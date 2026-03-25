@@ -28,6 +28,7 @@ npm run dev                  # → http://localhost:3000
 - [Project Overview](#project-overview)
 - [Architecture](#architecture)
 - [Architecture Diagram](#architecture-diagram)
+- [Scope](#scope)
 - [Tech Stack](#tech-stack)
 - [Getting Started](#getting-started)
 - [Environment Setup](#environment-setup)
@@ -107,36 +108,51 @@ The diagram below shows the full request flow from user to infrastructure across
 
 ```mermaid
 flowchart TD
-    User(["👤 User / Browser"])
+    User["👤 User"]
 
-    subgraph L1["🟦 Layer 1 — Product Application (This Repo)"]
-        App["ZeroLabs AI Publisher\n─────────────────\nNext.js App Router\nHosted on Vercel"]
+    subgraph L1["Layer 1 – Product App (This Repo)"]
+        App["Next.js App\nVercel"]
     end
 
-    subgraph L2["🟨 Layer 2 — ZeroFlow Platform"]
+    subgraph L2["Layer 2 – ZeroFlow Platform"]
         direction LR
-        AuthSvc["Auth &\nTenant Mgmt"]
-        BillingSvc["Usage Tracking\n& Billing"]
-        OrchestrSvc["AI Orchestration\nLayer"]
+        Auth["Auth Service"]
+        Billing["Billing Service"]
+        AI["AI Orchestration"]
     end
 
-    subgraph L3["🟥 Layer 3 — Infrastructure Providers"]
+    subgraph L3["Layer 3 – Infrastructure"]
         direction LR
-        OpenAI["OpenAI\nAI Generation"]
-        Qdrant["Qdrant\nVector DB"]
-        Wasabi["Wasabi\nObject Storage"]
-        Supabase["Supabase\nDatabase & Auth"]
+        OpenAI["OpenAI API"]
+        Qdrant["Qdrant Vector DB"]
+        Supabase["Supabase DB/Auth"]
+        Storage["Wasabi Storage"]
     end
 
     User --> App
-    App <-->|"platform services"| AuthSvc
-    App <-->|"platform services"| BillingSvc
-    App <-->|"platform services"| OrchestrSvc
-    App -->|"content generation"| OpenAI
-    App -->|"semantic search"| Qdrant
-    App -->|"asset storage"| Wasabi
-    App -->|"data & auth"| Supabase
+    App <-->|"auth / tenancy"| Auth
+    App <-->|"usage / billing"| Billing
+    App <-->|"AI requests"| AI
+    AI <-->|"completions"| OpenAI
+    AI <-->|"vector queries"| Qdrant
+    App <-->|"data & auth"| Supabase
+    App -->|"asset storage"| Storage
 ```
+
+---
+
+## Scope
+
+**This repository contains:**
+
+- The product application (Layer 1): Next.js frontend, API routes, feature modules, and Supabase database schema
+
+**This repository does NOT include:**
+
+- ZeroFlow platform services (Layer 2) — auth service, billing service, and AI orchestration layer are external platform dependencies
+- Infrastructure provisioning (Layer 3) — OpenAI, Qdrant, Wasabi, and Supabase are consumed as hosted services; their infrastructure is managed outside this repo
+
+> This boundary prevents confusion when onboarding new contributors and makes the integration points explicit.
 
 ---
 
@@ -180,6 +196,8 @@ npm install
 ---
 
 ## Environment Setup
+
+> ⚠️ **Never commit real secrets.** Only `.env.local` should hold live credentials — it is listed in `.gitignore` and must never be pushed to version control.
 
 Copy the example environment file and fill in your values:
 
