@@ -37,6 +37,7 @@ npm run dev                  # → http://localhost:3000
 - [Deployment](#deployment)
 - [Project Structure](#project-structure)
 - [Security Notes](#security-notes)
+- [Contributing](#contributing)
 
 ---
 
@@ -329,7 +330,23 @@ zerolabs-ai-publisher/
 
 ## Contributing
 
-Please open a pull request with a descriptive title following the [Conventional Commits](https://www.conventionalcommits.org/) format (e.g. `feat: add publishing scheduler`).
+### Branching Strategy
+
+This project uses a `main` / `develop` / `feature/*` branching model:
+
+| Branch | Purpose |
+|---|---|
+| `main` | Production-ready code — protected, deploys to production |
+| `develop` | Integration branch for upcoming work — protected |
+| `feature/<description>` | Short-lived branch for a single task or fix |
+
+All changes go through pull requests. Direct pushes to `main` and `develop` are not allowed.
+
+> See [docs/branching-strategy.md](docs/branching-strategy.md) for the full workflow, branch protection settings, and naming conventions.
+
+### Commit Messages
+
+Please use [Conventional Commits](https://www.conventionalcommits.org/) format (e.g. `feat: add publishing scheduler`).
 
 ---
 
