@@ -22,7 +22,7 @@ export const env = {
   },
 
   qdrant: {
-    url: required("QDRANT_URL", process.env.QDRANT_URL),
+    url: process.env.QDRANT_URL,
     apiKey: process.env.QDRANT_API_KEY,
     collection: process.env.QDRANT_COLLECTION || "ai_publisher_default",
   },
