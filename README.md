@@ -9,10 +9,25 @@
 
 ---
 
+## Quick Start
+
+```bash
+git clone https://github.com/zerolabsdotaipublisher-ai/zerolabs-ai-publisher.git
+cd zerolabs-ai-publisher
+npm install
+cp .env.example .env.local   # fill in your credentials
+npm run dev                  # → http://localhost:3000
+```
+
+> See [Environment Setup](#environment-setup) for a full list of required variables.
+
+---
+
 ## Table of Contents
 
 - [Project Overview](#project-overview)
 - [Architecture](#architecture)
+- [Architecture Diagram](#architecture-diagram)
 - [Tech Stack](#tech-stack)
 - [Getting Started](#getting-started)
 - [Environment Setup](#environment-setup)
@@ -82,6 +97,45 @@ Provides shared platform services consumed by this app:
 │  Layer 3 — Infrastructure Providers │
 │  OpenAI · Qdrant · Wasabi · Supabase│
 └─────────────────────────────────────┘
+```
+
+---
+
+## Architecture Diagram
+
+The diagram below shows the full request flow from user to infrastructure across all three layers of the ZeroFlow ecosystem.
+
+```mermaid
+flowchart TD
+    User(["👤 User / Browser"])
+
+    subgraph L1["🟦 Layer 1 — Product Application (This Repo)"]
+        App["ZeroLabs AI Publisher\n─────────────────\nNext.js App Router\nHosted on Vercel"]
+    end
+
+    subgraph L2["🟨 Layer 2 — ZeroFlow Platform"]
+        direction LR
+        AuthSvc["Auth &\nTenant Mgmt"]
+        BillingSvc["Usage Tracking\n& Billing"]
+        OrchestrSvc["AI Orchestration\nLayer"]
+    end
+
+    subgraph L3["🟥 Layer 3 — Infrastructure Providers"]
+        direction LR
+        OpenAI["OpenAI\nAI Generation"]
+        Qdrant["Qdrant\nVector DB"]
+        Wasabi["Wasabi\nObject Storage"]
+        Supabase["Supabase\nDatabase & Auth"]
+    end
+
+    User --> App
+    App <-->|"platform services"| AuthSvc
+    App <-->|"platform services"| BillingSvc
+    App <-->|"platform services"| OrchestrSvc
+    App -->|"content generation"| OpenAI
+    App -->|"semantic search"| Qdrant
+    App -->|"asset storage"| Wasabi
+    App -->|"data & auth"| Supabase
 ```
 
 ---
