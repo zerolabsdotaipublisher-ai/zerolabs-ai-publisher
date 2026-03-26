@@ -286,11 +286,26 @@ npm run lint
 
 This application is designed to be deployed on **[Vercel](https://vercel.com)**.
 
-1. Connect your GitHub repository to a Vercel project.
-2. Add all required environment variables in the Vercel project settings (under **Settings → Environment Variables**).
-3. Vercel will automatically build and deploy on every push to your main branch.
+### Quick setup
 
-> Ensure all variables from `.env.example` are configured in your Vercel environment before deploying to production.
+1. Connect the `zerolabsdotaipublisher-ai/zerolabs-ai-publisher` repository to a Vercel project.
+2. Set the **Framework Preset** to **Next.js** and leave the **Root Directory** blank.
+3. Set the **Production Branch** to `main`.
+4. Add all required environment variables under **Settings → Environment Variables** (see `.env.example` for the full list).
+5. Vercel will automatically build and deploy on every push to `main` (production) and to all other branches (preview).
+
+### Branch → deployment mapping
+
+| Branch | Deployment type |
+|---|---|
+| `main` | Production |
+| `develop`, `feature/*`, pull requests | Preview |
+
+### Deployment pipeline reference
+
+> For the complete deployment pipeline guide — including build settings validation, environment variable scoping, preview vs production behavior, rollback/redeploy procedures, and a 404 diagnostic checklist — see:
+>
+> **[docs/deployment/vercel-pipeline.md](docs/deployment/vercel-pipeline.md)**
 
 ---
 
