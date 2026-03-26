@@ -60,8 +60,9 @@ Current baseline files:
 - Only `NEXT_PUBLIC_*` variables are browser-exposed.
 - Keep server secrets (for example `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_API_KEY`) server-side only.
 - Keep optional integrations (Qdrant, Wasabi, ZeroFlow services) optional unless a feature actively requires them.
+- All `process.env` access must go through `config/env.ts` — never read `process.env` directly in other files.
 
-See also: [environment.md](./environment.md)
+See also: [docs/environment-variables.md](../environment-variables.md) (canonical reference) and [environment.md](./environment.md) (local setup guide).
 
 ## Static Asset Conventions
 
