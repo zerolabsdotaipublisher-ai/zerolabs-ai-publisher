@@ -224,33 +224,24 @@ Copy the example environment file and fill in your values:
 cp .env.example .env.local
 ```
 
-Environment variables are loaded from `.env.local` by Next.js. The current framework baseline can run without external integrations, and variables below become relevant when integration features are enabled.
+Environment variables are loaded from `.env.local` by Next.js. Required variables are validated at startup — the app will throw a clear error listing any missing values.
+
+**Required for every environment:**
 
 | Variable | Description |
 |---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous (public) key |
+| `NEXT_PUBLIC_APP_NAME` | Application display name |
+| `NEXT_PUBLIC_APP_URL` | Canonical URL for this deployment |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL (browser-safe) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key (browser-safe) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (server-side only) |
-| `OPENAI_API_KEY` | OpenAI API key |
-| `QDRANT_URL` | Qdrant instance URL (optional unless vector features are enabled) |
-| `QDRANT_API_KEY` | Qdrant API key |
-| `QDRANT_COLLECTION` | Qdrant collection name (default: `ai_publisher_default`) |
-| `JWT_SECRET` | Secret used for signing JWTs |
+| `OPENAI_API_KEY` | OpenAI API key (server-side only) |
 
-Optional variables:
+> Keep server-only values (`SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_API_KEY`) out of client components and never prefix them with `NEXT_PUBLIC_`.
 
-| Variable | Description |
-|---|---|
-| `WASABI_ACCESS_KEY_ID` | Wasabi access key |
-| `WASABI_SECRET_ACCESS_KEY` | Wasabi secret key |
-| `WASABI_BUCKET` | Wasabi bucket name |
-| `WASABI_REGION` | Wasabi region (default: `us-east-1`) |
-| `ZEROFLOW_API_URL` | ZeroFlow platform API base URL |
-| `ZEROFLOW_API_KEY` | ZeroFlow platform API key |
-| `ENABLE_ANALYTICS` | Enable analytics feature flag (`true`/`false`) |
-| `ENABLE_BILLING` | Enable billing feature flag (`true`/`false`) |
+For the complete variable reference — including optional, future, and Vercel-provided variables, the full environment matrix, and key-rotation procedures — see **[docs/environment-variables.md](docs/environment-variables.md)**.
 
-> Keep server-only values (for example `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_API_KEY`) out of client components and never prefix them with `NEXT_PUBLIC_`.
+For local setup steps see [docs/setup/environment.md](docs/setup/environment.md).
 
 ---
 

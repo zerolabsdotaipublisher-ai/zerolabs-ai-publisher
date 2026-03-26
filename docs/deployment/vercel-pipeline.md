@@ -73,6 +73,8 @@ The `vercel.json` committed to the repository root makes these settings explicit
 
 ## 3. Environment Variables
 
+For the complete variable reference, classification, environment matrix, and rotation procedures see **[docs/environment-variables.md](../environment-variables.md)**.
+
 ### Scoping rules
 
 Vercel environment variables can be scoped to one or more environments:
@@ -89,13 +91,14 @@ The following variables must be present in the **Production** environment. Previ
 
 | Variable | Scope | Notes |
 |---|---|---|
+| `NEXT_PUBLIC_APP_NAME` | Production + Preview | Display name |
+| `NEXT_PUBLIC_APP_URL` | Production + Preview | Set to the canonical domain for Production; set to the preview slug for Preview |
 | `NEXT_PUBLIC_SUPABASE_URL` | Production + Preview | Public — safe in browser. Throws at startup if missing. |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Production + Preview | Public — safe in browser. Throws at startup if missing. |
 | `SUPABASE_SERVICE_ROLE_KEY` | Production + Preview | Server-side only. Do not prefix with `NEXT_PUBLIC_`. |
 | `OPENAI_API_KEY` | Production + Preview | Server-side only. Throws at startup if missing. |
-| `JWT_SECRET` | Production + Preview | Use a random string of at least 32 characters. |
 
-> `config/env.ts` calls `required()` for `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `OPENAI_API_KEY`. If any of these are absent when the config module is first loaded, the app will throw a startup error — this can manifest as a 500 or as a 404 from Vercel depending on deployment state.
+> `config/env.ts` exports `validateEnv()`, which is called from `next.config.ts`. If any required variable is absent when the app starts, it throws a startup error listing all missing variables. This prevents broken deployments from reaching production silently.
 
 ### Optional variables
 
@@ -103,6 +106,9 @@ These variables are needed only when the corresponding feature is active:
 
 | Variable | Scope | Notes |
 |---|---|---|
+| `OPENAI_MODEL` | Production + Preview | Defaults to `gpt-4o` if omitted |
+| `NEXT_PUBLIC_SITE_URL` | Production + Preview | Used by Supabase for OAuth redirects |
+| `JWT_SECRET` | Production + Preview | Required if application-level JWT signing is used |
 | `QDRANT_URL` | Production + Preview | Optional unless vector search features are enabled |
 | `QDRANT_API_KEY` | Production + Preview | Optional |
 | `QDRANT_COLLECTION` | Production + Preview | Defaults to `ai_publisher_default` if omitted |
@@ -117,7 +123,7 @@ These variables are needed only when the corresponding feature is active:
 
 ### Checking variable names
 
-The canonical list of variable names is in `.env.example` at the repository root. Always verify that variable names in Vercel exactly match the names in `.env.example` — trailing spaces, capitalization differences, and typos are silent failures.
+The canonical list of variable names is in `.env.example` at the repository root and in [docs/environment-variables.md](../environment-variables.md). Always verify that variable names in Vercel exactly match the names in `.env.example` — trailing spaces, capitalization differences, and typos are silent failures.
 
 ---
 
