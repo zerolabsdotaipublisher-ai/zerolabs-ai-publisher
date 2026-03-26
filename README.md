@@ -36,6 +36,7 @@ npm run dev                  # → http://localhost:3000
 - [Running Locally](#running-locally)
 - [Build and Production](#build-and-production)
 - [Deployment](#deployment)
+- [Observability](#observability)
 - [Project Structure](#project-structure)
 - [Security Notes](#security-notes)
 - [Contributing](#contributing)
@@ -298,6 +299,23 @@ This application is designed to be deployed on **[Vercel](https://vercel.com)**.
 > For the complete deployment pipeline guide — including build settings validation, environment variable scoping, preview vs production behavior, rollback/redeploy procedures, and a 404 diagnostic checklist — see:
 >
 > **[docs/deployment/vercel-pipeline.md](docs/deployment/vercel-pipeline.md)**
+
+---
+
+## Observability
+
+Zero Labs AI Publisher uses a centralized, structured JSON logging system
+compatible with Vercel's runtime log stream and any log drain.
+
+- All logs are emitted as structured JSON via the centralized `lib/observability/logger.ts`.
+- Request logging, error normalization, metrics counters, and external service wrappers are all provided under `lib/observability/`.
+- A health check endpoint is available at **`GET /api/health`**.
+- Startup events are logged via `instrumentation.ts`.
+
+For the full strategy — log levels, event categories, required fields,
+redaction rules, Vercel log inspection, and alert-readiness conditions — see:
+
+> **[docs/observability/logging-monitoring.md](docs/observability/logging-monitoring.md)**
 
 ---
 
