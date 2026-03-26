@@ -32,6 +32,8 @@ function optional(value: string | undefined, fallback?: string): string | undefi
  * Each entry must have a corresponding required() call in the env object below.
  */
 const REQUIRED_VARS = [
+  "NEXT_PUBLIC_APP_NAME",
+  "NEXT_PUBLIC_APP_URL",
   "NEXT_PUBLIC_SUPABASE_URL",
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
   "SUPABASE_SERVICE_ROLE_KEY",
@@ -41,8 +43,8 @@ const REQUIRED_VARS = [
 export const env = {
   /** Application identity */
   app: {
-    name: process.env.NEXT_PUBLIC_APP_NAME ?? "AI Publisher",
-    url: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
+    name: required("NEXT_PUBLIC_APP_NAME", process.env.NEXT_PUBLIC_APP_NAME),
+    url: required("NEXT_PUBLIC_APP_URL", process.env.NEXT_PUBLIC_APP_URL),
     env: process.env.NODE_ENV ?? "development",
     isProduction: process.env.NODE_ENV === "production",
     /** Vercel-provided at runtime — do not set manually */
