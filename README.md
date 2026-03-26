@@ -30,6 +30,7 @@ npm run dev                  # → http://localhost:3000
 - [Architecture Diagram](#architecture-diagram)
 - [Scope](#scope)
 - [Tech Stack](#tech-stack)
+- [Next.js Framework Conventions](#nextjs-framework-conventions)
 - [Getting Started](#getting-started)
 - [Environment Setup](#environment-setup)
 - [Running Locally](#running-locally)
@@ -171,6 +172,23 @@ flowchart TD
 
 ---
 
+## Next.js Framework Conventions
+
+The framework baseline in this repository was established previously and is validated in-place (not recreated).
+
+- **Framework/runtime:** Next.js 16 with React 19 (`package.json`)
+- **Router:** App Router via `app/` (`app/layout.tsx`, `app/page.tsx`)
+- **TypeScript:** Enabled with strict mode (`tsconfig.json`)
+- **Styling baseline:** Global styles in `app/globals.css` and route-scoped styles with CSS Modules (for example `app/page.module.css`)
+- **Linting:** Next.js Core Web Vitals + TypeScript config via `eslint.config.mjs`
+- **Static assets:** `public/` with placeholder directories for future brand/icon/image assets
+
+For framework-specific guidance, see:
+- [docs/setup/nextjs-framework.md](docs/setup/nextjs-framework.md)
+- [docs/setup/environment.md](docs/setup/environment.md)
+
+---
+
 ## Getting Started
 
 ### Prerequisites
@@ -206,7 +224,7 @@ Copy the example environment file and fill in your values:
 cp .env.example .env.local
 ```
 
-Required variables (validated at runtime by `config/env.ts`):
+Environment variables are loaded from `.env.local` by Next.js. The current framework baseline can run without external integrations, and variables below become relevant when integration features are enabled.
 
 | Variable | Description |
 |---|---|
@@ -214,7 +232,7 @@ Required variables (validated at runtime by `config/env.ts`):
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous (public) key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (server-side only) |
 | `OPENAI_API_KEY` | OpenAI API key |
-| `QDRANT_URL` | Qdrant instance URL |
+| `QDRANT_URL` | Qdrant instance URL (optional unless vector features are enabled) |
 | `QDRANT_API_KEY` | Qdrant API key |
 | `QDRANT_COLLECTION` | Qdrant collection name (default: `ai_publisher_default`) |
 | `JWT_SECRET` | Secret used for signing JWTs |
@@ -232,7 +250,7 @@ Optional variables:
 | `ENABLE_ANALYTICS` | Enable analytics feature flag (`true`/`false`) |
 | `ENABLE_BILLING` | Enable billing feature flag (`true`/`false`) |
 
-> All required variables are validated on startup via `config/env.ts`. The application will throw a descriptive error if any required variable is missing.
+> Keep server-only values (for example `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_API_KEY`) out of client components and never prefix them with `NEXT_PUBLIC_`.
 
 ---
 
@@ -353,4 +371,3 @@ Please use [Conventional Commits](https://www.conventionalcommits.org/) format (
 ## License
 
 Private — All rights reserved. © ZeroLabs AI
-
