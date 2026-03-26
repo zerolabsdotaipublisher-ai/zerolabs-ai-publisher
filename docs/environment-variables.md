@@ -80,6 +80,7 @@ Variables are classified along two axes:
 | `WASABI_SECRET_ACCESS_KEY` | ❌ | Future | Wasabi | Wasabi Console → Vercel |
 | `WASABI_BUCKET` | ❌ | Future | Wasabi | Wasabi Console → Vercel |
 | `WASABI_REGION` | ❌ | Future | Wasabi | Vercel |
+| `WASABI_ENDPOINT` | ❌ | Future | Wasabi | Vercel |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | ✅ | Future | Stripe | Stripe Dashboard → Vercel |
 | `STRIPE_SECRET_KEY` | ❌ | Future | Stripe | Stripe Dashboard → Vercel |
 | `STRIPE_WEBHOOK_SECRET` | ❌ | Future | Stripe | Stripe Dashboard → Vercel |
@@ -89,6 +90,9 @@ Variables are classified along two axes:
 | `ZEROFLOW_API_KEY` | ❌ | Future | ZeroFlow | ZeroFlow Team → Vercel |
 | `ENABLE_ANALYTICS` | ❌ | Future | Feature flag | Vercel |
 | `ENABLE_BILLING` | ❌ | Future | Feature flag | Vercel |
+| `ENABLE_PUBLISHING` | ❌ | Future | Feature flag | Vercel |
+| `ENABLE_PROJECT_CREATION` | ❌ | Future | Feature flag | Vercel |
+| `ENABLE_ZEROFLOW_INTEGRATION` | ❌ | Future | Feature flag | Vercel |
 | `VERCEL_URL` | — | Auto-provided | Vercel | Vercel (do not set) |
 | `VERCEL_ENV` | — | Auto-provided | Vercel | Vercel (do not set) |
 | `VERCEL_GIT_COMMIT_SHA` | — | Auto-provided | Vercel | Vercel (do not set) |
@@ -188,6 +192,7 @@ Required only when asset upload and file storage features are active. Wasabi use
 | `WASABI_SECRET_ACCESS_KEY` | ❌ | Future | Wasabi secret access key |
 | `WASABI_BUCKET` | ❌ | Future | Target bucket name |
 | `WASABI_REGION` | ❌ | Future | Bucket region (e.g. `us-east-1`) |
+| `WASABI_ENDPOINT` | ❌ | Future | S3-compatible endpoint URL (e.g. `https://s3.wasabisys.com`) |
 
 ---
 
@@ -233,6 +238,9 @@ Boolean toggles that gate feature areas. Set to `"true"` to enable.
 |---|---|---|---|
 | `ENABLE_ANALYTICS` | ❌ | `false` | Enable analytics collection |
 | `ENABLE_BILLING` | ❌ | `false` | Enable billing and subscription features |
+| `ENABLE_PUBLISHING` | ❌ | `false` | Enable content publishing workflows |
+| `ENABLE_PROJECT_CREATION` | ❌ | `false` | Enable project creation and management |
+| `ENABLE_ZEROFLOW_INTEGRATION` | ❌ | `false` | Enable ZeroFlow platform integration |
 
 ---
 
@@ -274,6 +282,9 @@ This table shows which variables are configured in each environment and where th
 | `ZEROFLOW_*` | Future | Future | Future | ZeroFlow Team → Vercel |
 | `ENABLE_ANALYTICS` | Future | Future | Future | Vercel |
 | `ENABLE_BILLING` | Future | Future | Future | Vercel |
+| `ENABLE_PUBLISHING` | Future | Future | Future | Vercel |
+| `ENABLE_PROJECT_CREATION` | Future | Future | Future | Vercel |
+| `ENABLE_ZEROFLOW_INTEGRATION` | Future | Future | Future | Vercel |
 | `VERCEL_URL` | ❌ auto | ✅ auto | ✅ auto | Vercel (automatic) |
 | `VERCEL_ENV` | ❌ auto | ✅ auto | ✅ auto | Vercel (automatic) |
 
@@ -377,18 +388,31 @@ The following table lists who should have access to each secret system. Follow t
 
 All `process.env` access is centralized in `config/env.ts`. **Do not read `process.env` directly in other files.**
 
+The preferred way to access configuration in application code is through the unified entry point:
+
 ```typescript
-// ✅ Correct
-import { env } from "@/config/env";
+// ✅ Correct — unified entry point
+import { config } from "@/config";
+const model = config.services.openai.model;
+const appName = config.app.name;
+
+// ✅ Also correct — direct env access when needed
+import { env } from "@/config";
 const url = env.supabase.url;
 
 // ❌ Incorrect — bypasses central config and validation
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 ```
 
-`config/env.ts` exports:
+`config/index.ts` (`@/config`) exports:
 
-- `env` — typed object with all variable values and defaults.
-- `validateEnv()` — throws a comprehensive error listing all missing required variables. Called from `next.config.ts` so failures are caught at build time.
+- `config` — unified object with `app`, `services`, and `features` sections.
+- `env` — raw typed environment object (use for direct env-layer access).
+- `validateEnv()` — throws a comprehensive error listing all missing required variables.
+- `isProduction()`, `isPreview()`, `isDevelopment()` — environment detection helpers.
+- `getPublicConfig()` — browser-safe app config subset.
+- `routes` — navigation route constants.
 
-Since server-only variables (those without `NEXT_PUBLIC_`) are stripped from the client bundle by Next.js, only import `config/env.ts` in server-side code (API routes, Server Components, server actions).
+Since server-only variables (those without `NEXT_PUBLIC_`) are stripped from the client bundle by Next.js, only import `config` (or `config/env.ts`) in server-side code (API routes, Server Components, server actions).
+
+See [docs/setup/configuration.md](./setup/configuration.md) for the full configuration architecture guide.

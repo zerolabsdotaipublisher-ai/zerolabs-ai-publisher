@@ -186,6 +186,7 @@ The framework baseline in this repository was established previously and is vali
 For framework-specific guidance, see:
 - [docs/setup/nextjs-framework.md](docs/setup/nextjs-framework.md)
 - [docs/setup/environment.md](docs/setup/environment.md)
+- [docs/setup/configuration.md](docs/setup/configuration.md)
 
 ---
 
@@ -313,9 +314,12 @@ zerolabs-ai-publisher/
 │   ├── shared/           # Shared layout components
 │   └── ui/               # Base UI primitives
 ├── config/               # Application configuration
-│   ├── app.ts            # App-level constants
+│   ├── index.ts          # Single entry point — import from "@/config"
+│   ├── app.ts            # App metadata and typed AppConfig
 │   ├── env.ts            # Typed, validated environment variables
-│   └── routes.ts         # Route constants
+│   ├── features.ts       # Feature flag definitions
+│   ├── routes.ts         # Route constants
+│   └── services.ts       # Grouped external service configs
 ├── features/             # Feature-based modules (auth, projects, publishing, assets, analytics)
 ├── hooks/                # Custom React hooks
 ├── lib/                  # Core library code

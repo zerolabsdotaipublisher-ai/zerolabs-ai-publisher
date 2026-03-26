@@ -10,7 +10,15 @@
  * (API routes, Server Components, server actions, next.config.ts).
  *
  * See docs/environment-variables.md for the full variable reference.
+ * See docs/setup/configuration.md for the configuration architecture guide.
  */
+
+/**
+ * Runtime deployment stage derived from Vercel and Node.js environment
+ * indicators. Use env.runtime.stage for environment-aware logic rather than
+ * reading NODE_ENV or VERCEL_ENV directly.
+ */
+export type RuntimeEnvironment = "development" | "preview" | "production";
 
 function required(key: string, value: string | undefined): string {
   if (!value) {
@@ -50,6 +58,24 @@ export const env = {
     /** Vercel-provided at runtime — do not set manually */
     vercelUrl: optional(process.env.VERCEL_URL),
     vercelEnv: optional(process.env.VERCEL_ENV),
+  },
+
+  /**
+   * Runtime stage derived from VERCEL_ENV (preferred) with NODE_ENV fallback.
+   * Use this instead of reading NODE_ENV or VERCEL_ENV directly.
+   *
+   * - "production"  — Vercel production deployment or NODE_ENV=production
+   * - "preview"     — Vercel preview deployment (branch / pull request)
+   * - "development" — local dev server or any other context
+   */
+  runtime: {
+    stage: ((): RuntimeEnvironment => {
+      const vercelEnv = process.env.VERCEL_ENV;
+      if (vercelEnv === "production") return "production";
+      if (vercelEnv === "preview") return "preview";
+      if (process.env.NODE_ENV === "production") return "production";
+      return "development";
+    })(),
   },
 
   /** Supabase — database & authentication (required) */
@@ -93,6 +119,7 @@ export const env = {
     secretKey: optional(process.env.WASABI_SECRET_ACCESS_KEY),
     bucket: optional(process.env.WASABI_BUCKET),
     region: process.env.WASABI_REGION ?? "us-east-1",
+    endpoint: optional(process.env.WASABI_ENDPOINT),
   },
 
   /** Billing via Stripe (future) */
@@ -116,8 +143,16 @@ export const env = {
 
   /** Feature flags */
   features: {
-    analytics: process.env.ENABLE_ANALYTICS === "true",
-    billing: process.env.ENABLE_BILLING === "true",
+    /** Enable analytics collection */
+    enableAnalytics: process.env.ENABLE_ANALYTICS === "true",
+    /** Enable billing and subscription features */
+    enableBilling: process.env.ENABLE_BILLING === "true",
+    /** Enable content publishing workflows */
+    enablePublishing: process.env.ENABLE_PUBLISHING === "true",
+    /** Enable project creation and management */
+    enableProjectCreation: process.env.ENABLE_PROJECT_CREATION === "true",
+    /** Enable ZeroFlow platform integration */
+    enableZeroFlowIntegration: process.env.ENABLE_ZEROFLOW_INTEGRATION === "true",
   },
 };
 
