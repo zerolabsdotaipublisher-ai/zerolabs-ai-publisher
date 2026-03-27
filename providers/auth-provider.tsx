@@ -72,7 +72,7 @@ export function AuthProvider({
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
 
-      if (nextSession?.user) {
+      if (nextSession?.user && nextSession.user.id !== user?.id) {
         fetch("/api/auth/profile-sync", { method: "POST" }).catch(() => undefined);
       }
 
@@ -83,7 +83,7 @@ export function AuthProvider({
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, [supabase, user?.id]);
 
   const value = useMemo(
     () => ({ session, user, loading, refreshSession }),

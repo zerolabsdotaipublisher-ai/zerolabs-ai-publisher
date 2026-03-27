@@ -24,5 +24,7 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/health).*)"],
+  // Exclude API routes from auth middleware to avoid interfering with route handlers.
+  // API auth routes use server-side Supabase clients for auth/session operations.
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };

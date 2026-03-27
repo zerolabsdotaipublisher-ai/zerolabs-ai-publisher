@@ -13,6 +13,11 @@ export function SignInForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(
+    searchParams.get("message") === "check_email"
+      ? "Account created. Check your email to confirm your account, then sign in."
+      : null
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const nextPath = searchParams.get("next") || routes.dashboard;
@@ -20,6 +25,7 @@ export function SignInForm() {
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    setMessage(null);
     setIsSubmitting(true);
 
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
@@ -30,7 +36,6 @@ export function SignInForm() {
       return;
     }
 
-    await fetch("/api/auth/profile-sync", { method: "POST" }).catch(() => undefined);
     router.replace(nextPath);
     router.refresh();
   }
@@ -59,6 +64,7 @@ export function SignInForm() {
         />
       </label>
       {error ? <p className="auth-error">{error}</p> : null}
+      {message ? <p className="auth-success">{message}</p> : null}
       <button type="submit" disabled={isSubmitting}>
         {isSubmitting ? "Signing in..." : "Sign in"}
       </button>

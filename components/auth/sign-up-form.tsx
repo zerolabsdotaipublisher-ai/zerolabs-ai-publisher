@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getSupabaseAppUrl, getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { routes } from "@/config/routes";
@@ -13,14 +12,12 @@ export function SignUpForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
-    setMessage(null);
     setIsSubmitting(true);
 
     const { error: signUpError } = await supabase.auth.signUp({
@@ -38,9 +35,8 @@ export function SignUpForm() {
       return;
     }
 
-    setMessage("Account created. Check your email to confirm your account, then sign in.");
     setIsSubmitting(false);
-    router.replace(routes.login);
+    router.replace(`${routes.login}?message=check_email`);
     router.refresh();
   }
 
@@ -73,13 +69,9 @@ export function SignUpForm() {
         />
       </label>
       {error ? <p className="auth-error">{error}</p> : null}
-      {message ? <p className="auth-success">{message}</p> : null}
       <button type="submit" disabled={isSubmitting}>
         {isSubmitting ? "Creating account..." : "Create account"}
       </button>
-      <p>
-        Already have an account? <Link href={routes.login}>Sign in</Link>
-      </p>
     </form>
   );
 }
