@@ -71,7 +71,7 @@ export function SignUpForm() {
       email: email.trim(),
       password,
       options: {
-        data: { full_name: fullName.trim() || undefined },
+        data: { full_name: fullName.trim() !== "" ? fullName.trim() : undefined },
         emailRedirectTo: `${getSupabaseAppUrl()}${routes.authCallback}`,
       },
     });
@@ -166,6 +166,9 @@ export function SignUpForm() {
       <button type="submit" disabled={isSubmitting} aria-busy={isSubmitting}>
         {isSubmitting ? "Creating account…" : "Create account"}
       </button>
+      <span className="sr-only" aria-live="polite" aria-atomic="true">
+        {isSubmitting ? "Submitting registration, please wait." : ""}
+      </span>
 
       <p className="auth-terms-notice">
         By creating an account, you agree to our Terms of Service and Privacy Policy.
