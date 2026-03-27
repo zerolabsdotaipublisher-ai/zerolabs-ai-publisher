@@ -1,9 +1,22 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { routes } from "@/config/routes";
+import { getServerUser } from "@/lib/supabase/server";
 import { SignInForm } from "@/components/auth/sign-in-form";
 
-export default function LoginPage() {
+export const metadata: Metadata = {
+  title: "Sign In",
+  description: "Sign in to Zero Labs AI Publisher.",
+};
+
+export default async function LoginPage() {
+  const user = await getServerUser();
+  if (user) {
+    redirect(routes.dashboard);
+  }
+
   return (
     <>
       <Suspense fallback={<p>Loading...</p>}>
