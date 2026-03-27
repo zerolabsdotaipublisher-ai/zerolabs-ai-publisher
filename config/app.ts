@@ -35,6 +35,13 @@ export interface PublicAppConfig {
   url: string;
   /** Current runtime stage */
   environment: RuntimeEnvironment;
+  /** Browser-safe Supabase settings */
+  supabase: {
+    /** Project URL — NEXT_PUBLIC, safe for browser */
+    url: string;
+    /** Anon (public) key — NEXT_PUBLIC, safe for browser */
+    anonKey: string;
+  };
 }
 
 export const appConfig: AppConfig = {
@@ -48,4 +55,8 @@ export const publicAppConfig: PublicAppConfig = {
   name: appConfig.name,
   url: appConfig.url,
   environment: appConfig.environment,
+  supabase: {
+    url: env.supabase.url,
+    anonKey: env.supabase.anonKey,
+  },
 };
