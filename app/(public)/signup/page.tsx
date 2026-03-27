@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { routes } from "@/config/routes";
 import { SignUpForm } from "@/components/auth/sign-up-form";
+
+export const metadata: Metadata = {
+  title: "Create account",
+  description: "Create your Zero Labs AI Publisher account.",
+};
 
 export default function SignUpPage() {
   return (

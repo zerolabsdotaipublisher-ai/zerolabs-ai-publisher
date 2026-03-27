@@ -105,3 +105,15 @@ a {
 .auth-link-row {
   margin-top: 1rem;
 }
+
+.auth-field-hint {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-top: -0.5rem;
+}
+
+.auth-terms-notice {
+  font-size: 0.8rem;
+  color: #6b7280;
+  text-align: center;
+}
