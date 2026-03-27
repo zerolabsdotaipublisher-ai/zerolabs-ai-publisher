@@ -162,6 +162,11 @@ Find these connection strings in your Supabase project at **Project Settings →
 | `NEXT_PUBLIC_SITE_URL` | ✅ | Optional now | Canonical site URL for Supabase OAuth redirect allow-list |
 | `JWT_SECRET` | ❌ | Optional now | Secret for signing application-level JWTs — minimum 32 characters |
 
+For auth flows in this repository, configure Supabase redirect URLs to include:
+
+- `${NEXT_PUBLIC_SITE_URL}/auth/callback` (or `${NEXT_PUBLIC_APP_URL}/auth/callback`)
+- `${NEXT_PUBLIC_SITE_URL}/reset-password` (or `${NEXT_PUBLIC_APP_URL}/reset-password`)
+
 Generate `JWT_SECRET` with:
 
 ```bash

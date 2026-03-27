@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { getPublicConfig } from "@/config";
+import { AuthProvider } from "@/providers/auth-provider";
 
 export const metadata: Metadata = {
   title: "Zero Labs AI Publisher",
@@ -11,9 +13,21 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const publicConfig = getPublicConfig();
+
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <AuthProvider
+          supabaseConfig={{
+            url: publicConfig.supabase.url,
+            anonKey: publicConfig.supabase.anonKey,
+            appUrl: publicConfig.url,
+          }}
+        >
+          {children}
+        </AuthProvider>
+      </body>
     </html>
   );
 }
