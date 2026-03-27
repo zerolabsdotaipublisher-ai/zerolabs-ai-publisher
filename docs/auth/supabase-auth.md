@@ -2,6 +2,8 @@
 
 This document defines the authentication foundation for Zero Labs AI Publisher using Supabase with Next.js App Router.
 
+For the full registration flow definition (ZLAP-STORY 2-1), see [Registration Flow](./registration-flow.md).
+
 ## Requirements and Scope
 
 - App-level auth is implemented in this Layer 1 product app.
