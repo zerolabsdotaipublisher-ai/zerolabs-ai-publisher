@@ -3,7 +3,7 @@
 import { useState, useId, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
-import { routes } from "@/config/routes";
+import { resolveSafeNextPath } from "@/lib/auth/redirect";
 
 function resolveInitialState(searchParams: ReturnType<typeof useSearchParams>): {
   initialMessage: string | null;
@@ -59,7 +59,7 @@ export function SignInForm() {
   const [message, setMessage] = useState<string | null>(initialMessage);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const nextPath = searchParams.get("next") || routes.dashboard;
+  const nextPath = resolveSafeNextPath(searchParams.get("next"));
   const errorId = `${id}-error`;
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {

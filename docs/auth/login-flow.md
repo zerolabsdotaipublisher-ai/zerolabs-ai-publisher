@@ -38,6 +38,7 @@ No social login, magic link, or additional fields are in scope for MVP.
 | ------------------------------------------ | ------------------------------------------------ |
 | Successful login (no `next` param)         | `/dashboard`                                     |
 | Successful login (with `?next=/some/path`) | `/some/path` (protected route preserved)         |
+| Successful login (`next` is external/invalid) | `/dashboard` (invalid return target ignored)   |
 | Authenticated user visits `/login`         | Redirected to `/dashboard` (server-side check)   |
 | Unauthenticated user visits protected page | Redirected to `/login?next=<intended-path>`      |
 
@@ -49,6 +50,8 @@ When an unauthenticated user attempts to access a protected page:
 2. The user is redirected to `/login?next=<intended-path>`.
 3. After successful login, `SignInForm` reads `searchParams.get("next")` and calls `router.replace(nextPath)`.
 4. The user arrives at the originally intended page.
+
+`next` must be an internal app path (`/something`). Any absolute URL, protocol-relative URL (`//...`), or malformed value falls back to `/dashboard`.
 
 ---
 
