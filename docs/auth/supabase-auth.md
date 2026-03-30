@@ -6,6 +6,8 @@ For the full registration flow definition (ZLAP-STORY 2-1), see [Registration Fl
 
 For the full login flow definition (ZLAP-STORY 2-2), see [Login Flow](./login-flow.md).
 
+For the full session lifecycle definition (ZLAP-STORY 2-3), see [Session Management](./session-management.md).
+
 ## Requirements and Scope
 
 - App-level auth is implemented in this Layer 1 product app.
