@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { routes } from "@/config/routes";
 import { updateSession } from "@/lib/supabase/middleware";
 
-const protectedPaths = [routes.dashboard];
+const protectedPaths = [routes.dashboard, routes.profile];
 
 export async function middleware(request: NextRequest): Promise<NextResponse> {
   const { pathname, search } = request.nextUrl;

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { routes } from "@/config/routes";
+import { getServerUser } from "@/lib/supabase/server";
 import { SignUpForm } from "@/components/auth/sign-up-form";
 
 export const metadata: Metadata = {
@@ -8,7 +10,12 @@ export const metadata: Metadata = {
   description: "Create your Zero Labs AI Publisher account.",
 };
 
-export default function SignUpPage() {
+export default async function SignUpPage() {
+  const user = await getServerUser();
+  if (user) {
+    redirect(routes.dashboard);
+  }
+
   return (
     <>
       <SignUpForm />
