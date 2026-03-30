@@ -1,8 +1,15 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { routes } from "@/config/routes";
+import { getServerUser } from "@/lib/supabase/server";
 import { ForgotPasswordForm } from "@/components/auth/forgot-password-form";
 
-export default function ForgotPasswordPage() {
+export default async function ForgotPasswordPage() {
+  const user = await getServerUser();
+  if (user) {
+    redirect(routes.dashboard);
+  }
+
   return (
     <>
       <ForgotPasswordForm />
