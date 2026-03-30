@@ -4,6 +4,8 @@ This document defines the authentication foundation for Zero Labs AI Publisher u
 
 For the full registration flow definition (ZLAP-STORY 2-1), see [Registration Flow](./registration-flow.md).
 
+For the full login flow definition (ZLAP-STORY 2-2), see [Login Flow](./login-flow.md).
+
 ## Requirements and Scope
 
 - App-level auth is implemented in this Layer 1 product app.
