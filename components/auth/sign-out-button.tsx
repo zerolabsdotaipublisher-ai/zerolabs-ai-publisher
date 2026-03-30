@@ -25,8 +25,7 @@ export function SignOutButton() {
       } else {
         setError("Sign out failed. Please try again.");
       }
-    } catch (err) {
-      console.error("[SignOutButton] Sign-out request failed:", err);
+    } catch {
       setError("Sign out failed. Please try again.");
     } finally {
       setSigningOut(false);
