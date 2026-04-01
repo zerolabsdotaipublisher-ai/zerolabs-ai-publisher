@@ -1,0 +1,294 @@
+/**
+ * Website structure model for Zero Labs AI Publisher.
+ *
+ * This module owns the typed, validated, storage-ready website structure
+ * produced by the generation pipeline. It is distinct from the AI prompt
+ * output contract (lib/ai/prompts/types.ts): the prompt contract is the AI
+ * output shape; this model is the product-owned structure persisted and
+ * rendered by the app.
+ *
+ * Relationship to Story 3-1:
+ *   WebsiteGenerationOutput (prompt output) → mapper → WebsiteStructure (this)
+ */
+
+import type {
+  WebsiteGenerationInput,
+  TonePreset,
+  StylePreset,
+  WebsiteType,
+} from "../prompts/types";
+
+export type { WebsiteType, TonePreset, StylePreset };
+
+// ---------------------------------------------------------------------------
+// Enumerations
+// ---------------------------------------------------------------------------
+
+export type WebsiteStructureStatus = "draft" | "published" | "archived";
+
+export type PageType = "home" | "about" | "services" | "contact" | "custom";
+
+export type SectionType =
+  | "hero"
+  | "about"
+  | "services"
+  | "testimonials"
+  | "cta"
+  | "contact"
+  | "footer"
+  | "custom";
+
+export type ComponentType =
+  | "heading"
+  | "paragraph"
+  | "button"
+  | "image"
+  | "list"
+  | "card"
+  | "form"
+  | "custom";
+
+// ---------------------------------------------------------------------------
+// Component-level (MVP foundation)
+// ---------------------------------------------------------------------------
+
+/**
+ * A single renderable UI component within a section.
+ * Provides a typed foundation for future component-level editing.
+ */
+export interface WebsiteComponent {
+  /** Stable unique identifier. */
+  id: string;
+  /** Component variant. */
+  type: ComponentType;
+  /** Arbitrary component props — renderer interprets by type. */
+  props: Record<string, unknown>;
+}
+
+// ---------------------------------------------------------------------------
+// Section-level
+// ---------------------------------------------------------------------------
+
+/**
+ * Optional style directives applied to a section during rendering.
+ * Derived from the AI styleHints output.
+ */
+export interface SectionStyleHints {
+  /** Emphasis instruction (e.g. "large headline, centered"). */
+  emphasis?: string;
+  /** Layout hint (e.g. "two-column", "full-width"). */
+  layout?: string;
+}
+
+/**
+ * A single content section within a page.
+ * `content` maps directly to the corresponding prompt output section shape.
+ */
+export interface WebsiteSection {
+  /** Stable unique identifier. */
+  id: string;
+  /** Section variant — drives renderer selection. */
+  type: SectionType;
+  /** Render order within the page (ascending). */
+  order: number;
+  /** Whether this section is shown during rendering. */
+  visible: boolean;
+  /** Section content — field names match the prompt output contract. */
+  content: Record<string, unknown>;
+  /** Optional UI components generated for this section. */
+  components?: WebsiteComponent[];
+  /** Optional visual hints passed to the renderer. */
+  styleHints?: SectionStyleHints;
+}
+
+// ---------------------------------------------------------------------------
+// SEO
+// ---------------------------------------------------------------------------
+
+/** SEO metadata for an individual page. */
+export interface PageSeo {
+  /** `<title>` tag value. */
+  title: string;
+  /** `<meta name="description">` value. */
+  description: string;
+  /** Keywords array (used for structured data and internal tooling). */
+  keywords: string[];
+}
+
+// ---------------------------------------------------------------------------
+// Page-level
+// ---------------------------------------------------------------------------
+
+/**
+ * A single page within the website structure.
+ * MVP generates one home page; multi-page support is ready via this model.
+ */
+export interface WebsitePage {
+  /** Stable unique identifier. */
+  id: string;
+  /** URL path (e.g. "/" for home, "/about" for about). */
+  slug: string;
+  /** Human-readable page title. */
+  title: string;
+  /** Page variant. */
+  type: PageType;
+  /** Ordered sections on this page. */
+  sections: WebsiteSection[];
+  /** Page-level SEO metadata. */
+  seo: PageSeo;
+  /** Render order for multi-page navigation (ascending). */
+  order: number;
+}
+
+// ---------------------------------------------------------------------------
+// Navigation
+// ---------------------------------------------------------------------------
+
+/** A single navigation link item. */
+export interface NavigationItem {
+  /** Link label shown to the user. */
+  label: string;
+  /** Target URL or anchor href. */
+  href: string;
+  /** When true, opens in a new tab. */
+  external?: boolean;
+}
+
+/** Navigation structure for the full website. */
+export interface WebsiteNavigation {
+  /** Primary nav items shown in the header. */
+  primary: NavigationItem[];
+  /** Footer nav items (optional). */
+  footer?: NavigationItem[];
+}
+
+// ---------------------------------------------------------------------------
+// Site-level SEO
+// ---------------------------------------------------------------------------
+
+/** Site-wide SEO metadata. */
+export interface WebsiteSeo {
+  /** Default `<title>` for the site. */
+  title: string;
+  /** Default meta description. */
+  description: string;
+  /** Primary keywords for the site. */
+  keywords: string[];
+  /** Open Graph image URL (optional). */
+  ogImage?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Style configuration
+// ---------------------------------------------------------------------------
+
+/** Visual style directives derived from AI output. */
+export interface WebsiteStyleConfig {
+  tone: TonePreset;
+  style: StylePreset;
+  /** Colour mood description (e.g. "Clean neutrals with one accent"). */
+  colorMood: string;
+  /** Typography mood description (e.g. "Readable sans-serif hierarchy"). */
+  typographyMood: string;
+}
+
+// ---------------------------------------------------------------------------
+// Dynamic content variations
+// ---------------------------------------------------------------------------
+
+/**
+ * A set of content variants for a specific field in a section.
+ * Supports A/B testing and iterative regeneration without full re-generation.
+ */
+export interface ContentVariation {
+  /** ID of the section that owns this variation. */
+  sectionId: string;
+  /** Dot-notation path to the field (e.g. "content.headline"). */
+  fieldPath: string;
+  /** All available variants for this field. */
+  variants: string[];
+  /** Index of the currently active variant. */
+  activeVariant: number;
+}
+
+// ---------------------------------------------------------------------------
+// Full website structure model
+// ---------------------------------------------------------------------------
+
+/**
+ * The complete, validated, storage-ready website structure.
+ *
+ * This is the product-owned model that represents a generated website.
+ * It is produced by the generation pipeline, persisted in Supabase, and
+ * consumed by the frontend renderer.
+ */
+export interface WebsiteStructure {
+  /** Stable unique identifier (e.g. "ws_<timestamp>_<random>"). */
+  id: string;
+  /** Owning user ID — maps to auth.users.id. */
+  userId: string;
+  /** Website type from the source input. */
+  websiteType: WebsiteType;
+  /** Site display name. */
+  siteTitle: string;
+  /** One-line brand tagline. */
+  tagline: string;
+  /** Ordered list of pages. One page for MVP; multi-page ready. */
+  pages: WebsitePage[];
+  /** Site-wide navigation structure. */
+  navigation: WebsiteNavigation;
+  /** Site-level SEO metadata. */
+  seo: WebsiteSeo;
+  /** Visual style configuration. */
+  styleConfig: WebsiteStyleConfig;
+  /** Optional content variations for A/B testing. */
+  contentVariations?: ContentVariation[];
+  /** Original input that produced this structure. */
+  sourceInput: WebsiteGenerationInput;
+  /** Lifecycle status. */
+  status: WebsiteStructureStatus;
+  /** Incremented on each regeneration. */
+  version: number;
+  /** ISO 8601 timestamp of first generation. */
+  generatedAt: string;
+  /** ISO 8601 timestamp of last update. */
+  updatedAt: string;
+}
+
+// ---------------------------------------------------------------------------
+// Generation result
+// ---------------------------------------------------------------------------
+
+/** Result returned by the generation service. */
+export interface StructureGenerationResult {
+  /** The produced website structure. */
+  structure: WebsiteStructure;
+  /** Validation errors found after generation (structure may still be usable). */
+  validationErrors: string[];
+  /** True when at least one AI output field was replaced by a fallback value. */
+  usedFallback: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Storage row (Supabase public.website_structures)
+// ---------------------------------------------------------------------------
+
+/**
+ * Database row shape for public.website_structures.
+ * `structure` and `source_input` are stored as JSONB.
+ */
+export interface WebsiteStructureRow {
+  id: string;
+  user_id: string;
+  website_type: string;
+  site_title: string;
+  tagline: string;
+  /** Full structure stored as JSONB. */
+  structure: unknown;
+  /** Original generation input stored as JSONB. */
+  source_input: unknown;
+  status: string;
+  version: number;
+  generated_at: string;
+  updated_at: string;
+}
