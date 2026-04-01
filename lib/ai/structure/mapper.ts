@@ -143,6 +143,7 @@ export function mapOutputToStructure(
     output.websiteType,
     sections,
     output.siteTitle,
+    new Date(now).getFullYear(),
   );
 
   return {

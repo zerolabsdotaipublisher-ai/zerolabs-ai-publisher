@@ -43,11 +43,20 @@ const NAV_EXCLUDED_TYPES = new Set<string>(["hero", "cta", "footer", "custom"]);
  * - Builds primary nav from navigable sections (excludes hero/cta/footer).
  * - Builds footer nav from primary nav plus a "Home" link and copyright.
  * - Falls back to template defaults when no navigable sections are present.
+ *
+ * @param websiteType   - Website type (used for template fallback).
+ * @param sections      - Sections on the home page.
+ * @param siteTitle     - Display name used in the copyright notice.
+ * @param copyrightYear - Year for the copyright notice. Callers should pass
+ *                        the year derived from the structure's `generatedAt`
+ *                        for reproducible output. Defaults to current year
+ *                        when not provided.
  */
 export function generateNavigation(
   websiteType: WebsiteType,
   sections: WebsiteSection[],
   siteTitle: string,
+  copyrightYear?: number,
 ): WebsiteNavigation {
   const primary: NavigationItem[] = [];
 
@@ -69,9 +78,9 @@ export function generateNavigation(
           href: `#${label.toLowerCase().replace(/\s+/g, "-")}`,
         }));
 
-  const currentYear = new Date().getFullYear();
+  const year = copyrightYear ?? new Date().getFullYear();
   const footerCopyright: NavigationItem = {
-    label: `© ${currentYear} ${siteTitle}`,
+    label: `© ${year} ${siteTitle}`,
     href: "/",
   };
 

@@ -88,7 +88,7 @@ export const edgeCaseStructureFixture: WebsiteStructure = {
       { label: "Features", href: "#features" },
       { label: "Pricing", href: "#pricing" },
       { label: "Sign Up", href: "#sign-up" },
-      { label: `© ${new Date().getFullYear()} Lean Launch Lab`, href: "/" },
+      { label: "© 2026 Lean Launch Lab", href: "/" },
     ],
   },
   seo: {
