@@ -32,7 +32,7 @@ export function ensureValidWebsiteLayout(
 
   return {
     layout: recovered,
-    errors: [...errors, ...revalidated],
+    errors: revalidated,
     usedFallback: true,
   };
 }

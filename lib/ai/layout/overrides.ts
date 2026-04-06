@@ -1,4 +1,11 @@
-import type { AlignmentMode, LayoutOverrides, SpacingScale, WebsiteLayoutModel } from "./types";
+import { SUPPORTED_LAYOUT_VARIANTS } from "./schemas";
+import type {
+  AlignmentMode,
+  LayoutOverrides,
+  LayoutVariantName,
+  SpacingScale,
+  WebsiteLayoutModel,
+} from "./types";
 
 function normalizeSpacingScale(value: unknown): SpacingScale | undefined {
   if (value === "compact" || value === "comfortable" || value === "spacious") {
@@ -14,6 +21,13 @@ function normalizeAlignment(value: unknown): AlignmentMode | undefined {
   return undefined;
 }
 
+function normalizeTemplate(value: unknown): LayoutVariantName | undefined {
+  if (typeof value !== "string") return undefined;
+  return SUPPORTED_LAYOUT_VARIANTS.includes(value as LayoutVariantName)
+    ? (value as LayoutVariantName)
+    : undefined;
+}
+
 function filterValidEntries<T extends string>(
   input: Record<string, unknown>,
   validator: (value: unknown) => T | undefined,
@@ -26,23 +40,51 @@ function filterValidEntries<T extends string>(
   );
 }
 
+function sanitizeSectionOrderMap(
+  input: Record<string, unknown>,
+): Record<string, string[]> {
+  return Object.fromEntries(
+    Object.entries(input).map(([slug, value]) => {
+      const ids = Array.isArray(value)
+        ? value.filter((id): id is string => typeof id === "string" && id.trim().length > 0)
+        : [];
+      return [slug, ids];
+    }),
+  );
+}
+
+function sanitizeVisibilityMap(
+  input: Record<string, unknown>,
+): Record<string, boolean> {
+  return Object.fromEntries(
+    Object.entries(input).flatMap(([sectionId, value]) =>
+      typeof value === "boolean" ? [[sectionId, value]] : [],
+    ),
+  );
+}
+
 export function sanitizeLayoutOverrides(overrides?: LayoutOverrides): LayoutOverrides | undefined {
   if (!overrides) return undefined;
 
-  const spacingScaleByPageSlug = filterValidEntries(
-    overrides.spacingScaleByPageSlug ?? {},
-    normalizeSpacingScale,
-  );
-
-  const alignmentBySectionId = filterValidEntries(
-    overrides.alignmentBySectionId ?? {},
-    normalizeAlignment,
-  );
-
   return {
-    ...overrides,
-    spacingScaleByPageSlug,
-    alignmentBySectionId,
+    pageTemplateBySlug: filterValidEntries(
+      overrides.pageTemplateBySlug ?? {},
+      normalizeTemplate,
+    ),
+    sectionOrderByPageSlug: sanitizeSectionOrderMap(
+      (overrides.sectionOrderByPageSlug ?? {}) as Record<string, unknown>,
+    ),
+    sectionVisibilityById: sanitizeVisibilityMap(
+      (overrides.sectionVisibilityById ?? {}) as Record<string, unknown>,
+    ),
+    spacingScaleByPageSlug: filterValidEntries(
+      overrides.spacingScaleByPageSlug ?? {},
+      normalizeSpacingScale,
+    ),
+    alignmentBySectionId: filterValidEntries(
+      overrides.alignmentBySectionId ?? {},
+      normalizeAlignment,
+    ),
   };
 }
 
