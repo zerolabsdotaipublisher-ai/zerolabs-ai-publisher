@@ -14,21 +14,29 @@ function normalizeAlignment(value: unknown): AlignmentMode | undefined {
   return undefined;
 }
 
+function filterValidEntries<T extends string>(
+  input: Record<string, unknown>,
+  validator: (value: unknown) => T | undefined,
+): Record<string, T> {
+  return Object.fromEntries(
+    Object.entries(input).flatMap(([key, value]) => {
+      const normalized = validator(value);
+      return normalized ? [[key, normalized]] : [];
+    }),
+  );
+}
+
 export function sanitizeLayoutOverrides(overrides?: LayoutOverrides): LayoutOverrides | undefined {
   if (!overrides) return undefined;
 
-  const spacingScaleByPageSlug = Object.fromEntries(
-    Object.entries(overrides.spacingScaleByPageSlug ?? {}).flatMap(([slug, scale]) => {
-      const normalized = normalizeSpacingScale(scale);
-      return normalized ? [[slug, normalized]] : [];
-    }),
+  const spacingScaleByPageSlug = filterValidEntries(
+    overrides.spacingScaleByPageSlug ?? {},
+    normalizeSpacingScale,
   );
 
-  const alignmentBySectionId = Object.fromEntries(
-    Object.entries(overrides.alignmentBySectionId ?? {}).flatMap(([sectionId, alignment]) => {
-      const normalized = normalizeAlignment(alignment);
-      return normalized ? [[sectionId, normalized]] : [];
-    }),
+  const alignmentBySectionId = filterValidEntries(
+    overrides.alignmentBySectionId ?? {},
+    normalizeAlignment,
   );
 
   return {

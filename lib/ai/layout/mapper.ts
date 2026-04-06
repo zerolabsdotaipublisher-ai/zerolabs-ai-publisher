@@ -91,7 +91,7 @@ export function mapStructureToLayout(
     structureId: structure.id,
     websiteType: structure.websiteType,
     pages,
-    generatedAt: new Date().toISOString(),
+    generatedAt: structure.updatedAt,
     version: structure.version,
   };
 }

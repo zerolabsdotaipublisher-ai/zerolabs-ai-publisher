@@ -27,8 +27,9 @@ export function setCachedLayout(
   const key = createCacheKey(structure, options);
   layoutCache.set(key, layout);
 
-  if (layoutCache.size > 50) {
+  while (layoutCache.size > 50) {
     const firstKey = layoutCache.keys().next().value;
-    if (firstKey) layoutCache.delete(firstKey);
+    if (!firstKey) break;
+    layoutCache.delete(firstKey);
   }
 }

@@ -10,10 +10,6 @@ import type {
   PageLayoutModel,
 } from "./types";
 
-function defaultNow(value?: string): string {
-  return value ?? new Date().toISOString();
-}
-
 export function generatePageLayoutForPage(
   structure: WebsiteStructure,
   pageSlug: string,
@@ -48,11 +44,6 @@ export function generatePageLayouts(
   if (overrides) {
     layout = applyLayoutVisibilityOverrides(layout, overrides);
   }
-
-  layout = {
-    ...layout,
-    generatedAt: defaultNow(options?.now),
-  };
 
   const validated = ensureValidWebsiteLayout(layout);
   setCachedLayout(structure, options, validated.layout);
