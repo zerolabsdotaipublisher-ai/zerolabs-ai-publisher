@@ -17,6 +17,7 @@ import type {
   StylePreset,
   WebsiteType,
 } from "../prompts/types";
+import type { WebsiteLayoutModel } from "../layout/types";
 
 export type { WebsiteType, TonePreset, StylePreset };
 
@@ -243,6 +244,8 @@ export interface WebsiteStructure {
   styleConfig: WebsiteStyleConfig;
   /** Optional content variations for A/B testing. */
   contentVariations?: ContentVariation[];
+  /** Generated page layout model layered on top of structure. */
+  layout?: WebsiteLayoutModel;
   /** Original input that produced this structure. */
   sourceInput: WebsiteGenerationInput;
   /** Lifecycle status. */

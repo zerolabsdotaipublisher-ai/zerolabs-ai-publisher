@@ -1,4 +1,5 @@
 import type { WebsiteStructure } from "@/lib/ai/structure/types";
+import { LayoutRenderer } from "./layout-renderer";
 import { PageRenderer } from "./page-renderer";
 
 interface RendererProps {
@@ -17,6 +18,9 @@ interface RendererProps {
 export function Renderer({ structure, pageSlug = "/" }: RendererProps) {
   const page =
     structure.pages.find((p) => p.slug === pageSlug) ?? structure.pages[0];
+  const layoutPage =
+    structure.layout?.pages.find((p) => p.pageSlug === pageSlug) ??
+    structure.layout?.pages[0];
 
   if (!page) {
     return (
@@ -53,8 +57,10 @@ export function Renderer({ structure, pageSlug = "/" }: RendererProps) {
         </nav>
       </header>
 
+      <LayoutRenderer layout={structure.layout} pageSlug={pageSlug} />
+
       <main className="gs-site-main">
-        <PageRenderer page={page} />
+        <PageRenderer page={page} layoutPage={layoutPage} />
       </main>
     </div>
   );

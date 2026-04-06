@@ -78,6 +78,9 @@ export {
   listWebsiteStructures,
 } from "./storage";
 
+// Layout module (Story 3-3)
+export * as layout from "../layout";
+
 // Fixtures (testing / development use only)
 export {
   portfolioStructureFixture,

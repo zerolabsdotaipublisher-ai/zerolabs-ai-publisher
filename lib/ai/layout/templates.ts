@@ -1,0 +1,191 @@
+import type { LayoutTemplate } from "./types";
+
+export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
+  {
+    name: "hero-first",
+    supportedWebsiteTypes: [
+      "portfolio",
+      "small-business",
+      "landing-page",
+      "personal-brand",
+    ],
+    supportedPageTypes: ["home", "custom"],
+    defaultSlots: {
+      hero: "hero",
+      about: "intro",
+      services: "content-primary",
+      testimonials: "social-proof",
+      cta: "conversion",
+      contact: "contact",
+      footer: "footer",
+      custom: "custom",
+    },
+    defaultSectionOrder: [
+      "hero",
+      "about",
+      "services",
+      "testimonials",
+      "cta",
+      "contact",
+      "footer",
+      "custom",
+    ],
+    rationale: "Balanced conversion flow for broad marketing and profile websites.",
+  },
+  {
+    name: "content-heavy",
+    supportedWebsiteTypes: ["portfolio", "personal-brand"],
+    supportedPageTypes: ["about", "services", "custom"],
+    defaultSlots: {
+      hero: "intro",
+      about: "content-primary",
+      services: "content-secondary",
+      testimonials: "social-proof",
+      cta: "conversion",
+      contact: "contact",
+      footer: "footer",
+      custom: "custom",
+    },
+    defaultSectionOrder: [
+      "hero",
+      "about",
+      "services",
+      "testimonials",
+      "cta",
+      "contact",
+      "footer",
+      "custom",
+    ],
+    rationale: "Prioritizes storytelling depth before conversion prompts.",
+  },
+  {
+    name: "minimal",
+    supportedWebsiteTypes: ["landing-page", "personal-brand"],
+    supportedPageTypes: ["home", "contact", "custom"],
+    defaultSlots: {
+      hero: "hero",
+      about: "intro",
+      services: "content-primary",
+      testimonials: "social-proof",
+      cta: "conversion",
+      contact: "contact",
+      footer: "footer",
+      custom: "custom",
+    },
+    defaultSectionOrder: [
+      "hero",
+      "services",
+      "cta",
+      "contact",
+      "footer",
+      "about",
+      "testimonials",
+      "custom",
+    ],
+    rationale: "Keeps pages short and action-oriented with reduced cognitive load.",
+  },
+  {
+    name: "grid-based",
+    supportedWebsiteTypes: ["portfolio", "small-business"],
+    supportedPageTypes: ["services", "custom"],
+    defaultSlots: {
+      hero: "intro",
+      about: "content-secondary",
+      services: "content-primary",
+      testimonials: "social-proof",
+      cta: "conversion",
+      contact: "contact",
+      footer: "footer",
+      custom: "custom",
+    },
+    defaultSectionOrder: [
+      "hero",
+      "services",
+      "about",
+      "testimonials",
+      "cta",
+      "contact",
+      "footer",
+      "custom",
+    ],
+    rationale: "Optimized for service-card density and proof blocks.",
+  },
+  {
+    name: "services-first",
+    supportedWebsiteTypes: ["small-business", "landing-page"],
+    supportedPageTypes: ["home", "services", "custom"],
+    defaultSlots: {
+      hero: "hero",
+      about: "content-secondary",
+      services: "content-primary",
+      testimonials: "social-proof",
+      cta: "conversion",
+      contact: "contact",
+      footer: "footer",
+      custom: "custom",
+    },
+    defaultSectionOrder: [
+      "hero",
+      "services",
+      "testimonials",
+      "cta",
+      "about",
+      "contact",
+      "footer",
+      "custom",
+    ],
+    rationale: "For business sites where offer clarity should appear immediately.",
+  },
+  {
+    name: "contact-focused",
+    supportedWebsiteTypes: ["small-business", "personal-brand"],
+    supportedPageTypes: ["contact", "custom"],
+    defaultSlots: {
+      hero: "intro",
+      about: "content-secondary",
+      services: "content-primary",
+      testimonials: "social-proof",
+      cta: "conversion",
+      contact: "contact",
+      footer: "footer",
+      custom: "custom",
+    },
+    defaultSectionOrder: [
+      "contact",
+      "hero",
+      "services",
+      "testimonials",
+      "cta",
+      "about",
+      "footer",
+      "custom",
+    ],
+    rationale: "Puts booking/contact intent at top for lead-capture pages.",
+  },
+];
+
+export function getLayoutTemplate(name: LayoutTemplate["name"]): LayoutTemplate {
+  return (
+    LAYOUT_TEMPLATES.find((template) => template.name === name) ??
+    LAYOUT_TEMPLATES[0]
+  );
+}
+
+export function getTemplateForPage(
+  websiteType: LayoutTemplate["supportedWebsiteTypes"][number],
+  pageType: LayoutTemplate["supportedPageTypes"][number],
+): LayoutTemplate {
+  const byPageAndType = LAYOUT_TEMPLATES.find(
+    (template) =>
+      template.supportedWebsiteTypes.includes(websiteType) &&
+      template.supportedPageTypes.includes(pageType),
+  );
+
+  if (byPageAndType) return byPageAndType;
+
+  return (
+    LAYOUT_TEMPLATES.find((template) =>
+      template.supportedWebsiteTypes.includes(websiteType),
+    ) ?? LAYOUT_TEMPLATES[0]
+  );
+}

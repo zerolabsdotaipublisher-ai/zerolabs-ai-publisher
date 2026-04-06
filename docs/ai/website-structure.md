@@ -4,6 +4,8 @@
 
 This document describes the website structure generation system implemented in Story 3-2. It extends the prompt system from Story 3-1 to add a typed, validated, storable website structure model and a full generation pipeline.
 
+Story 3-3 adds a dedicated page layout engine layered on top of this structure model. See `docs/ai/website-layout-generation.md` for the layout system details.
+
 ## Architecture
 
 ```
@@ -74,8 +76,10 @@ WebsiteGenerationInput
   → applyFallbacks()
   → mapOutputToStructure()
   → WebsiteStructure (Story 3-2)
+  → generatePageLayouts() (Story 3-3)
+  → structure.layout attached
   → storeWebsiteStructure() (Supabase)
-  → Renderer components
+  → Renderer components (layout-aware)
 ```
 
 ## Generation pipeline
