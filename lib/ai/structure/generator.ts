@@ -24,6 +24,7 @@ import type {
 } from "../prompts/types";
 import { applyFallbacks, needsFallback } from "./fallback";
 import { mapOutputToStructure } from "./mapper";
+import { generatePageLayouts } from "../layout";
 import { validateWebsiteStructure } from "./schemas";
 import type { WebsiteStructure, StructureGenerationResult } from "./types";
 
@@ -168,7 +169,13 @@ export async function generateWebsiteStructure(
     now,
   );
 
-  const validationErrors = validateWebsiteStructure(structure);
+  const layoutResult = generatePageLayouts(structure);
+  structure.layout = layoutResult.layout;
+
+  const validationErrors = [
+    ...validateWebsiteStructure(structure),
+    ...layoutResult.validationErrors.map((err) => `layout: ${err}`),
+  ];
 
   if (validationErrors.length > 0) {
     logger.warn("Generated structure has validation errors", {
