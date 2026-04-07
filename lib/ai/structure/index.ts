@@ -80,6 +80,8 @@ export {
 
 // Layout module (Story 3-3)
 export * as layout from "../layout";
+// Content module (Story 3-4)
+export * as content from "../content";
 
 // Fixtures (testing / development use only)
 export {
