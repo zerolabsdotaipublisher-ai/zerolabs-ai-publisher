@@ -7,11 +7,10 @@ import type {
   WebsiteContentPackage,
 } from "./types";
 import { createCtaFallback, normalizeCtaSection } from "./cta";
-import { createHeroFallback, normalizeHeroSectionContent } from "./hero";
+import { normalizeHeroSectionContent } from "./hero";
 import {
   createAboutFallback,
   createInformationalFallback,
-  createServicesFallback,
   normalizeInformationalSection,
   normalizeServicesSection,
 } from "./informational";
@@ -68,7 +67,7 @@ function fallbackContact(input: WebsiteGenerationInput) {
   };
 }
 
-function fallbackFooter(input: WebsiteGenerationInput) {
+export function createFooterFallback(input: WebsiteGenerationInput) {
   return {
     shortBlurb: `${input.brandName} helps ${input.targetAudience} with practical, high-impact work.`,
     legalText: `© ${new Date().getFullYear()} ${input.brandName}`,
@@ -124,7 +123,7 @@ export function createFallbackPageContent(
       },
       cta: normalizeCtaSection(createCtaFallback(input), input),
       contact: fallbackContact(input),
-      footer: fallbackFooter(input),
+      footer: createFooterFallback(input),
       microcopy: normalizeMicrocopy(createMicrocopyFallback(input), input),
     },
   };

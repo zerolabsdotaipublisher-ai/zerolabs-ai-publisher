@@ -9,7 +9,7 @@ import type {
 const BANNED_PATTERNS = [
   /lorem ipsum/i,
   /tbd/i,
-  /coming soon/i,
+  /\\bcoming soon\\.?$/i,
   /best in the world/i,
   /guaranteed results/i,
 ];

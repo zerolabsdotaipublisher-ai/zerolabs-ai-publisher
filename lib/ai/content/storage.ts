@@ -6,8 +6,14 @@ import type {
   WebsiteGeneratedContentRow,
 } from "./types";
 
+// Base64url-encoded fallback key for the root page slug when no slug is present.
+const ROOT_PAGE_SLUG_KEY = "cm9vdA";
+
 function generateRowId(structureId: string, pageSlug: string, sectionKey: string): string {
-  const slug = pageSlug.replace(/[^a-z0-9/]/gi, "").replace(/\//g, "_") || "root";
+  const normalizedSlug = pageSlug.trim();
+  const slug = normalizedSlug
+    ? Buffer.from(normalizedSlug, "utf8").toString("base64url")
+    : ROOT_PAGE_SLUG_KEY;
   return `${structureId}:${slug}:${sectionKey}`;
 }
 

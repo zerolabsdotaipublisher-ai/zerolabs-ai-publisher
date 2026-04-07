@@ -1,15 +1,52 @@
 import { generatePageLayouts } from "../layout";
 import type { WebsiteSection, WebsiteStructure } from "../structure/types";
 import type {
+  ContentSectionType,
   GeneratedPageContent,
   GeneratedSectionContentMap,
   PageGenerationContext,
   WebsiteContentPackage,
 } from "./types";
 
+function isContentSectionType(value: string): value is ContentSectionType {
+  return value !== "custom";
+}
+
 function sectionMapForPage(page: GeneratedPageContent): GeneratedSectionContentMap {
   return page.sections;
 }
+
+const DEFAULT_PAGE_CONTEXTS: PageGenerationContext[] = [
+  {
+    pageSlug: "/",
+    pageType: "home",
+    sections: ["hero", "about", "services", "cta", "contact", "footer", "microcopy"],
+  },
+  {
+    pageSlug: "/about",
+    pageType: "about",
+    sections: ["hero", "about", "benefits", "testimonials", "cta", "footer", "microcopy"],
+  },
+  {
+    pageSlug: "/services",
+    pageType: "services",
+    sections: [
+      "hero",
+      "services",
+      "features",
+      "process",
+      "cta",
+      "contact",
+      "footer",
+      "microcopy",
+    ],
+  },
+  {
+    pageSlug: "/contact",
+    pageType: "contact",
+    sections: ["hero", "contact", "faq", "cta", "footer", "microcopy"],
+  },
+];
 
 function mapSectionContent(
   section: WebsiteSection,
@@ -155,21 +192,26 @@ export function applyGeneratedContentToStructure(
 export function resolvePageGenerationContexts(
   structure: WebsiteStructure,
 ): PageGenerationContext[] {
-  const contexts = structure.pages.map((page) => ({
-    pageSlug: page.slug,
-    pageType: page.type,
-    sections: page.sections.map((section) => section.type),
-  }));
+  const contexts: PageGenerationContext[] = structure.pages.map((page) => {
+    const sections = page.sections.reduce<ContentSectionType[]>(
+      (acc, section) => {
+        if (isContentSectionType(section.type)) {
+          acc.push(section.type);
+        }
+        return acc;
+      },
+      [],
+    );
+
+    return {
+      pageSlug: page.slug,
+      pageType: page.type,
+      sections,
+    };
+  });
 
   const existing = new Set(contexts.map((context) => context.pageSlug));
-  const defaults: PageGenerationContext[] = [
-    { pageSlug: "/", pageType: "home", sections: ["hero", "about", "services", "cta", "contact", "footer", "microcopy"] },
-    { pageSlug: "/about", pageType: "about", sections: ["hero", "about", "benefits", "testimonials", "cta", "footer", "microcopy"] },
-    { pageSlug: "/services", pageType: "services", sections: ["hero", "services", "features", "process", "cta", "contact", "footer", "microcopy"] },
-    { pageSlug: "/contact", pageType: "contact", sections: ["hero", "contact", "faq", "cta", "footer", "microcopy"] },
-  ];
-
-  defaults.forEach((defaultPage) => {
+  DEFAULT_PAGE_CONTEXTS.forEach((defaultPage) => {
     if (!existing.has(defaultPage.pageSlug)) {
       contexts.push(defaultPage);
     }

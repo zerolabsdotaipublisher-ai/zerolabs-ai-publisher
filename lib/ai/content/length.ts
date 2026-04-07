@@ -24,6 +24,14 @@ function scaleByDensity(value: number, preset: ContentDensityPreset): number {
   return value;
 }
 
+function applyPresetScaling(
+  value: number,
+  lengthPreset: ContentLengthPreset,
+  densityPreset: ContentDensityPreset,
+): number {
+  return scaleByDensity(scaleByLength(value, lengthPreset), densityPreset);
+}
+
 const BASE_LENGTH_RULES: Record<ContentSectionType, ContentLengthRule> = {
   hero: {
     sectionType: "hero",
@@ -120,9 +128,21 @@ export function getLengthRule(
 
   return {
     sectionType,
-    headlineWordsMax: scaleByDensity(scaleByLength(base.headlineWordsMax, lengthPreset), densityPreset),
-    paragraphCountMax: scaleByDensity(scaleByLength(base.paragraphCountMax, lengthPreset), densityPreset),
-    paragraphWordsMax: scaleByDensity(scaleByLength(base.paragraphWordsMax, lengthPreset), densityPreset),
-    bulletsMax: scaleByDensity(scaleByLength(base.bulletsMax, lengthPreset), densityPreset),
+    headlineWordsMax: applyPresetScaling(
+      base.headlineWordsMax,
+      lengthPreset,
+      densityPreset,
+    ),
+    paragraphCountMax: applyPresetScaling(
+      base.paragraphCountMax,
+      lengthPreset,
+      densityPreset,
+    ),
+    paragraphWordsMax: applyPresetScaling(
+      base.paragraphWordsMax,
+      lengthPreset,
+      densityPreset,
+    ),
+    bulletsMax: applyPresetScaling(base.bulletsMax, lengthPreset, densityPreset),
   };
 }

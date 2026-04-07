@@ -3,7 +3,7 @@ import { logger } from "@/lib/observability";
 import type { WebsiteGenerationInput } from "../prompts/types";
 import type { WebsiteStructure } from "../structure/types";
 import { normalizeCtaSection } from "./cta";
-import { createFallbackWebsiteContentPackage } from "./fallback";
+import { createFallbackWebsiteContentPackage, createFooterFallback } from "./fallback";
 import { evaluateContentQuality } from "./guardrails";
 import { normalizeHeroSectionContent } from "./hero";
 import {
@@ -96,6 +96,8 @@ function normalizeGeneratedSectionMap(
   sections: Partial<GeneratedSectionContentMap> | undefined,
   input: WebsiteGenerationInput,
 ): GeneratedSectionContentMap {
+  const footerFallback = createFooterFallback(input);
+
   return {
     hero: normalizeHeroSectionContent(sections?.hero, input),
     about: normalizeInformationalSection(sections?.about, createAboutFallback(input)),
@@ -155,13 +157,15 @@ function normalizeGeneratedSectionMap(
       helperText: sections?.contact?.helperText?.trim() || undefined,
     },
     footer: {
-      shortBlurb: sections?.footer?.shortBlurb?.trim() || `${input.brandName} for ${input.targetAudience}`,
-      legalText: sections?.footer?.legalText?.trim() || undefined,
+      shortBlurb:
+        sections?.footer?.shortBlurb?.trim() || footerFallback.shortBlurb,
+      legalText:
+        sections?.footer?.legalText?.trim() || footerFallback.legalText,
       trustIndicators:
         sections?.footer?.trustIndicators
           ?.map((item) => item.trim())
           .filter(Boolean)
-          .slice(0, 4) || undefined,
+          .slice(0, 4) || footerFallback.trustIndicators,
     },
     microcopy: normalizeMicrocopy(sections?.microcopy, input),
   };
@@ -281,15 +285,39 @@ export async function generateWebsiteContent(
       densityPreset,
     });
 
-    const retries = options?.maxRetries ?? 2;
+    const maxRetries = options?.maxRetries ?? 2;
     let parsed: Partial<{ pages: Partial<GeneratedPageContent>[] }> = {};
 
-    for (let attempt = 0; attempt <= retries; attempt++) {
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
       const raw = await callOpenAI(prompt);
       parsed = parseJson<{ pages: Partial<GeneratedPageContent>[] }>(raw);
 
       if (Array.isArray(parsed.pages) && parsed.pages.length > 0) {
+        if (attempt > 0) {
+          logger.info("Website content generation recovered after retry", {
+            category: "service_call",
+            service: "openai",
+            structureId: structure.id,
+            attempt,
+          });
+        }
         break;
+      }
+
+      logger.warn("Website content generation returned empty page payload", {
+        category: "service_call",
+        service: "openai",
+        structureId: structure.id,
+        attempt,
+      });
+
+      if (attempt === maxRetries) {
+        logger.warn("Website content generation exhausted retries", {
+          category: "service_call",
+          service: "openai",
+          structureId: structure.id,
+          maxRetries,
+        });
       }
     }
 

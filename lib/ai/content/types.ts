@@ -12,7 +12,7 @@ import type {
 } from "../prompts/types";
 
 export type ContentSectionType =
-  | SectionType
+  | Exclude<SectionType, "custom">
   | "features"
   | "process"
   | "benefits"

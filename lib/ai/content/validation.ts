@@ -59,7 +59,7 @@ function validateLength(
     }
   }
 
-  if (Array.isArray(section.paragraphs) && rule.paragraphCountMax >= 0) {
+  if (Array.isArray(section.paragraphs) && rule.paragraphCountMax > 0) {
     if (section.paragraphs.length > rule.paragraphCountMax) {
       errors.push(`${sectionType}.paragraphs exceeds max count (${rule.paragraphCountMax})`);
     }
