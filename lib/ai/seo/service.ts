@@ -3,9 +3,8 @@ import { logger } from "@/lib/observability";
 import type { WebsiteGenerationInput } from "../prompts/types";
 import type { WebsiteStructure } from "../structure/types";
 import { buildCanonicalUrl } from "./canonical";
-import { normalizeSeoDescription } from "./descriptions";
+import { createFallbackPageDescription, normalizeSeoDescription } from "./descriptions";
 import {
-  createFallbackPageDescription,
   createFallbackWebsiteSeoPackage,
   createSeoGenerationContexts,
 } from "./fallback";
