@@ -20,6 +20,7 @@ import { getServerUser } from "@/lib/supabase/server";
 import { generateWebsiteStructure } from "@/lib/ai/structure/generator";
 import { storeWebsiteStructure } from "@/lib/ai/structure/storage";
 import { storeWebsiteNavigation } from "@/lib/ai/navigation";
+import { generateWebsiteSeo, storeWebsiteSeoMetadata } from "@/lib/ai/seo";
 import {
   validateWebsiteGenerationInput,
   sanitizeInput,
@@ -54,7 +55,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   try {
     const result = await generateWebsiteStructure(input, user.id);
-    const stored = await storeWebsiteStructure(result.structure);
+    const seoResult = await generateWebsiteSeo(input, result.structure, user.id, {
+      version: result.structure.version,
+    });
+    const stored = await storeWebsiteStructure(seoResult.mappedStructure);
     await storeWebsiteNavigation({
       structureId: stored.id,
       userId: user.id,
@@ -63,11 +67,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       createdAt: stored.generatedAt,
       updatedAt: stored.updatedAt,
     });
+    await storeWebsiteSeoMetadata({
+      ...seoResult.seo,
+      structureId: stored.id,
+      version: stored.version,
+      updatedAt: stored.updatedAt,
+    });
 
     return NextResponse.json({
       structure: stored,
-      usedFallback: result.usedFallback,
-      validationErrors: result.validationErrors,
+      seo: seoResult.seo,
+      usedFallback: result.usedFallback || seoResult.usedFallback,
+      validationErrors: [...result.validationErrors, ...seoResult.validationErrors],
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";

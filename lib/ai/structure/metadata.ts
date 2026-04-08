@@ -5,8 +5,20 @@
  * Falls back to sensible defaults when AI output fields are absent.
  */
 
+import { config } from "@/config";
 import type { WebsiteGenerationOutput } from "../prompts/types";
 import type { WebsiteSeo, PageSeo } from "./types";
+
+function normalizePagePath(pageSlug: string): string {
+  if (!pageSlug || pageSlug === "home") return "/";
+  return pageSlug.startsWith("/") ? pageSlug : `/${pageSlug}`;
+}
+
+function absoluteUrl(path: string): string {
+  const base = config.app.url.replace(/\/+$/, "");
+  const normalizedPath = normalizePagePath(path);
+  return normalizedPath === "/" ? base : `${base}${normalizedPath}`;
+}
 
 // ---------------------------------------------------------------------------
 // Site-level SEO
@@ -20,6 +32,13 @@ export function generateSiteSeo(output: WebsiteGenerationOutput): WebsiteSeo {
     title: output.seo.title,
     description: output.seo.description,
     keywords: output.seo.keywords,
+    canonicalBaseUrl: config.app.url,
+    openGraph: {
+      title: output.seo.title,
+      description: output.seo.description,
+      type: "website",
+      url: absoluteUrl("/"),
+    },
   };
 }
 
@@ -44,6 +63,13 @@ export function generatePageSeo(
       title: output.seo.title,
       description: output.seo.description,
       keywords: output.seo.keywords,
+      canonicalUrl: absoluteUrl("/"),
+      openGraph: {
+        title: output.seo.title,
+        description: output.seo.description,
+        type: "website",
+        url: absoluteUrl("/"),
+      },
     };
   }
 
@@ -57,5 +83,12 @@ export function generatePageSeo(
     title: `${pageLabel} | ${output.siteTitle}`,
     description: output.seo.description,
     keywords: output.seo.keywords,
+    canonicalUrl: absoluteUrl(pageSlug),
+    openGraph: {
+      title: `${pageLabel} | ${output.siteTitle}`,
+      description: output.seo.description,
+      type: "website",
+      url: absoluteUrl(pageSlug),
+    },
   };
 }
