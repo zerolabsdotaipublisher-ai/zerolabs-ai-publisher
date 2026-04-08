@@ -6,6 +6,7 @@ import type {
   WebsiteSeoMetadataRow,
   WebsiteSeoPackage,
 } from "./types";
+import { SEO_METADATA_REQUIREMENTS } from "./requirements";
 
 const SITE_ROW_SLUG = "__site__";
 
@@ -53,7 +54,8 @@ function fromRows(rows: WebsiteSeoMetadataRow[]): WebsiteSeoPackage | null {
   const generatedInput = siteRow.generated_from_input as Partial<
     WebsiteSeoPackage["generatedFromInput"]
   >;
-  const websiteType = generatedInput.websiteType || "landing-page";
+  const websiteType =
+    generatedInput.websiteType || SEO_METADATA_REQUIREMENTS.fallbackWebsiteType;
 
   const pages = rows
     .filter((row) => row.page_slug !== SITE_ROW_SLUG)

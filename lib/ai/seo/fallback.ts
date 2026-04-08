@@ -44,7 +44,7 @@ export function createFallbackSiteMetadata(
   const title = `${input.brandName} | ${input.primaryCta}`
     .slice(0, SEO_METADATA_REQUIREMENTS.titleMaxLength)
     .trim();
-  const description = `${input.brandName} helps ${input.targetAudience} with ${input.services.slice(0, 3).join(", ")}. ${input.description}`
+  const description = `${input.brandName} helps ${input.targetAudience} with ${input.services.slice(0, SEO_METADATA_REQUIREMENTS.maxFallbackServicesInDescription).join(", ")}. ${input.description}`
     .replace(/\s+/g, " ")
     .slice(0, SEO_METADATA_REQUIREMENTS.descriptionMaxLength)
     .trim();

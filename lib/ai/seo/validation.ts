@@ -23,7 +23,7 @@ export function validateGeneratedWebsiteSeo(seo: WebsiteSeoPackage): string[] {
       errors.push(`pages[${index}].description is too long for SEO`);
     }
 
-    if (!page.canonicalUrl.startsWith("http")) {
+    if (!page.canonicalUrl || !page.canonicalUrl.startsWith("http")) {
       errors.push(`pages[${index}].canonicalUrl must be absolute`);
     }
   });

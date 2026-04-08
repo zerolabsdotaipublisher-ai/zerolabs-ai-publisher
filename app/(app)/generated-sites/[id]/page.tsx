@@ -30,7 +30,9 @@ export async function generateMetadata({
 
   const seo = await getWebsiteSeoMetadata(id, user.id);
   const page = structure.pages.find((candidate) => candidate.slug === pageSlug) ?? structure.pages[0];
-  const pageSeo = seo?.pages.find((candidate) => candidate.pageSlug === page?.slug);
+  const pageSeo = page
+    ? seo?.pages.find((candidate) => candidate.pageSlug === page.slug)
+    : undefined;
 
   const title = pageSeo?.title || page?.seo.title || structure.seo.title;
   const description = pageSeo?.description || page?.seo.description || structure.seo.description;

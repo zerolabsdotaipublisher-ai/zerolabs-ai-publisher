@@ -228,10 +228,10 @@ export async function generateWebsiteSeo(
 
   try {
     const prompt = buildWebsiteSeoPrompt({ input, pages: contextPages });
-    const maxRetries = options?.maxRetries ?? 2;
+    const maxAttempts = (options?.maxRetries ?? 2) + 1;
     let parsed: ParsedSeoPayload = {};
 
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
       const raw = await callOpenAI(prompt);
       parsed = parseJson(raw);
 
@@ -239,12 +239,12 @@ export async function generateWebsiteSeo(
         break;
       }
 
-      if (attempt === maxRetries) {
+      if (attempt === maxAttempts - 1) {
         logger.warn("Website SEO generation exhausted retries", {
           category: "service_call",
           service: "openai",
           structureId: structure.id,
-          maxRetries,
+          maxRetries: maxAttempts - 1,
         });
       }
     }
