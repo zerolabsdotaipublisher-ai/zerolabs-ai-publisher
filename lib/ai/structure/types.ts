@@ -115,6 +115,16 @@ export interface PageSeo {
   description: string;
   /** Keywords array (used for structured data and internal tooling). */
   keywords: string[];
+  /** Canonical URL for the page. */
+  canonicalUrl?: string;
+  /** Open Graph metadata for social sharing previews. */
+  openGraph?: {
+    title: string;
+    description: string;
+    type: "website" | "article";
+    url: string;
+    image?: string;
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -170,8 +180,18 @@ export interface WebsiteSeo {
   description: string;
   /** Primary keywords for the site. */
   keywords: string[];
+  /** Canonical base URL for generated pages. */
+  canonicalBaseUrl?: string;
   /** Open Graph image URL (optional). */
   ogImage?: string;
+  /** Default Open Graph metadata for the site. */
+  openGraph?: {
+    title: string;
+    description: string;
+    type: "website" | "article";
+    url: string;
+    image?: string;
+  };
 }
 
 // ---------------------------------------------------------------------------

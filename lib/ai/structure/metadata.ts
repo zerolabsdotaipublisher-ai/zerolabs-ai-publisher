@@ -20,6 +20,13 @@ export function generateSiteSeo(output: WebsiteGenerationOutput): WebsiteSeo {
     title: output.seo.title,
     description: output.seo.description,
     keywords: output.seo.keywords,
+    canonicalBaseUrl: "",
+    openGraph: {
+      title: output.seo.title,
+      description: output.seo.description,
+      type: "website",
+      url: "/",
+    },
   };
 }
 
@@ -44,6 +51,13 @@ export function generatePageSeo(
       title: output.seo.title,
       description: output.seo.description,
       keywords: output.seo.keywords,
+      canonicalUrl: "/",
+      openGraph: {
+        title: output.seo.title,
+        description: output.seo.description,
+        type: "website",
+        url: "/",
+      },
     };
   }
 
@@ -57,5 +71,12 @@ export function generatePageSeo(
     title: `${pageLabel} | ${output.siteTitle}`,
     description: output.seo.description,
     keywords: output.seo.keywords,
+    canonicalUrl: pageSlug.startsWith("/") ? pageSlug : `/${pageSlug}`,
+    openGraph: {
+      title: `${pageLabel} | ${output.siteTitle}`,
+      description: output.seo.description,
+      type: "website",
+      url: pageSlug.startsWith("/") ? pageSlug : `/${pageSlug}`,
+    },
   };
 }

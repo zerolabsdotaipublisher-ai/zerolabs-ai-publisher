@@ -8,6 +8,7 @@ import {
   storeWebsiteGeneratedContent,
   type ContentGenerationOptions,
 } from "@/lib/ai/content";
+import { generateWebsiteSeo, storeWebsiteSeoMetadata } from "@/lib/ai/seo";
 import type { WebsiteGenerationInput } from "@/lib/ai/prompts/types";
 
 interface RegenerateContentBody {
@@ -49,8 +50,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       body.options as ContentGenerationOptions,
     );
 
+    const seoResult = await generateWebsiteSeo(
+      result.mappedStructure.sourceInput,
+      result.mappedStructure,
+      user.id,
+      {
+        version: result.mappedStructure.version,
+        pages: body.options?.pages,
+      },
+    );
+
     await storeWebsiteGeneratedContent(result.content);
-    const updatedStructure = await updateWebsiteStructure(result.mappedStructure);
+    const updatedStructure = await updateWebsiteStructure(seoResult.mappedStructure);
     await storeWebsiteNavigation({
       structureId: updatedStructure.id,
       userId: user.id,
@@ -59,12 +70,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       createdAt: updatedStructure.generatedAt,
       updatedAt: updatedStructure.updatedAt,
     });
+    await storeWebsiteSeoMetadata({
+      ...seoResult.seo,
+      structureId: updatedStructure.id,
+      version: updatedStructure.version,
+      updatedAt: updatedStructure.updatedAt,
+    });
 
     return NextResponse.json({
       content: result.content,
       structure: updatedStructure,
-      usedFallback: result.usedFallback,
-      validationErrors: result.validationErrors,
+      seo: seoResult.seo,
+      usedFallback: result.usedFallback || seoResult.usedFallback,
+      validationErrors: [...result.validationErrors, ...seoResult.validationErrors],
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";

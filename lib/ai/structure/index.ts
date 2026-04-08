@@ -96,6 +96,8 @@ export {
 export * as layout from "../layout";
 // Content module (Story 3-4)
 export * as content from "../content";
+// SEO module (Story 3-6)
+export * as seo from "../seo";
 
 // Fixtures (testing / development use only)
 export {
