@@ -50,6 +50,11 @@ function fromRows(rows: WebsiteSeoMetadataRow[]): WebsiteSeoPackage | null {
   const siteRow = rows.find((row) => row.page_slug === SITE_ROW_SLUG);
   if (!siteRow) return null;
 
+  const generatedInput = siteRow.generated_from_input as Partial<
+    WebsiteSeoPackage["generatedFromInput"]
+  >;
+  const websiteType = generatedInput.websiteType || "landing-page";
+
   const pages = rows
     .filter((row) => row.page_slug !== SITE_ROW_SLUG)
     .map((row) => row.metadata_json as GeneratedPageMetadata);
@@ -58,10 +63,10 @@ function fromRows(rows: WebsiteSeoMetadataRow[]): WebsiteSeoPackage | null {
     id: `wseo_${siteRow.structure_id}_v${siteRow.version}`,
     structureId: siteRow.structure_id,
     userId: siteRow.user_id,
-    websiteType: (siteRow.generated_from_input as { websiteType: WebsiteSeoPackage["websiteType"] }).websiteType,
+    websiteType,
     site: siteRow.metadata_json as GeneratedSiteMetadata,
     pages,
-    generatedFromInput: siteRow.generated_from_input as WebsiteSeoPackage["generatedFromInput"],
+    generatedFromInput: generatedInput as WebsiteSeoPackage["generatedFromInput"],
     generatedAt: siteRow.created_at,
     updatedAt: siteRow.updated_at,
     version: siteRow.version,

@@ -59,15 +59,14 @@ async function callOpenAI(prompt: string): Promise<string> {
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`OpenAI API error ${response.status}: ${errorText}`);
+    throw new Error(`OpenAI API error ${response.status} while generating SEO metadata`);
   }
 
   const data = (await response.json()) as OpenAIChatResponse;
   const content = data.choices[0]?.message?.content;
 
   if (!content) {
-    throw new Error("OpenAI returned empty SEO content response");
+    throw new Error("OpenAI returned empty SEO content; retry or fallback is required");
   }
 
   return content;
