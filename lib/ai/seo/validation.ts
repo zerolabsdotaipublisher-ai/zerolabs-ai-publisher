@@ -5,6 +5,11 @@ import type { WebsiteSeoPackage } from "./types";
 const TITLE_LENGTH_TOLERANCE = 20;
 const DESCRIPTION_LENGTH_TOLERANCE = 30;
 
+function isAbsoluteUrl(url: string | undefined): boolean {
+  if (!url) return false;
+  return url.startsWith("http://") || url.startsWith("https://");
+}
+
 export function validateGeneratedWebsiteSeo(seo: WebsiteSeoPackage): string[] {
   const errors = validateWebsiteSeoShape(seo);
 
@@ -23,11 +28,7 @@ export function validateGeneratedWebsiteSeo(seo: WebsiteSeoPackage): string[] {
       errors.push(`pages[${index}].description is too long for SEO`);
     }
 
-    if (
-      !page.canonicalUrl ||
-      (!page.canonicalUrl.startsWith("http://") &&
-        !page.canonicalUrl.startsWith("https://"))
-    ) {
+    if (!isAbsoluteUrl(page.canonicalUrl)) {
       errors.push(`pages[${index}].canonicalUrl must be absolute`);
     }
   });

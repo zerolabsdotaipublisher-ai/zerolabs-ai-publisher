@@ -13,6 +13,20 @@ import type {
 } from "./types";
 import { SEO_METADATA_REQUIREMENTS } from "./requirements";
 
+export function getSectionHeadline(section: {
+  type: string;
+  content: unknown;
+}): string {
+  if (section.content && typeof section.content === "object" && "headline" in section.content) {
+    const headline = (section.content as { headline?: unknown }).headline;
+    if (typeof headline === "string" && headline.trim().length > 0) {
+      return headline.trim();
+    }
+  }
+
+  return section.type;
+}
+
 function seoId(structureId: string): string {
   const ts = Date.now().toString(36);
   const rnd = Math.random().toString(36).slice(2, 10);
@@ -28,10 +42,7 @@ export function createSeoGenerationContexts(
     pageType: page.type,
     pageTitle: page.title,
     sectionHeadlines: page.sections
-      .map((section) => {
-        const headline = (section.content as { headline?: string }).headline;
-        return typeof headline === "string" ? headline.trim() : section.type;
-      })
+      .map((section) => getSectionHeadline(section))
       .filter(Boolean)
       .slice(0, maxSectionsPerPage),
   }));

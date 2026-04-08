@@ -24,10 +24,7 @@ export async function generateMetadata({
   }
 
   const structure = await getWebsiteStructure(id, user.id);
-  if (!structure) {
-    return {};
-  }
-  if (!structure.pages.length) {
+  if (!structure || !structure.pages.length) {
     return {};
   }
 

@@ -6,6 +6,7 @@ import { buildCanonicalUrl } from "./canonical";
 import { createFallbackPageDescription, normalizeSeoDescription } from "./descriptions";
 import {
   createFallbackWebsiteSeoPackage,
+  getSectionHeadline,
   createSeoGenerationContexts,
 } from "./fallback";
 import { buildOpenGraphMetadata } from "./og";
@@ -54,6 +55,7 @@ async function callOpenAI(prompt: string): Promise<string> {
     body: JSON.stringify({
       model: config.services.openai.model,
       messages: [{ role: "user", content: prompt }],
+      // Lower temperature keeps SEO output deterministic and policy-aligned.
       temperature: 0.4,
     }),
   });
@@ -105,17 +107,6 @@ function normalizeKeywords(values: string[] | undefined, fallback: string[]): st
   );
 }
 
-function extractSectionHeadline(section: { type: string; content: unknown }): string {
-  if (section.content && typeof section.content === "object" && "headline" in section.content) {
-    const headline = (section.content as { headline?: unknown }).headline;
-    if (typeof headline === "string" && headline.trim().length > 0) {
-      return headline.trim();
-    }
-  }
-
-  return section.type;
-}
-
 function applySeoToStructure(structure: WebsiteStructure, seo: WebsiteSeoPackage): WebsiteStructure {
   const siteSeo = {
     ...structure.seo,
@@ -163,7 +154,7 @@ function normalizePageMetadata(args: {
       pageTitle: structurePage?.title ?? fallbackPage.title,
       sectionHeadlines:
         structurePage?.sections
-          .map((section) => extractSectionHeadline(section))
+          .map((section) => getSectionHeadline(section))
           .slice(0, 4) ?? [],
     };
 
