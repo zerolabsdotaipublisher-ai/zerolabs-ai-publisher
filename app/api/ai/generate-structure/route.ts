@@ -19,6 +19,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { getServerUser } from "@/lib/supabase/server";
 import { generateWebsiteStructure } from "@/lib/ai/structure/generator";
 import { storeWebsiteStructure } from "@/lib/ai/structure/storage";
+import { storeWebsiteNavigation } from "@/lib/ai/navigation";
 import {
   validateWebsiteGenerationInput,
   sanitizeInput,
@@ -54,6 +55,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const result = await generateWebsiteStructure(input, user.id);
     const stored = await storeWebsiteStructure(result.structure);
+    await storeWebsiteNavigation({
+      structureId: stored.id,
+      userId: user.id,
+      navigation: stored.navigation,
+      version: stored.version,
+      createdAt: stored.generatedAt,
+      updatedAt: stored.updatedAt,
+    });
 
     return NextResponse.json({
       structure: stored,

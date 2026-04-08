@@ -1,6 +1,7 @@
 import type { WebsiteStructure } from "@/lib/ai/structure/types";
 import { LayoutRenderer } from "./layout-renderer";
 import { PageRenderer } from "./page-renderer";
+import { NavigationRenderer } from "./navigation-renderer";
 
 interface RendererProps {
   structure: WebsiteStructure;
@@ -37,24 +38,12 @@ export function Renderer({ structure, pageSlug = "/" }: RendererProps) {
       data-structure-id={structure.id}
     >
       <header className="gs-site-header">
-        <nav className="gs-site-nav" aria-label="Primary navigation">
-          <span className="gs-site-brand">{structure.siteTitle}</span>
-          <ul className="gs-site-nav-list">
-            {structure.navigation.primary.map((item) => (
-              <li key={item.href} className="gs-site-nav-item">
-                <a
-                  href={item.href}
-                  className="gs-site-nav-link"
-                  {...(item.external
-                    ? { target: "_blank", rel: "noopener noreferrer" }
-                    : {})}
-                >
-                  {item.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </nav>
+        <NavigationRenderer
+          siteTitle={structure.siteTitle}
+          navigation={structure.navigation}
+          activePath={page.slug}
+          currentPageHref=""
+        />
       </header>
 
       <LayoutRenderer layout={structure.layout} pageSlug={pageSlug} />
@@ -62,6 +51,26 @@ export function Renderer({ structure, pageSlug = "/" }: RendererProps) {
       <main className="gs-site-main">
         <PageRenderer page={page} layoutPage={layoutPage} />
       </main>
+      {structure.navigation.footer && structure.navigation.footer.length > 0 ? (
+        <footer className="gs-site-footer-nav" aria-label="Footer navigation">
+          <ul className="gs-site-nav-list">
+            {structure.navigation.footer.map((item) => (
+              <li key={`${item.href}-${item.label}`} className="gs-site-nav-item">
+                <a
+                  className="gs-site-nav-link"
+                  href={
+                    item.href.startsWith("/")
+                      ? `?page=${encodeURIComponent(item.href)}`
+                      : item.href
+                  }
+                >
+                  {item.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </footer>
+      ) : null}
     </div>
   );
 }

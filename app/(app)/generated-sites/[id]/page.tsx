@@ -5,6 +5,7 @@ import { Renderer } from "@/components/generated-site/renderer";
 
 interface PageProps {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<{ page?: string }>;
 }
 
 /**
@@ -14,8 +15,9 @@ interface PageProps {
  * Fetches the structure from Supabase, scoped to the authenticated user.
  * Returns 404 when the structure does not exist or belongs to another user.
  */
-export default async function GeneratedSitePage({ params }: PageProps) {
+export default async function GeneratedSitePage({ params, searchParams }: PageProps) {
   const { id } = await params;
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
   const user = await getServerUser();
 
   if (!user) {
@@ -37,7 +39,7 @@ export default async function GeneratedSitePage({ params }: PageProps) {
           <span className="generated-site-version">v{structure.version}</span>
         </p>
       </div>
-      <Renderer structure={structure} />
+      <Renderer structure={structure} pageSlug={resolvedSearchParams?.page || "/"} />
     </div>
   );
 }

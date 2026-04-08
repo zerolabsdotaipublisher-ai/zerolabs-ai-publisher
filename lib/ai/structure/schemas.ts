@@ -57,6 +57,18 @@ function validatePage(page: Partial<WebsitePage>, index: number): string[] {
   if (!isNonEmptyString(page.title)) {
     errors.push(`${label}.title is required`);
   }
+  if (typeof page.depth !== "number" || page.depth < 0) {
+    errors.push(`${label}.depth must be >= 0`);
+  }
+  if (typeof page.priority !== "number") {
+    errors.push(`${label}.priority is required`);
+  }
+  if (typeof page.visible !== "boolean") {
+    errors.push(`${label}.visible is required`);
+  }
+  if (!page.navigation) {
+    errors.push(`${label}.navigation is required`);
+  }
   if (!page.sections || page.sections.length === 0) {
     errors.push(`${label} ("${page.slug ?? "?"}") must have at least one section`);
   }
@@ -129,6 +141,15 @@ export function validateWebsiteStructure(
     structure.navigation.primary.length === 0
   ) {
     errors.push("navigation.primary must include at least one item");
+  } else {
+    const pagePaths = new Set(
+      (structure.pages ?? []).map((page) => page.slug),
+    );
+    for (const item of structure.navigation.primary) {
+      if (item.href.startsWith("/") && !pagePaths.has(item.href)) {
+        errors.push(`navigation.primary href not found in pages: ${item.href}`);
+      }
+    }
   }
   if (!structure.seo) {
     errors.push("seo is required");
