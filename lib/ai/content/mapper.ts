@@ -1,4 +1,5 @@
 import { generatePageLayouts } from "../layout";
+import { generateNavigation } from "../structure/navigation";
 import type { WebsiteSection, WebsiteStructure } from "../structure/types";
 import type {
   ContentSectionType,
@@ -180,6 +181,7 @@ export function applyGeneratedContentToStructure(
   const updatedStructure: WebsiteStructure = {
     ...structure,
     pages: updatedPages,
+    navigation: generateNavigation(structure.websiteType, updatedPages, structure.siteTitle),
     updatedAt: new Date().toISOString(),
   };
 

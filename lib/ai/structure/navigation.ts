@@ -1,102 +1,48 @@
 /**
- * Navigation structure generation.
+ * Story 3-5 navigation compatibility adapter.
  *
- * Derives the primary and footer navigation from the sections present in the
- * generated structure.  Sections that don't belong in navigation (hero, cta,
- * footer) are excluded.  Falls back to template defaults when no navigable
- * sections are found.
+ * Keeps Story 3-2 call sites stable while delegating navigation + hierarchy
+ * generation to the centralized app-owned navigation module.
  */
 
-import type { WebsiteNavigation, NavigationItem, WebsiteSection, WebsiteType } from "./types";
-import { getWebsiteTemplate } from "./templates";
+import {
+  generateValidatedWebsiteNavigation,
+  type NavigationOverrideInput,
+  type WebsiteNavigation,
+} from "../navigation";
+import type { WebsiteType } from "../prompts/types";
+import type { WebsitePage } from "./types";
 
-// ---------------------------------------------------------------------------
-// Section → nav mapping
-// ---------------------------------------------------------------------------
-
-/** Human-readable label for each navigable section type. */
-const SECTION_LABELS: Partial<Record<string, string>> = {
-  about: "About",
-  services: "Services",
-  testimonials: "Testimonials",
-  contact: "Contact",
-};
-
-/** Anchor href for each navigable section type. */
-const SECTION_HREFS: Partial<Record<string, string>> = {
-  about: "#about",
-  services: "#services",
-  testimonials: "#testimonials",
-  contact: "#contact",
-};
-
-/** Section types that are excluded from primary navigation. */
-const NAV_EXCLUDED_TYPES = new Set<string>(["hero", "cta", "footer", "custom"]);
-
-// ---------------------------------------------------------------------------
-// Public API
-// ---------------------------------------------------------------------------
-
-/**
- * Generate a `WebsiteNavigation` from the provided page sections.
- *
- * - Builds primary nav from navigable sections (excludes hero/cta/footer).
- * - Builds footer nav from primary nav plus a "Home" link and copyright.
- * - Falls back to template defaults when no navigable sections are present.
- *
- * @param websiteType   - Website type (used for template fallback).
- * @param sections      - Sections on the home page.
- * @param siteTitle     - Display name used in the copyright notice.
- * @param copyrightYear - Year for the copyright notice. Callers should pass
- *                        the year derived from the structure's `generatedAt`
- *                        for reproducible output. Defaults to current year
- *                        when not provided.
- */
 export function generateNavigation(
   websiteType: WebsiteType,
-  sections: WebsiteSection[],
+  pages: WebsitePage[],
   siteTitle: string,
-  copyrightYear?: number,
+  _copyrightYear?: number,
+  overrides?: NavigationOverrideInput,
 ): WebsiteNavigation {
-  const primary: NavigationItem[] = [];
+  const result = generateValidatedWebsiteNavigation(
+    {
+      websiteType,
+      siteTitle,
+      pages: pages.map((page) => ({
+        id: page.id,
+        title: page.title,
+        slug: page.slug,
+        type: page.type,
+        order: page.order,
+        visible: page.visible ?? true,
+        parentPageId: page.parentPageId,
+        priority: page.priority,
+        includeInNavigation:
+          page.navigation?.includeInHeader ||
+          page.navigation?.includeInFooter ||
+          page.navigation?.includeInSidebar ||
+          false,
+        navigationLabel: page.navigationLabel,
+      })),
+    },
+    overrides,
+  );
 
-  for (const section of sections) {
-    if (NAV_EXCLUDED_TYPES.has(section.type) || !section.visible) {
-      continue;
-    }
-    const label = SECTION_LABELS[section.type] ?? capitalise(section.type);
-    const href = SECTION_HREFS[section.type] ?? `#${section.type}`;
-    primary.push({ label, href });
-  }
-
-  // Fall back to template defaults when no navigable sections were found.
-  const resolvedPrimary =
-    primary.length > 0
-      ? primary
-      : getWebsiteTemplate(websiteType).defaultPrimaryNav.map((label) => ({
-          label,
-          href: `#${label.toLowerCase().replace(/\s+/g, "-")}`,
-        }));
-
-  const year = copyrightYear ?? new Date().getFullYear();
-  const footerCopyright: NavigationItem = {
-    label: `© ${year} ${siteTitle}`,
-    href: "/",
-  };
-
-  const footer: NavigationItem[] = [
-    { label: "Home", href: "/" },
-    ...resolvedPrimary,
-    footerCopyright,
-  ];
-
-  return { primary: resolvedPrimary, footer };
-}
-
-// ---------------------------------------------------------------------------
-// Internal helpers
-// ---------------------------------------------------------------------------
-
-function capitalise(value: string): string {
-  return value.charAt(0).toUpperCase() + value.slice(1);
+  return result.navigation;
 }

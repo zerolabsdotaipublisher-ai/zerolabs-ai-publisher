@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { getServerUser } from "@/lib/supabase/server";
 import { getWebsiteStructure, updateWebsiteStructure } from "@/lib/ai/structure/storage";
+import { storeWebsiteNavigation } from "@/lib/ai/navigation";
 import { logger } from "@/lib/observability";
 import {
   regenerateWebsiteContent,
@@ -50,6 +51,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     await storeWebsiteGeneratedContent(result.content);
     const updatedStructure = await updateWebsiteStructure(result.mappedStructure);
+    await storeWebsiteNavigation({
+      structureId: updatedStructure.id,
+      userId: user.id,
+      navigation: updatedStructure.navigation,
+      version: updatedStructure.version,
+      createdAt: updatedStructure.generatedAt,
+      updatedAt: updatedStructure.updatedAt,
+    });
 
     return NextResponse.json({
       content: result.content,

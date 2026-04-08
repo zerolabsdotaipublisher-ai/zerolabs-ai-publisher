@@ -25,8 +25,6 @@ export type {
   WebsiteSection,
   PageSeo,
   WebsitePage,
-  NavigationItem,
-  WebsiteNavigation,
   WebsiteSeo,
   WebsiteStyleConfig,
   ContentVariation,
@@ -34,6 +32,21 @@ export type {
   StructureGenerationResult,
   WebsiteStructureRow,
 } from "./types";
+
+export type {
+  NavigationLocation,
+  NavigationStyle,
+  PageNavigationFlags,
+  PageHierarchyNode,
+  PageHierarchyModel,
+  NavigationMenuItem,
+  NavigationMenu,
+  NavigationItem,
+  WebsiteNavigation,
+  NavigationPageSeed,
+  NavigationGenerationContext,
+  NavigationOverrideInput,
+} from "../navigation/types";
 
 // Schema validation
 export {
@@ -52,6 +65,7 @@ export { applyFallbacks, needsFallback } from "./fallback";
 
 // Navigation generation
 export { generateNavigation } from "./navigation";
+export * as navigation from "../navigation";
 
 // Metadata / SEO generation
 export { generateSiteSeo, generatePageSeo } from "./metadata";

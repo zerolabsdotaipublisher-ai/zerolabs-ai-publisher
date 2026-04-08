@@ -11,6 +11,7 @@ import type {
   WebsiteGenerationOutput,
   WebsiteSectionName,
 } from "../prompts/types";
+import { createDefaultPageSeeds } from "../navigation/defaults";
 import type {
   WebsiteStructure,
   WebsitePage,
@@ -33,6 +34,15 @@ function generateId(prefix: string): string {
   const ts = Date.now().toString(36);
   const rnd = Math.random().toString(36).slice(2, 8);
   return `${prefix}_${ts}_${rnd}`;
+}
+
+function cloneSection(section: WebsiteSection): WebsiteSection {
+  return {
+    ...section,
+    content: structuredClone(section.content),
+    components: section.components ? structuredClone(section.components) : undefined,
+    styleHints: section.styleHints ? { ...section.styleHints } : undefined,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -113,13 +123,13 @@ export function mapOutputToStructure(
   now: string,
 ): WebsiteStructure {
   // Build sections in canonical order, skipping absent ones.
-  const sections: WebsiteSection[] = [];
+  const homeSections: WebsiteSection[] = [];
   let order = 0;
 
   for (const name of SECTION_ORDER) {
     const content = extractSectionContent(name, output);
     if (content !== null) {
-      sections.push({
+      homeSections.push({
         id: generateId(`sec_${name}`),
         type: name as SectionType,
         order: order++,
@@ -129,19 +139,73 @@ export function mapOutputToStructure(
     }
   }
 
-  const page: WebsitePage = {
-    id: generateId("page_home"),
-    slug: "/",
-    title: "Home",
-    type: "home",
-    sections,
-    seo: generatePageSeo(output, "home"),
-    order: 0,
+  const sectionByType = new Map(homeSections.map((section) => [section.type, section]));
+  const pageSeeds = createDefaultPageSeeds(output.websiteType);
+  const pageSeedById = new Map(pageSeeds.map((seed) => [seed.id, seed]));
+
+  const resolveSeedDepth = (
+    seedId: string,
+    seen = new Set<string>(),
+  ): number => {
+    const seed = pageSeedById.get(seedId);
+    if (!seed?.parentPageId) return 0;
+    if (seen.has(seedId)) return 0;
+    const parent = pageSeedById.get(seed.parentPageId);
+    if (!parent) return 0;
+    seen.add(seedId);
+    return 1 + resolveSeedDepth(parent.id, seen);
   };
+
+  const sectionTypesByPageType: Record<WebsitePage["type"], SectionType[]> = {
+    home: ["hero", "about", "services", "testimonials", "cta", "contact", "footer"],
+    about: ["hero", "about", "testimonials", "cta", "footer"],
+    services: ["hero", "services", "testimonials", "cta", "contact", "footer"],
+    contact: ["hero", "contact", "cta", "footer"],
+    custom: ["hero", "services", "cta", "footer"],
+  };
+
+  const pages: WebsitePage[] = pageSeeds.map((seed, pageIndex) => {
+    const sectionTypes = sectionTypesByPageType[seed.type] ?? sectionTypesByPageType.custom;
+    const selectedSections = sectionTypes
+      .map((type) => sectionByType.get(type))
+      .filter((section): section is WebsiteSection => Boolean(section))
+      .map((section, sectionIndex) => ({
+        ...cloneSection(section),
+        id: generateId(`sec_${seed.type}_${section.type}`),
+        order: sectionIndex,
+      }));
+
+    return {
+      id: seed.id || generateId(`page_${seed.type}`),
+      slug: seed.slug,
+      title: seed.title,
+      type: seed.type,
+      sections:
+        selectedSections.length > 0
+          ? selectedSections
+          : homeSections.map((section, sectionIndex) => ({
+              ...cloneSection(section),
+              id: generateId(`sec_${seed.type}_${section.type}`),
+              order: sectionIndex,
+            })),
+      seo: generatePageSeo(output, seed.type),
+      order: pageIndex,
+      parentPageId: seed.parentPageId ?? null,
+      depth: resolveSeedDepth(seed.id),
+      priority: seed.priority ?? pageIndex,
+      visible: seed.visible,
+      navigation: {
+        includeInHeader: seed.includeInNavigation ?? true,
+        includeInFooter: true,
+        includeInSidebar: Boolean(seed.parentPageId),
+      },
+      navigationLabel: seed.navigationLabel ?? seed.title,
+    };
+  });
 
   const navigation = generateNavigation(
     output.websiteType,
-    sections,
+    pages,
     output.siteTitle,
     new Date(now).getFullYear(),
   );
@@ -152,7 +216,7 @@ export function mapOutputToStructure(
     websiteType: output.websiteType,
     siteTitle: output.siteTitle,
     tagline: output.tagline,
-    pages: [page],
+    pages,
     navigation,
     seo: generateSiteSeo(output),
     styleConfig: {

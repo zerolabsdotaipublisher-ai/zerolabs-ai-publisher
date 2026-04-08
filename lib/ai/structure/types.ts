@@ -18,6 +18,7 @@ import type {
   WebsiteType,
 } from "../prompts/types";
 import type { WebsiteLayoutModel } from "../layout/types";
+import type { WebsiteNavigation, PageNavigationFlags } from "../navigation/types";
 
 export type { WebsiteType, TonePreset, StylePreset };
 
@@ -139,29 +140,23 @@ export interface WebsitePage {
   seo: PageSeo;
   /** Render order for multi-page navigation (ascending). */
   order: number;
+  /** Parent page id for hierarchical navigation. */
+  parentPageId?: string | null;
+  /** Hierarchy depth (root = 0). */
+  depth?: number;
+  /** Navigation + conversion priority (lower appears earlier). */
+  priority?: number;
+  /** Page visibility in generated output. */
+  visible?: boolean;
+  /** Navigation inclusion flags by menu location. */
+  navigation?: PageNavigationFlags;
+  /** Optional generated navigation label override. */
+  navigationLabel?: string;
 }
 
 // ---------------------------------------------------------------------------
 // Navigation
 // ---------------------------------------------------------------------------
-
-/** A single navigation link item. */
-export interface NavigationItem {
-  /** Link label shown to the user. */
-  label: string;
-  /** Target URL or anchor href. */
-  href: string;
-  /** When true, opens in a new tab. */
-  external?: boolean;
-}
-
-/** Navigation structure for the full website. */
-export interface WebsiteNavigation {
-  /** Primary nav items shown in the header. */
-  primary: NavigationItem[];
-  /** Footer nav items (optional). */
-  footer?: NavigationItem[];
-}
 
 // ---------------------------------------------------------------------------
 // Site-level SEO
