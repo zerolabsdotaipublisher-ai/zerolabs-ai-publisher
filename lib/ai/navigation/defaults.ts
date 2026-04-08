@@ -145,7 +145,10 @@ export function getDefaultPagesForWebsiteType(
 
 export function createDefaultPageSeeds(websiteType: WebsiteType): NavigationPageSeed[] {
   return getDefaultPagesForWebsiteType(websiteType).map((page, index) => ({
-    id: `page_${page.slug.replace(/\//g, "_") || "home"}`,
+    id:
+      page.slug === "/"
+        ? "page_home"
+        : `page_${page.slug.replace(/^\/+/, "").replace(/\//g, "_")}`,
     title: page.title,
     slug: page.slug,
     type: page.type,

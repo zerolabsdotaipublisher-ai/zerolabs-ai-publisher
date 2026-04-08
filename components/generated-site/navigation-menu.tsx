@@ -4,24 +4,22 @@ import { withNavigationActiveState } from "./navigation-active-state";
 interface NavigationMenuProps {
   items: NavigationItem[];
   activePath: string;
-  currentPageHref: string;
   ariaLabel: string;
 }
 
-function toRenderedHref(href: string, currentPageHref: string): string {
+function toRenderedHref(href: string): string {
   if (href.startsWith("#")) {
     return href;
   }
   if (!href.startsWith("/")) {
     return href;
   }
-  return `${currentPageHref}?page=${encodeURIComponent(href)}`;
+  return `?page=${encodeURIComponent(href)}`;
 }
 
 export function NavigationMenu({
   items,
   activePath,
-  currentPageHref,
   ariaLabel,
 }: NavigationMenuProps) {
   const states = withNavigationActiveState(items, activePath);
@@ -29,9 +27,9 @@ export function NavigationMenu({
   return (
     <ul className="gs-site-nav-list" aria-label={ariaLabel}>
       {states.map((item) => (
-        <li key={`${item.href}-${item.label}`} className="gs-site-nav-item">
-          <a
-            href={toRenderedHref(item.href, currentPageHref)}
+        <li key={item.pageId ?? item.href} className="gs-site-nav-item">
+            <a
+            href={toRenderedHref(item.href)}
             className={`gs-site-nav-link${item.active ? " is-active" : ""}`}
             aria-current={item.active ? "page" : undefined}
             data-active={item.active ? "true" : "false"}

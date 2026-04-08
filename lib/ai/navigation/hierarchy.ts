@@ -10,27 +10,21 @@ import type {
 
 function mergePageSeeds(context: NavigationGenerationContext): NavigationPageSeed[] {
   const defaults = createDefaultPageSeeds(context.websiteType);
-  const bySlug = new Map<string, NavigationPageSeed>();
+  const existingSlugs = new Set(context.pages.map((page) => page.slug));
+  const mergedBase = [
+    ...context.pages,
+    ...defaults.filter((page) => !existingSlugs.has(page.slug)),
+  ];
 
-  defaults.forEach((page) => {
-    bySlug.set(page.slug, page);
-  });
-
-  context.pages.forEach((page, index) => {
-    const existing = bySlug.get(page.slug);
-    bySlug.set(page.slug, {
-      ...existing,
-      ...page,
-      order: page.order ?? existing?.order ?? index,
-      visible: page.visible ?? true,
-      parentPageId: page.parentPageId ?? existing?.parentPageId ?? null,
-      includeInNavigation: page.includeInNavigation ?? existing?.includeInNavigation ?? true,
-      priority: page.priority ?? existing?.priority,
-      navigationLabel: page.navigationLabel ?? existing?.navigationLabel,
-    });
-  });
-
-  return Array.from(bySlug.values());
+  return mergedBase.map((page, index) => ({
+    ...page,
+    order: page.order ?? index,
+    visible: page.visible ?? true,
+    parentPageId: page.parentPageId ?? null,
+    includeInNavigation: page.includeInNavigation ?? true,
+    priority: page.priority ?? index,
+    navigationLabel: page.navigationLabel ?? page.title,
+  }));
 }
 
 function resolveDepth(

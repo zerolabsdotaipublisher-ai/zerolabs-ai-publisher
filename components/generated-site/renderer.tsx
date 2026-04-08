@@ -42,7 +42,6 @@ export function Renderer({ structure, pageSlug = "/" }: RendererProps) {
           siteTitle={structure.siteTitle}
           navigation={structure.navigation}
           activePath={page.slug}
-          currentPageHref=""
         />
       </header>
 
@@ -55,7 +54,7 @@ export function Renderer({ structure, pageSlug = "/" }: RendererProps) {
         <footer className="gs-site-footer-nav" aria-label="Footer navigation">
           <ul className="gs-site-nav-list">
             {structure.navigation.footer.map((item) => (
-              <li key={`${item.href}-${item.label}`} className="gs-site-nav-item">
+              <li key={item.pageId ?? item.href} className="gs-site-nav-item">
                 <a
                   className="gs-site-nav-link"
                   href={

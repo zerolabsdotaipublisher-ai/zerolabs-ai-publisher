@@ -142,11 +142,14 @@ export function validateWebsiteStructure(
   ) {
     errors.push("navigation.primary must include at least one item");
   } else {
-    const pagePaths = new Set(
-      (structure.pages ?? []).map((page) => page.slug),
+    const navigationPaths =
+      structure.navigation.hierarchy?.nodes?.map((node) => node.path) ?? [];
+    const pageSlugs = new Set((structure.pages ?? []).map((page) => page.slug));
+    const pageRoutes = new Set(
+      navigationPaths.length > 0 ? navigationPaths : Array.from(pageSlugs),
     );
     for (const item of structure.navigation.primary) {
-      if (item.href.startsWith("/") && !pagePaths.has(item.href)) {
+      if (item.href.startsWith("/") && !pageRoutes.has(item.href)) {
         errors.push(`navigation.primary href not found in pages: ${item.href}`);
       }
     }

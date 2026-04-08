@@ -37,7 +37,7 @@ export function generateNavigation(
           page.navigation?.includeInHeader ||
           page.navigation?.includeInFooter ||
           page.navigation?.includeInSidebar ||
-          true,
+          false,
         navigationLabel: page.navigationLabel,
       })),
     },

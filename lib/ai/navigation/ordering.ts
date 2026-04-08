@@ -12,7 +12,7 @@ function normalizedOrder(page: NavigationPageSeed): number {
   if (typeof page.priority === "number") {
     return page.priority;
   }
-  return PAGE_TYPE_PRIORITY[page.type] + page.order;
+  return PAGE_TYPE_PRIORITY[page.type];
 }
 
 export function orderPages(pages: NavigationPageSeed[]): NavigationPageSeed[] {
@@ -21,8 +21,6 @@ export function orderPages(pages: NavigationPageSeed[]): NavigationPageSeed[] {
     if (priorityDiff !== 0) return priorityDiff;
     if (a.slug === "/") return -1;
     if (b.slug === "/") return 1;
-    if (a.type === "contact" && b.type !== "contact") return 1;
-    if (b.type === "contact" && a.type !== "contact") return -1;
     return a.order - b.order;
   });
 }

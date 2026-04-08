@@ -31,7 +31,15 @@ export function buildUniquePaths(pages: NavigationPageSeed[]): Map<string, strin
       return pathByPageId.get(page.id)!;
     }
     if (stack.has(page.id)) {
-      return normalizeBasePath(page.slug);
+      const fallback = normalizeBasePath(page.slug);
+      let deduped = fallback;
+      let index = 1;
+      while (usedPaths.has(deduped)) {
+        deduped = `${fallback}-${index++}`;
+      }
+      usedPaths.add(deduped);
+      pathByPageId.set(page.id, deduped);
+      return deduped;
     }
     stack.add(page.id);
 

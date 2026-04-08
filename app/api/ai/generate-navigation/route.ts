@@ -55,7 +55,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           includeInNavigation:
             page.navigation?.includeInHeader ||
             page.navigation?.includeInFooter ||
-            true,
+            false,
           navigationLabel: page.navigationLabel,
         })),
         generatedAt: structure.generatedAt,
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     logger.error("generate-navigation route failed", {
       category: "error",
-      service: "openai",
+      service: "navigation",
       structureId: body.structureId,
       error: { message, name: "GenerateNavigationError" },
     });

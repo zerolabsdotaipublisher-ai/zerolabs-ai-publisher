@@ -36,6 +36,15 @@ function generateId(prefix: string): string {
   return `${prefix}_${ts}_${rnd}`;
 }
 
+function cloneSection(section: WebsiteSection): WebsiteSection {
+  return {
+    ...section,
+    content: structuredClone(section.content),
+    components: section.components ? structuredClone(section.components) : undefined,
+    styleHints: section.styleHints ? { ...section.styleHints } : undefined,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Section extraction
 // ---------------------------------------------------------------------------
@@ -132,6 +141,20 @@ export function mapOutputToStructure(
 
   const sectionByType = new Map(homeSections.map((section) => [section.type, section]));
   const pageSeeds = createDefaultPageSeeds(output.websiteType);
+  const pageSeedById = new Map(pageSeeds.map((seed) => [seed.id, seed]));
+
+  const resolveSeedDepth = (
+    seedId: string,
+    seen = new Set<string>(),
+  ): number => {
+    const seed = pageSeedById.get(seedId);
+    if (!seed?.parentPageId) return 0;
+    if (seen.has(seedId)) return 0;
+    const parent = pageSeedById.get(seed.parentPageId);
+    if (!parent) return 0;
+    seen.add(seedId);
+    return 1 + resolveSeedDepth(parent.id, seen);
+  };
 
   const sectionTypesByPageType: Record<WebsitePage["type"], SectionType[]> = {
     home: ["hero", "about", "services", "testimonials", "cta", "contact", "footer"],
@@ -147,7 +170,7 @@ export function mapOutputToStructure(
       .map((type) => sectionByType.get(type))
       .filter((section): section is WebsiteSection => Boolean(section))
       .map((section, sectionIndex) => ({
-        ...section,
+        ...cloneSection(section),
         id: generateId(`sec_${seed.type}_${section.type}`),
         order: sectionIndex,
       }));
@@ -161,14 +184,14 @@ export function mapOutputToStructure(
         selectedSections.length > 0
           ? selectedSections
           : homeSections.map((section, sectionIndex) => ({
-              ...section,
+              ...cloneSection(section),
               id: generateId(`sec_${seed.type}_${section.type}`),
               order: sectionIndex,
             })),
       seo: generatePageSeo(output, seed.type),
       order: pageIndex,
       parentPageId: seed.parentPageId ?? null,
-      depth: seed.parentPageId ? 1 : 0,
+      depth: resolveSeedDepth(seed.id),
       priority: seed.priority ?? pageIndex,
       visible: seed.visible,
       navigation: {
