@@ -1,8 +1,12 @@
 import type { SeoOverrideInput, WebsiteSeoPackage } from "./types";
+import { SEO_METADATA_REQUIREMENTS } from "./requirements";
 
 function uniqueKeywords(values: string[] | undefined): string[] | undefined {
   if (!values?.length) return undefined;
-  return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean))).slice(0, 12);
+  return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean))).slice(
+    0,
+    SEO_METADATA_REQUIREMENTS.maxKeywordsPerPage,
+  );
 }
 
 export function applySeoOverrides(

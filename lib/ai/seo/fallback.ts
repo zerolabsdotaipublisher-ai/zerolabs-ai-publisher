@@ -11,6 +11,7 @@ import type {
   SeoGenerationContextPage,
   WebsiteSeoPackage,
 } from "./types";
+import { SEO_METADATA_REQUIREMENTS } from "./requirements";
 
 function seoId(structureId: string): string {
   const ts = Date.now().toString(36);
@@ -40,14 +41,16 @@ export function createFallbackSiteMetadata(
   input: WebsiteGenerationInput,
   canonicalBaseUrl: string,
 ): GeneratedSiteMetadata {
-  const title = `${input.brandName} | ${input.primaryCta}`.slice(0, 60).trim();
+  const title = `${input.brandName} | ${input.primaryCta}`
+    .slice(0, SEO_METADATA_REQUIREMENTS.titleMaxLength)
+    .trim();
   const description = `${input.brandName} helps ${input.targetAudience} with ${input.services.slice(0, 3).join(", ")}. ${input.description}`
     .replace(/\s+/g, " ")
-    .slice(0, 160)
+    .slice(0, SEO_METADATA_REQUIREMENTS.descriptionMaxLength)
     .trim();
   const keywords = Array.from(
     new Set([input.brandName, input.websiteType, ...input.services].map((value) => value.trim()).filter(Boolean)),
-  ).slice(0, 12);
+  ).slice(0, SEO_METADATA_REQUIREMENTS.maxKeywordsPerPage);
 
   const canonical = buildCanonicalUrl(canonicalBaseUrl, routes.generatedSite("preview"), "/");
 
@@ -84,7 +87,10 @@ export function createFallbackPageMetadata(
     pageType: page.pageType,
     title,
     description,
-    keywords: [brandName, page.pageType, ...page.sectionHeadlines].slice(0, 10),
+    keywords: [brandName, page.pageType, ...page.sectionHeadlines].slice(
+      0,
+      SEO_METADATA_REQUIREMENTS.maxKeywordsPerPage,
+    ),
     canonicalUrl,
     openGraph: buildOpenGraphMetadata({
       title,

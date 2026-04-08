@@ -11,6 +11,7 @@ import {
 import { buildOpenGraphMetadata } from "./og";
 import { applySeoOverrides } from "./overrides";
 import { buildWebsiteSeoPrompt } from "./prompts";
+import { SEO_METADATA_REQUIREMENTS } from "./requirements";
 import { getSeoStrategyForPageType } from "./strategy";
 import { normalizeSeoTitle, createFallbackPageTitle } from "./titles";
 import type {
@@ -99,7 +100,10 @@ function normalizeKeywords(values: string[] | undefined, fallback: string[]): st
     new Set((values || []).map((value) => value.trim()).filter(Boolean)),
   );
 
-  return (deduped.length > 0 ? deduped : fallback).slice(0, 12);
+  return (deduped.length > 0 ? deduped : fallback).slice(
+    0,
+    SEO_METADATA_REQUIREMENTS.maxKeywordsPerPage,
+  );
 }
 
 function applySeoToStructure(structure: WebsiteStructure, seo: WebsiteSeoPackage): WebsiteStructure {
