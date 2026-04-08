@@ -105,6 +105,17 @@ function normalizeKeywords(values: string[] | undefined, fallback: string[]): st
   );
 }
 
+function extractSectionHeadline(section: { type: string; content: unknown }): string {
+  if (section.content && typeof section.content === "object" && "headline" in section.content) {
+    const headline = (section.content as { headline?: unknown }).headline;
+    if (typeof headline === "string" && headline.trim().length > 0) {
+      return headline.trim();
+    }
+  }
+
+  return section.type;
+}
+
 function applySeoToStructure(structure: WebsiteStructure, seo: WebsiteSeoPackage): WebsiteStructure {
   const siteSeo = {
     ...structure.seo,
@@ -152,10 +163,7 @@ function normalizePageMetadata(args: {
       pageTitle: structurePage?.title ?? fallbackPage.title,
       sectionHeadlines:
         structurePage?.sections
-          .map((section) => {
-            const contentHeadline = (section.content as { headline?: string }).headline;
-            return typeof contentHeadline === "string" ? contentHeadline : section.type;
-          })
+          .map((section) => extractSectionHeadline(section))
           .slice(0, 4) ?? [],
     };
 

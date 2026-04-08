@@ -16,9 +16,10 @@ export function createFallbackPageTitle(
   page: Pick<SeoGenerationContextPage, "pageType" | "pageTitle">,
 ): string {
   const strategy = getSeoStrategyForPageType(page.pageType);
+  const primaryHint = strategy.keywordHints[0] ?? "services";
 
   if (page.pageType === "home") {
-    return clampTitle(`${brandName} | ${strategy.keywordHints[0]}`);
+    return clampTitle(`${brandName} | ${primaryHint}`);
   }
 
   return clampTitle(`${strategy.titlePrefix} | ${brandName}`);

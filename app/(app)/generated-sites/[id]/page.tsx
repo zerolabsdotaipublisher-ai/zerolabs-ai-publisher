@@ -27,9 +27,14 @@ export async function generateMetadata({
   if (!structure) {
     return {};
   }
+  if (!structure.pages.length) {
+    return {};
+  }
 
   const seo = await getWebsiteSeoMetadata(id, user.id);
-  const page = structure.pages.find((candidate) => candidate.slug === pageSlug) ?? structure.pages[0];
+  const page =
+    structure.pages.find((candidate) => candidate.slug === pageSlug) ??
+    structure.pages[0];
   const pageSeo = page
     ? seo?.pages.find((candidate) => candidate.pageSlug === page.slug)
     : undefined;
