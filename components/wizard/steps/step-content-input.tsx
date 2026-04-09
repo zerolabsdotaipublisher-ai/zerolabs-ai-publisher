@@ -14,7 +14,7 @@ interface StepContentInputProps {
 
 function testimonialHint(testimonials: TestimonialInput[]): string {
   if (!testimonials.length) {
-    return "Optional. Format: quote | author | role";
+    return "Optional. Format: quote | author | role (escape pipe with \\|)";
   }
 
   return `${testimonials.length} testimonial entr${testimonials.length === 1 ? "y" : "ies"} parsed`;

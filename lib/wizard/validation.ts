@@ -69,16 +69,18 @@ export function validateStyleThemeStep(data: WebsiteWizardInput): string[] {
 export function validateContentInputStep(data: WebsiteWizardInput): string[] {
   const errors: string[] = [];
 
-  const invalidTestimonials = data.testimonials.filter(
-    (testimonial) => hasContent(testimonial.quote) !== hasContent(testimonial.author),
+  const incompleteTestimonials = data.testimonials.filter(
+    (testimonial) =>
+      (hasContent(testimonial.quote) && !hasContent(testimonial.author)) ||
+      (!hasContent(testimonial.quote) && hasContent(testimonial.author)),
   );
 
-  if (invalidTestimonials.length > 0) {
+  if (incompleteTestimonials.length > 0) {
     errors.push("Each testimonial needs both quote and author.");
   }
 
   const email = data.contactInfo.email?.trim();
-  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  if (email && !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(email)) {
     errors.push("Contact email must be a valid email address.");
   }
 

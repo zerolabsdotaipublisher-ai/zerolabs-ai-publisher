@@ -40,15 +40,58 @@ const loadingLabels: Record<string, string> = {
   finalizing: "Finalizing your generated website…",
 };
 
+function splitEscapedPipes(value: string): string[] {
+  const segments: string[] = [];
+  let current = "";
+  let escaped = false;
+
+  for (const char of value) {
+    if (escaped) {
+      current += char;
+      escaped = false;
+      continue;
+    }
+
+    if (char === "\\") {
+      escaped = true;
+      continue;
+    }
+
+    if (char === "|") {
+      segments.push(current.trim());
+      current = "";
+      continue;
+    }
+
+    current += char;
+  }
+
+  segments.push(current.trim());
+  return segments;
+}
+
 function parseTestimonials(value: string): WebsiteWizardInput["testimonials"] {
   return normalizeList(value.split("\n")).map((line) => {
-    const [quote, author, role] = line.split("|").map((item) => item.trim());
+    const [quote, author, ...roleParts] = splitEscapedPipes(line);
     return {
       quote: quote || "",
       author: author || "",
-      role: role || undefined,
+      role: roleParts.length ? roleParts.join(" | ") : undefined,
     };
   });
+}
+
+function isRestorableWizardState(value: unknown): value is WebsiteCreationWizardState {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const candidate = value as Partial<WebsiteCreationWizardState>;
+  if (!candidate.data || typeof candidate.data !== "object") {
+    return false;
+  }
+
+  return typeof candidate.currentStep === "string" && typeof candidate.data.brandName === "string";
 }
 
 export function WebsiteCreationWizard() {
@@ -63,7 +106,7 @@ export function WebsiteCreationWizard() {
 
     try {
       const parsed = JSON.parse(cached) as WebsiteCreationWizardState;
-      if (parsed?.data && parsed?.currentStep) {
+      if (isRestorableWizardState(parsed)) {
         setState({
           ...parsed,
           generationStatus: "idle",
@@ -215,13 +258,14 @@ export function WebsiteCreationWizard() {
       if (!structureResponse.ok || !structureBody.structure?.id) {
         throw new Error(structureBody.error || structureBody.message || "Structure generation failed.");
       }
+      const structureId = structureBody.structure.id;
 
       setLoadingStage("content");
       const contentResponse = await fetch(wizardPipelineEndpoints.generateContent, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          structureId: structureBody.structure.id,
+          structureId,
         }),
       });
 
@@ -231,7 +275,7 @@ export function WebsiteCreationWizard() {
       }
 
       setLoadingStage("finalizing");
-      const generatedSitePath = mapStructureIdToOutputPath(structureBody.structure.id);
+      const generatedSitePath = mapStructureIdToOutputPath(structureId);
 
       setState((current) => ({
         ...current,
@@ -239,7 +283,7 @@ export function WebsiteCreationWizard() {
         currentStep: "success",
         completedSteps: markStepComplete("loading", current),
         generationResult: {
-          structureId: structureBody.structure?.id,
+          structureId,
           generatedSitePath,
           completedAt: new Date().toISOString(),
         },
@@ -247,7 +291,12 @@ export function WebsiteCreationWizard() {
 
       window.localStorage.removeItem(WIZARD_STORAGE_KEY);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Generation failed. Please try again.";
+      const message =
+        error instanceof TypeError
+          ? "Network issue detected. Check your connection and try again."
+          : error instanceof Error
+            ? error.message
+            : "Generation failed. Please try again.";
       setState((current) => ({
         ...current,
         generationStatus: "error",
