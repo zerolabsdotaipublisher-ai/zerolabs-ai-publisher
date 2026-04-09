@@ -17,7 +17,7 @@ function testimonialHint(testimonials: TestimonialInput[]): string {
     return "Optional. Format: quote | author | role (escape pipe with \\|)";
   }
 
-  return `${testimonials.length} testimonial entr${testimonials.length === 1 ? "y" : "ies"} parsed`;
+  return `${testimonials.length} testimonial ${testimonials.length === 1 ? "entry" : "entries"} parsed`;
 }
 
 export function StepContentInput({
