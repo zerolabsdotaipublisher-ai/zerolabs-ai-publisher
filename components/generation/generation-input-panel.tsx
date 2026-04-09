@@ -33,6 +33,14 @@ export function GenerationInputPanel({
   onSocialLinksChange,
   onConstraintsChange,
 }: GenerationInputPanelProps) {
+  function runIfEditing<T>(handler: (value: T) => void, value: T) {
+    if (!isEditing) {
+      return;
+    }
+
+    handler(value);
+  }
+
   return (
     <section className="generation-panel" aria-labelledby="generation-inputs-title">
       <h2 id="generation-inputs-title">Generation inputs</h2>
@@ -45,32 +53,35 @@ export function GenerationInputPanel({
         </div>
       ) : null}
 
-      <div aria-disabled={!isEditing} className={!isEditing ? "generation-readonly" : undefined}>
+      <fieldset
+        disabled={!isEditing}
+        className={`generation-input-fieldset ${!isEditing ? "generation-readonly" : ""}`.trim()}
+      >
         <StepWebsiteType
           value={data.websiteType}
-          onChange={(value) => (isEditing ? onFieldChange({ websiteType: value }) : undefined)}
+          onChange={(value) => runIfEditing(onFieldChange, { websiteType: value })}
         />
         <StepBusinessInfo
           data={data}
           servicesText={servicesText}
-          onFieldChange={(patch) => (isEditing ? onFieldChange(patch) : undefined)}
-          onServicesTextChange={(value) => (isEditing ? onServicesTextChange(value) : undefined)}
+          onFieldChange={(patch) => runIfEditing(onFieldChange, patch)}
+          onServicesTextChange={(value) => runIfEditing(onServicesTextChange, value)}
         />
         <StepStyleTheme
           data={data}
-          onFieldChange={(patch) => (isEditing ? onFieldChange(patch) : undefined)}
+          onFieldChange={(patch) => runIfEditing(onFieldChange, patch)}
         />
         <StepContentInput
           data={data}
           testimonialsText={testimonialsText}
           socialLinksText={socialLinksText}
           constraintsText={constraintsText}
-          onFieldChange={(patch) => (isEditing ? onFieldChange(patch) : undefined)}
-          onTestimonialsChange={(value) => (isEditing ? onTestimonialsChange(value) : undefined)}
-          onSocialLinksChange={(value) => (isEditing ? onSocialLinksChange(value) : undefined)}
-          onConstraintsChange={(value) => (isEditing ? onConstraintsChange(value) : undefined)}
+          onFieldChange={(patch) => runIfEditing(onFieldChange, patch)}
+          onTestimonialsChange={(value) => runIfEditing(onTestimonialsChange, value)}
+          onSocialLinksChange={(value) => runIfEditing(onSocialLinksChange, value)}
+          onConstraintsChange={(value) => runIfEditing(onConstraintsChange, value)}
         />
-      </div>
+      </fieldset>
     </section>
   );
 }

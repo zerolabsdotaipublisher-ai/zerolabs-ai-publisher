@@ -61,16 +61,17 @@ function parseTestimonials(value: string): WebsiteWizardInput["testimonials"] {
 }
 
 export function WebsiteGenerationInterface() {
-  const [state, setState] = useState<GenerationInterfaceState>(createInitialGenerationState());
+  const [state, setState] = useState<GenerationInterfaceState>(() => {
+    if (typeof window === "undefined") {
+      return createInitialGenerationState();
+    }
 
-  useEffect(() => {
     const cachedGenerationState = window.localStorage.getItem(GENERATION_STORAGE_KEY);
     if (cachedGenerationState) {
       try {
         const parsed = JSON.parse(cachedGenerationState) as GenerationInterfaceState;
         if (parsed?.input) {
-          setState(parsed);
-          return;
+          return parsed;
         }
       } catch {
         window.localStorage.removeItem(GENERATION_STORAGE_KEY);
@@ -79,19 +80,18 @@ export function WebsiteGenerationInterface() {
 
     const cachedWizardState = window.localStorage.getItem(WIZARD_STORAGE_KEY);
     if (!cachedWizardState) {
-      return;
+      return createInitialGenerationState();
     }
 
     try {
       const parsed = JSON.parse(cachedWizardState) as unknown;
       const mappedInput = extractWizardInput(parsed);
-      if (mappedInput) {
-        setState(createInitialGenerationState(mappedInput));
-      }
+      return mappedInput ? createInitialGenerationState(mappedInput) : createInitialGenerationState();
     } catch {
       window.localStorage.removeItem(WIZARD_STORAGE_KEY);
+      return createInitialGenerationState();
     }
-  }, []);
+  });
 
   useEffect(() => {
     window.localStorage.setItem(GENERATION_STORAGE_KEY, JSON.stringify(state));
@@ -133,6 +133,8 @@ export function WebsiteGenerationInterface() {
       return;
     }
 
+    const nextRetryCount = isRetry ? state.retryCount + 1 : state.retryCount;
+
     setState((current) => ({
       ...current,
       submissionStatus: "running",
@@ -140,17 +142,17 @@ export function WebsiteGenerationInterface() {
       stage: "preparing",
       result: undefined,
       isEditingInputs: false,
-      retryCount: isRetry ? current.retryCount + 1 : current.retryCount,
+      retryCount: nextRetryCount,
     }));
 
     if (isRetry) {
       void trackGenerationEvent({
         event: "generation_retry_clicked",
-        retryCount: state.retryCount + 1,
+        retryCount: nextRetryCount,
       });
     }
 
-    void trackGenerationEvent({ event: "generation_started", retryCount: state.retryCount });
+    void trackGenerationEvent({ event: "generation_started", retryCount: nextRetryCount });
 
     const result = await submitWebsiteGeneration(state.input, {
       onStageChange(stage) {
@@ -171,7 +173,7 @@ export function WebsiteGenerationInterface() {
         event: "generation_failed",
         status: "error",
         message: result.error,
-        retryCount: state.retryCount,
+        retryCount: nextRetryCount,
       });
       return;
     }
@@ -191,7 +193,7 @@ export function WebsiteGenerationInterface() {
       event: "generation_completed",
       status: "success",
       structureId: result.structureId,
-      retryCount: state.retryCount,
+      retryCount: nextRetryCount,
     });
   }
 

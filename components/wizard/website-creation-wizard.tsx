@@ -84,30 +84,35 @@ function isRestorableWizardState(value: unknown): value is WebsiteCreationWizard
 
 export function WebsiteCreationWizard() {
   const router = useRouter();
-  const [state, setState] = useState<WebsiteCreationWizardState>(createInitialWizardState());
+  const [state, setState] = useState<WebsiteCreationWizardState>(() => {
+    if (typeof window === "undefined") {
+      return createInitialWizardState();
+    }
 
-  useEffect(() => {
     const cached = window.localStorage.getItem(WIZARD_STORAGE_KEY);
     if (!cached) {
-      return;
+      return createInitialWizardState();
     }
 
     try {
       const parsed = JSON.parse(cached) as WebsiteCreationWizardState;
-      if (isRestorableWizardState(parsed)) {
-        setState({
-          ...parsed,
-          generationStatus: "idle",
-          currentStep:
-            parsed.currentStep === "loading" || parsed.currentStep === "success"
-              ? "review-confirm"
-              : parsed.currentStep,
-        });
+      if (!isRestorableWizardState(parsed)) {
+        return createInitialWizardState();
       }
+
+      return {
+        ...parsed,
+        generationStatus: "idle",
+        currentStep:
+          parsed.currentStep === "loading" || parsed.currentStep === "success"
+            ? "review-confirm"
+            : parsed.currentStep,
+      };
     } catch {
       window.localStorage.removeItem(WIZARD_STORAGE_KEY);
+      return createInitialWizardState();
     }
-  }, []);
+  });
 
   useEffect(() => {
     window.localStorage.setItem(WIZARD_STORAGE_KEY, JSON.stringify(state));
@@ -245,7 +250,7 @@ export function WebsiteCreationWizard() {
       />
 
       {stepErrors.length > 0 ? (
-        <div className="wizard-error" role="alert" aria-live="assertive">
+        <div className="wizard-error" role="alert">
           {stepErrors.map((error) => (
             <p key={error}>{error}</p>
           ))}

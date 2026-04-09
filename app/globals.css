@@ -198,6 +198,12 @@ a {
   margin-bottom: 0.5rem;
 }
 
+.generation-input-fieldset {
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+
 .generation-readonly {
   opacity: 0.95;
 }
