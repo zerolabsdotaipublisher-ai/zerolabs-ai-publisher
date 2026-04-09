@@ -7,6 +7,7 @@ export const routes = {
   authCallback: "/auth/callback",
   dashboard: "/dashboard",
   createWebsite: "/create",
+  generateWebsite: "/generate",
   profile: "/profile",
   generatedSites: "/generated-sites",
   generatedSite: (id: string) => `/generated-sites/${id}`,
