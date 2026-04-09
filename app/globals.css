@@ -153,6 +153,7 @@ a {
 
 .profile-section,
 .wizard-shell,
+.generation-shell,
 .generated-site-container {
   width: 100%;
   max-width: 64rem;
@@ -171,6 +172,34 @@ a {
   border: 1px solid #e5e7eb;
   border-radius: 0.75rem;
   padding: 1rem;
+}
+
+.generation-shell {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  gap: 1rem;
+}
+
+.generation-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.generation-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.generation-panel .wizard-step-panel {
+  margin-bottom: 0.5rem;
+}
+
+.generation-readonly {
+  opacity: 0.95;
 }
 
 .wizard-header p,
@@ -358,6 +387,14 @@ a {
 
   .wizard-shell {
     padding: 0.75rem;
+  }
+
+  .generation-shell {
+    padding: 0.75rem;
+  }
+
+  .generation-grid {
+    grid-template-columns: 1fr;
   }
 
   .wizard-columns,

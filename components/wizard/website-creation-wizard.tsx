@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { routes } from "@/config/routes";
 import {
   WIZARD_FORM_STEPS,
   WIZARD_STORAGE_KEY,
@@ -8,15 +10,10 @@ import {
   getFormStepIndex,
   getNextFormStep,
   getPreviousFormStep,
-  mapStructureIdToOutputPath,
-  mapWizardInputToGenerationInput,
   mergeWizardInput,
   normalizeList,
   validateReviewStep,
   validateWizardStep,
-  wizardPipelineEndpoints,
-  type ContentGenerationResponse,
-  type StructureGenerationResponse,
   type WebsiteCreationWizardState,
   type WebsiteWizardInput,
   type WizardStepId,
@@ -26,19 +23,10 @@ import { WizardProgress } from "./wizard-progress";
 import { WizardStepper } from "./wizard-stepper";
 import { WizardNavigation } from "./wizard-navigation";
 import { WizardReview } from "./wizard-review";
-import { WizardLoading } from "./wizard-loading";
-import { WizardSuccess } from "./wizard-success";
 import { StepBusinessInfo } from "./steps/step-business-info";
 import { StepContentInput } from "./steps/step-content-input";
 import { StepStyleTheme } from "./steps/step-style-theme";
 import { StepWebsiteType } from "./steps/step-website-type";
-
-const loadingLabels: Record<string, string> = {
-  preparing: "Preparing your input package…",
-  structure: "Generating structure and layout…",
-  content: "Generating content and final metadata…",
-  finalizing: "Finalizing your generated website…",
-};
 
 function splitEscapedPipes(value: string): string[] {
   const segments: string[] = [];
@@ -95,8 +83,8 @@ function isRestorableWizardState(value: unknown): value is WebsiteCreationWizard
 }
 
 export function WebsiteCreationWizard() {
+  const router = useRouter();
   const [state, setState] = useState<WebsiteCreationWizardState>(createInitialWizardState());
-  const [loadingStage, setLoadingStage] = useState<keyof typeof loadingLabels>("preparing");
 
   useEffect(() => {
     const cached = window.localStorage.getItem(WIZARD_STORAGE_KEY);
@@ -110,7 +98,10 @@ export function WebsiteCreationWizard() {
         setState({
           ...parsed,
           generationStatus: "idle",
-          currentStep: parsed.currentStep === "loading" ? "review-confirm" : parsed.currentStep,
+          currentStep:
+            parsed.currentStep === "loading" || parsed.currentStep === "success"
+              ? "review-confirm"
+              : parsed.currentStep,
         });
       }
     } catch {
@@ -119,10 +110,6 @@ export function WebsiteCreationWizard() {
   }, []);
 
   useEffect(() => {
-    if (state.currentStep === "success") {
-      return;
-    }
-
     window.localStorage.setItem(WIZARD_STORAGE_KEY, JSON.stringify(state));
   }, [state]);
 
@@ -130,7 +117,6 @@ export function WebsiteCreationWizard() {
   const currentStepIndex = Math.max(getFormStepIndex(state.currentStep), 0);
 
   const stepErrors = state.stepErrors[state.currentStep] || [];
-  const generationError = state.generationResult?.error;
 
   const servicesText = useMemo(() => state.data.services.join("\n"), [state.data.services]);
   const testimonialsText = useMemo(
@@ -154,8 +140,8 @@ export function WebsiteCreationWizard() {
         ...current.stepErrors,
         [current.currentStep]: undefined,
       },
-      generationResult: current.generationStatus === "error" ? undefined : current.generationResult,
-      generationStatus: current.generationStatus === "error" ? "idle" : current.generationStatus,
+      generationResult: undefined,
+      generationStatus: "idle",
     }));
   }
 
@@ -222,7 +208,7 @@ export function WebsiteCreationWizard() {
     }));
   }
 
-  async function generateWebsite() {
+  function handleOpenGenerationInterface() {
     const errors = validateReviewStep(state.data);
     if (errors.length > 0) {
       setState((current) => ({
@@ -235,190 +221,101 @@ export function WebsiteCreationWizard() {
       return;
     }
 
-    setLoadingStage("preparing");
     setState((current) => ({
       ...current,
       generationStatus: "submitting",
-      currentStep: "loading",
       completedSteps: markStepComplete("review-confirm", current),
-      generationResult: undefined,
     }));
 
-    try {
-      const generationInput = mapWizardInputToGenerationInput(state.data);
-
-      setLoadingStage("structure");
-      const structureResponse = await fetch(wizardPipelineEndpoints.generateStructure, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(generationInput),
-      });
-
-      const structureBody = (await structureResponse.json()) as StructureGenerationResponse;
-      if (!structureResponse.ok || !structureBody.structure?.id) {
-        throw new Error(structureBody.error || structureBody.message || "Structure generation failed.");
-      }
-      const structureId = structureBody.structure.id;
-
-      setLoadingStage("content");
-      const contentResponse = await fetch(wizardPipelineEndpoints.generateContent, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          structureId,
-        }),
-      });
-
-      const contentBody = (await contentResponse.json()) as ContentGenerationResponse;
-      if (!contentResponse.ok) {
-        throw new Error(contentBody.error || contentBody.message || "Content generation failed.");
-      }
-
-      setLoadingStage("finalizing");
-      const generatedSitePath = mapStructureIdToOutputPath(structureId);
-
-      setState((current) => ({
-        ...current,
-        generationStatus: "success",
-        currentStep: "success",
-        completedSteps: markStepComplete("loading", current),
-        generationResult: {
-          structureId,
-          generatedSitePath,
-          completedAt: new Date().toISOString(),
-        },
-      }));
-
-      window.localStorage.removeItem(WIZARD_STORAGE_KEY);
-    } catch (error) {
-      const message =
-        error instanceof TypeError
-          ? "Network issue detected. Check your connection and try again."
-          : error instanceof Error
-            ? error.message
-            : "Generation failed. Please try again.";
-      setState((current) => ({
-        ...current,
-        generationStatus: "error",
-        currentStep: "review-confirm",
-        generationResult: {
-          error: message,
-        },
-      }));
-    }
-  }
-
-  function resetWizard() {
-    setState(createInitialWizardState());
-    setLoadingStage("preparing");
-    window.localStorage.removeItem(WIZARD_STORAGE_KEY);
+    router.push(routes.generateWebsite);
   }
 
   return (
     <WizardShell>
-      {state.currentStep === "loading" ? <WizardLoading stageLabel={loadingLabels[loadingStage]} /> : null}
+      <WizardProgress
+        current={currentStepIndex + 1}
+        total={WIZARD_FORM_STEPS.length}
+        label={currentStepDefinition?.title || "Create website"}
+      />
 
-      {state.currentStep === "success" ? (
-        <WizardSuccess
-          generatedSitePath={state.generationResult?.generatedSitePath}
-          onCreateAnother={resetWizard}
+      <WizardStepper
+        steps={WIZARD_FORM_STEPS}
+        currentStep={state.currentStep}
+        completedSteps={state.completedSteps}
+      />
+
+      {stepErrors.length > 0 ? (
+        <div className="wizard-error" role="alert" aria-live="assertive">
+          {stepErrors.map((error) => (
+            <p key={error}>{error}</p>
+          ))}
+        </div>
+      ) : null}
+
+      {state.currentStep === "website-type" ? (
+        <StepWebsiteType
+          value={state.data.websiteType}
+          onChange={(value) => updateData({ websiteType: value })}
         />
       ) : null}
 
-      {state.currentStep !== "loading" && state.currentStep !== "success" ? (
-        <>
-          <WizardProgress
-            current={currentStepIndex + 1}
-            total={WIZARD_FORM_STEPS.length}
-            label={currentStepDefinition?.title || "Create website"}
-          />
-
-          <WizardStepper
-            steps={WIZARD_FORM_STEPS}
-            currentStep={state.currentStep}
-            completedSteps={state.completedSteps}
-          />
-
-          {stepErrors.length > 0 ? (
-            <div className="wizard-error" role="alert">
-              {stepErrors.map((error) => (
-                <p key={error}>{error}</p>
-              ))}
-            </div>
-          ) : null}
-
-          {generationError ? (
-            <div className="wizard-error" role="alert">
-              <p>{generationError}</p>
-            </div>
-          ) : null}
-
-          {state.currentStep === "website-type" ? (
-            <StepWebsiteType
-              value={state.data.websiteType}
-              onChange={(value) => updateData({ websiteType: value })}
-            />
-          ) : null}
-
-          {state.currentStep === "business-info" ? (
-            <StepBusinessInfo
-              data={state.data}
-              servicesText={servicesText}
-              onFieldChange={updateData}
-              onServicesTextChange={(value) => updateData({ services: normalizeList(value.split("\n")) })}
-            />
-          ) : null}
-
-          {state.currentStep === "style-theme" ? (
-            <StepStyleTheme data={state.data} onFieldChange={updateData} />
-          ) : null}
-
-          {state.currentStep === "content-input" ? (
-            <StepContentInput
-              data={state.data}
-              testimonialsText={testimonialsText}
-              socialLinksText={socialLinksText}
-              constraintsText={constraintsText}
-              onFieldChange={updateData}
-              onTestimonialsChange={(value) => updateData({ testimonials: parseTestimonials(value) })}
-              onSocialLinksChange={(value) =>
-                updateData({
-                  contactInfo: {
-                    ...state.data.contactInfo,
-                    socialLinks: normalizeList(value.split("\n")),
-                  },
-                })
-              }
-              onConstraintsChange={(value) => updateData({ constraints: normalizeList(value.split("\n")) })}
-            />
-          ) : null}
-
-          {state.currentStep === "review-confirm" ? (
-            <>
-              <WizardReview
-                data={state.data}
-                onEditStep={(stepId) => setState((current) => ({ ...current, currentStep: stepId }))}
-                onGenerate={generateWebsite}
-                isSubmitting={state.generationStatus === "submitting"}
-              />
-
-              <div className="wizard-navigation">
-                <button type="button" onClick={handleBack}>
-                  Back
-                </button>
-              </div>
-            </>
-          ) : (
-            <WizardNavigation
-              canBack={currentStepIndex > 0}
-              canSkip={Boolean(currentStepDefinition?.skippable)}
-              onBack={handleBack}
-              onSkip={handleSkip}
-              onNext={handleNext}
-            />
-          )}
-        </>
+      {state.currentStep === "business-info" ? (
+        <StepBusinessInfo
+          data={state.data}
+          servicesText={servicesText}
+          onFieldChange={updateData}
+          onServicesTextChange={(value) => updateData({ services: normalizeList(value.split("\n")) })}
+        />
       ) : null}
+
+      {state.currentStep === "style-theme" ? (
+        <StepStyleTheme data={state.data} onFieldChange={updateData} />
+      ) : null}
+
+      {state.currentStep === "content-input" ? (
+        <StepContentInput
+          data={state.data}
+          testimonialsText={testimonialsText}
+          socialLinksText={socialLinksText}
+          constraintsText={constraintsText}
+          onFieldChange={updateData}
+          onTestimonialsChange={(value) => updateData({ testimonials: parseTestimonials(value) })}
+          onSocialLinksChange={(value) =>
+            updateData({
+              contactInfo: {
+                ...state.data.contactInfo,
+                socialLinks: normalizeList(value.split("\n")),
+              },
+            })
+          }
+          onConstraintsChange={(value) => updateData({ constraints: normalizeList(value.split("\n")) })}
+        />
+      ) : null}
+
+      {state.currentStep === "review-confirm" ? (
+        <>
+          <WizardReview
+            data={state.data}
+            onEditStep={(stepId) => setState((current) => ({ ...current, currentStep: stepId }))}
+            onGenerate={handleOpenGenerationInterface}
+            isSubmitting={state.generationStatus === "submitting"}
+          />
+
+          <div className="wizard-navigation">
+            <button type="button" onClick={handleBack}>
+              Back
+            </button>
+          </div>
+        </>
+      ) : (
+        <WizardNavigation
+          canBack={currentStepIndex > 0}
+          canSkip={Boolean(currentStepDefinition?.skippable)}
+          onBack={handleBack}
+          onSkip={handleSkip}
+          onNext={handleNext}
+        />
+      )}
     </WizardShell>
   );
 }
