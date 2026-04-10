@@ -28,6 +28,7 @@ export interface WebsitePreviewModel {
   permissions: PreviewPermissions;
   generatedSitePath: string;
   previewPath: string;
+  routePath: string;
   sharedPreviewPath?: string;
   sharedPreviewExpiresAt?: string;
   refreshKey?: string;

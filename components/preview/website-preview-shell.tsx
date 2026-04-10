@@ -1,6 +1,4 @@
-"use client";
-
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { routes } from "@/config/routes";
 import { Renderer } from "@/components/generated-site/renderer";
 import {
@@ -8,7 +6,6 @@ import {
   getPreviewDeviceClass,
   getPreviewRendererKey,
   PREVIEW_QUERY_KEYS,
-  updatePreviewQuery,
   type PreviewDeviceMode,
   type WebsitePreviewModel,
 } from "@/lib/preview";
@@ -22,23 +19,33 @@ interface WebsitePreviewShellProps {
 }
 
 export function WebsitePreviewShell({ model }: WebsitePreviewShellProps) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const pageSlug = model.currentPageSlug;
+  const currentDeviceMode = model.currentDeviceMode;
 
-  function pushQuery(changes: Partial<Record<(typeof PREVIEW_QUERY_KEYS)[keyof typeof PREVIEW_QUERY_KEYS], string | undefined>>) {
-    const query = updatePreviewQuery(new URLSearchParams(searchParams.toString()), changes);
-    router.push(query ? `${pathname}?${query}` : pathname);
+  function buildHref(changes: Partial<Record<(typeof PREVIEW_QUERY_KEYS)[keyof typeof PREVIEW_QUERY_KEYS], string | undefined>>): string {
+    const query = new URLSearchParams();
+    const nextPage = changes[PREVIEW_QUERY_KEYS.page] || pageSlug;
+    const nextDevice = changes[PREVIEW_QUERY_KEYS.device] || currentDeviceMode;
+    const nextRefresh = changes[PREVIEW_QUERY_KEYS.refresh] || model.refreshKey;
+
+    query.set(PREVIEW_QUERY_KEYS.page, nextPage);
+    query.set(PREVIEW_QUERY_KEYS.device, nextDevice);
+    if (nextRefresh) {
+      query.set(PREVIEW_QUERY_KEYS.refresh, nextRefresh);
+    }
+
+    return `${model.routePath}?${query.toString()}`;
   }
 
-  function replaceQuery(changes: Partial<Record<(typeof PREVIEW_QUERY_KEYS)[keyof typeof PREVIEW_QUERY_KEYS], string | undefined>>) {
-    const query = updatePreviewQuery(new URLSearchParams(searchParams.toString()), changes);
-    router.replace(query ? `${pathname}?${query}` : pathname);
-  }
+  const pageLinks = Object.fromEntries(
+    model.pages.map((page) => [page.slug, buildHref({ [PREVIEW_QUERY_KEYS.page]: page.slug })]),
+  );
 
-  const pageSlug = searchParams.get(PREVIEW_QUERY_KEYS.page) || model.currentPageSlug;
-  const currentDeviceMode = (searchParams.get(PREVIEW_QUERY_KEYS.device) || model.currentDeviceMode) as PreviewDeviceMode;
-  const refreshKey = searchParams.get(PREVIEW_QUERY_KEYS.refresh) || model.refreshKey;
+  const deviceLinks: Record<PreviewDeviceMode, string> = {
+    desktop: buildHref({ [PREVIEW_QUERY_KEYS.device]: "desktop" }),
+    tablet: buildHref({ [PREVIEW_QUERY_KEYS.device]: "tablet" }),
+    mobile: buildHref({ [PREVIEW_QUERY_KEYS.device]: "mobile" }),
+  };
 
   return (
     <div className="preview-shell">
@@ -50,28 +57,24 @@ export function WebsitePreviewShell({ model }: WebsitePreviewShellProps) {
             <PreviewPageNavigation
               pages={model.pages}
               currentPageSlug={pageSlug}
-              onSelectPage={(nextPageSlug) => pushQuery({ [PREVIEW_QUERY_KEYS.page]: nextPageSlug })}
+              pageLinks={pageLinks}
             />
             <PreviewDeviceSwitcher
               value={currentDeviceMode}
-              onChange={(mode) => pushQuery({ [PREVIEW_QUERY_KEYS.device]: mode })}
+              links={deviceLinks}
             />
           </>
         }
         actions={
           <>
-            <button
-              type="button"
+            <Link
+              href={buildHref({
+                [PREVIEW_QUERY_KEYS.refresh]: createPreviewRefreshKey(),
+              })}
               className="wizard-button-secondary"
-              onClick={() =>
-                replaceQuery({
-                  [PREVIEW_QUERY_KEYS.refresh]: createPreviewRefreshKey(),
-                })
-              }
-              disabled={!model.permissions.canRefresh}
             >
               Refresh preview
-            </button>
+            </Link>
             <PreviewShareActions
               structureId={model.structure.id}
               canShare={model.permissions.canShare}
@@ -100,7 +103,7 @@ export function WebsitePreviewShell({ model }: WebsitePreviewShellProps) {
       >
         <div className="preview-canvas-frame">
           <Renderer
-            key={getPreviewRendererKey(pageSlug, currentDeviceMode, refreshKey)}
+            key={getPreviewRendererKey(pageSlug, currentDeviceMode, model.refreshKey)}
             structure={model.structure}
             pageSlug={pageSlug}
           />

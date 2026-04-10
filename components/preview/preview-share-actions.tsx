@@ -32,11 +32,14 @@ export function PreviewShareActions({
     return new URL(sharedPreviewPath, window.location.origin).toString();
   }, [shareUrl, sharedPreviewPath]);
 
+  const resolvedExpiresAt = expiresAt || sharedPreviewExpiresAt;
+
   async function copyToClipboard(value: string) {
     try {
       await navigator.clipboard.writeText(value);
+      setError(undefined);
     } catch {
-      // no-op
+      setError("Copy failed. Please copy the share link manually.");
     }
   }
 
@@ -86,8 +89,8 @@ export function PreviewShareActions({
         </button>
       ) : null}
       {resolvedShareUrl ? <p className="preview-share-caption">{resolvedShareUrl}</p> : null}
-      {expiresAt || sharedPreviewExpiresAt ? (
-        <p className="preview-share-caption">Expires: {new Date(expiresAt || sharedPreviewExpiresAt || "").toLocaleString()}</p>
+      {resolvedExpiresAt ? (
+        <p className="preview-share-caption">Expires: {new Date(resolvedExpiresAt).toLocaleString()}</p>
       ) : null}
       {error ? <p className="preview-share-caption">{error}</p> : null}
     </div>

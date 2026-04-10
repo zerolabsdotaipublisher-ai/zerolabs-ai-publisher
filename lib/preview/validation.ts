@@ -19,5 +19,5 @@ export function sanitizePreviewPageSlug(
     return value;
   }
 
-  return structure.pages[0]?.slug || "/";
+  return structure.pages[0]?.slug || "";
 }

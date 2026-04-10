@@ -5,8 +5,8 @@ import { config, routes } from "@/config";
 import type { PreviewShareResult, PreviewShareTokenPayload } from "./types";
 
 const TOKEN_DELIMITER = ".";
-const DEFAULT_PREVIEW_SHARE_TTL_MINUTES = 60;
-const MAX_PREVIEW_SHARE_TTL_MINUTES = 24 * 60;
+const DEFAULT_PREVIEW_SHARE_TTL_IN_MINUTES = 60;
+const MAX_PREVIEW_SHARE_TTL_IN_MINUTES = 1440;
 
 function toBase64Url(value: string): string {
   return Buffer.from(value, "utf8").toString("base64url");
@@ -37,9 +37,9 @@ function safeEqual(left: string, right: string): boolean {
 export function createPreviewShareToken(
   structureId: string,
   userId: string,
-  ttlMinutes: number = DEFAULT_PREVIEW_SHARE_TTL_MINUTES,
+  ttlMinutes: number = DEFAULT_PREVIEW_SHARE_TTL_IN_MINUTES,
 ): PreviewShareResult {
-  const boundedTtlMinutes = Math.max(1, Math.min(ttlMinutes, MAX_PREVIEW_SHARE_TTL_MINUTES));
+  const boundedTtlMinutes = Math.max(1, Math.min(ttlMinutes, MAX_PREVIEW_SHARE_TTL_IN_MINUTES));
   const expiresAt = new Date(Date.now() + boundedTtlMinutes * 60_000);
   const payload: PreviewShareTokenPayload = {
     sid: structureId,

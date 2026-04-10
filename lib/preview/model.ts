@@ -41,6 +41,10 @@ export function createPreviewModel({
     },
     generatedSitePath: routes.generatedSite(structure.id),
     previewPath: routes.previewSite(structure.id),
+    routePath:
+      accessLevel === "shared"
+        ? (sharedPreviewPath ?? routes.previewSite(structure.id))
+        : routes.previewSite(structure.id),
     sharedPreviewPath,
     sharedPreviewExpiresAt,
     refreshKey,

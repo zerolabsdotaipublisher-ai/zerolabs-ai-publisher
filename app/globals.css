@@ -435,9 +435,23 @@ a {
   gap: 0.5rem;
 }
 
-.preview-control-buttons button.is-active {
+.preview-control-buttons a,
+.preview-control-buttons span,
+.preview-control-buttons button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  padding: 0.45rem 0.7rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.preview-control-buttons .is-active {
   background: #111827;
   color: #fff;
+  border-color: #111827;
 }
 
 .preview-share-actions {
