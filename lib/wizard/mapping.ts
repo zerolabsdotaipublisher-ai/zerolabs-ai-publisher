@@ -48,7 +48,7 @@ export function mapWizardInputToGenerationInput(
 }
 
 export function mapStructureIdToOutputPath(structureId: string): string {
-  return routes.generatedSite(structureId);
+  return routes.previewSite(structureId);
 }
 
 export interface StructureGenerationResponse {

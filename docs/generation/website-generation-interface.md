@@ -17,7 +17,7 @@ The interface provides:
 1. Input area with editable wizard-aligned fields.
 2. Action area for generate, retry, edit, reset, preview, and return-to-wizard.
 3. Status area with idle, in-progress, success, and failure states.
-4. Output handoff via generated-site preview link (`/generated-sites/{id}`).
+4. Output handoff via website preview link (`/preview/{id}`).
 
 ## State model
 
