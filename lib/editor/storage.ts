@@ -72,7 +72,12 @@ function toSeoPackage(structure: WebsiteStructure): WebsiteSeoPackage {
 }
 
 export async function loadEditorStructure(structureId: string, userId: string): Promise<WebsiteStructure | null> {
-  return getWebsiteStructure(structureId, userId);
+  const structure = await getWebsiteStructure(structureId, userId);
+  if (!structure || structure.management?.deletedAt) {
+    return null;
+  }
+
+  return structure;
 }
 
 export interface SaveEditorStructureResult {
@@ -83,7 +88,7 @@ export interface SaveEditorStructureResult {
 
 export async function saveEditorStructureDraft(userId: string, structure: WebsiteStructure): Promise<SaveEditorStructureResult> {
   const existing = await getWebsiteStructure(structure.id, userId);
-  if (!existing) {
+  if (!existing || existing.management?.deletedAt) {
     return {
       validationErrors: [],
       error: "Website structure not found.",
