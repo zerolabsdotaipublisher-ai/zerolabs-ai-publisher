@@ -11,6 +11,8 @@ export const routes = {
   preview: "/preview",
   previewSite: (id: string) => `/preview/${id}`,
   previewShared: (token: string) => `/preview/share/${token}`,
+  editor: "/editor",
+  editorSite: (id: string) => `/editor/${id}`,
   profile: "/profile",
   generatedSites: "/generated-sites",
   generatedSite: (id: string) => `/generated-sites/${id}`,

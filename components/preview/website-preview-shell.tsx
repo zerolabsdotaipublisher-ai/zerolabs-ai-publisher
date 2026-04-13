@@ -84,6 +84,9 @@ export function WebsitePreviewShell({ model }: WebsitePreviewShellProps) {
           </>
         }
         links={[
+          ...(model.accessLevel === "owner"
+            ? [{ label: "Open editor", href: routes.editorSite(model.structure.id) }]
+            : []),
           {
             label: "Open generated-site route",
             href: model.generatedSitePath,
