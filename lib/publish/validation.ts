@@ -1,7 +1,11 @@
 import type { WebsiteStructure } from "@/lib/ai/structure";
 import type { PublishValidationResult } from "./types";
 
-// Valid examples: "/", "/about", "/about/team", "/pricing-plans".
+// Rules:
+// - starts with "/"
+// - path segments are lowercase letters/digits with optional internal hyphens
+// - supports nested paths (for example "/about/team")
+// - home page "/" is valid
 const slugPattern = /^\/(?:[a-z0-9]+(?:-[a-z0-9]+)*)?(?:\/[a-z0-9]+(?:-[a-z0-9]+)*)*$/;
 
 export function validatePublishEligibility(structure: WebsiteStructure): PublishValidationResult {

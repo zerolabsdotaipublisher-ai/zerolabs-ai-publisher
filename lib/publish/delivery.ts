@@ -4,11 +4,12 @@ import { buildLivePath, buildLiveUrl } from "./urls";
 
 export async function deliverPublishedWebsite(structure: WebsiteStructure): Promise<PublishDeliveryResult> {
   const deliveredAt = new Date().toISOString();
+  const deploymentId = `deploy_${structure.id}_${crypto.randomUUID()}`;
 
   return {
     liveUrl: buildLiveUrl(structure.id),
     livePath: buildLivePath(structure.id),
-    deploymentId: `deploy_${structure.id}_${Date.now().toString(36)}`,
+    deploymentId,
     deliveredAt,
   };
 }

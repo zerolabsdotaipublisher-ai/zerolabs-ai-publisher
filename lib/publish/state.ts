@@ -2,7 +2,14 @@ import type { WebsiteStructure, WebsiteStructureStatus } from "@/lib/ai/structur
 import { detectPublicationState } from "./detection";
 import { getPublicationMetadata, withPublicationMetadata } from "./model";
 
-function resolveStructureStatus(state: "draft" | "published"): WebsiteStructureStatus {
+function resolveStructureStatus(
+  currentStatus: WebsiteStructureStatus,
+  state: "draft" | "published",
+): WebsiteStructureStatus {
+  if (currentStatus === "archived") {
+    return "archived";
+  }
+
   return state;
 }
 
@@ -20,7 +27,7 @@ export function markDraftUpdatedForPublication(structure: WebsiteStructure, upda
   return withPublicationMetadata(
     {
       ...structure,
-      status: resolveStructureStatus(detection.neverPublished ? "draft" : "published"),
+      status: resolveStructureStatus(structure.status, detection.neverPublished ? "draft" : "published"),
     },
     {
       ...publication,
@@ -50,7 +57,7 @@ export function markPublished(
   return withPublicationMetadata(
     {
       ...structure,
-      status: resolveStructureStatus("published"),
+      status: resolveStructureStatus(structure.status, "published"),
     },
     {
       ...publication,
