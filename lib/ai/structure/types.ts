@@ -261,6 +261,19 @@ export interface WebsiteStructure {
   contentVariations?: ContentVariation[];
   /** Generated page layout model layered on top of structure. */
   layout?: WebsiteLayoutModel;
+  /** Publication lifecycle metadata owned by the product app. */
+  publication?: {
+    state: "draft" | "publishing" | "published" | "update_pending" | "update_failed" | "unpublished";
+    publishedVersion?: number;
+    liveUrl?: string;
+    livePath?: string;
+    firstPublishedAt?: string;
+    lastPublishedAt?: string;
+    lastDraftUpdatedAt?: string;
+    lastPublishAttemptAt?: string;
+    lastUpdatedAt?: string;
+    lastError?: string;
+  };
   /** Original input that produced this structure. */
   sourceInput: WebsiteGenerationInput;
   /** Lifecycle status. */

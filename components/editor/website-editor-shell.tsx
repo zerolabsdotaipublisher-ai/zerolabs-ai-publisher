@@ -3,6 +3,7 @@
 import { useMemo, useReducer } from "react";
 import type { LayoutVariantName } from "@/lib/ai/layout";
 import type { SectionType, StylePreset, TonePreset, WebsiteStructure } from "@/lib/ai/structure";
+import { PublishControls } from "@/components/publish/publish-controls";
 import {
   addSectionToPage,
   buildPreviewStructureFromDraft,
@@ -296,6 +297,7 @@ export function WebsiteEditorShell({ initialStructure, previewPath, generatedSit
 
       <EditorUnsavedWarning dirty={state.dirty} />
       <EditorErrorState message={state.saveStatus === "error" ? state.saveMessage : undefined} validationErrors={state.validationErrors} />
+      <PublishControls structure={state.original} hasUnsavedChanges={state.dirty} context="editor" />
 
       <div className="editor-layout">
         <EditorSidebar

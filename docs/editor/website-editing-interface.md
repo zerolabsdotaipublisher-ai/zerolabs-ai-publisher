@@ -29,7 +29,7 @@ Defined in `lib/editor/boundaries.ts`:
   - `styleConfig.tone`, `styleConfig.style`
   - `layout.pages[].templateName`, `layout.pages[].metadata.themeMode`
 - System-managed:
-  - `id`, `userId`, `generatedAt`, `updatedAt`, `version`, `status`, `sourceInput`, `contentVariations`
+  - `id`, `userId`, `generatedAt`, `updatedAt`, `version`, `status`, `publication`, `sourceInput`, `contentVariations`
 
 ## Architecture
 

@@ -7,6 +7,7 @@ import type { WebsiteSeoPackage } from "@/lib/ai/seo";
 import { getWebsiteStructure, updateWebsiteStructure } from "@/lib/ai/structure";
 import type { WebsitePage, WebsiteStructure } from "@/lib/ai/structure";
 import { logger } from "@/lib/observability";
+import { markDraftUpdatedForPublication } from "@/lib/publish";
 import { applySystemManagedBoundaries } from "./boundaries";
 import type { EditorValidationError } from "./types";
 import { validateEditorDraft } from "./validation";
@@ -91,12 +92,13 @@ export async function saveEditorStructureDraft(userId: string, structure: Websit
 
   const now = new Date().toISOString();
   const draft = applySystemManagedBoundaries(existing, structure);
-  const withAuditFields: WebsiteStructure = {
+  const withAuditFieldsBase: WebsiteStructure = {
     ...draft,
     version: existing.version + 1,
     updatedAt: now,
-    status: "draft",
+    status: existing.status,
   };
+  const withAuditFields = markDraftUpdatedForPublication(withAuditFieldsBase, now);
 
   const validationErrors = validateEditorDraft(withAuditFields);
   if (validationErrors.length > 0) {

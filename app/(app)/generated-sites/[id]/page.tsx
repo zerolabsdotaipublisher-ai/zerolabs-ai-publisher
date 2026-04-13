@@ -4,6 +4,8 @@ import { getServerUser } from "@/lib/supabase/server";
 import { getWebsiteStructure } from "@/lib/ai/structure/storage";
 import { getWebsiteSeoMetadata } from "@/lib/ai/seo";
 import { Renderer } from "@/components/generated-site/renderer";
+import { PublishStatusBadge } from "@/components/publish/publish-status-badge";
+import { detectPublicationState } from "@/lib/publish";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -80,6 +82,7 @@ export default async function GeneratedSitePage({ params, searchParams }: PagePr
   if (!structure) {
     notFound();
   }
+  const publication = detectPublicationState(structure);
 
   return (
     <div className="generated-site-container">
@@ -87,6 +90,7 @@ export default async function GeneratedSitePage({ params, searchParams }: PagePr
         <p className="generated-site-info">
           <span>{structure.siteTitle}</span>
           <span className="generated-site-status">{structure.status}</span>
+          <PublishStatusBadge state={publication.state} />
           <span className="generated-site-version">v{structure.version}</span>
         </p>
       </div>

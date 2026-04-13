@@ -29,6 +29,7 @@ export const editorBoundaries: EditableBoundaryDefinition = {
     "updatedAt",
     "version",
     "status",
+    "publication",
     "sourceInput",
     "contentVariations",
   ],
@@ -46,6 +47,7 @@ export function applySystemManagedBoundaries(base: WebsiteStructure, draft: Webs
     sourceInput: base.sourceInput,
     generatedAt: base.generatedAt,
     status: base.status,
+    publication: base.publication,
   };
 }
 

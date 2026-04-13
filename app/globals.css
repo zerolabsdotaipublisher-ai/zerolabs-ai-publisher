@@ -655,6 +655,117 @@ a {
   font-size: 0.875rem;
 }
 
+.publish-controls {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.publish-controls-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.publish-status-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.8rem;
+}
+
+.publish-status-published {
+  border-color: #166534;
+  color: #166534;
+}
+
+.publish-status-update_pending,
+.publish-status-unpublished {
+  border-color: #92400e;
+  color: #92400e;
+}
+
+.publish-status-update_failed {
+  border-color: #b91c1c;
+  color: #b91c1c;
+}
+
+.publish-status-publishing {
+  border-color: #1d4ed8;
+  color: #1d4ed8;
+}
+
+.publish-controls-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.publish-warning {
+  color: #92400e;
+  font-size: 0.875rem;
+}
+
+.publish-validation-errors {
+  color: #991b1b;
+  padding-left: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.publish-loading-state {
+  color: #1d4ed8;
+}
+
+.publish-success-state {
+  color: #166534;
+}
+
+.publish-error-state {
+  border: 1px solid #fca5a5;
+  border-radius: 0.5rem;
+  background: #fef2f2;
+  color: #991b1b;
+  padding: 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.publish-confirmation {
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  background: #f9fafb;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.publish-confirmation-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.publish-live-link-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+}
+
 @media (max-width: 768px) {
   .app-page {
     padding: 1rem;
@@ -725,6 +836,16 @@ a {
   .editor-toolbar-actions button {
     width: 100%;
     text-align: center;
+  }
+
+  .publish-controls-actions,
+  .publish-confirmation-actions {
+    width: 100%;
+  }
+
+  .publish-controls-actions button,
+  .publish-confirmation-actions button {
+    width: 100%;
   }
 
   .editor-layout {
