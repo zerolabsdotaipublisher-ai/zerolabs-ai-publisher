@@ -26,7 +26,7 @@ export async function generateMetadata({
   }
 
   const structure = await getWebsiteStructure(id, user.id);
-  if (!structure || !structure.pages.length) {
+  if (!structure || structure.management?.deletedAt || !structure.pages.length) {
     return {};
   }
 
@@ -79,7 +79,7 @@ export default async function GeneratedSitePage({ params, searchParams }: PagePr
 
   const structure = await getWebsiteStructure(id, user.id);
 
-  if (!structure) {
+  if (!structure || structure.management?.deletedAt) {
     notFound();
   }
   const publication = detectPublicationState(structure);

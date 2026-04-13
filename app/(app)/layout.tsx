@@ -15,6 +15,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         <nav className="app-nav">
           <Link href={routes.dashboard}>Dashboard</Link>
           <Link href={routes.createWebsite}>Create website</Link>
+          <Link href={routes.websites}>Websites</Link>
           <Link href={routes.profile}>Profile</Link>
           <span className="app-nav-user">{user.email}</span>
           <SignOutButton />

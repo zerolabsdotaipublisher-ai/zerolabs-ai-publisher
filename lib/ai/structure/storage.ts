@@ -85,6 +85,8 @@ export async function updateWebsiteStructure(
   const { error } = await supabase
     .from("website_structures")
     .update({
+      site_title: structure.siteTitle,
+      tagline: structure.tagline,
       structure,
       source_input: structure.sourceInput,
       status: structure.status,

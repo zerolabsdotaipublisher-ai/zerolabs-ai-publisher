@@ -7,7 +7,12 @@ export async function getOwnedPreviewStructure(
   structureId: string,
   userId: string,
 ): Promise<WebsiteStructure | null> {
-  return getWebsiteStructure(structureId, userId);
+  const structure = await getWebsiteStructure(structureId, userId);
+  if (!structure || structure.management?.deletedAt) {
+    return null;
+  }
+
+  return structure;
 }
 
 export interface SharedPreviewAccess {
@@ -23,7 +28,7 @@ export async function resolveSharedPreviewAccess(token: string): Promise<SharedP
   }
 
   const structure = await getWebsiteStructure(payload.sid, payload.uid);
-  if (!structure) {
+  if (!structure || structure.management?.deletedAt) {
     return null;
   }
 

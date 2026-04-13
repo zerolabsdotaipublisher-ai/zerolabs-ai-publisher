@@ -11,6 +11,7 @@ export default async function DashboardPage() {
       <p>Signed in as {user?.email}</p>
       <p>Ready to generate a new website?</p>
       <Link href={routes.createWebsite}>Create website</Link>
+      <Link href={routes.websites}>Manage websites</Link>
     </section>
   );
 }

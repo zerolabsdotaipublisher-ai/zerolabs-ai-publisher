@@ -274,6 +274,14 @@ export interface WebsiteStructure {
     lastUpdatedAt?: string;
     lastError?: string;
   };
+  /** Product-owned management metadata for dashboard/listing and deletion workflows. */
+  management?: {
+    displayName?: string;
+    description?: string;
+    deletedAt?: string;
+    deletedBy?: string;
+    deletionState?: "active" | "deleting" | "deleted";
+  };
   /** Original input that produced this structure. */
   sourceInput: WebsiteGenerationInput;
   /** Lifecycle status. */

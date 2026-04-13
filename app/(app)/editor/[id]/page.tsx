@@ -13,7 +13,7 @@ export default async function WebsiteEditorPage({ params }: PageProps) {
   const user = await requireUser(routes.editorSite(id));
   const structure = await getWebsiteStructure(id, user.id);
 
-  if (!structure) {
+  if (!structure || structure.management?.deletedAt) {
     notFound();
   }
 
