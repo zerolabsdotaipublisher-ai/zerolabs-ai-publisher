@@ -9,6 +9,13 @@ function resolveStructureStatus(state: "draft" | "published"): WebsiteStructureS
 export function markDraftUpdatedForPublication(structure: WebsiteStructure, updatedAt: string): WebsiteStructure {
   const publication = getPublicationMetadata(structure);
   const detection = detectPublicationState(structure);
+  let nextState = publication.state;
+
+  if (detection.neverPublished) {
+    nextState = "draft";
+  } else if (detection.hasUnpublishedChanges) {
+    nextState = "update_pending";
+  }
 
   return withPublicationMetadata(
     {
@@ -17,11 +24,7 @@ export function markDraftUpdatedForPublication(structure: WebsiteStructure, upda
     },
     {
       ...publication,
-      state: detection.neverPublished
-        ? "draft"
-        : detection.hasUnpublishedChanges
-          ? "update_pending"
-          : publication.state,
+      state: nextState,
       lastDraftUpdatedAt: updatedAt,
     },
   );

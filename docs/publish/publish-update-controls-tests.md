@@ -22,7 +22,7 @@ Validate publication lifecycle state, controls, validation, permissions, deliver
    - Verify publish action is blocked with unsaved warning
 
 4. **Validation blocked**
-   - Create invalid draft (for example invalid slug or missing visible section)
+   - Create invalid draft (for example, invalid slug or missing visible section)
    - Verify publish action is blocked and validation errors render
 
 5. **Publish failure and retry**

@@ -1,6 +1,7 @@
 import type { WebsiteStructure } from "@/lib/ai/structure";
 import type { PublishValidationResult } from "./types";
 
+// Valid examples: "/", "/about", "/about/team", "/pricing-plans".
 const slugPattern = /^\/(?:[a-z0-9]+(?:-[a-z0-9]+)*)?(?:\/[a-z0-9]+(?:-[a-z0-9]+)*)*$/;
 
 export function validatePublishEligibility(structure: WebsiteStructure): PublishValidationResult {

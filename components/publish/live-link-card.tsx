@@ -14,7 +14,10 @@ function formatDate(value?: string): string {
     return "—";
   }
 
-  return parsed.toLocaleString();
+  return parsed.toLocaleString("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
 }
 
 export function LiveLinkCard({ liveUrl, lastPublishedAt, lastDraftUpdatedAt }: LiveLinkCardProps) {

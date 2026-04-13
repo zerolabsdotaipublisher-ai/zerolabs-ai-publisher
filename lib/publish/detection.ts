@@ -2,13 +2,18 @@ import type { WebsiteStructure } from "@/lib/ai/structure";
 import { getPublicationMetadata } from "./model";
 import type { PublicationDetection, PublicationState } from "./types";
 
+function hasUnpublishedSavedChanges(structure: WebsiteStructure): boolean {
+  const publication = getPublicationMetadata(structure);
+  const hasPublishedVersion = typeof publication.publishedVersion === "number";
+  const publishedVersion = publication.publishedVersion ?? 0;
+
+  return hasPublishedVersion ? structure.version > publishedVersion : false;
+}
+
 function deriveState(structure: WebsiteStructure): PublicationState {
   const publication = getPublicationMetadata(structure);
   const hasPublishedVersion = typeof publication.publishedVersion === "number";
-  const hasUnpublishedChanges =
-    hasPublishedVersion && publication.publishedVersion !== undefined
-      ? structure.version > publication.publishedVersion
-      : false;
+  const hasUnpublishedChanges = hasUnpublishedSavedChanges(structure);
 
   if (publication.state === "publishing") {
     return "publishing";
@@ -37,10 +42,7 @@ export function detectPublicationState(structure: WebsiteStructure): Publication
   const publication = getPublicationMetadata(structure);
   const state = deriveState(structure);
   const hasPublishedVersion = typeof publication.publishedVersion === "number";
-  const hasUnpublishedChanges =
-    hasPublishedVersion && publication.publishedVersion !== undefined
-      ? structure.version > publication.publishedVersion
-      : false;
+  const hasUnpublishedChanges = hasUnpublishedSavedChanges(structure);
 
   return {
     state,

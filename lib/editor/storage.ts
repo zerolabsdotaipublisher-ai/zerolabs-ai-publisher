@@ -98,6 +98,8 @@ export async function saveEditorStructureDraft(userId: string, structure: Websit
     updatedAt: now,
     status: existing.status,
   };
+  // Publication metadata is recomputed after version/timestamp updates so we can
+  // detect saved-but-unpublished draft changes for publish controls.
   const withAuditFields = markDraftUpdatedForPublication(withAuditFieldsBase, now);
 
   const validationErrors = validateEditorDraft(withAuditFields);

@@ -143,7 +143,7 @@ export function PublishControls({ structure, hasUnsavedChanges = false, context 
     void sendPublishRequest(action);
   }
 
-  const controlsDisabled = loading || blockedByUnsaved || blockedByValidation || blockedBecauseNoUpdates;
+  const publishButtonDisabled = loading || blockedByUnsaved || blockedByValidation || blockedBecauseNoUpdates;
 
   return (
     <section className="publish-controls" aria-label="Publish controls">
@@ -162,7 +162,7 @@ export function PublishControls({ structure, hasUnsavedChanges = false, context 
       ) : null}
 
       <div className="publish-controls-actions">
-        <button type="button" onClick={handleOpenConfirmation} disabled={controlsDisabled}>
+        <button type="button" onClick={handleOpenConfirmation} disabled={publishButtonDisabled}>
           {loading ? "Processing…" : buttonLabel}
         </button>
       </div>
