@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { routes } from "@/config/routes";
 import { Renderer } from "@/components/generated-site/renderer";
+import { PublishControls } from "@/components/publish/publish-controls";
 import {
   createPreviewRefreshKey,
   getPreviewDeviceClass,
@@ -96,6 +97,9 @@ export function WebsitePreviewShell({ model }: WebsitePreviewShellProps) {
             : []),
         ]}
       />
+      {model.accessLevel === "owner" ? (
+        <PublishControls structure={model.structure} context="preview" />
+      ) : null}
 
       <div
         className={`preview-canvas ${getPreviewDeviceClass(currentDeviceMode)}`}

@@ -9,6 +9,11 @@ const allowedEvents = new Set([
   "generation_retry_clicked",
   "generation_preview_opened",
   "generation_edit_inputs_clicked",
+  "publish_started",
+  "publish_completed",
+  "publish_failed",
+  "publish_retry_clicked",
+  "update_completed",
 ]);
 
 interface EventBody {
