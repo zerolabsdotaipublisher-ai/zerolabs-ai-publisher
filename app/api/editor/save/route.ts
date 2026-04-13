@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import type { WebsiteStructure } from "@/lib/ai/structure";
-import { saveEditorStructureDraft } from "@/lib/editor";
+import { saveEditorStructureDraft } from "@/lib/editor/storage";
 import { getServerUser } from "@/lib/supabase/server";
 
 interface SaveEditorBody {

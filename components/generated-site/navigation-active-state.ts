@@ -1,5 +1,5 @@
-import { isNavigationItemActive } from "@/lib/ai/navigation";
-import type { NavigationItem } from "@/lib/ai/navigation";
+import { isNavigationItemActive } from "@/lib/ai/navigation/state";
+import type { NavigationItem } from "@/lib/ai/navigation/types";
 
 export interface NavigationItemState extends NavigationItem {
   active: boolean;

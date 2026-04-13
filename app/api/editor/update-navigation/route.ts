@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { loadEditorStructure, reorderNavigation, saveEditorStructureDraft, setNavigationInclusion, updateNavigationLabel } from "@/lib/editor";
+import { reorderNavigation, setNavigationInclusion, updateNavigationLabel } from "@/lib/editor";
+import { loadEditorStructure, saveEditorStructureDraft } from "@/lib/editor/storage";
 import { getServerUser } from "@/lib/supabase/server";
 
 interface NavigationUpdateItem {

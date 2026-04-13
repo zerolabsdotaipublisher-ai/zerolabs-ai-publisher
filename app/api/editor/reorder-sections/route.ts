@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { loadEditorStructure, reorderPageSections, saveEditorStructureDraft, updateStructurePage } from "@/lib/editor";
+import { reorderPageSections, updateStructurePage } from "@/lib/editor";
+import { loadEditorStructure, saveEditorStructureDraft } from "@/lib/editor/storage";
 import { getServerUser } from "@/lib/supabase/server";
 
 interface ReorderBody {

@@ -1,4 +1,4 @@
-import type { NavigationItem } from "@/lib/ai/navigation";
+import type { NavigationItem } from "@/lib/ai/navigation/types";
 import { withNavigationActiveState } from "./navigation-active-state";
 
 interface NavigationMenuProps {

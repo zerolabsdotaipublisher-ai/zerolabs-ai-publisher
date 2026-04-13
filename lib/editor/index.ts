@@ -7,7 +7,6 @@ export * from "./mapping";
 export * from "./sections";
 export * from "./navigation";
 export * from "./save";
-export * from "./storage";
 export * from "./preview-sync";
 export * from "./dirty";
 export * from "./scenarios";

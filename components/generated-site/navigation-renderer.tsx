@@ -1,4 +1,4 @@
-import type { WebsiteNavigation } from "@/lib/ai/navigation";
+import type { WebsiteNavigation } from "@/lib/ai/navigation/types";
 import { MobileNavigation } from "./mobile-navigation";
 import { NavigationMenu } from "./navigation-menu";
 
