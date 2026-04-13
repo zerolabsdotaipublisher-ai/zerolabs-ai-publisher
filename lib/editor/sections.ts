@@ -33,7 +33,18 @@ function nextSectionOrder(page: WebsitePage): number {
 }
 
 function createSectionId(pageId: string, type: SectionType): string {
-  return `${pageId}_${type}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  if (globalThis.crypto?.randomUUID) {
+    return `${pageId}_${type}_${globalThis.crypto.randomUUID()}`;
+  }
+
+  if (globalThis.crypto?.getRandomValues) {
+    const bytes = new Uint8Array(16);
+    globalThis.crypto.getRandomValues(bytes);
+    const randomPart = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+    return `${pageId}_${type}_${randomPart}`;
+  }
+
+  return `${pageId}_${type}_${Date.now().toString(36)}`;
 }
 
 export function addSectionToPage(page: WebsitePage, type: SectionType): WebsitePage {

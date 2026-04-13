@@ -19,20 +19,23 @@ export function setValueByPath<T extends object>(source: T, path: string, value:
   }
 
   const clone = structuredClone(source);
-  let current: Record<string, unknown> = clone as Record<string, unknown>;
+  let current: Record<string, unknown> | unknown[] = clone as Record<string, unknown>;
+
+  const isArrayIndex = (entry: string): boolean => /^\d+$/.test(entry);
 
   for (let i = 0; i < keys.length - 1; i += 1) {
     const key = keys[i];
-    const nextValue = current[key];
+    const nextValue = (current as Record<string, unknown>)[key];
+    const nextKey = keys[i + 1];
 
-    if (typeof nextValue !== "object" || nextValue === null || Array.isArray(nextValue)) {
-      current[key] = {};
+    if (nextValue === undefined || nextValue === null || typeof nextValue !== "object") {
+      (current as Record<string, unknown>)[key] = isArrayIndex(nextKey) ? [] : {};
     }
 
-    current = current[key] as Record<string, unknown>;
+    current = (current as Record<string, unknown>)[key] as Record<string, unknown> | unknown[];
   }
 
-  current[keys[keys.length - 1]] = value;
+  (current as Record<string, unknown>)[keys[keys.length - 1]] = value;
   return clone;
 }
 
@@ -55,5 +58,26 @@ export function reorderById<T extends { id: string; order: number }>(items: T[],
 }
 
 export function stableStringify(value: unknown): string {
-  return JSON.stringify(value, Object.keys(value as object).sort());
+  if (value === null || typeof value !== "object") {
+    return JSON.stringify(value);
+  }
+
+  const sortDeep = (input: unknown): unknown => {
+    if (Array.isArray(input)) {
+      return input.map(sortDeep);
+    }
+
+    if (input && typeof input === "object") {
+      return Object.entries(input as Record<string, unknown>)
+        .sort(([left], [right]) => left.localeCompare(right))
+        .reduce<Record<string, unknown>>((accumulator, [key, entry]) => {
+          accumulator[key] = sortDeep(entry);
+          return accumulator;
+        }, {});
+    }
+
+    return input;
+  };
+
+  return JSON.stringify(sortDeep(value));
 }

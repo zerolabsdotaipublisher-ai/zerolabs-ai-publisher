@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import type { WebsiteStructure } from "@/lib/ai/structure";
-import { saveEditorStructureDraft } from "@/lib/editor/storage";
+import { loadEditorStructure, saveEditorStructureDraft } from "@/lib/editor/storage";
 import { getServerUser } from "@/lib/supabase/server";
 
 interface SaveEditorBody {
@@ -27,6 +27,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   if (body.structureId !== body.draft.id) {
     return NextResponse.json({ ok: false, error: "structureId does not match draft.id" }, { status: 400 });
+  }
+
+  const ownedStructure = await loadEditorStructure(body.structureId, user.id);
+  if (!ownedStructure) {
+    return NextResponse.json({ ok: false, error: "Structure not found" }, { status: 404 });
   }
 
   const result = await saveEditorStructureDraft(user.id, body.draft);

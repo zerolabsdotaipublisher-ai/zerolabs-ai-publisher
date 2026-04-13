@@ -71,10 +71,17 @@ export function WebsiteEditorShell({ initialStructure, previewPath, generatedSit
     }
 
     dispatch({ type: "set-save-status", status: "saving" });
-    const response = await saveEditorDraft({
-      structureId: state.draft.id,
-      draft: state.draft,
-    });
+
+    let response;
+    try {
+      response = await saveEditorDraft({
+        structureId: state.draft.id,
+        draft: state.draft,
+      });
+    } catch {
+      dispatch({ type: "set-error", message: "Unable to save draft right now." });
+      return;
+    }
 
     if (!response.ok || !response.structure) {
       dispatch({
@@ -284,7 +291,7 @@ export function WebsiteEditorShell({ initialStructure, previewPath, generatedSit
         dirty={state.dirty}
         previewPath={previewPath}
         generatedSitePath={generatedSitePath}
-        onSave={() => void handleSaveDraft()}
+        onSave={handleSaveDraft}
       />
 
       <EditorUnsavedWarning dirty={state.dirty} />

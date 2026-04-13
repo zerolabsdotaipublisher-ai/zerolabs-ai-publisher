@@ -9,7 +9,7 @@ interface EditorToolbarProps {
   dirty: boolean;
   previewPath: string;
   generatedSitePath: string;
-  onSave: () => void;
+  onSave: () => void | Promise<void>;
 }
 
 export function EditorToolbar({
@@ -28,7 +28,7 @@ export function EditorToolbar({
         <EditorSaveStatus status={saveStatus} message={saveMessage} dirty={dirty} />
       </div>
       <div className="editor-toolbar-actions">
-        <button type="button" onClick={onSave} disabled={saveStatus === "saving"}>
+        <button type="button" onClick={() => { onSave(); }} disabled={saveStatus === "saving"}>
           Save draft
         </button>
         <Link href={previewPath} className="wizard-button-secondary">

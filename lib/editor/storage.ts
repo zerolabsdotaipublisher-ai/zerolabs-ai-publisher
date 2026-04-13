@@ -12,9 +12,13 @@ import type { EditorValidationError } from "./types";
 import { validateEditorDraft } from "./validation";
 
 function buildCanonicalUrl(baseUrl: string, slug: string): string {
-  const normalizedBase = baseUrl.replace(/\/+$/, "");
-  const normalizedSlug = slug === "/" ? "" : slug;
-  return `${normalizedBase}${normalizedSlug}`;
+  const normalizedBase = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
+  if (slug === "/") {
+    return new URL("/", normalizedBase).toString();
+  }
+
+  const normalizedSlug = slug.startsWith("/") ? slug.slice(1) : slug;
+  return new URL(normalizedSlug, normalizedBase).toString();
 }
 
 function mapPageSeo(page: WebsitePage, canonicalBaseUrl: string) {

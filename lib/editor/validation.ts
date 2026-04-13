@@ -11,14 +11,14 @@ function ensureSlugValidation(structure: WebsiteStructure, errors: EditorValidat
     if (!SLUG_PATTERN.test(page.slug)) {
       errors.push({
         field: `pages.${pageIndex}.slug`,
-        message: `Slug \"${page.slug}\" must use lowercase letters, numbers, and hyphens.`,
+        message: `Slug "${page.slug}" must be "/" or use lowercase letters, numbers, and hyphens.`,
       });
     }
 
     if (seen.has(page.slug)) {
       errors.push({
         field: `pages.${pageIndex}.slug`,
-        message: `Slug \"${page.slug}\" is duplicated across pages.`,
+        message: `Slug "${page.slug}" is duplicated across pages.`,
       });
     }
 
