@@ -13,8 +13,10 @@
  * See: docs/observability/logging-monitoring.md
  */
 
+import { env } from "./config/env";
+
 export async function register(): Promise<void> {
-  if (process.env.NEXT_RUNTIME === "nodejs") {
+  if (env.app.nextRuntime === "nodejs") {
     // Dynamic imports ensure this code only executes in Node.js runtime.
     const { logger } = await import("@/lib/observability/logger");
 

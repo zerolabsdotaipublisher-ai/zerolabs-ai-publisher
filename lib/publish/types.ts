@@ -10,11 +10,34 @@ export type PublicationState =
 
 export type PublishAction = "publish" | "update";
 
+export type PublicationDeploymentEnvironment = "preview" | "production";
+
+export type PublicationDeploymentStatus =
+  | "queued"
+  | "validating"
+  | "building"
+  | "deploying"
+  | "ready"
+  | "failed";
+
+export interface PublicationDeploymentMetadata {
+  deploymentId?: string;
+  target?: string;
+  environment: PublicationDeploymentEnvironment;
+  status: PublicationDeploymentStatus;
+  url?: string;
+  path?: string;
+  attempts?: number;
+  updatedAt: string;
+  lastError?: string;
+}
+
 export interface PublicationMetadata {
   state: PublicationState;
   publishedVersion?: number;
   liveUrl?: string;
   livePath?: string;
+  deployment?: PublicationDeploymentMetadata;
   firstPublishedAt?: string;
   lastPublishedAt?: string;
   lastDraftUpdatedAt?: string;
@@ -47,6 +70,7 @@ export interface PublishDeliveryResult {
   livePath: string;
   deploymentId: string;
   deliveredAt: string;
+  deployment?: PublicationDeploymentMetadata;
 }
 
 export interface PublishStatusResponse {

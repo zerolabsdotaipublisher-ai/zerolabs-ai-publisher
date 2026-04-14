@@ -35,6 +35,13 @@ function optional(value: string | undefined, fallback?: string): string | undefi
   return value !== undefined && value !== "" ? value : fallback;
 }
 
+function optionalPositiveInteger(value: string | undefined, fallback: number): number {
+  if (!value) return fallback;
+
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
 /**
  * Required variables validated at startup via validateEnv().
  * Each entry must have a corresponding required() call in the env object below.
@@ -58,6 +65,8 @@ export const env = {
     /** Vercel-provided at runtime — do not set manually */
     vercelUrl: optional(process.env.VERCEL_URL),
     vercelEnv: optional(process.env.VERCEL_ENV),
+    /** Next.js-provided runtime selector used by instrumentation hooks */
+    nextRuntime: optional(process.env.NEXT_RUNTIME),
   },
 
   /**
@@ -139,6 +148,15 @@ export const env = {
   zeroflow: {
     apiUrl: optional(process.env.ZEROFLOW_API_URL),
     apiKey: optional(process.env.ZEROFLOW_API_KEY),
+  },
+
+  /** Website build and deployment pipeline (MVP-safe adapter orchestration) */
+  pipeline: {
+    deploymentTarget: process.env.PIPELINE_DEPLOYMENT_TARGET ?? "mock",
+    previewBaseUrl: optional(process.env.PIPELINE_PREVIEW_BASE_URL),
+    productionBaseUrl: optional(process.env.PIPELINE_PRODUCTION_BASE_URL),
+    maxAttempts: optionalPositiveInteger(process.env.PIPELINE_MAX_ATTEMPTS, 3),
+    retryBaseDelayMs: optionalPositiveInteger(process.env.PIPELINE_RETRY_BASE_DELAY_MS, 100),
   },
 
   /** Feature flags */

@@ -1,15 +1,26 @@
 import type { WebsiteStructure } from "@/lib/ai/structure";
+import { deployWebsiteProduction } from "@/lib/pipeline";
 import type { PublishDeliveryResult } from "./types";
-import { buildLivePath, buildLiveUrl } from "./urls";
 
 export async function deliverPublishedWebsite(structure: WebsiteStructure): Promise<PublishDeliveryResult> {
-  const deliveredAt = new Date().toISOString();
-  const deploymentId = `deploy_${structure.id}_${crypto.randomUUID()}`;
+  const result = await deployWebsiteProduction({ structure });
+  const deployment = result.deployment;
 
   return {
-    liveUrl: buildLiveUrl(structure.id),
-    livePath: buildLivePath(structure.id),
-    deploymentId,
-    deliveredAt,
+    liveUrl: deployment.url,
+    livePath: deployment.path,
+    deploymentId: deployment.deploymentId,
+    deliveredAt: deployment.readyAt ?? deployment.updatedAt,
+    deployment: {
+      deploymentId: deployment.deploymentId,
+      target: deployment.target,
+      environment: deployment.environment,
+      status: deployment.status,
+      url: deployment.url,
+      path: deployment.path,
+      attempts: deployment.attempts,
+      updatedAt: deployment.readyAt ?? deployment.updatedAt,
+      lastError: deployment.error,
+    },
   };
 }

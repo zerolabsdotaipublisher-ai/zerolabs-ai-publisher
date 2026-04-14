@@ -27,6 +27,7 @@ export type {
   DatabaseConfig,
   EmailConfig,
   OpenAIConfig,
+  PipelineConfig,
   QdrantConfig,
   ServiceConfig,
   SupabaseConfig,

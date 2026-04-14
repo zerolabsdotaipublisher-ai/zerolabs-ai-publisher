@@ -64,6 +64,7 @@ export async function runPublishWorkflow({
       liveUrl: delivery.liveUrl,
       livePath: delivery.livePath,
       publishedAt: delivery.deliveredAt,
+      deployment: delivery.deployment,
     });
 
     const stored = await savePublishStructure(publishedStructure);

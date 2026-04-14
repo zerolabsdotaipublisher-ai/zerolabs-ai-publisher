@@ -18,6 +18,7 @@ export function getPublicationMetadata(structure: WebsiteStructure): Publication
     publishedVersion: metadata.publishedVersion,
     liveUrl: metadata.liveUrl,
     livePath: metadata.livePath,
+    deployment: metadata.deployment,
     firstPublishedAt: metadata.firstPublishedAt,
     lastPublishedAt: metadata.lastPublishedAt,
     lastDraftUpdatedAt: metadata.lastDraftUpdatedAt || structure.updatedAt,
