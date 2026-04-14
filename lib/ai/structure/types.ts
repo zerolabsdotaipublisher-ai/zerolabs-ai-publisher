@@ -267,6 +267,17 @@ export interface WebsiteStructure {
     publishedVersion?: number;
     liveUrl?: string;
     livePath?: string;
+    deployment?: {
+      deploymentId?: string;
+      target?: string;
+      environment: "preview" | "production";
+      status: "queued" | "validating" | "building" | "deploying" | "ready" | "failed";
+      url?: string;
+      path?: string;
+      attempts?: number;
+      updatedAt: string;
+      lastError?: string;
+    };
     firstPublishedAt?: string;
     lastPublishedAt?: string;
     lastDraftUpdatedAt?: string;

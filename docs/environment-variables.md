@@ -22,6 +22,7 @@ For Vercel deployment instructions see [docs/deployment/vercel-pipeline.md](./de
   - [Billing — Stripe (Future)](#billing--stripe-future)
   - [Email — Resend (Future)](#email--resend-future)
   - [ZeroFlow Platform Services (Future)](#zeroflow-platform-services-future)
+  - [Website Deployment Pipeline](#website-deployment-pipeline)
   - [Feature Flags (Future)](#feature-flags-future)
   - [Vercel Runtime Variables (Auto-provided)](#vercel-runtime-variables-auto-provided)
 - [Environment Matrix](#environment-matrix)
@@ -88,6 +89,11 @@ Variables are classified along two axes:
 | `EMAIL_FROM` | ❌ | Future | Resend | Vercel |
 | `ZEROFLOW_API_URL` | ❌ | Future | ZeroFlow | ZeroFlow Team → Vercel |
 | `ZEROFLOW_API_KEY` | ❌ | Future | ZeroFlow | ZeroFlow Team → Vercel |
+| `PIPELINE_DEPLOYMENT_TARGET` | ❌ | Optional now | Pipeline | Vercel |
+| `PIPELINE_PREVIEW_BASE_URL` | ❌ | Optional now | Pipeline | Vercel |
+| `PIPELINE_PRODUCTION_BASE_URL` | ❌ | Optional now | Pipeline | Vercel |
+| `PIPELINE_MAX_ATTEMPTS` | ❌ | Optional now | Pipeline | Vercel |
+| `PIPELINE_RETRY_BASE_DELAY_MS` | ❌ | Optional now | Pipeline | Vercel |
 | `ENABLE_ANALYTICS` | ❌ | Future | Feature flag | Vercel |
 | `ENABLE_BILLING` | ❌ | Future | Feature flag | Vercel |
 | `ENABLE_PUBLISHING` | ❌ | Future | Feature flag | Vercel |
@@ -232,6 +238,20 @@ Required when platform-level auth, billing, or orchestration is active. ZeroFlow
 |---|---|---|---|
 | `ZEROFLOW_API_URL` | ❌ | Future | Base URL of the ZeroFlow platform API |
 | `ZEROFLOW_API_KEY` | ❌ | Future | API key issued by the ZeroFlow platform |
+
+---
+
+### Website Deployment Pipeline
+
+MVP-safe build/deployment orchestration owned by AI Publisher. `mock` is the default target and performs no external calls; `vercel` is a dry-run adapter until real provider integration is added.
+
+| Variable | Public | Required | Default | Description |
+|---|---|---|---|---|
+| `PIPELINE_DEPLOYMENT_TARGET` | ❌ | Optional now | `mock` | Deployment adapter target: `mock` or `vercel` |
+| `PIPELINE_PREVIEW_BASE_URL` | ❌ | Optional now | `NEXT_PUBLIC_APP_URL` | Base URL used when assigning preview deployment URLs |
+| `PIPELINE_PRODUCTION_BASE_URL` | ❌ | Optional now | `NEXT_PUBLIC_APP_URL` | Base URL used when assigning production deployment URLs |
+| `PIPELINE_MAX_ATTEMPTS` | ❌ | Optional now | `3` | Maximum attempts for retryable adapter failures |
+| `PIPELINE_RETRY_BASE_DELAY_MS` | ❌ | Optional now | `100` | Base retry delay in milliseconds |
 
 ---
 

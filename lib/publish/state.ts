@@ -1,6 +1,7 @@
 import type { WebsiteStructure, WebsiteStructureStatus } from "@/lib/ai/structure";
 import { detectPublicationState } from "./detection";
 import { getPublicationMetadata, withPublicationMetadata } from "./model";
+import type { PublicationDeploymentMetadata } from "./types";
 
 function resolveStructureStatus(
   currentStatus: WebsiteStructureStatus,
@@ -44,12 +45,25 @@ export function markPublishing(structure: WebsiteStructure, attemptedAt: string)
     state: "publishing",
     lastPublishAttemptAt: attemptedAt,
     lastError: undefined,
+    deployment: {
+      ...publication.deployment,
+      environment: "production",
+      status: "deploying",
+      attempts: (publication.deployment?.attempts ?? 0) + 1,
+      updatedAt: attemptedAt,
+      lastError: undefined,
+    },
   });
 }
 
 export function markPublished(
   structure: WebsiteStructure,
-  params: { liveUrl: string; livePath: string; publishedAt: string },
+  params: {
+    liveUrl: string;
+    livePath: string;
+    publishedAt: string;
+    deployment?: PublicationDeploymentMetadata;
+  },
 ): WebsiteStructure {
   const publication = getPublicationMetadata(structure);
   const firstPublishedAt = publication.firstPublishedAt || params.publishedAt;
@@ -65,6 +79,7 @@ export function markPublished(
       publishedVersion: structure.version,
       liveUrl: params.liveUrl,
       livePath: params.livePath,
+      deployment: params.deployment ?? publication.deployment,
       firstPublishedAt,
       lastPublishedAt: params.publishedAt,
       lastUpdatedAt: params.publishedAt,
@@ -85,5 +100,12 @@ export function markPublishFailure(
     state: "update_failed",
     lastPublishAttemptAt: attemptedAt,
     lastError: errorMessage,
+    deployment: {
+      ...publication.deployment,
+      environment: publication.deployment?.environment ?? "production",
+      status: "failed",
+      updatedAt: attemptedAt,
+      lastError: errorMessage,
+    },
   });
 }

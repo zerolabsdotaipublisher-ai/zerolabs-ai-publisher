@@ -91,6 +91,19 @@ export interface ZeroFlowConfig {
   apiKey: string | undefined;
 }
 
+export interface PipelineConfig {
+  /** Deployment adapter target. Validated by lib/pipeline before use. */
+  deploymentTarget: string;
+  /** Optional base URL used for preview deployment URL assignment. */
+  previewBaseUrl: string | undefined;
+  /** Optional base URL used for production deployment URL assignment. */
+  productionBaseUrl: string | undefined;
+  /** Maximum adapter attempts for retryable deployment failures. */
+  maxAttempts: number;
+  /** Base retry delay in milliseconds. */
+  retryBaseDelayMs: number;
+}
+
 export interface AuthConfig {
   /** JWT secret for signing application-level session tokens */
   jwtSecret: string | undefined;
@@ -106,6 +119,7 @@ export interface ServiceConfig {
   billing: BillingConfig;
   email: EmailConfig;
   zeroflow: ZeroFlowConfig;
+  pipeline: PipelineConfig;
   auth: AuthConfig;
 }
 
@@ -159,6 +173,14 @@ export const servicesConfig: ServiceConfig = {
   zeroflow: {
     apiUrl: env.zeroflow.apiUrl,
     apiKey: env.zeroflow.apiKey,
+  },
+
+  pipeline: {
+    deploymentTarget: env.pipeline.deploymentTarget,
+    previewBaseUrl: env.pipeline.previewBaseUrl,
+    productionBaseUrl: env.pipeline.productionBaseUrl,
+    maxAttempts: env.pipeline.maxAttempts,
+    retryBaseDelayMs: env.pipeline.retryBaseDelayMs,
   },
 
   auth: {

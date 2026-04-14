@@ -1,0 +1,37 @@
+import { createDeploymentStatusRecord, markDeploymentReady } from "../status";
+import { assignDeploymentUrl } from "../urls";
+import type {
+  PipelineDeploymentRequest,
+  PipelineDeploymentResult,
+  PipelineRuntimeConfig,
+} from "../types";
+import type { DeploymentAdapter } from "./types";
+
+export class VercelDeploymentAdapter implements DeploymentAdapter {
+  constructor(private readonly runtimeConfig: PipelineRuntimeConfig) {}
+
+  async deploy(request: PipelineDeploymentRequest): Promise<PipelineDeploymentResult> {
+    const assignedUrl = assignDeploymentUrl({
+      structureId: request.build.manifest.structureId,
+      environment: request.environment,
+      runtimeConfig: this.runtimeConfig,
+    });
+    const status = markDeploymentReady(
+      createDeploymentStatusRecord(request, "deploying"),
+      assignedUrl,
+    );
+
+    return {
+      ...status,
+      url: assignedUrl.url,
+      path: assignedUrl.path,
+      providerDeploymentId: `vercel_${status.deploymentId}`,
+      providerMetadata: {
+        adapter: "vercel",
+        dryRun: true,
+        buildId: request.build.buildId,
+        manifestFormat: request.build.manifest.format,
+      },
+    };
+  }
+}
