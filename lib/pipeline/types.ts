@@ -1,5 +1,6 @@
 import type { RuntimeEnvironment } from "@/config";
 import type { WebsiteStructure } from "@/lib/ai/structure";
+import type { StaticSiteArtifact } from "./ssg/types";
 
 export type PipelineDeploymentEnvironment = "preview" | "production";
 export type PipelineDeploymentTarget = "mock" | "vercel";
@@ -17,6 +18,9 @@ export type PipelineEventName =
   | "pipeline_validation_completed"
   | "pipeline_build_started"
   | "pipeline_build_completed"
+  | "pipeline_ssg_started"
+  | "pipeline_ssg_completed"
+  | "pipeline_ssg_failed"
   | "pipeline_deployment_started"
   | "pipeline_deployment_completed"
   | "pipeline_deployment_failed"
@@ -54,6 +58,13 @@ export interface PipelineBuildManifest {
   siteTitle: string;
   environment: PipelineDeploymentEnvironment;
   routes: PipelinePageRoute[];
+  ssg: {
+    format: StaticSiteArtifact["format"];
+    strategy: StaticSiteArtifact["strategy"];
+    output: StaticSiteArtifact["output"];
+    cache: StaticSiteArtifact["cache"];
+    metrics: StaticSiteArtifact["metrics"];
+  };
   entryPath: string;
   sourceHash: string;
   createdAt: string;
@@ -64,6 +75,7 @@ export interface PipelineBuildOutput {
   idempotencyKey: string;
   structure: WebsiteStructure;
   manifest: PipelineBuildManifest;
+  ssg: StaticSiteArtifact;
   validation: PipelineValidationResult;
 }
 
