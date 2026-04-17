@@ -4,6 +4,7 @@ import {
   type WebsiteStructure,
 } from "@/lib/ai/structure";
 import { validatePipelineDeploymentTarget } from "./schema";
+import { staticValidationMessages, validateStaticSiteReadiness } from "./ssg";
 import type {
   PipelineBuildInput,
   PipelineDeploymentEnvironment,
@@ -76,11 +77,19 @@ export function validatePipelineStructure(
 export function validatePipelineBuildInput(input: PipelineBuildInput): PipelineValidationResult {
   const structureValidation = validatePipelineStructure(input.structure, input.environment);
   const targetErrors = validatePipelineDeploymentTarget(input.target);
+  const staticValidation = validateStaticSiteReadiness({
+    structure: input.structure,
+    environment: input.environment,
+  });
+  const staticMessages = staticValidationMessages(staticValidation);
 
   return {
-    valid: structureValidation.valid && targetErrors.length === 0,
-    errors: [...structureValidation.errors, ...targetErrors],
-    warnings: structureValidation.warnings,
+    valid:
+      structureValidation.valid &&
+      targetErrors.length === 0 &&
+      staticValidation.valid,
+    errors: [...structureValidation.errors, ...targetErrors, ...staticMessages.errors],
+    warnings: [...structureValidation.warnings, ...staticMessages.warnings],
   };
 }
 

@@ -31,6 +31,9 @@ export class VercelDeploymentAdapter implements DeploymentAdapter {
         dryRun: true,
         buildId: request.build.buildId,
         manifestFormat: request.build.manifest.format,
+        ssgFormat: request.build.ssg.format,
+        staticPageCount: request.build.ssg.metrics.pageCount,
+        staticRouteCount: request.build.ssg.metrics.routeCount,
       },
     };
   }

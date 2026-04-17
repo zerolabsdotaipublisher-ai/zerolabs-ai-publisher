@@ -4,7 +4,9 @@ import { logger, metrics } from "@/lib/observability";
 import type { PipelineEvent, PipelineObserver } from "./types";
 
 function logPipelineEvent(event: PipelineEvent): void {
-  const isFailure = event.event === "pipeline_deployment_failed";
+  const isFailure =
+    event.event === "pipeline_deployment_failed" ||
+    event.event === "pipeline_ssg_failed";
   const message = `pipeline ${event.event}`;
   const { error, ...eventMeta } = event;
 

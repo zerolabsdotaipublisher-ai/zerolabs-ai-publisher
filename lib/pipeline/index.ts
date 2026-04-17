@@ -68,6 +68,7 @@ export { createDeploymentAdapter } from "./adapters/registry";
 export type { DeploymentAdapter } from "./adapters/types";
 export { pipelineScenarios } from "./scenarios";
 export type { PipelineScenario } from "./scenarios";
+export * from "./ssg";
 export {
   previewPipelineBuildInputFixture,
   productionPipelineBuildInputFixture,
