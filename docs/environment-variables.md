@@ -94,6 +94,15 @@ Variables are classified along two axes:
 | `PIPELINE_PRODUCTION_BASE_URL` | ❌ | Optional now | Pipeline | Vercel |
 | `PIPELINE_MAX_ATTEMPTS` | ❌ | Optional now | Pipeline | Vercel |
 | `PIPELINE_RETRY_BASE_DELAY_MS` | ❌ | Optional now | Pipeline | Vercel |
+| `PIPELINE_VERCEL_API_URL` | ❌ | Optional now | Pipeline | Vercel |
+| `PIPELINE_VERCEL_TOKEN` | ❌ | Optional now | Pipeline | Vercel |
+| `PIPELINE_VERCEL_PROJECT_ID` | ❌ | Optional now | Pipeline | Vercel |
+| `PIPELINE_VERCEL_TEAM_ID` | ❌ | Optional now | Pipeline | Vercel |
+| `PIPELINE_VERCEL_DEPLOY_HOOK_PREVIEW_URL` | ❌ | Optional now | Pipeline | Vercel |
+| `PIPELINE_VERCEL_DEPLOY_HOOK_PRODUCTION_URL` | ❌ | Optional now | Pipeline | Vercel |
+| `PIPELINE_VERCEL_DEFAULT_DOMAIN` | ❌ | Optional now | Pipeline | Vercel |
+| `PIPELINE_VERCEL_ENABLE_REAL_DEPLOYMENTS` | ❌ | Optional now | Pipeline | Vercel |
+| `PIPELINE_VERCEL_TIMEOUT_MS` | ❌ | Optional now | Pipeline | Vercel |
 | `ENABLE_ANALYTICS` | ❌ | Future | Feature flag | Vercel |
 | `ENABLE_BILLING` | ❌ | Future | Feature flag | Vercel |
 | `ENABLE_PUBLISHING` | ❌ | Future | Feature flag | Vercel |
@@ -243,7 +252,7 @@ Required when platform-level auth, billing, or orchestration is active. ZeroFlow
 
 ### Website Deployment Pipeline
 
-MVP-safe build/deployment orchestration owned by AI Publisher. `mock` is the default target and performs no external calls; `vercel` is a dry-run adapter until real provider integration is added.
+MVP-safe build/deployment orchestration owned by AI Publisher. `mock` is the default target and performs no external calls; `vercel` supports safe dry-run mode and optional real deploy-hook integration.
 
 | Variable | Public | Required | Default | Description |
 |---|---|---|---|---|
@@ -252,6 +261,15 @@ MVP-safe build/deployment orchestration owned by AI Publisher. `mock` is the def
 | `PIPELINE_PRODUCTION_BASE_URL` | ❌ | Optional now | `NEXT_PUBLIC_APP_URL` | Base URL used when assigning production deployment URLs |
 | `PIPELINE_MAX_ATTEMPTS` | ❌ | Optional now | `3` | Maximum attempts for retryable adapter failures |
 | `PIPELINE_RETRY_BASE_DELAY_MS` | ❌ | Optional now | `100` | Base retry delay in milliseconds |
+| `PIPELINE_VERCEL_API_URL` | ❌ | Optional now | `https://api.vercel.com` | Vercel API base URL used by hosting adapter integrations |
+| `PIPELINE_VERCEL_TOKEN` | ❌ | Optional now | — | Optional Vercel token for provider API integrations |
+| `PIPELINE_VERCEL_PROJECT_ID` | ❌ | Optional now | — | Optional Vercel project identifier for metadata/correlation |
+| `PIPELINE_VERCEL_TEAM_ID` | ❌ | Optional now | — | Optional Vercel team scope identifier |
+| `PIPELINE_VERCEL_DEPLOY_HOOK_PREVIEW_URL` | ❌ | Optional now | — | Preview deploy-hook URL used for real programmatic preview deployments |
+| `PIPELINE_VERCEL_DEPLOY_HOOK_PRODUCTION_URL` | ❌ | Optional now | — | Production deploy-hook URL used for real programmatic production deployments |
+| `PIPELINE_VERCEL_DEFAULT_DOMAIN` | ❌ | Optional now | — | Base domain used to derive deterministic generated subdomains |
+| `PIPELINE_VERCEL_ENABLE_REAL_DEPLOYMENTS` | ❌ | Optional now | `false` | Enables real Vercel deployment calls when deploy-hook URLs are configured |
+| `PIPELINE_VERCEL_TIMEOUT_MS` | ❌ | Optional now | `15000` | Timeout for provider calls in milliseconds |
 
 ---
 

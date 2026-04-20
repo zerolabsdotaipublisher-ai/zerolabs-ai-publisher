@@ -23,7 +23,7 @@ export async function deliverPublishedWebsite(structure: WebsiteStructure): Prom
       attempts: deployment.attempts,
       updatedAt: deployment.readyAt ?? deployment.updatedAt,
       lastError: deployment.error,
-      providerMetadata: deployment.providerMetadata,
+      providerMetadata: deployment.providerMetadata as unknown as Record<string, unknown>,
       logs: deployment.providerMetadata.logs,
     },
   };
