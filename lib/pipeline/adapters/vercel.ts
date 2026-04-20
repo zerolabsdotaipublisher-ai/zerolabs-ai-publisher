@@ -22,6 +22,8 @@ interface VercelDeployHookResponse {
   [key: string]: unknown;
 }
 
+const MIN_DEPLOY_HOOK_TIMEOUT_MS = 1000;
+
 function normalizeProviderUrl(url: string | undefined): string | undefined {
   if (!url) return undefined;
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
@@ -35,6 +37,39 @@ function getDeployHookUrl(
   return environment === "production"
     ? runtimeConfig.hosting.vercel.deployHookProductionUrl
     : runtimeConfig.hosting.vercel.deployHookPreviewUrl;
+}
+
+function resolveCanonicalDeploymentUrl(params: {
+  generatedDomain?: string;
+  fallbackUrl: string;
+}): string {
+  return params.generatedDomain ? `https://${params.generatedDomain}` : params.fallbackUrl;
+}
+
+function extractVercelErrorMessage(data: VercelDeployHookResponse): string {
+  if (typeof data.error === "string" && data.error) {
+    return data.error;
+  }
+
+  if (typeof data.message === "string" && data.message) {
+    return data.message;
+  }
+
+  const errorObject = data.error;
+  if (errorObject && typeof errorObject === "object") {
+    const maybeMessage = (errorObject as { message?: unknown }).message;
+    if (typeof maybeMessage === "string" && maybeMessage) {
+      return maybeMessage;
+    }
+  }
+
+  return "Unknown provider error";
+}
+
+function classifyHttpStatus(status: number): "Client error" | "Server error" | "Unexpected error" {
+  if (status >= 400 && status < 500) return "Client error";
+  if (status >= 500) return "Server error";
+  return "Unexpected error";
 }
 
 export class VercelDeploymentAdapter implements DeploymentAdapter {
@@ -65,7 +100,7 @@ export class VercelDeploymentAdapter implements DeploymentAdapter {
     const controller = new AbortController();
     const timeout = setTimeout(
       () => controller.abort(),
-      Math.max(1000, this.runtimeConfig.hosting.vercel.timeoutMs),
+      Math.max(MIN_DEPLOY_HOOK_TIMEOUT_MS, this.runtimeConfig.hosting.vercel.timeoutMs),
     );
 
     try {
@@ -75,7 +110,9 @@ export class VercelDeploymentAdapter implements DeploymentAdapter {
           "content-type": "application/json",
         },
         body: JSON.stringify({
-          name: `zl-ai-publisher-${request.environment}-${request.build.manifest.structureId}`,
+          name: `${this.runtimeConfig.hosting.vercel.projectId ?? "ai-publisher"}-${
+            request.environment
+          }-${request.build.manifest.structureId}`,
           target: request.environment === "production" ? "production" : "preview",
           meta: {
             structureId: request.build.manifest.structureId,
@@ -89,12 +126,24 @@ export class VercelDeploymentAdapter implements DeploymentAdapter {
         signal: controller.signal,
       });
 
-      const data = (await response.json().catch(() => ({}))) as VercelDeployHookResponse;
+      const data = (await response
+        .json()
+        .catch((error) => {
+          logs.push(
+            createHostingLog("Unable to parse Vercel deploy hook JSON response.", {
+              level: "warn",
+              details: {
+                parseError: error instanceof Error ? error.message : String(error),
+              },
+            }),
+          );
+          return {};
+        })) as VercelDeployHookResponse;
       if (!response.ok) {
         throw new PipelineDeploymentError(
-          `Vercel deployment hook failed with ${response.status}: ${
-            typeof data.error === "string" ? data.error : "Unknown provider error"
-          }`,
+          `${classifyHttpStatus(response.status)} from Vercel deployment hook (${response.status}): ${extractVercelErrorMessage(
+            data,
+          )}`,
           { retryable: response.status >= 500 },
         );
       }
@@ -192,7 +241,10 @@ export class VercelDeploymentAdapter implements DeploymentAdapter {
           },
         }),
       );
-      const url = generatedDomain ? `https://${generatedDomain}` : assignedUrl.url;
+      const url = resolveCanonicalDeploymentUrl({
+        generatedDomain,
+        fallbackUrl: assignedUrl.url,
+      });
       const ready = markDeploymentReady(baseStatus, {
         url,
         path: assignedUrl.path,
@@ -220,9 +272,10 @@ export class VercelDeploymentAdapter implements DeploymentAdapter {
         },
       }),
     );
+    const activeDeployHookUrl = deployHookUrl as string;
 
     try {
-      const providerResponse = await this.triggerDeploymentHook(request, deployHookUrl!, logs);
+      const providerResponse = await this.triggerDeploymentHook(request, activeDeployHookUrl, logs);
       const providerUrl = normalizeProviderUrl(providerResponse.url);
       const mappedStatus = mapVercelStateToPipelineStatus(providerResponse.state);
       if (mappedStatus === "failed") {
@@ -230,9 +283,10 @@ export class VercelDeploymentAdapter implements DeploymentAdapter {
           retryable: false,
         });
       }
-      const url = generatedDomain
-        ? `https://${generatedDomain}`
-        : providerUrl ?? assignedUrl.url;
+      const url = resolveCanonicalDeploymentUrl({
+        generatedDomain,
+        fallbackUrl: providerUrl ?? assignedUrl.url,
+      });
       const ready = markDeploymentReady(baseStatus, {
         url,
         path: assignedUrl.path,

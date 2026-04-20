@@ -19,12 +19,12 @@ export async function deliverPublishedWebsite(structure: WebsiteStructure): Prom
       providerDeploymentId: deployment.providerDeploymentId,
       url: deployment.url,
       path: deployment.path,
-      domains: deployment.providerMetadata.domains?.map((domain) => domain.domain),
+      domains: deployment.providerMetadata?.domains?.map((domain) => domain.domain),
       attempts: deployment.attempts,
       updatedAt: deployment.readyAt ?? deployment.updatedAt,
       lastError: deployment.error,
       providerMetadata: deployment.providerMetadata as unknown as Record<string, unknown>,
-      logs: deployment.providerMetadata.logs,
+      logs: deployment.providerMetadata?.logs,
     },
   };
 }
