@@ -17,19 +17,32 @@ export type PublicationDeploymentStatus =
   | "validating"
   | "building"
   | "deploying"
+  | "updating"
+  | "deployed"
   | "ready"
   | "failed";
 
+export interface PublicationHostingLogEntry {
+  at: string;
+  level: "info" | "warn" | "error";
+  message: string;
+  details?: Record<string, unknown>;
+}
+
 export interface PublicationDeploymentMetadata {
   deploymentId?: string;
+  providerDeploymentId?: string;
   target?: string;
   environment: PublicationDeploymentEnvironment;
   status: PublicationDeploymentStatus;
   url?: string;
   path?: string;
+  domains?: string[];
   attempts?: number;
   updatedAt: string;
   lastError?: string;
+  providerMetadata?: Record<string, unknown>;
+  logs?: PublicationHostingLogEntry[];
 }
 
 export interface PublicationMetadata {

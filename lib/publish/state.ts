@@ -40,6 +40,7 @@ export function markDraftUpdatedForPublication(structure: WebsiteStructure, upda
 
 export function markPublishing(structure: WebsiteStructure, attemptedAt: string): WebsiteStructure {
   const publication = getPublicationMetadata(structure);
+  const isUpdate = Boolean(publication.publishedVersion);
   return withPublicationMetadata(structure, {
     ...publication,
     state: "publishing",
@@ -48,7 +49,7 @@ export function markPublishing(structure: WebsiteStructure, attemptedAt: string)
     deployment: {
       ...publication.deployment,
       environment: "production",
-      status: "deploying",
+      status: isUpdate ? "updating" : "deploying",
       attempts: (publication.deployment?.attempts ?? 0) + 1,
       updatedAt: attemptedAt,
       lastError: undefined,

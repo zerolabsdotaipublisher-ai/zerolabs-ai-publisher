@@ -16,11 +16,15 @@ export async function deliverPublishedWebsite(structure: WebsiteStructure): Prom
       target: deployment.target,
       environment: deployment.environment,
       status: deployment.status,
+      providerDeploymentId: deployment.providerDeploymentId,
       url: deployment.url,
       path: deployment.path,
+      domains: deployment.providerMetadata.domains?.map((domain) => domain.domain),
       attempts: deployment.attempts,
       updatedAt: deployment.readyAt ?? deployment.updatedAt,
       lastError: deployment.error,
+      providerMetadata: deployment.providerMetadata,
+      logs: deployment.providerMetadata.logs,
     },
   };
 }

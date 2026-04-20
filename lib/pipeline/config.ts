@@ -15,5 +15,18 @@ export function getPipelineConfig(): PipelineRuntimeConfig {
     retryBaseDelayMs: pipelineConfig.retryBaseDelayMs,
     runtimeStage: config.app.environment,
     appBaseUrl: config.app.url,
+    hosting: {
+      vercel: {
+        apiUrl: pipelineConfig.vercel.apiUrl,
+        token: pipelineConfig.vercel.token,
+        projectId: pipelineConfig.vercel.projectId,
+        teamId: pipelineConfig.vercel.teamId,
+        deployHookPreviewUrl: pipelineConfig.vercel.deployHookPreviewUrl,
+        deployHookProductionUrl: pipelineConfig.vercel.deployHookProductionUrl,
+        defaultDomain: pipelineConfig.vercel.defaultDomain,
+        enableRealDeployments: pipelineConfig.vercel.enableRealDeployments,
+        timeoutMs: pipelineConfig.vercel.timeoutMs,
+      },
+    },
   };
 }

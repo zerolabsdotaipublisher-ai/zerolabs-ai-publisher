@@ -1,3 +1,5 @@
+import { pipelineHostingScenarios } from "./hosting/scenarios";
+
 export interface PipelineScenario {
   id: string;
   name: string;
@@ -46,8 +48,9 @@ export const pipelineScenarios: PipelineScenario[] = [
     expectedBehavior: "Retryable adapter errors are retried up to the configured attempt limit and logged.",
   },
   {
-    id: "vercel-dry-run-target",
-    name: "Vercel dry-run target",
-    expectedBehavior: "The Vercel adapter path is selectable without performing a real Vercel deployment.",
+    id: "vercel-safe-real-integration",
+    name: "Vercel real integration with safe fallback",
+    expectedBehavior: "The Vercel adapter performs real deploy-hook calls when enabled and falls back to dry-run safely when not configured.",
   },
+  ...pipelineHostingScenarios,
 ];
