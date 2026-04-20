@@ -17,7 +17,12 @@ ZLAP-STORY 5-1 adds a Layer 1 pipeline under `lib/pipeline/`. AI Publisher owns 
 
 `mock` is the default target and performs no external calls.
 
-`vercel` is present as an MVP-safe dry-run adapter. It uses the same interface and URL assignment rules as a real adapter, but it does not call Vercel APIs yet.
+`vercel` supports MVP-safe hosting integration:
+
+- safe dry-run behavior by default
+- optional real programmatic deployment trigger mode via configured deploy hooks
+- preview and production environment separation
+- typed domain/security/log metadata in deployment responses
 
 Supported targets are configured with:
 
@@ -70,6 +75,6 @@ Pipeline events are logged through `lib/observability` and can also be observed 
 
 - No pipeline code lives in `services/zeroflow`.
 - No new website model is introduced; the build artifact wraps the existing `WebsiteStructure`.
-- No real deployment is performed in the MVP adapters.
+- No second deployment system is introduced; Story 5-3 extends the existing adapter path.
 - No provider-specific CDN behavior or ISR revalidation is enabled in Story 5-2.
 - Persistent deployment history is not added; the current production deployment status is stored in publication metadata.

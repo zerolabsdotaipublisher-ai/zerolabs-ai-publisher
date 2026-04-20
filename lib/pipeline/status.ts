@@ -29,13 +29,13 @@ export function createDeploymentStatusRecord(
 
 export function markDeploymentReady(
   record: PipelineDeploymentStatusRecord,
-  params: { url: string; path: string },
+  params: { url: string; path: string; status?: PipelineRunStatus },
 ): PipelineDeploymentStatusRecord {
   const readyAt = new Date().toISOString();
 
   return {
     ...record,
-    status: "ready",
+    status: params.status ?? "ready",
     url: params.url,
     path: params.path,
     updatedAt: readyAt,

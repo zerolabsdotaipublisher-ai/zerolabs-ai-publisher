@@ -79,7 +79,7 @@ Confirmation dialog communicates live impact before publish/update.
 
 - builds live path from existing generated-site route
 - generates absolute live URL using config layer
-- returns deployment metadata for future delivery system expansion
+- persists typed hosting deployment metadata (provider deployment id, domains, logs, and status) returned by the existing pipeline adapter path
 
 ## Access control
 

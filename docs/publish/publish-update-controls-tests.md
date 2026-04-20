@@ -16,6 +16,7 @@ Validate publication lifecycle state, controls, validation, permissions, deliver
    - Save draft edits in editor
    - Verify state becomes `update_pending`
    - Run update and verify state returns to `published`
+   - Verify deployment status transitions through `updating` to `deployed` (or compatibility `ready`)
 
 3. **Unsaved changes blocked**
    - Edit content without saving in editor

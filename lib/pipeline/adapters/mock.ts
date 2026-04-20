@@ -1,4 +1,8 @@
 import { createDeploymentStatusRecord, markDeploymentReady } from "../status";
+import { buildDomainAssignments, createGeneratedDomain } from "../hosting/domains";
+import { createHostingLog } from "../hosting/logs";
+import { createHostingSecurityMetadata } from "../hosting/security";
+import { getDeploymentInProgressStatus } from "../hosting/status";
 import { assignDeploymentUrl } from "../urls";
 import type {
   PipelineDeploymentRequest,
@@ -16,9 +20,17 @@ export class MockDeploymentAdapter implements DeploymentAdapter {
       environment: request.environment,
       runtimeConfig: this.runtimeConfig,
     });
+    const generatedDomain = createGeneratedDomain({
+      structureId: request.build.manifest.structureId,
+      environment: request.environment,
+      defaultDomain: this.runtimeConfig.hosting.vercel.defaultDomain,
+    });
     const status = markDeploymentReady(
-      createDeploymentStatusRecord(request, "deploying"),
-      assignedUrl,
+      createDeploymentStatusRecord(request, getDeploymentInProgressStatus(request.attempt)),
+      {
+        ...assignedUrl,
+        status: "deployed",
+      },
     );
 
     return {
@@ -34,6 +46,12 @@ export class MockDeploymentAdapter implements DeploymentAdapter {
         ssgFormat: request.build.ssg.format,
         staticPageCount: request.build.ssg.metrics.pageCount,
         staticRouteCount: request.build.ssg.metrics.routeCount,
+        domains: buildDomainAssignments({
+          environment: request.environment,
+          generatedDomain,
+        }),
+        security: createHostingSecurityMetadata(),
+        logs: [createHostingLog("Mock adapter completed deployment assignment.")],
       },
     };
   }

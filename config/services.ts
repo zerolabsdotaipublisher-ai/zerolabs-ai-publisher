@@ -102,6 +102,27 @@ export interface PipelineConfig {
   maxAttempts: number;
   /** Base retry delay in milliseconds. */
   retryBaseDelayMs: number;
+  /** Vercel provider configuration for hosting integration. */
+  vercel: {
+    /** Vercel API base URL. */
+    apiUrl: string;
+    /** Optional Vercel API token for direct API integrations. */
+    token: string | undefined;
+    /** Optional Vercel project ID. */
+    projectId: string | undefined;
+    /** Optional Vercel team ID (scope). */
+    teamId: string | undefined;
+    /** Deploy hook URL for preview environment deployments. */
+    deployHookPreviewUrl: string | undefined;
+    /** Deploy hook URL for production environment deployments. */
+    deployHookProductionUrl: string | undefined;
+    /** Base domain used to generate deterministic per-site subdomains. */
+    defaultDomain: string | undefined;
+    /** Enables real provider calls when true; otherwise adapter remains safe dry-run. */
+    enableRealDeployments: boolean;
+    /** Timeout in milliseconds for provider API calls. */
+    timeoutMs: number;
+  };
 }
 
 export interface AuthConfig {
@@ -181,6 +202,17 @@ export const servicesConfig: ServiceConfig = {
     productionBaseUrl: env.pipeline.productionBaseUrl,
     maxAttempts: env.pipeline.maxAttempts,
     retryBaseDelayMs: env.pipeline.retryBaseDelayMs,
+    vercel: {
+      apiUrl: env.pipeline.vercel.apiUrl,
+      token: env.pipeline.vercel.token,
+      projectId: env.pipeline.vercel.projectId,
+      teamId: env.pipeline.vercel.teamId,
+      deployHookPreviewUrl: env.pipeline.vercel.deployHookPreviewUrl,
+      deployHookProductionUrl: env.pipeline.vercel.deployHookProductionUrl,
+      defaultDomain: env.pipeline.vercel.defaultDomain,
+      enableRealDeployments: env.pipeline.vercel.enableRealDeployments,
+      timeoutMs: env.pipeline.vercel.timeoutMs,
+    },
   },
 
   auth: {

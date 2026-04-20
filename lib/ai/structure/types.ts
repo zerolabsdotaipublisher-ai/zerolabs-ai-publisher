@@ -269,14 +269,31 @@ export interface WebsiteStructure {
     livePath?: string;
     deployment?: {
       deploymentId?: string;
+      providerDeploymentId?: string;
       target?: string;
       environment: "preview" | "production";
-      status: "queued" | "validating" | "building" | "deploying" | "ready" | "failed";
+      status:
+        | "queued"
+        | "validating"
+        | "building"
+        | "deploying"
+        | "updating"
+        | "deployed"
+        | "ready"
+        | "failed";
       url?: string;
       path?: string;
+      domains?: string[];
       attempts?: number;
       updatedAt: string;
       lastError?: string;
+      providerMetadata?: Record<string, unknown>;
+      logs?: Array<{
+        at: string;
+        level: "info" | "warn" | "error";
+        message: string;
+        details?: Record<string, unknown>;
+      }>;
     };
     firstPublishedAt?: string;
     lastPublishedAt?: string;

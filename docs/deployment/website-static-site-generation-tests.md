@@ -66,7 +66,6 @@ When `buildWebsiteStructure()` runs:
 
 - ISR remains disabled with `revalidate: false`.
 - Cache policies remain provider-neutral.
-- The Vercel adapter remains a dry-run adapter.
+- The Vercel adapter may run in dry-run or real deploy-hook mode, but still consumes the same `PipelineBuildOutput` + SSG artifact.
 - Current preview and generated-site app routes remain compatible with existing rendering.
 - No code is moved into ZeroFlow.
-

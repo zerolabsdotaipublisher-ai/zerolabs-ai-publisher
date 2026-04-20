@@ -71,7 +71,7 @@ export async function deployBuild(params: {
         structureVersion: params.build.manifest.structureVersion,
         environment: params.environment,
         target,
-        status: "ready",
+        status: result.status,
         deploymentId: result.deploymentId,
         attempt: result.attempts,
         durationMs: Date.now() - startedAt,

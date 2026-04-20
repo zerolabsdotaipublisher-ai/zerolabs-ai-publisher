@@ -10,6 +10,8 @@ export type PipelineRunStatus =
   | "validating"
   | "building"
   | "deploying"
+  | "updating"
+  | "deployed"
   | "ready"
   | "failed";
 
@@ -34,6 +36,19 @@ export interface PipelineRuntimeConfig {
   retryBaseDelayMs: number;
   runtimeStage: RuntimeEnvironment;
   appBaseUrl: string;
+  hosting: {
+    vercel: {
+      apiUrl: string;
+      token?: string;
+      projectId?: string;
+      teamId?: string;
+      deployHookPreviewUrl?: string;
+      deployHookProductionUrl?: string;
+      defaultDomain?: string;
+      enableRealDeployments: boolean;
+      timeoutMs: number;
+    };
+  };
 }
 
 export interface PipelineValidationResult {
@@ -116,11 +131,58 @@ export interface PipelineDeploymentStatusRecord {
   error?: string;
 }
 
+export type PipelineHostingLogLevel = "info" | "warn" | "error";
+
+export interface PipelineHostingLogEntry {
+  at: string;
+  level: PipelineHostingLogLevel;
+  message: string;
+  details?: Record<string, unknown>;
+}
+
+export interface PipelineHostingError {
+  code: string;
+  message: string;
+  retryable: boolean;
+  provider: PipelineDeploymentTarget;
+  details?: Record<string, unknown>;
+}
+
+export interface PipelineHostingDomainAssignment {
+  type: "generated-subdomain" | "provider-url";
+  environment: PipelineDeploymentEnvironment;
+  domain: string;
+  verified: boolean;
+}
+
+export interface PipelineHostingSecurityMetadata {
+  httpsOnly: boolean;
+  tlsManagedByProvider: boolean;
+  publicAccess: "public";
+}
+
+export interface PipelineHostingMetadata {
+  adapter: PipelineDeploymentTarget;
+  dryRun: boolean;
+  buildId: string;
+  manifestFormat: PipelineBuildOutput["manifest"]["format"];
+  ssgFormat: PipelineBuildOutput["ssg"]["format"];
+  staticPageCount: number;
+  staticRouteCount: number;
+  projectId?: string;
+  teamId?: string;
+  providerDeploymentUrl?: string;
+  domains?: PipelineHostingDomainAssignment[];
+  security: PipelineHostingSecurityMetadata;
+  logs?: PipelineHostingLogEntry[];
+}
+
 export interface PipelineDeploymentResult extends PipelineDeploymentStatusRecord {
   url: string;
   path: string;
   providerDeploymentId: string;
-  providerMetadata: Record<string, unknown>;
+  providerMetadata: PipelineHostingMetadata;
+  hostingError?: PipelineHostingError;
 }
 
 export interface PipelineRunResult {

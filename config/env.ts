@@ -42,6 +42,11 @@ function optionalPositiveInteger(value: string | undefined, fallback: number): n
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+function optionalBoolean(value: string | undefined, fallback = false): boolean {
+  if (value === undefined || value === "") return fallback;
+  return value === "true";
+}
+
 /**
  * Required variables validated at startup via validateEnv().
  * Each entry must have a corresponding required() call in the env object below.
@@ -157,6 +162,17 @@ export const env = {
     productionBaseUrl: optional(process.env.PIPELINE_PRODUCTION_BASE_URL),
     maxAttempts: optionalPositiveInteger(process.env.PIPELINE_MAX_ATTEMPTS, 3),
     retryBaseDelayMs: optionalPositiveInteger(process.env.PIPELINE_RETRY_BASE_DELAY_MS, 100),
+    vercel: {
+      apiUrl: process.env.PIPELINE_VERCEL_API_URL ?? "https://api.vercel.com",
+      token: optional(process.env.PIPELINE_VERCEL_TOKEN),
+      projectId: optional(process.env.PIPELINE_VERCEL_PROJECT_ID),
+      teamId: optional(process.env.PIPELINE_VERCEL_TEAM_ID),
+      deployHookPreviewUrl: optional(process.env.PIPELINE_VERCEL_DEPLOY_HOOK_PREVIEW_URL),
+      deployHookProductionUrl: optional(process.env.PIPELINE_VERCEL_DEPLOY_HOOK_PRODUCTION_URL),
+      defaultDomain: optional(process.env.PIPELINE_VERCEL_DEFAULT_DOMAIN),
+      enableRealDeployments: optionalBoolean(process.env.PIPELINE_VERCEL_ENABLE_REAL_DEPLOYMENTS),
+      timeoutMs: optionalPositiveInteger(process.env.PIPELINE_VERCEL_TIMEOUT_MS, 15000),
+    },
   },
 
   /** Feature flags */
