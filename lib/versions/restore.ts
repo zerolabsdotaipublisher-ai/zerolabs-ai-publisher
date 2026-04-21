@@ -20,6 +20,14 @@ export interface RestoreWebsiteVersionResult {
 }
 
 function buildRestoredStructure(current: WebsiteStructure, snapshotStructure: WebsiteStructure, restoredAt: string): WebsiteStructure {
+  let nextStatus = snapshotStructure.status;
+
+  if (current.status === "archived") {
+    nextStatus = "archived";
+  } else if (snapshotStructure.status === "archived") {
+    nextStatus = "draft";
+  }
+
   const restored: WebsiteStructure = {
     ...snapshotStructure,
     id: current.id,
@@ -29,7 +37,7 @@ function buildRestoredStructure(current: WebsiteStructure, snapshotStructure: We
     generatedAt: current.generatedAt,
     version: current.version + 1,
     updatedAt: restoredAt,
-    status: current.status === "archived" ? "archived" : snapshotStructure.status === "archived" ? "draft" : snapshotStructure.status,
+    status: nextStatus,
   };
 
   return markDraftUpdatedForPublication(restored, restoredAt);
