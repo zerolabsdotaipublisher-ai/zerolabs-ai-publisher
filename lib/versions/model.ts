@@ -5,6 +5,7 @@ export const WEBSITE_VERSION_HISTORY_LIMIT = 30;
 
 function sanitizeLabel(label: string): string {
   const normalized = label.trim().replace(/\s+/g, " ");
+  // Keep labels short enough for dense history UIs while preserving meaningful context.
   return normalized.slice(0, 120);
 }
 

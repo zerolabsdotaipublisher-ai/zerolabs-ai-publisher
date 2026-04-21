@@ -109,7 +109,7 @@ export async function restoreWebsiteVersion(params: {
       }),
     });
   } catch (error) {
-    logger.error("Website version restore succeeded without version snapshot", {
+    logger.error("Failed to create version snapshot after successful restore", {
       category: "error",
       service: "versions",
       structureId: params.structureId,

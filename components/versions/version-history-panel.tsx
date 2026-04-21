@@ -126,9 +126,6 @@ export function VersionHistoryPanel({ structureId, entries }: VersionHistoryPane
               <span className="version-history-badge">{formatSource(entry.source)}</span>
               {entry.isLive ? <span className="version-history-badge version-history-badge-live">Live</span> : null}
               {entry.isCurrentDraft ? <span className="version-history-badge version-history-badge-current">Current draft</span> : null}
-              {entry.status === "archived" ? (
-                <span className="version-history-badge version-history-badge-archived">Archived</span>
-              ) : null}
             </div>
 
             <div className="version-history-item-meta">
