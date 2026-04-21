@@ -243,14 +243,14 @@ export function markPublished(
     previousStableVersionId: previousLiveVersionId,
   };
   const nextHistory = [
-    ...((publication.updates?.history ?? []).map((entry) => ({
+    ...(publication.updates?.history ?? []).map((entry) => ({
       ...entry,
       live: false,
       rollback: {
         ...entry.rollback,
         currentVersionId: liveVersionId,
       },
-    })) ?? []),
+    })),
     {
       versionId: liveVersionId,
       structureVersion: structure.version,
