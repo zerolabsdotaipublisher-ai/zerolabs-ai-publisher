@@ -16,6 +16,16 @@ function trimOrUndefined(value?: string): string | undefined {
   return trimmed ? trimmed : undefined;
 }
 
+function normalizeIsoTimestamp(value?: string): string | undefined {
+  const trimmed = trimOrUndefined(value);
+  if (!trimmed) {
+    return undefined;
+  }
+
+  const parsed = new Date(trimmed);
+  return Number.isNaN(parsed.getTime()) ? undefined : parsed.toISOString();
+}
+
 function sanitizeParagraphs(paragraphs: string[] | undefined): string[] {
   return (paragraphs ?? [])
     .map((paragraph) => paragraph.trim().replace(/\s+/g, " "))
@@ -47,6 +57,7 @@ export function sanitizeBlogGenerationInput(input: BlogGenerationInput): BlogGen
     tags: input.tags?.map((tag) => tag.trim()).filter(Boolean),
     sectionCount: resolveSectionCount(input.length, input.sectionCount),
     style: input.style ?? "editorial",
+    publishAt: normalizeIsoTimestamp(input.publishAt),
   };
 }
 
@@ -59,6 +70,9 @@ export function validateBlogGenerationInput(input: BlogGenerationInput): string[
   if (!input.keywords.length) errors.push("keywords must include at least one entry");
   if (input.sectionCount !== undefined && (input.sectionCount < 2 || input.sectionCount > 8)) {
     errors.push("sectionCount must be between 2 and 8");
+  }
+  if (input.publishAt && Number.isNaN(new Date(input.publishAt).getTime())) {
+    errors.push("publishAt must be a valid ISO timestamp");
   }
 
   return errors;
@@ -126,6 +140,8 @@ export function normalizeBlogPost(blog: GeneratedBlogPost): GeneratedBlogPost {
       targetWordCount: targetWordCount(blog.requirements.length),
       sectionCount: resolveSectionCount(blog.requirements.length, blog.requirements.sectionCount),
     },
+    scheduledPublishAt: normalizeIsoTimestamp(blog.scheduledPublishAt),
+    publishedAt: normalizeIsoTimestamp(blog.publishedAt),
   };
 
   const qualityNotes = collectBlogQualityNotes(normalized);

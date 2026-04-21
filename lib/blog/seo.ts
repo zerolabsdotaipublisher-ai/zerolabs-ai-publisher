@@ -120,6 +120,7 @@ export function createBlogMetadata(args: {
   conclusion: string;
   callToAction: string;
   qualityNotes: string[];
+  versionId?: string;
 }): BlogPostMetadata {
   const wordCount = estimateWordCount(
     args.introduction,
@@ -132,6 +133,7 @@ export function createBlogMetadata(args: {
     authorName: args.input.authorName?.trim() || DEFAULT_AUTHOR,
     createdAt: args.generatedAt,
     updatedAt: args.updatedAt,
+    versionId: args.versionId,
     readingTimeMinutes: estimateReadingTime(wordCount),
     wordCount,
     tags: normalizeTags(args.input.keywords, args.input.tags),

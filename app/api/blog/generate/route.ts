@@ -2,13 +2,18 @@ import { type NextRequest, NextResponse } from "next/server";
 import { storeWebsiteStructure } from "@/lib/ai/structure";
 import { persistWebsiteStructureArtifacts } from "@/lib/editor/storage";
 import {
+  createBlogMetadata,
+  collectBlogQualityNotes,
   generateBlogPost,
+  normalizeBlogPost,
   sanitizeBlogGenerationInput,
   upsertBlogPost,
   validateBlogGenerationInput,
 } from "@/lib/blog";
 import { logger } from "@/lib/observability";
 import { getServerUser } from "@/lib/supabase/server";
+import { createWebsiteVersionLabel } from "@/lib/versions/model";
+import { createWebsiteVersion } from "@/lib/versions/storage";
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const user = await getServerUser();
@@ -33,14 +38,36 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const result = await generateBlogPost(input, user.id);
     const storedStructure = await storeWebsiteStructure(result.structure);
     await persistWebsiteStructureArtifacts(storedStructure, user.id);
+    const versionRecord = await createWebsiteVersion({
+      structure: storedStructure,
+      userId: user.id,
+      source: "generate",
+      status: "draft",
+      label: createWebsiteVersionLabel("generate", storedStructure),
+    });
+    const normalizedBlog = normalizeBlogPost({
+      ...result.blog,
+      structureId: storedStructure.id,
+      version: storedStructure.version,
+      generatedAt: storedStructure.generatedAt,
+      updatedAt: storedStructure.updatedAt,
+    });
+    const qualityNotes = collectBlogQualityNotes(normalizedBlog);
 
     const storedBlog = await upsertBlogPost(
       {
-        ...result.blog,
-        structureId: storedStructure.id,
-        version: storedStructure.version,
-        generatedAt: storedStructure.generatedAt,
-        updatedAt: storedStructure.updatedAt,
+        ...normalizedBlog,
+        metadata: createBlogMetadata({
+          input: normalizedBlog.sourceInput,
+          generatedAt: normalizedBlog.generatedAt,
+          updatedAt: normalizedBlog.updatedAt,
+          sections: normalizedBlog.sections,
+          introduction: normalizedBlog.introduction,
+          conclusion: normalizedBlog.conclusion,
+          callToAction: normalizedBlog.callToAction,
+          qualityNotes,
+          versionId: versionRecord.id,
+        }),
       },
       user.id,
     );
@@ -48,6 +75,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({
       blog: storedBlog,
       structure: storedStructure,
+      versionId: versionRecord.id,
       previewPath: `/preview/${storedStructure.id}?page=/${storedBlog.slug}`,
       usedFallback: result.usedFallback,
       validationErrors: result.validationErrors,

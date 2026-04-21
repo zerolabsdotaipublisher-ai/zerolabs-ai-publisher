@@ -26,6 +26,7 @@ export interface BlogGenerationInput {
   callToAction?: string;
   tags?: string[];
   sectionCount?: number;
+  publishAt?: string;
 }
 
 export interface BlogPostSection {
@@ -55,6 +56,7 @@ export interface BlogPostMetadata {
   authorName: string;
   createdAt: string;
   updatedAt: string;
+  versionId?: string;
   readingTimeMinutes: number;
   wordCount: number;
   tags: string[];
@@ -80,6 +82,8 @@ export interface GeneratedBlogPost {
   version: number;
   generatedAt: string;
   updatedAt: string;
+  scheduledPublishAt?: string;
+  publishedAt?: string;
 }
 
 export interface BlogGenerationResult {
@@ -127,4 +131,6 @@ export interface BlogPostRow {
   version: number;
   generated_at: string;
   updated_at: string;
+  scheduled_publish_at?: string | null;
+  published_at?: string | null;
 }

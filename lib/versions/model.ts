@@ -17,6 +17,8 @@ export function createWebsiteVersionId(structureId: string, source: WebsiteVersi
 
 export function createWebsiteVersionLabel(source: WebsiteVersionSource, structure: WebsiteStructure): string {
   switch (source) {
+    case "generate":
+      return sanitizeLabel(`Initial generated draft for structure v${structure.version}`);
     case "draft_save":
       return sanitizeLabel(`Draft save for structure v${structure.version}`);
     case "publish":

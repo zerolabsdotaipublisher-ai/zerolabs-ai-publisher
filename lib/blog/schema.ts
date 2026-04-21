@@ -51,6 +51,7 @@ export const BLOG_OUTPUT_EXAMPLE: Omit<
     authorName: "Zero Labs Editorial",
     createdAt: "2026-04-21T00:00:00.000Z",
     updatedAt: "2026-04-21T00:00:00.000Z",
+    versionId: "wver_ws_123_generate_20260421000000_abc123",
     readingTimeMinutes: 5,
     wordCount: 780,
     tags: ["AI", "SEO", "Content Ops"],
@@ -79,6 +80,8 @@ export const BLOG_OUTPUT_EXAMPLE: Omit<
     tags: ["AI", "SEO"],
     sectionCount: 4,
   },
+  scheduledPublishAt: "2026-04-22T09:00:00.000Z",
+  publishedAt: undefined,
 };
 
 export function blogOutputContractJson(): string {

@@ -8,7 +8,7 @@ type VersionEntry = {
   versionNumber: number;
   label: string;
   status: "draft" | "published" | "archived" | "restored";
-  source: "draft_save" | "publish" | "update" | "restore";
+  source: "generate" | "draft_save" | "publish" | "update" | "restore";
   structureVersion: number;
   isLive: boolean;
   isCurrentDraft: boolean;
@@ -39,6 +39,8 @@ interface VersionHistoryPanelProps {
 
 function formatSource(source: VersionEntry["source"]): string {
   switch (source) {
+    case "generate":
+      return "Initial generation";
     case "draft_save":
       return "Draft save";
     case "publish":

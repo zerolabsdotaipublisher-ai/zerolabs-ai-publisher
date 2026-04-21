@@ -195,6 +195,8 @@ function createFallbackBlogPost(input: BlogGenerationInput): GeneratedBlogPost {
     version: 1,
     generatedAt: now,
     updatedAt: now,
+    scheduledPublishAt: input.publishAt,
+    publishedAt: undefined,
   };
 }
 
@@ -289,7 +291,9 @@ function buildPages(blog: GeneratedBlogPost): WebsitePage[] {
         introduction: blog.introduction,
         authorName: blog.metadata.authorName,
         updatedAt: blog.updatedAt,
+        versionId: blog.metadata.versionId,
         readingTimeMinutes: blog.metadata.readingTimeMinutes,
+        qualityStatus: blog.metadata.qualityStatus,
         tags: blog.metadata.tags,
       },
     },
@@ -429,6 +433,7 @@ function withNormalizedMetadata(blog: GeneratedBlogPost): GeneratedBlogPost {
       conclusion: normalized.conclusion,
       callToAction: normalized.callToAction,
       qualityNotes,
+      versionId: normalized.metadata.versionId,
     }),
   };
 }
@@ -470,6 +475,8 @@ export async function generateBlogPost(
           targetWordCount: targetWordCount(input.length),
           sectionCount: resolveSectionCount(input.length, input.sectionCount),
         },
+        scheduledPublishAt: parsed.scheduledPublishAt ?? input.publishAt,
+        publishedAt: parsed.publishedAt,
       });
       usedFallback = false;
     }
@@ -536,6 +543,7 @@ export async function regenerateBlogPost(
       sourceInput: mergedInput,
       updatedAt: now,
       version: existing.version + 1,
+      scheduledPublishAt: mergedInput.publishAt ?? existing.scheduledPublishAt,
     });
     const structure = mapBlogToWebsiteStructure(updatedBlog, userId);
 
@@ -558,6 +566,12 @@ export async function regenerateBlogPost(
     generatedAt: existing.generatedAt,
     updatedAt: now,
     version: existing.version + 1,
+    metadata: {
+      ...generated.blog.metadata,
+      versionId: existing.metadata.versionId,
+    },
+    scheduledPublishAt: mergedInput.publishAt ?? existing.scheduledPublishAt,
+    publishedAt: existing.publishedAt,
   };
   const normalizedBlog = withNormalizedMetadata(blog);
   const structure = mapBlogToWebsiteStructure(normalizedBlog, userId);

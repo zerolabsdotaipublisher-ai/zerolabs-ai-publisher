@@ -60,6 +60,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       conclusion: normalizedBlog.conclusion,
       callToAction: normalizedBlog.callToAction,
       qualityNotes,
+      versionId: normalizedBlog.metadata.versionId,
     }),
   };
   const validationErrors = validateGeneratedBlogPost(finalBlog);
@@ -84,6 +85,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       ...finalBlog,
       version: draftSave.structure.version,
       updatedAt: draftSave.structure.updatedAt,
+      metadata: {
+        ...finalBlog.metadata,
+        versionId: draftSave.versionId ?? finalBlog.metadata.versionId,
+      },
     },
     user.id,
   );
@@ -92,6 +97,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     ok: true,
     blog: storedBlog,
     structure: draftSave.structure,
+    versionId: draftSave.versionId,
     validationErrors: [],
   });
 }

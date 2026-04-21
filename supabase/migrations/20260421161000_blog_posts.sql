@@ -10,12 +10,15 @@ create table if not exists public.blog_posts (
   blog_json    jsonb       not null,
   source_input jsonb       not null,
   version      integer     not null default 1,
+  scheduled_publish_at timestamptz,
+  published_at timestamptz,
   generated_at timestamptz not null default now(),
   updated_at   timestamptz not null default now()
 );
 
 create index if not exists idx_blog_posts_user on public.blog_posts(user_id);
 create index if not exists idx_blog_posts_slug on public.blog_posts(slug);
+create index if not exists idx_blog_posts_scheduled_publish_at on public.blog_posts(scheduled_publish_at);
 
 alter table public.blog_posts enable row level security;
 

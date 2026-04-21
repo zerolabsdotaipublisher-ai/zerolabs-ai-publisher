@@ -78,6 +78,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           conclusion: normalizedBlog.conclusion,
           callToAction: normalizedBlog.callToAction,
           qualityNotes,
+          versionId: draftSave.versionId ?? normalizedBlog.metadata.versionId,
         }),
       },
       user.id,
@@ -86,6 +87,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({
       blog: storedBlog,
       structure: draftSave.structure,
+      versionId: draftSave.versionId,
       usedFallback: regenerated.usedFallback,
       validationErrors: regenerated.validationErrors,
     });

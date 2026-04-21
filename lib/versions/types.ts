@@ -7,12 +7,20 @@ import type {
 
 export type WebsiteVersionStatus = "draft" | "published" | "archived" | "restored";
 
-export type WebsiteVersionSource = "draft_save" | "publish" | "update" | "restore";
+export type WebsiteVersionSource = "generate" | "draft_save" | "publish" | "update" | "restore";
+
+export interface WebsiteVersionBlogSummary {
+  postSlug: string;
+  sectionCount: number;
+  wordCount: number;
+  qualityStatus?: string;
+}
 
 export interface WebsiteVersionSnapshot {
   schemaVersion: 1;
   capturedAt: string;
   structure: WebsiteStructure;
+  blog?: WebsiteVersionBlogSummary;
 }
 
 export interface WebsiteVersionSummary {
@@ -22,6 +30,7 @@ export interface WebsiteVersionSummary {
   pageIds: string[];
   routePaths: string[];
   assetPaths: string[];
+  blog?: WebsiteVersionBlogSummary;
 }
 
 export interface WebsiteVersionDeploymentLink {
