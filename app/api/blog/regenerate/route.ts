@@ -6,6 +6,7 @@ import {
   normalizeBlogPost,
   regenerateBlogPost,
   upsertBlogPost,
+  type BlogGenerationInput,
 } from "@/lib/blog";
 import { saveEditorStructureDraft } from "@/lib/editor/storage";
 import { logger } from "@/lib/observability";
@@ -15,7 +16,7 @@ interface RegenerateBlogBody {
   structureId?: string;
   scope?: "full" | "section";
   sectionId?: string;
-  updatedInput?: Parameters<typeof regenerateBlogPost>[2]["updatedInput"];
+  updatedInput?: Partial<BlogGenerationInput>;
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
