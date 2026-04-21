@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Website version management stays inside AI Publisher as product-owned state and workflow.
+ZLAP-STORY 5-6 is the website version management story for AI Publisher, and it keeps version history inside the product as product-owned state and workflow.
 
 AI Publisher owns:
 
