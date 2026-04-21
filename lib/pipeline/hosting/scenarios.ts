@@ -31,6 +31,16 @@ export const pipelineHostingScenarios: PipelineHostingScenario[] = [
     expectedBehavior: "Subsequent publish updates set updating/deploying status and redeploy through the same adapter path.",
   },
   {
+    id: "hosting-domain-stability",
+    name: "Stable domain handling during updates",
+    expectedBehavior: "Production deployment updates preserve generated/live domain mappings instead of breaking the current live route contract.",
+  },
+  {
+    id: "hosting-cache-refresh-metadata",
+    name: "Cache refresh metadata",
+    expectedBehavior: "Deployment responses can be mapped to provider-neutral cache invalidation metadata for the affected SSG routes and assets.",
+  },
+  {
     id: "hosting-invalid-config",
     name: "Invalid hosting config",
     expectedBehavior: "Invalid Vercel real-deploy configuration fails fast with actionable typed errors.",

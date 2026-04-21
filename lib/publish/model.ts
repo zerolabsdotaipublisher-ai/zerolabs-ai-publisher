@@ -10,6 +10,11 @@ export function getPublicationMetadata(structure: WebsiteStructure): Publication
     return {
       state: DEFAULT_PUBLICATION_STATE,
       lastDraftUpdatedAt: structure.updatedAt,
+      updates: {
+        queue: {
+          duplicateRequests: 0,
+        },
+      },
     };
   }
 
@@ -25,6 +30,13 @@ export function getPublicationMetadata(structure: WebsiteStructure): Publication
     lastPublishAttemptAt: metadata.lastPublishAttemptAt,
     lastUpdatedAt: metadata.lastUpdatedAt,
     lastError: metadata.lastError,
+    updates: {
+      ...metadata.updates,
+      queue: {
+        duplicateRequests: metadata.updates?.queue?.duplicateRequests ?? 0,
+        ...metadata.updates?.queue,
+      },
+    },
   };
 }
 
