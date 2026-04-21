@@ -316,6 +316,6 @@ export function planDeploymentUpdate(
   };
 }
 
-export function createPublicationVersionId(structure: WebsiteStructure): string {
+export function createDeploymentVersionId(structure: WebsiteStructure): string {
   return `deployment_${structure.id}_v${structure.version}`;
 }

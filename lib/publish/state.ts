@@ -1,7 +1,7 @@
 import type { WebsiteStructure, WebsiteStructureStatus } from "@/lib/ai/structure";
 import { detectPublicationState } from "./detection";
 import { getPublicationMetadata, withPublicationMetadata } from "./model";
-import { createPublicationVersionId, planDeploymentUpdate } from "./versioning";
+import { createDeploymentVersionId, planDeploymentUpdate } from "./versioning";
 import type {
   PublicationCacheInvalidationMetadata,
   PublicationDeploymentMetadata,
@@ -235,7 +235,7 @@ export function markPublished(
   const publication = getPublicationMetadata(structure);
   const firstPublishedAt = publication.firstPublishedAt || params.publishedAt;
   const previousLiveVersionId = publication.updates?.liveVersionId;
-  const liveVersionId = createPublicationVersionId(structure);
+  const liveVersionId = createDeploymentVersionId(structure);
   const rollback = {
     providerSupport: "metadata-only" as const,
     rollbackReady: true,
@@ -454,8 +454,8 @@ export function normalizeDomainSnapshot(
 ): PublicationDomainSnapshot {
   return {
     ...nextDomain,
-    liveUrl: nextDomain.liveUrl || previousLiveUrl || nextDomain.liveUrl,
-    livePath: nextDomain.livePath || previousLivePath || nextDomain.livePath,
+    liveUrl: nextDomain.liveUrl,
+    livePath: nextDomain.livePath,
     domains: uniqueSorted(nextDomain.domains.length > 0 ? nextDomain.domains : previousDomains ?? []),
     preservedLivePath: previousLivePath ? previousLivePath === nextDomain.livePath : nextDomain.preservedLivePath,
     preservedDomains: previousDomains
