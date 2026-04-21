@@ -33,6 +33,11 @@ export const pipelineScenarios: PipelineScenario[] = [
     expectedBehavior: "Every visible WebsiteStructure page is represented in the SSG route manifest.",
   },
   {
+    id: "routing-config-manifest-alignment",
+    name: "Routing config and manifest alignment",
+    expectedBehavior: "Pipeline route manifests are generated from product-owned routing records and stay aligned with SSG output.",
+  },
+  {
     id: "static-metadata-included",
     name: "Static metadata included",
     expectedBehavior: "Static page artifacts include page title, description, keywords, canonical, and Open Graph metadata when available.",

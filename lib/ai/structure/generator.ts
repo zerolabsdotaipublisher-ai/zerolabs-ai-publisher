@@ -27,6 +27,7 @@ import { mapOutputToStructure } from "./mapper";
 import { generatePageLayouts } from "../layout";
 import { validateWebsiteStructure } from "./schemas";
 import type { WebsiteStructure, StructureGenerationResult } from "./types";
+import { withRegeneratedWebsiteRouting } from "@/lib/routing";
 
 // ---------------------------------------------------------------------------
 // ID generation
@@ -172,9 +173,11 @@ export async function generateWebsiteStructure(
   const layoutResult = generatePageLayouts(structure);
   structure.layout = layoutResult.layout;
 
+  const routed = withRegeneratedWebsiteRouting(structure, now);
   const validationErrors = [
-    ...validateWebsiteStructure(structure),
+    ...validateWebsiteStructure(routed.structure),
     ...layoutResult.validationErrors.map((err) => `layout: ${err}`),
+    ...routed.validationErrors.map((err) => `routing: ${err}`),
   ];
 
   if (validationErrors.length > 0) {
@@ -194,5 +197,5 @@ export async function generateWebsiteStructure(
     });
   }
 
-  return { structure, validationErrors, usedFallback };
+  return { structure: routed.structure, validationErrors, usedFallback };
 }

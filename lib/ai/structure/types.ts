@@ -19,6 +19,7 @@ import type {
 } from "../prompts/types";
 import type { WebsiteLayoutModel } from "../layout/types";
 import type { WebsiteNavigation, PageNavigationFlags } from "../navigation/types";
+import type { WebsiteRoutingConfig } from "@/lib/routing";
 
 export type { WebsiteType, TonePreset, StylePreset };
 
@@ -310,6 +311,8 @@ export interface WebsiteStructure {
     deletedBy?: string;
     deletionState?: "active" | "deleting" | "deleted";
   };
+  /** Product-owned website route model for preview/live/frontend resolution. */
+  routing?: WebsiteRoutingConfig;
   /** Original input that produced this structure. */
   sourceInput: WebsiteGenerationInput;
   /** Lifecycle status. */

@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { WebsiteStructure } from "@/lib/ai/structure";
+import { getWebsiteRoutingConfig } from "@/lib/routing";
 import { buildStaticSiteOutput, staticValidationMessages } from "./ssg";
 import { PipelineValidationError } from "./errors";
 import {
@@ -24,15 +25,23 @@ function pageRoutePath(slug: string): string {
 }
 
 function createRouteManifest(structure: WebsiteStructure): PipelinePageRoute[] {
-  return structure.pages
-    .filter((page) => page.visible !== false)
-    .map((page) => ({
-      pageId: page.id,
-      slug: page.slug,
-      path: pageRoutePath(page.slug),
-      title: page.title,
-      visible: page.visible !== false,
-    }))
+  const pagesById = new Map(structure.pages.map((page) => [page.id, page]));
+  return getWebsiteRoutingConfig(structure).routes
+    .map((route) => {
+      const page = pagesById.get(route.pageId);
+      if (!page) {
+        return undefined;
+      }
+
+      return {
+        pageId: page.id,
+        slug: route.slug,
+        path: pageRoutePath(route.path),
+        title: page.title,
+        visible: route.visible,
+      };
+    })
+    .filter((route): route is PipelinePageRoute => Boolean(route))
     .sort((a, b) => a.path.localeCompare(b.path));
 }
 

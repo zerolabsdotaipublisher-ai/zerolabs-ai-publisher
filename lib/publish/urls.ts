@@ -2,7 +2,7 @@ import { routes } from "@/config/routes";
 import { config } from "@/config";
 
 export function buildLivePath(structureId: string): string {
-  return `${routes.generatedSite(structureId)}?live=1`;
+  return routes.liveSite(structureId);
 }
 
 export function buildLiveUrl(structureId: string): string {

@@ -12,6 +12,7 @@
 import type { WebsiteGenerationInput } from "../prompts/types";
 import { generateWebsiteStructure } from "./generator";
 import type { WebsiteStructure, StructureGenerationResult } from "./types";
+import { withRegeneratedWebsiteRouting } from "@/lib/routing";
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -48,8 +49,11 @@ export async function regenerateWebsiteStructure(
     updatedAt: new Date().toISOString(),
   };
 
+  const routed = withRegeneratedWebsiteRouting(regenerated, regenerated.updatedAt);
+
   return {
     ...result,
-    structure: regenerated,
+    structure: routed.structure,
+    validationErrors: [...result.validationErrors, ...routed.validationErrors.map((error) => `routing: ${error}`)],
   };
 }

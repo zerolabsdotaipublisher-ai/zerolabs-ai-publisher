@@ -1,4 +1,5 @@
 import type { WebsiteStructure } from "@/lib/ai/structure";
+import { getWebsiteRoutingConfig, validateWebsiteRoutes } from "@/lib/routing";
 import type { PublishValidationResult } from "./types";
 
 // Rules:
@@ -52,6 +53,9 @@ export function validatePublishEligibility(structure: WebsiteStructure): Publish
   if (structure.navigation.primary.length === 0) {
     errors.push("Primary navigation must include at least one item before publishing.");
   }
+
+  const routingValidation = validateWebsiteRoutes(getWebsiteRoutingConfig(structure).routes);
+  errors.push(...routingValidation.errors);
 
   if (structure.status === "archived") {
     errors.push("Archived websites cannot be published.");

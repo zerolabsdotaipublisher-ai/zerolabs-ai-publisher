@@ -6,6 +6,7 @@ import { getWebsiteSeoMetadata } from "@/lib/ai/seo";
 import { Renderer } from "@/components/generated-site/renderer";
 import { PublishStatusBadge } from "@/components/publish/publish-status-badge";
 import { detectPublicationState } from "@/lib/publish";
+import { resolveWebsitePageByPath } from "@/lib/routing";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -31,9 +32,7 @@ export async function generateMetadata({
   }
 
   const seo = await getWebsiteSeoMetadata(id, user.id);
-  const page =
-    structure.pages.find((candidate) => candidate.slug === pageSlug) ??
-    structure.pages[0];
+  const page = resolveWebsitePageByPath(structure, pageSlug).page ?? structure.pages[0];
   const pageSeo = page
     ? seo?.pages.find((candidate) => candidate.pageSlug === page.slug)
     : undefined;

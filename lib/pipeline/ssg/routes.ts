@@ -1,5 +1,6 @@
 import { routes as appRoutes } from "@/config/routes";
 import type { WebsitePage, WebsiteStructure } from "@/lib/ai/structure";
+import { getWebsiteRoutingConfig } from "@/lib/routing";
 import type {
   NextStaticPageParams,
   StaticPageRoute,
@@ -70,9 +71,18 @@ export function createStaticPageRoute(
 }
 
 export function createStaticPageRoutes(structure: WebsiteStructure): StaticPageRoute[] {
-  return structure.pages
-    .filter((page) => page.visible !== false)
-    .map((page) => createStaticPageRoute(structure, page))
+  const pagesById = new Map(structure.pages.map((page) => [page.id, page]));
+  return getWebsiteRoutingConfig(structure).routes
+    .filter((route) => route.visible)
+    .map((route) => {
+      const page = pagesById.get(route.pageId);
+      if (!page) {
+        return undefined;
+      }
+
+      return createStaticPageRoute(structure, { ...page, slug: route.path });
+    })
+    .filter((route): route is StaticPageRoute => Boolean(route))
     .sort((a, b) => a.path.localeCompare(b.path));
 }
 
@@ -153,4 +163,3 @@ export function createPreviewRoutePath(structureId: string, path: string): strin
 
   return `${basePath}?page=${encodeURIComponent(path)}`;
 }
-
