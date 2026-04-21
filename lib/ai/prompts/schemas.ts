@@ -10,6 +10,7 @@ export const SUPPORTED_WEBSITE_TYPES: WebsiteType[] = [
   "small-business",
   "landing-page",
   "personal-brand",
+  "blog",
 ];
 
 export const DEFAULT_SECTION_SEQUENCE: WebsiteSectionName[] = [

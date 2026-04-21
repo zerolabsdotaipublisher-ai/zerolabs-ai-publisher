@@ -59,6 +59,47 @@ interface FooterContent {
   legalText?: string;
 }
 
+interface BlogIndexPost {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  tags?: string[];
+  readingTimeMinutes?: number;
+}
+
+interface BlogIndexContent {
+  kind?: "blog-index";
+  headline?: string;
+  posts?: BlogIndexPost[];
+}
+
+interface BlogPostHeaderContent {
+  kind?: "blog-post-header";
+  title?: string;
+  excerpt?: string;
+  introduction?: string;
+  authorName?: string;
+  updatedAt?: string;
+  readingTimeMinutes?: number;
+  tags?: string[];
+}
+
+interface BlogPostBodySection {
+  id: string;
+  heading: string;
+  summary?: string;
+  paragraphs?: string[];
+  h3Headings?: string[];
+}
+
+interface BlogPostBodyContent {
+  kind?: "blog-post-body";
+  sections?: BlogPostBodySection[];
+  conclusion?: string;
+  callToAction?: string;
+}
+
 // ---------------------------------------------------------------------------
 // Section sub-renderers
 // ---------------------------------------------------------------------------
@@ -196,6 +237,69 @@ function FooterSectionView({ content }: { content: FooterContent }) {
   );
 }
 
+function BlogIndexSectionView({ content }: { content: BlogIndexContent }) {
+  return (
+    <section className="gs-section gs-blog-index">
+      {content.headline ? <h2 className="gs-section-headline">{content.headline}</h2> : null}
+      <div className="gs-blog-index-list">
+        {(content.posts ?? []).map((post) => (
+          <article key={post.id} className="gs-blog-card">
+            <h3 className="gs-blog-card-title">
+              <a href={`?page=${encodeURIComponent(post.slug)}`}>{post.title}</a>
+            </h3>
+            <p className="gs-blog-card-excerpt">{post.excerpt}</p>
+            <p className="gs-blog-card-meta">
+              {post.readingTimeMinutes ? `${post.readingTimeMinutes} min read` : null}
+              {post.tags?.length ? ` • ${post.tags.join(", ")}` : null}
+            </p>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function BlogPostHeaderSectionView({ content }: { content: BlogPostHeaderContent }) {
+  return (
+    <section className="gs-section gs-blog-post-header">
+      {content.title ? <h1 className="gs-hero-headline">{content.title}</h1> : null}
+      {content.excerpt ? <p className="gs-hero-subheadline">{content.excerpt}</p> : null}
+      <p className="gs-blog-post-meta">
+        {content.authorName ? `By ${content.authorName}` : null}
+        {content.updatedAt ? ` • Updated ${new Date(content.updatedAt).toLocaleDateString()}` : null}
+        {content.readingTimeMinutes ? ` • ${content.readingTimeMinutes} min read` : null}
+      </p>
+      {content.tags?.length ? <p className="gs-blog-post-tags">{content.tags.join(" • ")}</p> : null}
+      {content.introduction ? <p className="gs-about-body">{content.introduction}</p> : null}
+    </section>
+  );
+}
+
+function BlogPostBodySectionView({ content }: { content: BlogPostBodyContent }) {
+  return (
+    <section className="gs-section gs-blog-post-body">
+      {(content.sections ?? []).map((section) => (
+        <article key={section.id} className="gs-blog-post-block">
+          <h2 className="gs-section-headline">{section.heading}</h2>
+          {section.summary ? <p className="gs-about-body">{section.summary}</p> : null}
+          {(section.h3Headings ?? []).map((heading, index) => (
+            <h3 key={`${section.id}_${index}`} className="gs-blog-post-subheading">
+              {heading}
+            </h3>
+          ))}
+          {(section.paragraphs ?? []).map((paragraph, index) => (
+            <p key={`${section.id}_paragraph_${index}`} className="gs-about-body">
+              {paragraph}
+            </p>
+          ))}
+        </article>
+      ))}
+      {content.conclusion ? <p className="gs-about-body">{content.conclusion}</p> : null}
+      {content.callToAction ? <p className="gs-cta-headline">{content.callToAction}</p> : null}
+    </section>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Public section renderer
 // ---------------------------------------------------------------------------
@@ -209,6 +313,19 @@ interface SectionRendererProps {
  * sub-renderer based on `section.type`.
  */
 export function SectionRenderer({ section }: SectionRendererProps) {
+  if (section.type === "custom") {
+    const customKind = (section.content as { kind?: string }).kind;
+    if (customKind === "blog-index") {
+      return <BlogIndexSectionView content={section.content as BlogIndexContent} />;
+    }
+    if (customKind === "blog-post-header") {
+      return <BlogPostHeaderSectionView content={section.content as BlogPostHeaderContent} />;
+    }
+    if (customKind === "blog-post-body") {
+      return <BlogPostBodySectionView content={section.content as BlogPostBodyContent} />;
+    }
+  }
+
   switch (section.type) {
     case "hero":
       return <HeroSectionView content={section.content as HeroContent} />;
@@ -232,6 +349,7 @@ export function SectionRenderer({ section }: SectionRendererProps) {
       );
     case "footer":
       return <FooterSectionView content={section.content as FooterContent} />;
+    case "custom":
     default:
       return null;
   }

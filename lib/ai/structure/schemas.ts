@@ -30,6 +30,7 @@ export const SUPPORTED_WEBSITE_TYPES_STRUCTURE: WebsiteType[] = [
   "small-business",
   "landing-page",
   "personal-brand",
+  "blog",
 ];
 
 // ---------------------------------------------------------------------------
