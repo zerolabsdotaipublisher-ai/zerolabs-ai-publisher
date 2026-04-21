@@ -2,7 +2,8 @@ export type WebsiteType =
   | "portfolio"
   | "small-business"
   | "landing-page"
-  | "personal-brand";
+  | "personal-brand"
+  | "blog";
 
 export type TonePreset =
   | "professional"

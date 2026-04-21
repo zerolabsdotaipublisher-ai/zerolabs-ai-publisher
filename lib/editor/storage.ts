@@ -100,6 +100,7 @@ export interface SaveEditorStructureResult {
   structure?: WebsiteStructure;
   validationErrors: EditorValidationError[];
   error?: string;
+  versionId?: string;
 }
 
 export async function saveEditorStructureDraft(userId: string, structure: WebsiteStructure): Promise<SaveEditorStructureResult> {
@@ -141,15 +142,17 @@ export async function saveEditorStructureDraft(userId: string, structure: Websit
   try {
     const updated = await updateWebsiteStructure(routed.structure);
     await persistWebsiteStructureArtifacts(updated, userId);
+    let versionId: string | undefined;
 
     try {
-      await createWebsiteVersion({
+      const versionRecord = await createWebsiteVersion({
         structure: updated,
         userId,
         source: "draft_save",
         status: "draft",
         label: createWebsiteVersionLabel("draft_save", updated),
       });
+      versionId = versionRecord.id;
     } catch (error) {
       logger.error("Failed to store draft version snapshot", {
         category: "error",
@@ -166,6 +169,7 @@ export async function saveEditorStructureDraft(userId: string, structure: Websit
     return {
       structure: updated,
       validationErrors: [],
+      versionId,
     };
   } catch (error) {
     logger.error("Failed to save editor draft", {

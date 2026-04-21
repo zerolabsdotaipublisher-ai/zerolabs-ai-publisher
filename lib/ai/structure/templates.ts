@@ -85,6 +85,13 @@ const TEMPLATES: Record<WebsiteType, WebsiteTemplate> = {
     defaultTagline: "Helping you do your best work.",
     defaultPrimaryNav: ["About", "Services", "Contact"],
   },
+  blog: {
+    websiteType: "blog",
+    defaultSections: ["hero", "custom", "footer"],
+    defaultPageTitle: "Blog",
+    defaultTagline: "Structured articles ready for preview and publishing.",
+    defaultPrimaryNav: ["Blog"],
+  },
 };
 
 // ---------------------------------------------------------------------------

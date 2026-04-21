@@ -135,6 +135,22 @@ const NAV_DEFAULTS: Record<WebsiteType, DefaultPageDefinition[]> = {
       navigation: { includeInHeader: true, includeInFooter: true, includeInSidebar: false },
     },
   ],
+  blog: [
+    {
+      slug: "/",
+      title: "Blog",
+      type: "home",
+      priority: 0,
+      navigation: { includeInHeader: true, includeInFooter: true, includeInSidebar: false },
+    },
+    {
+      slug: "/latest",
+      title: "Latest",
+      type: "custom",
+      priority: 10,
+      navigation: { includeInHeader: true, includeInFooter: true, includeInSidebar: false },
+    },
+  ],
 };
 
 export function getDefaultPagesForWebsiteType(
