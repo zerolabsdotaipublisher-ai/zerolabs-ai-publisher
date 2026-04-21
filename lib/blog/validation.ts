@@ -9,6 +9,8 @@ const BANNED_PHRASES = [
   "unlock",
 ];
 
+const MIN_SECTION_PARAGRAPHS = 2;
+
 function trimOrUndefined(value?: string): string | undefined {
   const trimmed = value?.trim();
   return trimmed ? trimmed : undefined;
@@ -72,7 +74,7 @@ export function collectBlogQualityNotes(blog: GeneratedBlogPost): string[] {
 
   if (!blog.seo.metaTitle) notes.push("Meta title missing");
   if (!blog.seo.metaDescription) notes.push("Meta description missing");
-  if (blog.sections.some((section) => section.paragraphs.length < 2)) {
+  if (blog.sections.some((section) => section.paragraphs.length < MIN_SECTION_PARAGRAPHS)) {
     notes.push("One or more sections are too thin");
   }
 
@@ -149,8 +151,8 @@ export function validateGeneratedBlogPost(blog: GeneratedBlogPost): string[] {
     if (!section.heading.trim()) {
       errors.push(`sections[${index}].heading is required`);
     }
-    if (section.paragraphs.length < 2) {
-      errors.push(`sections[${index}] must include at least two paragraphs`);
+    if (section.paragraphs.length < MIN_SECTION_PARAGRAPHS) {
+      errors.push(`sections[${index}] must include at least ${MIN_SECTION_PARAGRAPHS} paragraphs`);
     }
   });
 

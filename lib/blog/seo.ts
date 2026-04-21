@@ -67,6 +67,7 @@ export function estimateWordCount(
 }
 
 export function estimateReadingTime(wordCount: number): number {
+  // 220 WPM is a common editorial benchmark for web reading-time estimates.
   return Math.max(1, Math.ceil(wordCount / 220));
 }
 

@@ -349,7 +349,6 @@ export function SectionRenderer({ section }: SectionRendererProps) {
       );
     case "footer":
       return <FooterSectionView content={section.content as FooterContent} />;
-    case "custom":
     default:
       return null;
   }
