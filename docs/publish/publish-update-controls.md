@@ -53,6 +53,7 @@ This implementation:
 - `lastPublishAttemptAt`
 - `lastUpdatedAt`
 - `lastError`
+- `updates`: pending update scope, live version history, retry/rollback-ready metadata, cache/domain metadata, and update logs
 
 Transition rules are centralized in `lib/publish/transitions.ts`.
 
@@ -123,6 +124,7 @@ Integrated in:
 
 ## Future extension path
 
+- deployment update management now lives in `docs/deployment/website-deployment-updates.md`
 - swap delivery adapter internals to real deployment provider
 - add role-based publish permissions beyond owner-only
 - add custom domain mapping atop `liveUrl/livePath` metadata

@@ -14,6 +14,7 @@ const allowedEvents = new Set([
   "publish_failed",
   "publish_retry_clicked",
   "update_completed",
+  "update_noop",
 ]);
 
 interface EventBody {

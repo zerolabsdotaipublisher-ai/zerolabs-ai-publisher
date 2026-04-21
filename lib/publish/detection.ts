@@ -1,13 +1,28 @@
 import type { WebsiteStructure } from "@/lib/ai/structure";
 import { getPublicationMetadata } from "./model";
+import { planDeploymentUpdate } from "./versioning";
 import type { PublicationDetection, PublicationState } from "./types";
 
 function hasUnpublishedSavedChanges(structure: WebsiteStructure): boolean {
   const publication = getPublicationMetadata(structure);
   const hasPublishedVersion = typeof publication.publishedVersion === "number";
-  const publishedVersion = publication.publishedVersion ?? 0;
 
-  return hasPublishedVersion ? structure.version > publishedVersion : false;
+  if (!hasPublishedVersion) {
+    return false;
+  }
+
+  const pending = publication.updates?.pending;
+  if (pending) {
+    return pending.required;
+  }
+
+  const liveFingerprint = publication.updates?.liveFingerprint;
+  if (liveFingerprint) {
+    return planDeploymentUpdate(structure, { liveFingerprint }).required;
+  }
+
+  const publishedVersion = publication.publishedVersion ?? 0;
+  return structure.version > publishedVersion;
 }
 
 function deriveState(structure: WebsiteStructure): PublicationState {
@@ -15,11 +30,11 @@ function deriveState(structure: WebsiteStructure): PublicationState {
   const hasPublishedVersion = typeof publication.publishedVersion === "number";
   const hasUnpublishedChanges = hasUnpublishedSavedChanges(structure);
 
-  if (publication.state === "publishing") {
+  if (publication.state === "publishing" || publication.updates?.queue?.activeRequestId) {
     return "publishing";
   }
 
-  if (publication.state === "update_failed") {
+  if (publication.state === "update_failed" && hasUnpublishedChanges) {
     return "update_failed";
   }
 
@@ -56,5 +71,8 @@ export function detectPublicationState(structure: WebsiteStructure): Publication
     lastPublishedAt: publication.lastPublishedAt,
     lastDraftUpdatedAt: publication.lastDraftUpdatedAt,
     lastError: publication.lastError,
+    deploymentStatus: publication.deployment?.status,
+    pendingUpdate: publication.updates?.pending,
+    liveVersionId: publication.updates?.liveVersionId,
   };
 }

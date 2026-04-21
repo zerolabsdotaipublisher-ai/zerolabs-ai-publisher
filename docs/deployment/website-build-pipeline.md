@@ -62,6 +62,7 @@ The SSG artifact includes:
 - typed validation result and metrics
 
 See [website-static-site-generation.md](./website-static-site-generation.md) for architecture details and [website-static-site-generation-tests.md](./website-static-site-generation-tests.md) for validation scenarios.
+Story 5-5 extends the same publish + pipeline path with deployment update planning, version history, cache metadata, and concurrency guards; see [website-deployment-updates.md](./website-deployment-updates.md).
 
 ## Idempotency
 
@@ -77,4 +78,4 @@ Pipeline events are logged through `lib/observability` and can also be observed 
 - No new website model is introduced; the build artifact wraps the existing `WebsiteStructure`.
 - No second deployment system is introduced; Story 5-3 extends the existing adapter path.
 - No provider-specific CDN behavior or ISR revalidation is enabled in Story 5-2.
-- Persistent deployment history is not added; the current production deployment status is stored in publication metadata.
+- Story 5-5 stores deployment update version history in publication metadata without creating a separate deployment database or queue service.

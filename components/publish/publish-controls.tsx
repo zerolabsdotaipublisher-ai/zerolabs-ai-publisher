@@ -86,7 +86,15 @@ export function PublishControls({ structure, hasUnsavedChanges = false, context 
 
       setWebsite(body.structure);
 
-      if (selectedAction === "publish") {
+      if (!body.didDeploy && selectedAction === "update") {
+        void trackPublishEvent({
+          event: "update_noop",
+          structureId: website.id,
+          action: selectedAction,
+          state: body.detection.state,
+          message: body.message,
+        });
+      } else if (selectedAction === "publish") {
         void trackPublishEvent({
           event: "publish_completed",
           structureId: website.id,
@@ -102,7 +110,12 @@ export function PublishControls({ structure, hasUnsavedChanges = false, context 
         });
       }
 
-      setSuccessMessage(selectedAction === "publish" ? "Website published successfully." : "Live website updated successfully.");
+      setSuccessMessage(
+        body.message ??
+          (selectedAction === "publish"
+            ? "Website published successfully."
+            : "Live website updated successfully."),
+      );
     } catch {
       setErrorMessage("Publish action failed unexpectedly.");
     } finally {

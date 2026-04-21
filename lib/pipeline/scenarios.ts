@@ -53,6 +53,11 @@ export const pipelineScenarios: PipelineScenario[] = [
     expectedBehavior: "Retryable adapter errors are retried up to the configured attempt limit and logged.",
   },
   {
+    id: "deployment-update-scope-captured",
+    name: "Deployment update scope captured",
+    expectedBehavior: "Publish/update orchestration can map SSG routes and assets back into app-owned deployment update scope metadata without creating a second pipeline.",
+  },
+  {
     id: "vercel-safe-real-integration",
     name: "Vercel real integration with safe fallback",
     expectedBehavior: "The Vercel adapter performs real deploy-hook calls when enabled and falls back to dry-run safely when not configured.",

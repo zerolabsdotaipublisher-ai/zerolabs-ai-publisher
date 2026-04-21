@@ -42,6 +42,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     : result.error === "This website has not been published yet."
       ? 409
       : result.error === "A publish operation is already in progress."
+          || result.error === "Another deployment update request won the race. Refresh and try again."
         ? 409
       : result.validation && !result.validation.eligible
         ? 422

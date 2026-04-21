@@ -302,6 +302,215 @@ export interface WebsiteStructure {
     lastPublishAttemptAt?: string;
     lastUpdatedAt?: string;
     lastError?: string;
+    updates?: {
+      liveVersionId?: string;
+      liveFingerprint?: {
+        generatedAt: string;
+        site: Record<"content" | "structure" | "layout" | "seo" | "routing", string>;
+        pages: Array<{
+          pageId: string;
+          path: string;
+          assetPaths: string[];
+          signatures: Record<"content" | "structure" | "layout" | "seo" | "routing", string>;
+        }>;
+        routePaths: string[];
+        assetPaths: string[];
+      };
+      pending?: {
+        required: boolean;
+        triggeredBy: Array<"content" | "structure" | "layout" | "seo" | "routing" | "manual">;
+        scope: {
+          fullSite: boolean;
+          metadataOnly: boolean;
+          pageIds: string[];
+          routePaths: string[];
+          assetPaths: string[];
+          changeKinds: Array<"content" | "structure" | "layout" | "seo" | "routing">;
+        };
+        summary: string;
+        comparedAt: string;
+        fingerprint: {
+          generatedAt: string;
+          site: Record<"content" | "structure" | "layout" | "seo" | "routing", string>;
+          pages: Array<{
+            pageId: string;
+            path: string;
+            assetPaths: string[];
+            signatures: Record<"content" | "structure" | "layout" | "seo" | "routing", string>;
+          }>;
+          routePaths: string[];
+          assetPaths: string[];
+        };
+      };
+      queue?: {
+        activeRequestId?: string;
+        requestedAt?: string;
+        startedAt?: string;
+        completedAt?: string;
+        lastCompletedRequestId?: string;
+        duplicateRequests: number;
+      };
+      current?: {
+        requestId: string;
+        action: "publish" | "update";
+        status: "pending" | "running" | "succeeded" | "failed" | "noop";
+        requestedAt: string;
+        startedAt?: string;
+        completedAt?: string;
+        error?: string;
+        retryable?: boolean;
+        update?: {
+          required: boolean;
+          triggeredBy: Array<"content" | "structure" | "layout" | "seo" | "routing" | "manual">;
+          scope: {
+            fullSite: boolean;
+            metadataOnly: boolean;
+            pageIds: string[];
+            routePaths: string[];
+            assetPaths: string[];
+            changeKinds: Array<"content" | "structure" | "layout" | "seo" | "routing">;
+          };
+          summary: string;
+          comparedAt: string;
+          fingerprint: {
+            generatedAt: string;
+            site: Record<"content" | "structure" | "layout" | "seo" | "routing", string>;
+            pages: Array<{
+              pageId: string;
+              path: string;
+              assetPaths: string[];
+              signatures: Record<"content" | "structure" | "layout" | "seo" | "routing", string>;
+            }>;
+            routePaths: string[];
+            assetPaths: string[];
+          };
+        };
+      };
+      retry?: {
+        retryable: boolean;
+        retryCount: number;
+        recommendedAction: "retry" | "fix_and_retry" | "manual_review";
+        lastAttemptAt?: string;
+      };
+      rollback?: {
+        providerSupport: "metadata-only" | "manual" | "native";
+        rollbackReady: boolean;
+        currentVersionId?: string;
+        previousStableVersionId?: string;
+      };
+      cache?: {
+        strategy: "full-site-redeploy" | "targeted-path-refresh";
+        provider: "provider-neutral" | "vercel";
+        affectedPaths: string[];
+        assetPaths: string[];
+        notes: string;
+        invalidatedAt?: string;
+      };
+      domain?: {
+        liveUrl: string;
+        livePath: string;
+        domains: string[];
+        providerDeploymentUrl?: string;
+        preservedLivePath: boolean;
+        preservedDomains: boolean;
+      };
+      staticSite?: {
+        pageCount: number;
+        routeCount: number;
+        assetCount: number;
+        routePaths: string[];
+        assetPaths: string[];
+      };
+      history?: Array<{
+        versionId: string;
+        structureVersion: number;
+        publishedAt: string;
+        deploymentId?: string;
+        providerDeploymentId?: string;
+        status:
+          | "queued"
+          | "validating"
+          | "building"
+          | "deploying"
+          | "updating"
+          | "deployed"
+          | "ready"
+          | "failed";
+        live: boolean;
+        liveUrl: string;
+        livePath: string;
+        domains: string[];
+        update: {
+          required: boolean;
+          triggeredBy: Array<"content" | "structure" | "layout" | "seo" | "routing" | "manual">;
+          scope: {
+            fullSite: boolean;
+            metadataOnly: boolean;
+            pageIds: string[];
+            routePaths: string[];
+            assetPaths: string[];
+            changeKinds: Array<"content" | "structure" | "layout" | "seo" | "routing">;
+          };
+          summary: string;
+          comparedAt: string;
+          fingerprint: {
+            generatedAt: string;
+            site: Record<"content" | "structure" | "layout" | "seo" | "routing", string>;
+            pages: Array<{
+              pageId: string;
+              path: string;
+              assetPaths: string[];
+              signatures: Record<"content" | "structure" | "layout" | "seo" | "routing", string>;
+            }>;
+            routePaths: string[];
+            assetPaths: string[];
+          };
+        };
+        cache: {
+          strategy: "full-site-redeploy" | "targeted-path-refresh";
+          provider: "provider-neutral" | "vercel";
+          affectedPaths: string[];
+          assetPaths: string[];
+          notes: string;
+          invalidatedAt?: string;
+        };
+        domain: {
+          liveUrl: string;
+          livePath: string;
+          domains: string[];
+          providerDeploymentUrl?: string;
+          preservedLivePath: boolean;
+          preservedDomains: boolean;
+        };
+        staticSite: {
+          pageCount: number;
+          routeCount: number;
+          assetCount: number;
+          routePaths: string[];
+          assetPaths: string[];
+        };
+        rollback: {
+          providerSupport: "metadata-only" | "manual" | "native";
+          rollbackReady: boolean;
+          currentVersionId?: string;
+          previousStableVersionId?: string;
+        };
+        logs?: Array<{
+          at: string;
+          level: "info" | "warn" | "error";
+          message: string;
+          details?: Record<string, unknown>;
+        }>;
+      }>;
+      logs?: Array<{
+        at: string;
+        phase: "analysis" | "queue" | "deployment" | "cache" | "domain" | "completion" | "retry";
+        level: "info" | "warn" | "error";
+        message: string;
+        requestId?: string;
+        details?: Record<string, unknown>;
+      }>;
+    };
   };
   /** Product-owned management metadata for dashboard/listing and deletion workflows. */
   management?: {
