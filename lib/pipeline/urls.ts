@@ -19,7 +19,7 @@ export function buildDeploymentPath(params: {
     return routes.previewSite(params.structureId);
   }
 
-  return `${routes.generatedSite(params.structureId)}?live=1`;
+  return routes.liveSite(params.structureId);
 }
 
 export function resolveDeploymentBaseUrl(

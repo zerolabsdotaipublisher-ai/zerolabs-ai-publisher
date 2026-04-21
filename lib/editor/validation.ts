@@ -1,8 +1,9 @@
 import { validateWebsiteStructure } from "@/lib/ai/structure/schemas";
 import type { WebsiteSection, WebsiteStructure } from "@/lib/ai/structure";
+import { isReservedRoutePath } from "@/lib/routing";
 import type { EditorValidationError } from "./types";
 
-const SLUG_PATTERN = /^\/(?:[a-z0-9]+(?:-[a-z0-9]+)*)?$/;
+const SLUG_PATTERN = /^\/(?:[a-z0-9]+(?:-[a-z0-9]+)*)?(?:\/[a-z0-9]+(?:-[a-z0-9]+)*)*$/;
 
 function ensureSlugValidation(structure: WebsiteStructure, errors: EditorValidationError[]): void {
   const seen = new Set<string>();
@@ -12,6 +13,12 @@ function ensureSlugValidation(structure: WebsiteStructure, errors: EditorValidat
       errors.push({
         field: `pages.${pageIndex}.slug`,
         message: `Slug "${page.slug}" must be "/" or use lowercase letters, numbers, and hyphens.`,
+      });
+    }
+    if (isReservedRoutePath(page.slug)) {
+      errors.push({
+        field: `pages.${pageIndex}.slug`,
+        message: `Slug "${page.slug}" is reserved for application system routes.`,
       });
     }
 

@@ -40,4 +40,9 @@ export const publishScenarios: PublishScenario[] = [
     name: "Status indicators update",
     expectedBehavior: "Editor and preview indicators reflect publication state and show the live link after publish.",
   },
+  {
+    id: "live-route-resolution-and-redirects",
+    name: "Live route resolution and redirects",
+    expectedBehavior: "Published routes resolve from persisted routing config and renamed page routes can redirect to updated paths.",
+  },
 ];

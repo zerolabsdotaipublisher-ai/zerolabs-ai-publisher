@@ -1,4 +1,5 @@
 import type { WebsiteStructure } from "@/lib/ai/structure/types";
+import { resolveWebsitePageByPath } from "@/lib/routing";
 import { LayoutRenderer } from "./layout-renderer";
 import { PageRenderer } from "./page-renderer";
 import { NavigationRenderer } from "./navigation-renderer";
@@ -7,6 +8,7 @@ interface RendererProps {
   structure: WebsiteStructure;
   /** URL slug of the page to render. Defaults to "/" (home page). */
   pageSlug?: string;
+  strictRoute?: boolean;
 }
 
 /**
@@ -16,17 +18,17 @@ interface RendererProps {
  * site-level layout container.  This is the entry point for the
  * AI → structure → render pipeline.
  */
-export function Renderer({ structure, pageSlug = "/" }: RendererProps) {
-  const page =
-    structure.pages.find((p) => p.slug === pageSlug) ?? structure.pages[0];
+export function Renderer({ structure, pageSlug = "/", strictRoute = false }: RendererProps) {
+  const resolved = resolveWebsitePageByPath(structure, pageSlug);
+  const page = resolved.page ?? (strictRoute ? undefined : structure.pages[0]);
   const layoutPage =
-    structure.layout?.pages.find((p) => p.pageSlug === pageSlug) ??
+    structure.layout?.pages.find((p) => p.pageSlug === (page?.slug ?? pageSlug)) ??
     structure.layout?.pages[0];
 
   if (!page) {
     return (
       <div className="gs-error">
-        <p>No page found for this website structure.</p>
+        <p>Page not found.</p>
       </div>
     );
   }

@@ -8,6 +8,7 @@ import { getWebsiteStructure, updateWebsiteStructure } from "@/lib/ai/structure"
 import type { WebsitePage, WebsiteStructure } from "@/lib/ai/structure";
 import { logger } from "@/lib/observability";
 import { markDraftUpdatedForPublication } from "@/lib/publish";
+import { withRegeneratedWebsiteRouting } from "@/lib/routing";
 import { applySystemManagedBoundaries } from "./boundaries";
 import type { EditorValidationError } from "./types";
 import { validateEditorDraft } from "./validation";
@@ -107,7 +108,14 @@ export async function saveEditorStructureDraft(userId: string, structure: Websit
   // detect saved-but-unpublished draft changes for publish controls.
   const withAuditFields = markDraftUpdatedForPublication(withAuditFieldsBase, now);
 
-  const validationErrors = validateEditorDraft(withAuditFields);
+  const routed = withRegeneratedWebsiteRouting(withAuditFields, now);
+  const validationErrors = [
+    ...validateEditorDraft(routed.structure),
+    ...routed.validationErrors.map((message) => ({
+      field: "routing",
+      message,
+    })),
+  ];
   if (validationErrors.length > 0) {
     return {
       validationErrors,
@@ -116,7 +124,7 @@ export async function saveEditorStructureDraft(userId: string, structure: Websit
   }
 
   try {
-    const updated = await updateWebsiteStructure(withAuditFields);
+    const updated = await updateWebsiteStructure(routed.structure);
 
     await storeWebsiteNavigation({
       structureId: updated.id,

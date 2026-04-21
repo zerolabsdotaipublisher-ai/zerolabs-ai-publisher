@@ -3,6 +3,7 @@ import {
   type WebsitePage,
   type WebsiteStructure,
 } from "@/lib/ai/structure";
+import { getWebsiteRoutingConfig, validateWebsiteRoutes } from "@/lib/routing";
 import { validatePipelineDeploymentTarget } from "./schema";
 import { staticValidationMessages, validateStaticSiteReadiness } from "./ssg";
 import type {
@@ -66,6 +67,9 @@ export function validatePipelineStructure(
   if (environment === "production" && structure.pages.some((page) => !page.seo?.title?.trim())) {
     errors.push("Production deployments require page SEO titles.");
   }
+
+  const routingValidation = validateWebsiteRoutes(getWebsiteRoutingConfig(structure).routes);
+  errors.push(...routingValidation.errors);
 
   return {
     valid: errors.length === 0,

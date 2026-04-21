@@ -46,4 +46,14 @@ export const websitePreviewScenarios: PreviewScenario[] = [
       "Valid token renders read-only shared preview",
     ],
   },
+  {
+    id: "preview-route-resolution",
+    name: "Preview route resolution",
+    description: "Preview page query values resolve through generated website routing records.",
+    expected: [
+      "Unknown page route falls back to first visible generated page",
+      "Preview page list uses generated route mapping",
+      "Navigation and preview route state stay synchronized",
+    ],
+  },
 ];

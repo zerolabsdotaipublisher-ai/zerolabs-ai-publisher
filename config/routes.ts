@@ -17,4 +17,5 @@ export const routes = {
   profile: "/profile",
   generatedSites: "/generated-sites",
   generatedSite: (id: string) => `/generated-sites/${id}`,
+  liveSite: (id: string) => `/site/${id}`,
 };

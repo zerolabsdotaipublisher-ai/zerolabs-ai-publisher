@@ -89,6 +89,7 @@ export {
   storeWebsiteStructure,
   updateWebsiteStructure,
   getWebsiteStructure,
+  getWebsiteStructureById,
   listWebsiteStructures,
 } from "./storage";
 

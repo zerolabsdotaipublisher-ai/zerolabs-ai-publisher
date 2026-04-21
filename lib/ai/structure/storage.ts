@@ -169,3 +169,33 @@ export async function listWebsiteStructures(
 
   return (data as WebsiteStructureRow[]).map(fromRow);
 }
+
+/**
+ * Fetch a structure by id without user scoping.
+ * Intended for public live-route resolution where publication state is checked separately.
+ */
+export async function getWebsiteStructureById(
+  id: string,
+): Promise<WebsiteStructure | null> {
+  const supabase = getSupabaseServiceClient();
+
+  const { data, error } = await supabase
+    .from("website_structures")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error) {
+    if (error.code === "PGRST116") return null;
+
+    logger.error("Failed to fetch website structure by id", {
+      category: "error",
+      service: "supabase",
+      structureId: id,
+      error: { message: error.message, name: "SupabaseStructureError" },
+    });
+    throw error;
+  }
+
+  return fromRow(data as WebsiteStructureRow);
+}

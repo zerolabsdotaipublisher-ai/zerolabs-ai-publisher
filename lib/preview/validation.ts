@@ -1,4 +1,5 @@
 import type { WebsiteStructure } from "@/lib/ai/structure";
+import { getWebsiteRoutingConfig } from "@/lib/routing";
 import type { PreviewDeviceMode } from "./types";
 
 export const PREVIEW_DEVICE_MODES: PreviewDeviceMode[] = ["desktop", "tablet", "mobile"];
@@ -15,9 +16,10 @@ export function sanitizePreviewPageSlug(
   structure: WebsiteStructure,
   value: string | undefined,
 ): string {
-  if (value && structure.pages.some((page) => page.slug === value)) {
+  const routes = getWebsiteRoutingConfig(structure).routes;
+  if (value && routes.some((route) => route.path === value && route.visible)) {
     return value;
   }
 
-  return structure.pages[0]?.slug || "";
+  return routes.find((route) => route.visible)?.path || structure.pages[0]?.slug || "";
 }
