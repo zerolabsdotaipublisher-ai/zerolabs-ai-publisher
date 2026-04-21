@@ -219,7 +219,7 @@ export async function runPublishWorkflow({
     const message = error instanceof Error ? error.message : "Unknown publish error";
     const failedAt = new Date().toISOString();
     const failedStructure = markPublishFailure(publishingStructure, {
-      attemptedAt: failedAt,
+      failureRecordedAt: failedAt,
       action,
       requestId,
       errorMessage: message,

@@ -51,7 +51,12 @@ function isAssetLikeValue(value: string): boolean {
   }
 
   if (value.startsWith("http://") || value.startsWith("https://")) {
-    return PUBLIC_ASSET_EXTENSIONS.some((extension) => value.toLowerCase().includes(extension));
+    try {
+      const pathname = new URL(value).pathname.toLowerCase();
+      return PUBLIC_ASSET_EXTENSIONS.some((extension) => pathname.endsWith(extension));
+    } catch {
+      return false;
+    }
   }
 
   if (!value.startsWith("/")) {
@@ -219,14 +224,14 @@ export function planDeploymentUpdate(
   const changeKinds = new Set<PublicationUpdateChangeKind>();
   const pageIds = new Set<string>();
   const routePaths = new Set<string>();
-  const assetPaths = new Set<string>();
+  const assetPathsSet = new Set<string>();
   let fullSite = false;
 
   if (!liveFingerprint) {
     fingerprint.pages.forEach((page) => {
       pageIds.add(page.pageId);
       routePaths.add(page.path);
-      page.assetPaths.forEach((assetPath) => assetPaths.add(assetPath));
+      page.assetPaths.forEach((assetPath) => assetPathsSet.add(assetPath));
     });
 
     return {
@@ -237,7 +242,7 @@ export function planDeploymentUpdate(
         metadataOnly: false,
         pageIds: uniqueSorted(pageIds),
         routePaths: uniqueSorted(routePaths),
-        assetPaths: uniqueSorted(assetPaths),
+        assetPaths: uniqueSorted(assetPathsSet),
         changeKinds: CHANGE_KINDS,
       },
       summary: "Initial publish requires a full deployment of the current website structure.",
@@ -266,7 +271,7 @@ export function planDeploymentUpdate(
       changeKinds.add("structure");
       fullSite = true;
       pageIds.add(pageId);
-      (currentPage ?? livePage)?.assetPaths.forEach((assetPath) => assetPaths.add(assetPath));
+      (currentPage ?? livePage)?.assetPaths.forEach((assetPath) => assetPathsSet.add(assetPath));
       if (livePage) {
         routePaths.add(livePage.path);
       }
@@ -282,8 +287,8 @@ export function planDeploymentUpdate(
         pageIds.add(pageId);
         routePaths.add(currentPage.path);
         routePaths.add(livePage.path);
-        currentPage.assetPaths.forEach((assetPath) => assetPaths.add(assetPath));
-        livePage.assetPaths.forEach((assetPath) => assetPaths.add(assetPath));
+        currentPage.assetPaths.forEach((assetPath) => assetPathsSet.add(assetPath));
+        livePage.assetPaths.forEach((assetPath) => assetPathsSet.add(assetPath));
       }
     });
   });
@@ -303,7 +308,7 @@ export function planDeploymentUpdate(
       metadataOnly,
       pageIds: uniqueSorted(pageIds),
       routePaths: uniqueSorted(routePaths),
-      assetPaths: uniqueSorted(assetPaths),
+        assetPaths: uniqueSorted(assetPathsSet),
       changeKinds: normalizedChangeKinds,
     },
     summary: required

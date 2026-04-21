@@ -25,19 +25,21 @@ export async function savePublishStructure(
   structure: WebsiteStructure,
   options?: { expectedUpdatedAt?: string },
 ): Promise<WebsiteStructure> {
+  const updatePayload = {
+    site_title: structure.siteTitle,
+    tagline: structure.tagline,
+    structure,
+    source_input: structure.sourceInput,
+    status: structure.status,
+    version: structure.version,
+    updated_at: structure.updatedAt,
+  };
+
   if (!options?.expectedUpdatedAt) {
     const supabase = getSupabaseServiceClient();
     const { error } = await supabase
       .from("website_structures")
-      .update({
-        site_title: structure.siteTitle,
-        tagline: structure.tagline,
-        structure,
-        source_input: structure.sourceInput,
-        status: structure.status,
-        version: structure.version,
-        updated_at: structure.updatedAt,
-      })
+      .update(updatePayload)
       .eq("id", structure.id)
       .eq("user_id", structure.userId);
 
@@ -57,15 +59,7 @@ export async function savePublishStructure(
   const supabase = getSupabaseServiceClient();
   const { data, error } = await supabase
     .from("website_structures")
-    .update({
-      site_title: structure.siteTitle,
-      tagline: structure.tagline,
-      structure,
-      source_input: structure.sourceInput,
-      status: structure.status,
-      version: structure.version,
-      updated_at: structure.updatedAt,
-    })
+    .update(updatePayload)
     .eq("id", structure.id)
     .eq("user_id", structure.userId)
     .eq("updated_at", options.expectedUpdatedAt)

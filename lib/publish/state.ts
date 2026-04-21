@@ -343,7 +343,7 @@ export function markPublished(
 export function markPublishFailure(
   structure: WebsiteStructure,
   params: {
-    attemptedAt: string;
+    failureRecordedAt: string;
     action: PublishAction;
     requestId: string;
     errorMessage: string;
@@ -357,18 +357,18 @@ export function markPublishFailure(
   return withPublicationMetadata(
     {
       ...structure,
-      updatedAt: params.attemptedAt,
+      updatedAt: params.failureRecordedAt,
     },
     {
       ...publication,
       state: "update_failed",
-      lastPublishAttemptAt: params.attemptedAt,
+      lastPublishAttemptAt: params.failureRecordedAt,
       lastError: params.errorMessage,
       deployment: {
         ...publication.deployment,
         environment: publication.deployment?.environment ?? "production",
         status: "failed",
-        updatedAt: params.attemptedAt,
+        updatedAt: params.failureRecordedAt,
         lastError: params.errorMessage,
       },
       updates: {
@@ -378,28 +378,28 @@ export function markPublishFailure(
           retryable: params.retryable,
           retryCount,
           recommendedAction: params.retryable ? "retry" : "fix_and_retry",
-          lastAttemptAt: params.attemptedAt,
+          lastAttemptAt: params.failureRecordedAt,
         },
         queue: {
           ...(publication.updates?.queue ?? { duplicateRequests: 0 }),
           activeRequestId: undefined,
-          completedAt: params.attemptedAt,
+          completedAt: params.failureRecordedAt,
           lastCompletedRequestId: params.requestId,
         },
         current: {
           requestId: params.requestId,
           action: params.action,
           status: "failed",
-          requestedAt: publication.updates?.current?.requestedAt ?? params.attemptedAt,
-          startedAt: publication.updates?.current?.startedAt ?? params.attemptedAt,
-          completedAt: params.attemptedAt,
+          requestedAt: publication.updates?.current?.requestedAt ?? params.failureRecordedAt,
+          startedAt: publication.updates?.current?.startedAt ?? params.failureRecordedAt,
+          completedAt: params.failureRecordedAt,
           error: params.errorMessage,
           retryable: params.retryable,
           update: params.updatePlan,
         },
         logs: appendUpdateLog(
           publication.updates?.logs,
-          createUpdateLog("retry", params.attemptedAt, params.errorMessage, {
+          createUpdateLog("retry", params.failureRecordedAt, params.errorMessage, {
             level: "error",
             requestId: params.requestId,
             details: {
@@ -459,12 +459,12 @@ export function normalizeDomainSnapshot(
     domains: uniqueSorted(nextDomain.domains.length > 0 ? nextDomain.domains : previousDomains ?? []),
     preservedLivePath: previousLivePath ? previousLivePath === nextDomain.livePath : nextDomain.preservedLivePath,
     preservedDomains: previousDomains
-      ? stableDomainMatch(previousDomains, nextDomain.domains)
+      ? domainsMatchExactly(previousDomains, nextDomain.domains)
       : nextDomain.preservedDomains,
   };
 }
 
-function stableDomainMatch(previousDomains: string[], nextDomains: string[]): boolean {
+function domainsMatchExactly(previousDomains: string[], nextDomains: string[]): boolean {
   const previous = uniqueSorted(previousDomains);
   const next = uniqueSorted(nextDomains);
   return previous.length === next.length && previous.every((domain, index) => domain === next[index]);
