@@ -5,8 +5,11 @@ import { getWebsiteStructure } from "@/lib/ai/structure/storage";
 import { getWebsiteSeoMetadata } from "@/lib/ai/seo";
 import { Renderer } from "@/components/generated-site/renderer";
 import { PublishStatusBadge } from "@/components/publish/publish-status-badge";
+import { VersionHistoryPanel } from "@/components/versions/version-history-panel";
 import { detectPublicationState } from "@/lib/publish";
 import { resolveWebsitePageByPath } from "@/lib/routing";
+import { summarizeWebsiteVersionComparison } from "@/lib/versions/compare";
+import { listWebsiteVersions } from "@/lib/versions/storage";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -82,6 +85,21 @@ export default async function GeneratedSitePage({ params, searchParams }: PagePr
     notFound();
   }
   const publication = detectPublicationState(structure);
+  const versions = await listWebsiteVersions(id, user.id);
+  const versionEntries = versions.map((version) => ({
+    id: version.id,
+    versionNumber: version.versionNumber,
+    label: version.label,
+    status: version.status,
+    source: version.source,
+    structureVersion: version.structureVersion,
+    isLive: version.isLive,
+    isCurrentDraft: version.isCurrentDraft,
+    restoredFromVersionId: version.restoredFromVersionId,
+    createdAt: version.createdAt,
+    deployment: version.deployment,
+    comparison: summarizeWebsiteVersionComparison(structure, version),
+  }));
 
   return (
     <div className="generated-site-container">
@@ -93,6 +111,7 @@ export default async function GeneratedSitePage({ params, searchParams }: PagePr
           <span className="generated-site-version">v{structure.version}</span>
         </p>
       </div>
+      <VersionHistoryPanel structureId={structure.id} entries={versionEntries} />
       <Renderer structure={structure} pageSlug={resolvedSearchParams?.page || "/"} />
     </div>
   );

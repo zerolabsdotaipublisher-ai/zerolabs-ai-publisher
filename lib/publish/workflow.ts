@@ -24,6 +24,8 @@ import { createCacheInvalidationMetadata } from "./cache";
 import { planDeploymentUpdate } from "./versioning";
 import type { PublishAction, PublishMutationResponse } from "./types";
 import type { WebsiteStructure } from "@/lib/ai/structure";
+import { createWebsiteVersionLabel } from "@/lib/versions/model";
+import { createWebsiteVersion } from "@/lib/versions/storage";
 
 interface RunPublishWorkflowParams {
   structure: WebsiteStructure;
@@ -174,6 +176,45 @@ export async function runPublishWorkflow({
     const stored = await savePublishStructure(publishedStructure, {
       expectedUpdatedAt: publishingStructure.updatedAt,
     });
+
+    try {
+      await createWebsiteVersion({
+        structure: stored,
+        userId,
+        source: action,
+        status: "published",
+        label: createWebsiteVersionLabel(action, stored),
+        requestId,
+        comparison: updatePlan,
+        deployment: {
+          deploymentId: delivery.deploymentId,
+          providerDeploymentId: delivery.deployment?.providerDeploymentId,
+          environment: delivery.deployment?.environment,
+          status: delivery.deployment?.status,
+          target: delivery.deployment?.target,
+          url: delivery.deployment?.url,
+          path: delivery.deployment?.path,
+          domains: delivery.domain.domains,
+          publishedAt: delivery.deliveredAt,
+          liveUrl: domain.liveUrl,
+          livePath: domain.livePath,
+          publicationVersionId: stored.publication?.updates?.liveVersionId,
+        },
+      });
+    } catch (versionError) {
+      logger.error("Published website without creating a website version snapshot", {
+        category: "error",
+        service: "versions",
+        action,
+        userId,
+        structureId: structure.id,
+        requestId,
+        error: {
+          name: "PublishVersionSnapshotError",
+          message: versionError instanceof Error ? versionError.message : "Unknown error",
+        },
+      });
+    }
 
     logger.info("publish workflow completed", {
       category: "request",

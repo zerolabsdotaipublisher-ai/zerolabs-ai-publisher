@@ -766,6 +766,89 @@ a {
   font-size: 0.9rem;
 }
 
+.version-history-panel {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.version-history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.version-history-header p {
+  color: #6b7280;
+  max-width: 48rem;
+}
+
+.version-history-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.version-history-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.version-history-item-header,
+.version-history-item-meta,
+.version-history-item-flags,
+.version-history-item-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.version-history-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid #d1d5db;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.8rem;
+}
+
+.version-history-badge-live {
+  border-color: #166534;
+  color: #166534;
+}
+
+.version-history-badge-current {
+  border-color: #1d4ed8;
+  color: #1d4ed8;
+}
+
+.version-history-badge-archived {
+  border-color: #6b7280;
+  color: #4b5563;
+}
+
+.version-history-summary {
+  color: #374151;
+  font-size: 0.95rem;
+}
+
+.version-history-error {
+  color: #991b1b;
+}
+
+.version-history-success {
+  color: #166534;
+}
+
 .website-management-shell {
   width: 100%;
   max-width: 72rem;

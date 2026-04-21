@@ -9,6 +9,8 @@ import type { WebsitePage, WebsiteStructure } from "@/lib/ai/structure";
 import { logger } from "@/lib/observability";
 import { markDraftUpdatedForPublication } from "@/lib/publish";
 import { withRegeneratedWebsiteRouting } from "@/lib/routing";
+import { createWebsiteVersionLabel } from "@/lib/versions/model";
+import { createWebsiteVersion } from "@/lib/versions/storage";
 import { applySystemManagedBoundaries } from "./boundaries";
 import type { EditorValidationError } from "./types";
 import { validateEditorDraft } from "./validation";
@@ -72,6 +74,19 @@ function toSeoPackage(structure: WebsiteStructure): WebsiteSeoPackage {
   };
 }
 
+export async function persistWebsiteStructureArtifacts(structure: WebsiteStructure, userId: string): Promise<void> {
+  await storeWebsiteNavigation({
+    structureId: structure.id,
+    userId,
+    navigation: structure.navigation,
+    version: structure.version,
+    createdAt: structure.generatedAt,
+    updatedAt: structure.updatedAt,
+  });
+
+  await storeWebsiteSeoMetadata(toSeoPackage(structure));
+}
+
 export async function loadEditorStructure(structureId: string, userId: string): Promise<WebsiteStructure | null> {
   const structure = await getWebsiteStructure(structureId, userId);
   if (!structure || structure.management?.deletedAt) {
@@ -125,17 +140,28 @@ export async function saveEditorStructureDraft(userId: string, structure: Websit
 
   try {
     const updated = await updateWebsiteStructure(routed.structure);
+    await persistWebsiteStructureArtifacts(updated, userId);
 
-    await storeWebsiteNavigation({
-      structureId: updated.id,
-      userId,
-      navigation: updated.navigation,
-      version: updated.version,
-      createdAt: updated.generatedAt,
-      updatedAt: updated.updatedAt,
-    });
-
-    await storeWebsiteSeoMetadata(toSeoPackage(updated));
+    try {
+      await createWebsiteVersion({
+        structure: updated,
+        userId,
+        source: "draft_save",
+        status: "draft",
+        label: createWebsiteVersionLabel("draft_save", updated),
+      });
+    } catch (error) {
+      logger.error("Failed to store draft version snapshot", {
+        category: "error",
+        service: "versions",
+        userId,
+        structureId: updated.id,
+        error: {
+          name: "EditorDraftVersionError",
+          message: error instanceof Error ? error.message : "Unknown error",
+        },
+      });
+    }
 
     return {
       structure: updated,
