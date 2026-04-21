@@ -77,9 +77,10 @@ export default async function LiveSitePage({ params }: LiveSitePageProps) {
   }
 
   const page = resolved.page;
-  if (!page || page.visible === false) {
+  const isVisible = page?.visible !== false;
+  if (!page || !isVisible) {
     notFound();
   }
 
-  return <Renderer structure={structure} pageSlug={page.slug} strictRoute />;
+  return <Renderer structure={structure} pageSlug={resolved.route?.path ?? page.slug} strictRoute />;
 }

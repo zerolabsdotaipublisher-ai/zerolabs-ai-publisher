@@ -1,15 +1,13 @@
 import { validateWebsiteStructure } from "@/lib/ai/structure/schemas";
 import type { WebsiteSection, WebsiteStructure } from "@/lib/ai/structure";
-import { isReservedRoutePath } from "@/lib/routing";
+import { isReservedRoutePath, isValidRoutePath } from "@/lib/routing";
 import type { EditorValidationError } from "./types";
-
-const SLUG_PATTERN = /^\/(?:[a-z0-9]+(?:-[a-z0-9]+)*)?(?:\/[a-z0-9]+(?:-[a-z0-9]+)*)*$/;
 
 function ensureSlugValidation(structure: WebsiteStructure, errors: EditorValidationError[]): void {
   const seen = new Set<string>();
 
   structure.pages.forEach((page, pageIndex) => {
-    if (!SLUG_PATTERN.test(page.slug)) {
+    if (!isValidRoutePath(page.slug)) {
       errors.push({
         field: `pages.${pageIndex}.slug`,
         message: `Slug "${page.slug}" must be "/" or use lowercase letters, numbers, and hyphens.`,

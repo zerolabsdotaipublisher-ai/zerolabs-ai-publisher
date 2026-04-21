@@ -29,20 +29,18 @@ function dedupePath(path: string, used: Set<string>): string {
 
 function mapNavigationToResolvedSlugs(
   structure: WebsiteStructure,
-  slugByPageId: Map<string, string>,
-  previousSlugByCurrent: Map<string, string>,
+  pathByPageId: Map<string, string>,
 ): WebsiteStructure {
   const resolveHref = (href: string, pageId?: string): string => {
-    if (pageId && slugByPageId.has(pageId)) {
-      return slugByPageId.get(pageId)!;
+    if (pageId && pathByPageId.has(pageId)) {
+      return pathByPageId.get(pageId) ?? href;
     }
 
     if (!href.startsWith("/")) {
       return href;
     }
 
-    const resolved = previousSlugByCurrent.get(href);
-    return resolved ?? href;
+    return href;
   };
 
   return {
@@ -70,16 +68,12 @@ export function buildWebsiteRouting(structure: WebsiteStructure, now = new Date(
   const homePageId =
     pages.find((page) => page.type === "home")?.id ??
     pages.find((page) => page.slug === "/")?.id ??
+    pages.find((page) => page.order === 0)?.id ??
     pages[0]?.id;
 
   const pageById = new Map(pages.map((page) => [page.id, page]));
   const usedPaths = new Set<string>();
   const pathByPageId = new Map<string, string>();
-  const previousSlugByCurrent = new Map<string, string>();
-
-  pages.forEach((page) => {
-    previousSlugByCurrent.set(page.slug, page.slug);
-  });
 
   const resolvePath = (pageId: string, stack = new Set<string>()): string => {
     const existing = pathByPageId.get(pageId);
@@ -108,8 +102,7 @@ export function buildWebsiteRouting(structure: WebsiteStructure, now = new Date(
       parentPath,
     });
 
-    path = withLeadingSlash(path);
-    path = dedupePath(path, usedPaths);
+    path = dedupePath(withLeadingSlash(path), usedPaths);
     pathByPageId.set(pageId, path);
     stack.delete(pageId);
     return path;
@@ -121,18 +114,18 @@ export function buildWebsiteRouting(structure: WebsiteStructure, now = new Date(
 
   const resolvedPages = pages.map((page) => ({
     ...page,
+    // Page slug remains the single product-owned route path value used by renderer/navigation/SSG.
     slug: pathByPageId.get(page.id) ?? page.slug,
   }));
 
-  const slugByPageId = new Map(resolvedPages.map((page) => [page.id, page.slug]));
+  const resolvedPathByPageId = new Map(resolvedPages.map((page) => [page.id, page.slug]));
 
   const routedStructure = mapNavigationToResolvedSlugs(
     {
       ...structure,
       pages: resolvedPages,
     },
-    slugByPageId,
-    previousSlugByCurrent,
+    resolvedPathByPageId,
   );
 
   const routesList: WebsiteRouteRecord[] = resolvedPages
