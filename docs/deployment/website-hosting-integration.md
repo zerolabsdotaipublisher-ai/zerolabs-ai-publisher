@@ -27,6 +27,7 @@ ZeroFlow (Layer 2) remains responsible for shared services (auth, billing, usage
 ## Architecture and Flow
 
 Story 5-3 extends the existing pipeline; it does not introduce a second deployment system.
+Story 5-5 continues that same path for deployment updates; update orchestration, version history, retry, cache, and domain stability stay app-owned in AI Publisher. See [website-deployment-updates.md](./website-deployment-updates.md).
 
 1. `buildWebsiteStructure()` produces `PipelineBuildOutput` with the existing SSG artifact (`build.ssg`).
 2. `deployBuild()` selects adapter (`mock` or `vercel`) through existing config.
