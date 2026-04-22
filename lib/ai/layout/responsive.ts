@@ -2,7 +2,13 @@ import type { SectionType } from "../structure/types";
 import type { Breakpoint, ResponsiveHint, SpacingScale } from "./types";
 
 function desktopForSection(sectionType: SectionType, spacing: SpacingScale): ResponsiveHint {
-  if (sectionType === "services" || sectionType === "testimonials") {
+  if (
+    sectionType === "services" ||
+    sectionType === "features" ||
+    sectionType === "benefits" ||
+    sectionType === "pricing" ||
+    sectionType === "testimonials"
+  ) {
     return {
       columns: "three",
       stackBehavior: "preserve",
@@ -33,7 +39,14 @@ function desktopForSection(sectionType: SectionType, spacing: SpacingScale): Res
 
 function tabletForSection(sectionType: SectionType, spacing: SpacingScale): ResponsiveHint {
   return {
-    columns: sectionType === "services" || sectionType === "testimonials" ? "two" : "single",
+    columns:
+      sectionType === "services" ||
+      sectionType === "features" ||
+      sectionType === "benefits" ||
+      sectionType === "pricing" ||
+      sectionType === "testimonials"
+        ? "two"
+        : "single",
     stackBehavior: "stack",
     spacingScale: spacing,
     alignmentMode: "balanced",

@@ -30,11 +30,36 @@ export function evaluateSectionQuality(
 ): string[] {
   const errors: string[] = [];
   const serialized = JSON.stringify(section ?? {});
+  const typedSection = (section ?? {}) as {
+    items?: Array<{ isPlaceholder?: boolean; company?: string }>;
+  };
+  const phrases = serialized
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((token) => token.length > 4);
+  const duplicatePhrase = phrases.find(
+    (phrase, index) => phrases.indexOf(phrase) !== index,
+  );
 
   for (const pattern of BANNED_PATTERNS) {
     if (pattern.test(serialized)) {
       errors.push(`${sectionType}: contains banned filler or unsupported claim pattern`);
     }
+  }
+
+  const duplicateMatches = duplicatePhrase
+    ? serialized.toLowerCase().match(new RegExp(duplicatePhrase, "g"))
+    : null;
+
+  if (duplicatePhrase && duplicateMatches && duplicateMatches.length >= 4) {
+    errors.push(`${sectionType}: repeats generic phrasing too often`);
+  }
+
+  if (
+    sectionType === "testimonials" &&
+    typedSection.items?.some((item) => item.isPlaceholder === false && !item.company)
+  ) {
+    errors.push("testimonials: non-placeholder proof should include richer attribution");
   }
 
   return errors;

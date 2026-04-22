@@ -1,9 +1,11 @@
 import type { WebsiteGenerationInput } from "../prompts/types";
 import type {
+  ContentSectionType,
   ContentDensityPreset,
   ContentLengthPreset,
   GeneratedPageContent,
   PageGenerationContext,
+  TestimonialsSectionContent,
   WebsiteContentPackage,
 } from "./types";
 import { createCtaFallback, normalizeCtaSection } from "./cta";
@@ -15,12 +17,21 @@ import {
   normalizeServicesSection,
 } from "./informational";
 import { createMicrocopyFallback, normalizeMicrocopy } from "./microcopy";
+import { createPricingFallback, normalizePricingSection } from "./pricing";
 
-function fallbackTestimonials(input: WebsiteGenerationInput) {
+function sectionRequested(
+  sectionType: ContentSectionType,
+  allowedSections?: ContentSectionType[],
+): boolean {
+  return !allowedSections?.length || allowedSections.includes(sectionType);
+}
+
+function fallbackTestimonials(input: WebsiteGenerationInput): TestimonialsSectionContent {
   const provided = input.testimonials?.slice(0, 3) ?? [];
 
   if (provided.length > 0) {
     return {
+      variant: provided.length > 1 ? "quote-grid" : "single-quote",
       headline: "Client feedback",
       subheadline: "Results from real engagements",
       items: provided.map((testimonial) => ({
@@ -29,10 +40,15 @@ function fallbackTestimonials(input: WebsiteGenerationInput) {
         role: testimonial.role,
         isPlaceholder: false,
       })),
+      audience: input.targetAudience,
+      tone: input.tone,
+      density: "medium" as const,
+      goal: input.primaryCta,
     };
   }
 
   return {
+    variant: "quote-grid",
     headline: "Client feedback",
     subheadline: "Representative outcomes",
     items: [
@@ -40,9 +56,14 @@ function fallbackTestimonials(input: WebsiteGenerationInput) {
         quote: "Clear process and strong communication from start to finish.",
         author: "Example Client",
         role: "Placeholder testimonial",
+        company: "Synthetic social proof",
         isPlaceholder: true,
       },
     ],
+    audience: input.targetAudience,
+    tone: input.tone,
+    density: "medium" as const,
+    goal: input.primaryCta,
   };
 }
 
@@ -78,10 +99,73 @@ export function createFooterFallback(input: WebsiteGenerationInput) {
 export function createFallbackPageContent(
   page: PageGenerationContext,
   input: WebsiteGenerationInput,
+  allowedSections?: ContentSectionType[],
 ): GeneratedPageContent {
   const hero = normalizeHeroSectionContent(undefined, input);
   const about = normalizeInformationalSection(undefined, createAboutFallback(input));
   const services = normalizeServicesSection(undefined, input);
+
+  const sections: GeneratedPageContent["sections"] = {};
+  if (sectionRequested("hero", allowedSections)) sections.hero = hero;
+  if (sectionRequested("about", allowedSections)) sections.about = about;
+  if (sectionRequested("services", allowedSections)) sections.services = services;
+  if (sectionRequested("features", allowedSections)) {
+    sections.features = normalizeInformationalSection(
+      undefined,
+      createInformationalFallback("Key features", input),
+    );
+  }
+  if (sectionRequested("process", allowedSections)) {
+    sections.process = normalizeInformationalSection(
+      undefined,
+      createInformationalFallback("How it works", input),
+    );
+  }
+  if (sectionRequested("benefits", allowedSections)) {
+    sections.benefits = normalizeInformationalSection(
+      undefined,
+      createInformationalFallback("Benefits", input),
+    );
+  }
+  if (sectionRequested("testimonials", allowedSections)) {
+    sections.testimonials = fallbackTestimonials(input);
+  }
+  if (sectionRequested("faq", allowedSections)) {
+    sections.faq = {
+      variant: "expanded",
+      headline: "Frequently asked questions",
+      subheadline: `Answers for ${input.targetAudience} before they commit.`,
+      items: [
+        {
+          question: "How do we get started?",
+          answer: "Start with a short discovery call and we will define scope and outcomes.",
+        },
+        {
+          question: "What does engagement look like?",
+          answer: "Clear milestones, transparent communication, and practical deliverables.",
+        },
+      ],
+      audience: input.targetAudience,
+      tone: input.tone,
+      density: "medium",
+      goal: input.primaryCta,
+    };
+  }
+  if (sectionRequested("cta", allowedSections)) {
+    sections.cta = normalizeCtaSection(createCtaFallback(input), input);
+  }
+  if (sectionRequested("pricing", allowedSections)) {
+    sections.pricing = normalizePricingSection(createPricingFallback(input), input);
+  }
+  if (sectionRequested("contact", allowedSections)) {
+    sections.contact = fallbackContact(input);
+  }
+  if (sectionRequested("footer", allowedSections)) {
+    sections.footer = createFooterFallback(input);
+  }
+  if (sectionRequested("microcopy", allowedSections)) {
+    sections.microcopy = normalizeMicrocopy(createMicrocopyFallback(input), input);
+  }
 
   return {
     pageSlug: page.pageSlug,
@@ -91,41 +175,7 @@ export function createFallbackPageContent(
       pageSubheadline: hero.subheadline,
       valueProposition: input.description,
     },
-    sections: {
-      hero,
-      about,
-      services,
-      features: normalizeInformationalSection(
-        undefined,
-        createInformationalFallback("Key features", input),
-      ),
-      process: normalizeInformationalSection(
-        undefined,
-        createInformationalFallback("How it works", input),
-      ),
-      benefits: normalizeInformationalSection(
-        undefined,
-        createInformationalFallback("Benefits", input),
-      ),
-      testimonials: fallbackTestimonials(input),
-      faq: {
-        headline: "Frequently asked questions",
-        items: [
-          {
-            question: "How do we get started?",
-            answer: "Start with a short discovery call and we will define scope and outcomes.",
-          },
-          {
-            question: "What does engagement look like?",
-            answer: "Clear milestones, transparent communication, and practical deliverables.",
-          },
-        ],
-      },
-      cta: normalizeCtaSection(createCtaFallback(input), input),
-      contact: fallbackContact(input),
-      footer: createFooterFallback(input),
-      microcopy: normalizeMicrocopy(createMicrocopyFallback(input), input),
-    },
+    sections,
   };
 }
 
@@ -143,6 +193,7 @@ export function createFallbackWebsiteContentPackage(
   pages: PageGenerationContext[],
   lengthPreset: ContentLengthPreset,
   densityPreset: ContentDensityPreset,
+  sectionTypes?: ContentSectionType[],
   version = 1,
 ): WebsiteContentPackage {
   const now = new Date().toISOString();
@@ -156,7 +207,7 @@ export function createFallbackWebsiteContentPackage(
     style: input.style,
     lengthPreset,
     densityPreset,
-    pages: pages.map((page) => createFallbackPageContent(page, input)),
+    pages: pages.map((page) => createFallbackPageContent(page, input, sectionTypes)),
     generatedFromInput: input,
     generatedAt: now,
     updatedAt: now,

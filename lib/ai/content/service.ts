@@ -14,6 +14,7 @@ import {
 } from "./informational";
 import { applyGeneratedContentToStructure, resolvePageGenerationContexts } from "./mapper";
 import { normalizeMicrocopy } from "./microcopy";
+import { normalizePricingSection } from "./pricing";
 import { buildWebsiteContentPrompt } from "./prompts";
 import { DEFAULT_DENSITY_PRESET, DEFAULT_LENGTH_PRESET } from "./schemas";
 import { resolveToneStyleProfile } from "./tone";
@@ -92,29 +93,58 @@ function parseJson<T>(raw: string): Partial<T> {
   return {};
 }
 
+function sectionRequested(
+  sectionType: ContentSectionType,
+  allowedSections?: ContentSectionType[],
+): boolean {
+  return !allowedSections?.length || allowedSections.includes(sectionType);
+}
+
 function normalizeGeneratedSectionMap(
   sections: Partial<GeneratedSectionContentMap> | undefined,
   input: WebsiteGenerationInput,
-): GeneratedSectionContentMap {
+  allowedSections?: ContentSectionType[],
+): Partial<GeneratedSectionContentMap> {
   const footerFallback = createFooterFallback(input);
+  const normalized: Partial<GeneratedSectionContentMap> = {};
 
-  return {
-    hero: normalizeHeroSectionContent(sections?.hero, input),
-    about: normalizeInformationalSection(sections?.about, createAboutFallback(input)),
-    services: normalizeServicesSection(sections?.services, input),
-    features: normalizeInformationalSection(
+  if (sectionRequested("hero", allowedSections)) {
+    normalized.hero = normalizeHeroSectionContent(sections?.hero, input);
+  }
+  if (sectionRequested("about", allowedSections)) {
+    normalized.about = normalizeInformationalSection(
+      sections?.about,
+      createAboutFallback(input),
+    );
+  }
+  if (sectionRequested("services", allowedSections)) {
+    normalized.services = normalizeServicesSection(sections?.services, input);
+  }
+  if (sectionRequested("features", allowedSections)) {
+    normalized.features = normalizeInformationalSection(
       sections?.features,
       createInformationalFallback("Key features", input),
-    ),
-    process: normalizeInformationalSection(
+    );
+  }
+  if (sectionRequested("process", allowedSections)) {
+    normalized.process = normalizeInformationalSection(
       sections?.process,
       createInformationalFallback("Process", input),
-    ),
-    benefits: normalizeInformationalSection(
+    );
+  }
+  if (sectionRequested("benefits", allowedSections)) {
+    normalized.benefits = normalizeInformationalSection(
       sections?.benefits,
       createInformationalFallback("Benefits", input),
-    ),
-    testimonials: {
+    );
+  }
+  if (sectionRequested("testimonials", allowedSections)) {
+    normalized.testimonials = {
+      variant:
+        sections?.testimonials?.variant ||
+        ((sections?.testimonials?.items?.length ?? 0) > 1
+          ? "quote-grid"
+          : "single-quote"),
       headline: sections?.testimonials?.headline?.trim() || "Client feedback",
       subheadline:
         sections?.testimonials?.subheadline?.trim() ||
@@ -125,14 +155,23 @@ function normalizeGeneratedSectionMap(
             quote: item.quote?.trim(),
             author: item.author?.trim(),
             role: item.role?.trim(),
-            isPlaceholder: Boolean(item.isPlaceholder),
+            company: item.company?.trim(),
+            isPlaceholder:
+              item.isPlaceholder ?? !(input.testimonials && input.testimonials.length > 0),
           }))
           .filter((item) => item.quote && item.author)
           .slice(0, 4) || [],
-    },
-    faq: {
-      headline:
-        sections?.faq?.headline?.trim() || "Frequently asked questions",
+      audience: sections?.testimonials?.audience?.trim() || input.targetAudience,
+      tone: sections?.testimonials?.tone || input.tone,
+      density: sections?.testimonials?.density || "medium",
+      goal: sections?.testimonials?.goal?.trim() || input.primaryCta,
+    };
+  }
+  if (sectionRequested("faq", allowedSections)) {
+    normalized.faq = {
+      variant: sections?.faq?.variant || "expanded",
+      headline: sections?.faq?.headline?.trim() || "Frequently asked questions",
+      subheadline: sections?.faq?.subheadline?.trim() || undefined,
       items:
         sections?.faq?.items
           ?.map((item) => ({
@@ -141,9 +180,20 @@ function normalizeGeneratedSectionMap(
           }))
           .filter((item) => item.question && item.answer)
           .slice(0, 6) || [],
-    },
-    cta: normalizeCtaSection(sections?.cta, input),
-    contact: {
+      audience: sections?.faq?.audience?.trim() || input.targetAudience,
+      tone: sections?.faq?.tone || input.tone,
+      density: sections?.faq?.density || "medium",
+      goal: sections?.faq?.goal?.trim() || input.primaryCta,
+    };
+  }
+  if (sectionRequested("cta", allowedSections)) {
+    normalized.cta = normalizeCtaSection(sections?.cta, input);
+  }
+  if (sectionRequested("pricing", allowedSections)) {
+    normalized.pricing = normalizePricingSection(sections?.pricing, input);
+  }
+  if (sectionRequested("contact", allowedSections)) {
+    normalized.contact = {
       headline: sections?.contact?.headline?.trim() || "Contact",
       subheadline: sections?.contact?.subheadline?.trim() || undefined,
       channels:
@@ -155,8 +205,10 @@ function normalizeGeneratedSectionMap(
           .filter((channel) => channel.label && channel.value)
           .slice(0, 6) || [],
       helperText: sections?.contact?.helperText?.trim() || undefined,
-    },
-    footer: {
+    };
+  }
+  if (sectionRequested("footer", allowedSections)) {
+    normalized.footer = {
       shortBlurb:
         sections?.footer?.shortBlurb?.trim() || footerFallback.shortBlurb,
       legalText:
@@ -166,15 +218,20 @@ function normalizeGeneratedSectionMap(
           ?.map((item) => item.trim())
           .filter(Boolean)
           .slice(0, 4) || footerFallback.trustIndicators,
-    },
-    microcopy: normalizeMicrocopy(sections?.microcopy, input),
-  };
+    };
+  }
+  if (sectionRequested("microcopy", allowedSections)) {
+    normalized.microcopy = normalizeMicrocopy(sections?.microcopy, input);
+  }
+
+  return normalized;
 }
 
 function normalizeGeneratedPage(
   candidate: Partial<GeneratedPageContent> | undefined,
   fallback: GeneratedPageContent,
   input: WebsiteGenerationInput,
+  allowedSections?: ContentSectionType[],
 ): GeneratedPageContent {
   return {
     pageSlug: candidate?.pageSlug?.trim() || fallback.pageSlug,
@@ -189,7 +246,7 @@ function normalizeGeneratedPage(
         candidate?.messaging?.valueProposition?.trim() ||
         fallback.messaging.valueProposition,
     },
-    sections: normalizeGeneratedSectionMap(candidate?.sections, input),
+    sections: normalizeGeneratedSectionMap(candidate?.sections, input, allowedSections),
   };
 }
 
@@ -246,7 +303,12 @@ export async function generateWebsiteContent(
 ): Promise<ContentGenerationResult> {
   const pages = resolvePageGenerationContexts(structure).filter((page) =>
     options?.pages?.length ? options.pages.includes(page.pageSlug) : true,
-  );
+  ).map((page) => ({
+    ...page,
+    sections: options?.sectionTypes?.length
+      ? page.sections.filter((section) => options.sectionTypes?.includes(section))
+      : page.sections,
+  })).filter((page) => page.sections.length > 0);
 
   const lengthPreset = options?.lengthPreset ?? DEFAULT_LENGTH_PRESET;
   const densityPreset = options?.densityPreset ?? DEFAULT_DENSITY_PRESET;
@@ -259,6 +321,7 @@ export async function generateWebsiteContent(
     pages,
     lengthPreset,
     densityPreset,
+    options?.sectionTypes,
   );
 
   const toneProfile = resolveToneStyleProfile(
@@ -283,6 +346,7 @@ export async function generateWebsiteContent(
       pages,
       lengthPreset,
       densityPreset,
+      options,
     });
 
     const maxRetries = options?.maxRetries ?? 2;
@@ -327,7 +391,12 @@ export async function generateWebsiteContent(
         (candidate) => candidate.pageSlug === context.pageSlug,
       );
 
-      return normalizeGeneratedPage(pageCandidate, fallbackPage, input);
+      return normalizeGeneratedPage(
+        pageCandidate,
+        fallbackPage,
+        input,
+        options?.sectionTypes,
+      );
     });
 
     let content = buildPackage(
@@ -338,20 +407,6 @@ export async function generateWebsiteContent(
       lengthPreset,
       densityPreset,
     );
-
-    if (options?.sectionTypes && options.sectionTypes.length > 0) {
-      content = {
-        ...content,
-        pages: content.pages.map((page) => ({
-          ...page,
-          sections: Object.fromEntries(
-            Object.entries(page.sections).filter(([key]) =>
-              options.sectionTypes?.includes(key as ContentSectionType),
-            ),
-          ) as GeneratedSectionContentMap,
-        })),
-      };
-    }
 
     const validationErrors = [
       ...validateGeneratedWebsiteContent(content),

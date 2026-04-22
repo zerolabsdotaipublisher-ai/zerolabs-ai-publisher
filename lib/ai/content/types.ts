@@ -17,6 +17,7 @@ export type ContentSectionType =
   | "process"
   | "benefits"
   | "faq"
+  | "pricing"
   | "microcopy";
 
 export type ContentLengthPreset = "concise" | "balanced" | "detailed";
@@ -35,24 +36,57 @@ export interface ContentGenerationOptions {
   lengthPreset?: ContentLengthPreset;
   densityPreset?: ContentDensityPreset;
   maxRetries?: number;
+  audienceOverride?: string;
+  conversionGoal?: string;
+  sectionVariants?: Partial<Record<ContentSectionType, string>>;
+  targetSectionIds?: string[];
 }
 
 export interface HeroSectionContent {
+  variant?: "text-only" | "with-image";
+  eyebrow?: string;
   headline: string;
   subheadline: string;
   supportingCopy: string;
   primaryCta: string;
   secondaryCta?: string;
+  ctaHref?: string;
+  image?: {
+    alt: string;
+    src?: string;
+    promptHint?: string;
+  };
+  audience?: string;
+  tone?: TonePreset;
+  density?: ContentDensityPreset;
+  goal?: string;
+}
+
+export interface MarketingItemContent {
+  title?: string;
+  name?: string;
+  description: string;
+  eyebrow?: string;
+  bullets?: string[];
+  descriptor?: string;
 }
 
 export interface InformationalSectionContent {
+  variant?: "grid" | "list" | "stacked";
   headline: string;
   subheadline?: string;
+  description?: string;
   paragraphs: string[];
   bullets?: string[];
+  items?: MarketingItemContent[];
+  audience?: string;
+  tone?: TonePreset;
+  density?: ContentDensityPreset;
+  goal?: string;
 }
 
 export interface ServicesSectionContent extends InformationalSectionContent {
+  variant?: "grid" | "list";
   items: Array<{
     name: string;
     description: string;
@@ -61,29 +95,72 @@ export interface ServicesSectionContent extends InformationalSectionContent {
 }
 
 export interface TestimonialsSectionContent {
+  variant?: "single-quote" | "quote-grid" | "trust-strip";
   headline: string;
   subheadline?: string;
   items: Array<{
     quote: string;
     author: string;
     role?: string;
+    company?: string;
     isPlaceholder?: boolean;
   }>;
+  audience?: string;
+  tone?: TonePreset;
+  density?: ContentDensityPreset;
+  goal?: string;
 }
 
 export interface FaqSectionContent {
+  variant?: "compact" | "expanded";
   headline: string;
+  subheadline?: string;
   items: Array<{
     question: string;
     answer: string;
   }>;
+  audience?: string;
+  tone?: TonePreset;
+  density?: ContentDensityPreset;
+  goal?: string;
 }
 
 export interface CtaSectionContent {
+  variant?: "banner" | "block";
   headline: string;
   supportingLine: string;
   ctaText: string;
+  ctaHref?: string;
+  secondaryCtaText?: string;
+  secondaryCtaHref?: string;
   urgencyLabel?: string;
+  audience?: string;
+  tone?: TonePreset;
+  density?: ContentDensityPreset;
+  goal?: string;
+}
+
+export interface PricingTierContent {
+  name: string;
+  price: string;
+  billingPeriod?: string;
+  description: string;
+  features: string[];
+  ctaText: string;
+  isFeatured?: boolean;
+}
+
+export interface PricingSectionContent {
+  variant?: "two-tier" | "three-tier";
+  headline: string;
+  subheadline?: string;
+  tiers: PricingTierContent[];
+  guaranteeLine?: string;
+  disclaimer?: string;
+  audience?: string;
+  tone?: TonePreset;
+  density?: ContentDensityPreset;
+  goal?: string;
 }
 
 export interface ContactSectionContent {
@@ -122,6 +199,7 @@ export interface GeneratedSectionContentMap {
   testimonials?: TestimonialsSectionContent;
   faq?: FaqSectionContent;
   cta?: CtaSectionContent;
+  pricing?: PricingSectionContent;
   contact?: ContactSectionContent;
   footer?: FooterSectionContent;
   microcopy?: MicrocopyContent;
@@ -135,7 +213,7 @@ export interface GeneratedPageContent {
     pageSubheadline?: string;
     valueProposition: string;
   };
-  sections: GeneratedSectionContentMap;
+  sections: Partial<GeneratedSectionContentMap>;
 }
 
 export interface WebsiteContentPackage {

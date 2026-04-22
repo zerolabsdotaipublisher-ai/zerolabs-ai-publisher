@@ -89,6 +89,13 @@ const BASE_LENGTH_RULES: Record<ContentSectionType, ContentLengthRule> = {
     paragraphWordsMax: 0,
     bulletsMax: 6,
   },
+  pricing: {
+    sectionType: "pricing",
+    headlineWordsMax: 12,
+    paragraphCountMax: 0,
+    paragraphWordsMax: 0,
+    bulletsMax: 6,
+  },
   contact: {
     sectionType: "contact",
     headlineWordsMax: 12,

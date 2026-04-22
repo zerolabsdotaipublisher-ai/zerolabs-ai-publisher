@@ -16,6 +16,9 @@ function defaultsBySection(
         containerVariant: "emphasis",
       };
     case "services":
+    case "features":
+    case "benefits":
+    case "pricing":
     case "testimonials":
       return {
         alignment: "left",

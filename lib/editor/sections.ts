@@ -11,10 +11,42 @@ function createSectionContent(type: SectionType): Record<string, unknown> {
       return { headline: "About", body: "Describe your business." };
     case "services":
       return { headline: "Services", items: [{ name: "Service name", description: "Service description" }] };
+    case "features":
+      return {
+        variant: "grid",
+        headline: "Features",
+        items: [{ title: "Feature title", description: "Feature description" }],
+      };
+    case "benefits":
+      return {
+        variant: "grid",
+        headline: "Benefits",
+        items: [{ title: "Benefit title", description: "Benefit description" }],
+      };
     case "testimonials":
       return { headline: "Testimonials", items: [{ quote: "Great service.", author: "Customer" }] };
+    case "faq":
+      return {
+        variant: "expanded",
+        headline: "FAQ",
+        items: [{ question: "Common question?", answer: "Helpful answer." }],
+      };
+    case "pricing":
+      return {
+        variant: "two-tier",
+        headline: "Pricing",
+        tiers: [
+          {
+            name: "Starter",
+            price: "$199",
+            description: "Starter offer",
+            features: ["Core feature"],
+            ctaText: "Choose Starter",
+          },
+        ],
+      };
     case "cta":
-      return { headline: "Ready to start?", ctaText: "Contact us" };
+      return { variant: "banner", headline: "Ready to start?", ctaText: "Contact us" };
     case "contact":
       return { headline: "Contact", channels: [{ label: "Email", value: "hello@example.com" }] };
     case "footer":
