@@ -91,6 +91,13 @@ export interface ZeroFlowConfig {
   apiKey: string | undefined;
 }
 
+export interface SchedulerConfig {
+  /** Optional bearer token used by external cron/system calls. */
+  executionToken: string | undefined;
+  /** Maximum schedules claimed in a single scheduler batch. */
+  batchSize: number;
+}
+
 export interface PipelineConfig {
   /** Deployment adapter target. Validated by lib/pipeline before use. */
   deploymentTarget: string;
@@ -140,6 +147,7 @@ export interface ServiceConfig {
   billing: BillingConfig;
   email: EmailConfig;
   zeroflow: ZeroFlowConfig;
+  scheduler: SchedulerConfig;
   pipeline: PipelineConfig;
   auth: AuthConfig;
 }
@@ -194,6 +202,11 @@ export const servicesConfig: ServiceConfig = {
   zeroflow: {
     apiUrl: env.zeroflow.apiUrl,
     apiKey: env.zeroflow.apiKey,
+  },
+
+  scheduler: {
+    executionToken: env.scheduler.executionToken,
+    batchSize: env.scheduler.batchSize,
   },
 
   pipeline: {

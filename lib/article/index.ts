@@ -43,6 +43,7 @@ export { generateArticle, mapArticleToWebsiteStructure, regenerateArticle } from
 export {
   deleteArticleByStructureId,
   getArticleByStructureId,
+  updateArticlePublicationMetadata,
   upsertArticle,
 } from "./storage";
 export { articleGenerationScenarios } from "./scenarios";

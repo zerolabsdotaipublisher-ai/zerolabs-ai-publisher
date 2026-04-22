@@ -29,6 +29,7 @@ export type {
   OpenAIConfig,
   PipelineConfig,
   QdrantConfig,
+  SchedulerConfig,
   ServiceConfig,
   SupabaseConfig,
   WasabiConfig,

@@ -6,6 +6,11 @@ import { logger } from "@/lib/observability";
 import { getSupabaseServiceClient } from "@/lib/supabase/server";
 import type { BlogPostRow, GeneratedBlogPost } from "./types";
 
+export interface BlogPublicationMetadataUpdate {
+  scheduledPublishAt?: string | null;
+  publishedAt?: string | null;
+}
+
 function toRow(blog: GeneratedBlogPost, userId: string): BlogPostRow {
   return {
     id: blog.id,
@@ -206,4 +211,30 @@ export async function deleteBlogPostByStructureId(
     });
     throw error;
   }
+}
+
+export async function updateBlogPublicationMetadata(
+  structureId: string,
+  userId: string,
+  updates: BlogPublicationMetadataUpdate,
+): Promise<GeneratedBlogPost | null> {
+  const existing = await getBlogPostByStructureId(structureId, userId);
+  if (!existing) {
+    return null;
+  }
+
+  const next: GeneratedBlogPost = {
+    ...existing,
+    scheduledPublishAt:
+      updates.scheduledPublishAt === undefined
+        ? existing.scheduledPublishAt
+        : updates.scheduledPublishAt ?? undefined,
+    publishedAt:
+      updates.publishedAt === undefined
+        ? existing.publishedAt
+        : updates.publishedAt ?? undefined,
+    updatedAt: new Date().toISOString(),
+  };
+
+  return upsertBlogPost(next, userId);
 }

@@ -83,12 +83,23 @@ export function WebsiteListItem({
             <dd>{new Date(website.deletedAt).toLocaleString()}</dd>
           </div>
         ) : null}
+        <div>
+          <dt>Schedule</dt>
+          <dd>
+            {website.schedule?.nextRunAt
+              ? `${website.schedule.status} • ${new Date(website.schedule.nextRunAt).toLocaleString()}`
+              : website.schedule
+                ? website.schedule.status
+                : "Not scheduled"}
+          </dd>
+        </div>
       </dl>
 
       <div className="website-list-item-links">
         <Link href={website.generatedSitePath}>View</Link>
         <Link href={website.previewPath}>Preview</Link>
         <Link href={website.editorPath}>Edit</Link>
+        <Link href={`${website.generatedSitePath}#content-schedule`}>Schedule</Link>
         {website.liveUrl ? (
           <a href={website.liveUrl} target="_blank" rel="noreferrer">
             Live site
