@@ -140,7 +140,11 @@ export function collectArticleQualityNotes(article: GeneratedArticle): string[] 
     ...(article.references ?? []).flatMap((reference) => [reference.title, reference.source, reference.note]),
   ];
 
-  if (textBlocks.some((value) => Boolean(value) && containsBannedPhrase(value))) {
+  if (
+    textBlocks
+      .filter((value): value is string => Boolean(value))
+      .some((value) => containsBannedPhrase(value))
+  ) {
     notes.push("Contains blocked filler or AI disclosure phrases");
   }
 
