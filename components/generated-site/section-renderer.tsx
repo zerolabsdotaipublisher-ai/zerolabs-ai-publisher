@@ -224,7 +224,7 @@ interface ArticlePageReferencesContent {
 function HeroSectionView({ content }: { content: HeroContent }) {
   return (
     <section className="gs-section gs-hero" id="hero">
-      {content.eyebrow ? <p className="gs-footer-blurb">{content.eyebrow}</p> : null}
+      {content.eyebrow ? <p className="gs-hero-eyebrow">{content.eyebrow}</p> : null}
       <h1 className="gs-hero-headline">{content.headline}</h1>
       {content.subheadline && (
         <p className="gs-hero-subheadline">{content.subheadline}</p>

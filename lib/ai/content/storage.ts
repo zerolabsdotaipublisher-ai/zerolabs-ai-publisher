@@ -62,6 +62,17 @@ function toStructuredContentPackage(
 ): WebsiteContentPackage {
   const now = new Date().toISOString();
   const generatedFromInput = structure.sourceInput as WebsiteGenerationInput;
+  const resolvePageSubheadline = (
+    page: WebsiteStructure["pages"][number],
+  ): string | undefined => {
+    for (const section of page.sections) {
+      const subheadline = section.content["subheadline"];
+      if (typeof subheadline === "string" && subheadline.trim()) {
+        return subheadline;
+      }
+    }
+    return undefined;
+  };
 
   return {
     id: `wc_${structure.id}_${structure.version}`,
@@ -77,10 +88,7 @@ function toStructuredContentPackage(
       pageType: page.type,
       messaging: {
         pageHeadline: page.title,
-        pageSubheadline:
-          typeof page.sections[0]?.content?.["subheadline"] === "string"
-            ? (page.sections[0].content["subheadline"] as string)
-            : undefined,
+        pageSubheadline: resolvePageSubheadline(page),
         valueProposition: page.seo.description,
       },
       sections: Object.fromEntries(
@@ -94,6 +102,14 @@ function toStructuredContentPackage(
     updatedAt: structure.updatedAt || now,
     version: structure.version,
   };
+}
+
+function inferPageTypeFromSlug(slug: string): GeneratedPageContent["pageType"] {
+  if (slug === "/") return "home";
+  if (slug === "/about") return "about";
+  if (slug === "/services" || slug === "/features" || slug === "/pricing") return "services";
+  if (slug === "/contact") return "contact";
+  return "custom";
 }
 
 export async function storeWebsiteGeneratedContent(
@@ -165,7 +181,7 @@ export async function getWebsiteGeneratedContent(
       pageMap.get(row.page_slug) ??
       ({
         pageSlug: row.page_slug,
-        pageType: "custom",
+        pageType: inferPageTypeFromSlug(row.page_slug),
         messaging: {
           pageHeadline: row.page_slug === "/" ? "Home" : row.page_slug,
           valueProposition: "",

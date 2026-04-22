@@ -30,6 +30,9 @@ export function evaluateSectionQuality(
 ): string[] {
   const errors: string[] = [];
   const serialized = JSON.stringify(section ?? {});
+  const typedSection = (section ?? {}) as {
+    items?: Array<{ isPlaceholder?: boolean; company?: string }>;
+  };
   const phrases = serialized
     .toLowerCase()
     .split(/[^a-z0-9]+/)
@@ -54,8 +57,7 @@ export function evaluateSectionQuality(
 
   if (
     sectionType === "testimonials" &&
-    /"isPlaceholder":false/i.test(serialized) &&
-    !/"company":/i.test(serialized)
+    typedSection.items?.some((item) => item.isPlaceholder === false && !item.company)
   ) {
     errors.push("testimonials: non-placeholder proof should include richer attribution");
   }

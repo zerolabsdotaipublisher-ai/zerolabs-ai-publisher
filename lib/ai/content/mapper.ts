@@ -26,7 +26,14 @@ function generateSectionId(pageId: string, sectionType: SectionType): string {
     return `${pageId}_${sectionType}_${globalThis.crypto.randomUUID()}`;
   }
 
-  return `${pageId}_${sectionType}_${Date.now().toString(36)}`;
+  if (globalThis.crypto?.getRandomValues) {
+    const bytes = new Uint8Array(8);
+    globalThis.crypto.getRandomValues(bytes);
+    const randomPart = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+    return `${pageId}_${sectionType}_${randomPart}`;
+  }
+
+  return `${pageId}_${sectionType}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
 function desiredStructureSectionOrder(

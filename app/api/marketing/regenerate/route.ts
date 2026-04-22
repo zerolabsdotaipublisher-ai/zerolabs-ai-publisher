@@ -85,7 +85,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       existing,
       user.id,
       body.updatedInput,
-      options as ContentGenerationOptions,
+      options,
     );
 
     const seoResult = await generateWebsiteSeo(
