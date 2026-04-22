@@ -44,7 +44,7 @@ export function buildArticleGenerationPrompt(input: ArticleGenerationInput): str
     "Ensure the focus keyword appears naturally in the title, subtitle, introduction, one H2, and meta title.",
     "Return a strong subtitle that sharpens the article promise.",
     "Return section takeaways only when they improve usability.",
-    ...seoGuidance,
+    ...seoGuidance.map((line) => `- ${line}`),
     "Input:",
     JSON.stringify(input, null, 2),
     "",

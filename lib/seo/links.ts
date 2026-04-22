@@ -43,13 +43,5 @@ export function buildInternalLinks(args: {
     });
   });
 
-  if (args.contentType !== "website-page" && !unique.has(slug)) {
-    unique.set(slug, {
-      href: slug,
-      anchorText: args.title,
-      reason: "Link directly to the primary content page",
-    });
-  }
-
   return Array.from(unique.values()).slice(0, 5);
 }

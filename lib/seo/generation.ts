@@ -7,7 +7,7 @@ import type {
   SeoGenerationInput,
   SeoHeadingStructure,
 } from "./types";
-import { validateSeoContent } from "./validation";
+import { SEO_VALIDATION_WARNINGS, validateSeoContent } from "./validation";
 
 function normalizeSentence(value: string, maxLength: number): string {
   const normalized = value.trim().replace(/\s+/g, " ");
@@ -40,10 +40,17 @@ function toHeadingStructure(title: string, headings?: SeoHeadingStructure): SeoH
 }
 
 function buildTitleTag(title: string, primaryKeyword: string): string {
-  const base = title.toLowerCase().includes(primaryKeyword.toLowerCase())
-    ? title
-    : `${title} | ${primaryKeyword}`;
-  return normalizeSentence(base, 60);
+  if (title.toLowerCase().includes(primaryKeyword.toLowerCase())) {
+    return normalizeSentence(title, 60);
+  }
+
+  const keywordFirst = `${primaryKeyword} | ${title}`;
+  if (keywordFirst.length <= 60) {
+    return keywordFirst;
+  }
+
+  const remainingTitleLength = Math.max(20, 60 - primaryKeyword.length - 3);
+  return normalizeSentence(`${primaryKeyword} | ${normalizeSentence(title, remainingTitleLength)}`, 60);
 }
 
 function buildMetaDescription(summary: string, primaryKeyword: string, targetAudience: string): string {
@@ -155,8 +162,8 @@ export function generateSeoContentMetadata(input: SeoGenerationInput): SeoConten
     readability: readabilitySummary.readability,
     length: readabilitySummary.length,
     guardrails: {
-      keywordStuffingRisk: validationSummary.warnings.includes("Primary keyword may be overused"),
-      duplicateHeadingRisk: validationSummary.warnings.includes("Duplicate H2 headings detected"),
+      keywordStuffingRisk: validationSummary.warnings.includes(SEO_VALIDATION_WARNINGS.keywordOveruse),
+      duplicateHeadingRisk: validationSummary.warnings.includes(SEO_VALIDATION_WARNINGS.duplicateH2),
       malformedMetadataRisk:
         validationSummary.issues.includes("Title tag is required") ||
         validationSummary.issues.includes("Meta description is required"),

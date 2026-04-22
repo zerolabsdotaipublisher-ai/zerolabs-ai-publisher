@@ -254,19 +254,22 @@ export function WebsiteEditorShell({ initialStructure, previewPath, generatedSit
         seo: {
           ...page.seo,
           keywords,
-          contentOptimization: page.seo.contentOptimization
-            ? {
-                ...page.seo.contentOptimization,
-                keywordStrategy: {
-                  ...page.seo.contentOptimization.keywordStrategy,
-                  primaryKeyword: keywords[0] ?? page.seo.contentOptimization.keywordStrategy.primaryKeyword,
-                  secondaryKeywords: keywords.slice(1, 6),
-                  keywordCluster: keywords.length
-                    ? keywords
-                    : page.seo.contentOptimization.keywordStrategy.keywordCluster,
-                },
-              }
-            : page.seo.contentOptimization,
+          contentOptimization: (() => {
+            const optimization = page.seo.contentOptimization;
+            if (!optimization) {
+              return optimization;
+            }
+
+            return {
+              ...optimization,
+              keywordStrategy: {
+                ...optimization.keywordStrategy,
+                primaryKeyword: keywords[0] ?? optimization.keywordStrategy.primaryKeyword,
+                secondaryKeywords: keywords.slice(1, 6),
+                keywordCluster: keywords.length ? keywords : optimization.keywordStrategy.keywordCluster,
+              },
+            };
+          })(),
         },
       })),
     );
