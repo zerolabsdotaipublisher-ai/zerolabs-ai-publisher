@@ -176,8 +176,11 @@ export async function getWebsiteGeneratedContent(
     if (row.section_key === "__page__") {
       page.messaging = row.content_json as GeneratedPageContent["messaging"];
     } else {
-      page.sections[row.section_key as keyof GeneratedPageContent["sections"]] =
-        row.content_json as never;
+      const sectionKey = row.section_key as keyof GeneratedPageContent["sections"];
+      page.sections = {
+        ...page.sections,
+        [sectionKey]: row.content_json,
+      } as GeneratedPageContent["sections"];
     }
 
     pageMap.set(row.page_slug, page);

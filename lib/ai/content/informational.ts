@@ -52,9 +52,9 @@ export function createServicesFallback(
     bullets: input.services.slice(0, 6),
     items: input.services.slice(0, 6).map((service) => ({
       name: service,
-        description: `Delivered with clear milestones and practical implementation support.`,
-        descriptor: "Outcome-driven",
-      })),
+      description: `Delivered with clear milestones and practical implementation support.`,
+      descriptor: "Outcome-driven",
+    })),
     audience: input.targetAudience,
     tone: input.tone,
     density: "medium",
