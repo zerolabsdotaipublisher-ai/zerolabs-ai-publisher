@@ -31,6 +31,7 @@ export const SUPPORTED_WEBSITE_TYPES_STRUCTURE: WebsiteType[] = [
   "landing-page",
   "personal-brand",
   "blog",
+  "article",
 ];
 
 // ---------------------------------------------------------------------------

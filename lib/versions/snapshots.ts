@@ -1,7 +1,12 @@
 import type { WebsiteStructure } from "@/lib/ai/structure";
 import { validateWebsiteStructure } from "@/lib/ai/structure";
 import { buildPublicationFingerprint, type PublicationStructureFingerprint } from "@/lib/publish";
-import type { WebsiteVersionBlogSummary, WebsiteVersionSnapshot, WebsiteVersionSummary } from "./types";
+import type {
+  WebsiteVersionArticleSummary,
+  WebsiteVersionBlogSummary,
+  WebsiteVersionSnapshot,
+  WebsiteVersionSummary,
+} from "./types";
 
 export interface WebsiteVersionSnapshotBundle {
   snapshot: WebsiteVersionSnapshot;
@@ -56,6 +61,60 @@ function extractBlogSummary(structure: WebsiteStructure): WebsiteVersionBlogSumm
   };
 }
 
+function extractArticleSummary(structure: WebsiteStructure): WebsiteVersionArticleSummary | undefined {
+  if (structure.websiteType !== "article") {
+    return undefined;
+  }
+
+  const articlePage = structure.pages.find((page) =>
+    page.sections.some(
+      (section) =>
+        section.type === "custom" &&
+        (section.content as { kind?: string }).kind === "article-page-body",
+    ),
+  );
+
+  if (!articlePage) {
+    return undefined;
+  }
+
+  const bodySection = articlePage.sections.find(
+    (section) =>
+      section.type === "custom" &&
+      (section.content as { kind?: string }).kind === "article-page-body",
+  );
+  const headerSection = articlePage.sections.find(
+    (section) =>
+      section.type === "custom" &&
+      (section.content as { kind?: string }).kind === "article-page-header",
+  );
+  const referencesSection = articlePage.sections.find(
+    (section) =>
+      section.type === "custom" &&
+      (section.content as { kind?: string }).kind === "article-page-references",
+  );
+  const sections =
+    ((bodySection?.content as { sections?: Array<{ paragraphs?: string[] }> } | undefined)?.sections ??
+      []).filter(Boolean);
+  const references =
+    ((referencesSection?.content as { references?: unknown[] } | undefined)?.references ?? []).filter(Boolean);
+
+  return {
+    articleSlug: articlePage.slug,
+    articleType:
+      (headerSection?.content as { articleType?: string } | undefined)?.articleType,
+    sectionCount: sections.length,
+    wordCount: sections
+      .flatMap((section) => section.paragraphs ?? [])
+      .join(" ")
+      .split(/\s+/)
+      .filter(Boolean).length,
+    referenceCount: references.length,
+    qualityStatus:
+      (headerSection?.content as { qualityStatus?: string } | undefined)?.qualityStatus,
+  };
+}
+
 export function createWebsiteVersionSnapshot(structure: WebsiteStructure): WebsiteVersionSnapshotBundle {
   const validationErrors = validateWebsiteStructure(structure);
   if (validationErrors.length > 0) {
@@ -65,6 +124,7 @@ export function createWebsiteVersionSnapshot(structure: WebsiteStructure): Websi
   const structureClone = cloneStructure(structure);
   const fingerprint = buildPublicationFingerprint(structureClone);
   const blog = extractBlogSummary(structureClone);
+  const article = extractArticleSummary(structureClone);
 
   return {
     snapshot: {
@@ -72,6 +132,7 @@ export function createWebsiteVersionSnapshot(structure: WebsiteStructure): Websi
       capturedAt: structureClone.updatedAt,
       structure: structureClone,
       blog,
+      article,
     },
     fingerprint,
     summary: {
@@ -82,6 +143,7 @@ export function createWebsiteVersionSnapshot(structure: WebsiteStructure): Websi
       routePaths: fingerprint.routePaths,
       assetPaths: fingerprint.assetPaths,
       blog,
+      article,
     },
   };
 }

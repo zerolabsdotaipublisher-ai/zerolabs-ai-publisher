@@ -92,6 +92,13 @@ const TEMPLATES: Record<WebsiteType, WebsiteTemplate> = {
     defaultTagline: "Structured articles ready for preview and publishing.",
     defaultPrimaryNav: ["Blog"],
   },
+  article: {
+    websiteType: "article",
+    defaultSections: ["hero", "custom", "footer"],
+    defaultPageTitle: "Articles",
+    defaultTagline: "Long-form articles ready for preview, editing, and publishing.",
+    defaultPrimaryNav: ["Articles"],
+  },
 };
 
 // ---------------------------------------------------------------------------

@@ -138,6 +138,56 @@ function validateBlogSections(page: StaticPageData): StaticValidationIssue[] {
   return [];
 }
 
+function validateArticleSections(page: StaticPageData): StaticValidationIssue[] {
+  if (page.websiteType !== "article") {
+    return [];
+  }
+
+  const customSections = page.sections.filter((section) => section.type === "custom");
+  const sectionKinds = new Map(
+    customSections.map((section) => [
+      (section.content as { kind?: string }).kind ?? section.id,
+      section,
+    ]),
+  );
+
+  if (page.page.slug === "/") {
+    const indexSection = sectionKinds.get("article-index");
+    const posts = (indexSection?.content as { posts?: unknown[] } | undefined)?.posts;
+    if (!indexSection || !Array.isArray(posts) || posts.length === 0) {
+      return [
+        {
+          code: "missing_section",
+          severity: "error",
+          pageId: page.page.id,
+          routePath: page.route.path,
+          message: `Article listing page "${page.page.title}" must include an article-index custom section with at least one article.`,
+        },
+      ];
+    }
+    return [];
+  }
+
+  const headerSection = sectionKinds.get("article-page-header");
+  const bodySection = sectionKinds.get("article-page-body");
+  const articleSections =
+    (bodySection?.content as { sections?: unknown[] } | undefined)?.sections;
+
+  if (!headerSection || !bodySection || !Array.isArray(articleSections) || articleSections.length === 0) {
+    return [
+      {
+        code: "missing_section",
+        severity: "error",
+        pageId: page.page.id,
+        routePath: page.route.path,
+        message: `Article page "${page.page.title}" must include article-page-header and article-page-body custom sections with structured article content.`,
+      },
+    ];
+  }
+
+  return [];
+}
+
 export function validateStaticPageData(page: StaticPageData): StaticValidationIssue[] {
   const issues: StaticValidationIssue[] = [];
 
@@ -198,7 +248,12 @@ export function validateStaticPageData(page: StaticPageData): StaticValidationIs
     });
   }
 
-  return [...issues, ...validateAssetReferences(page), ...validateBlogSections(page)];
+  return [
+    ...issues,
+    ...validateAssetReferences(page),
+    ...validateBlogSections(page),
+    ...validateArticleSections(page),
+  ];
 }
 
 export function validateStaticSiteData(params: {

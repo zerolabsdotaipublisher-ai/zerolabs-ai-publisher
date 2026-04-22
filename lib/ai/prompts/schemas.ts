@@ -11,6 +11,7 @@ export const SUPPORTED_WEBSITE_TYPES: WebsiteType[] = [
   "landing-page",
   "personal-brand",
   "blog",
+  "article",
 ];
 
 export const DEFAULT_SECTION_SEQUENCE: WebsiteSectionName[] = [
