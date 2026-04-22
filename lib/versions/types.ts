@@ -16,11 +16,21 @@ export interface WebsiteVersionBlogSummary {
   qualityStatus?: string;
 }
 
+export interface WebsiteVersionArticleSummary {
+  articleSlug: string;
+  articleType?: string;
+  sectionCount: number;
+  wordCount: number;
+  referenceCount: number;
+  qualityStatus?: string;
+}
+
 export interface WebsiteVersionSnapshot {
   schemaVersion: 1;
   capturedAt: string;
   structure: WebsiteStructure;
   blog?: WebsiteVersionBlogSummary;
+  article?: WebsiteVersionArticleSummary;
 }
 
 export interface WebsiteVersionSummary {
@@ -31,6 +41,7 @@ export interface WebsiteVersionSummary {
   routePaths: string[];
   assetPaths: string[];
   blog?: WebsiteVersionBlogSummary;
+  article?: WebsiteVersionArticleSummary;
 }
 
 export interface WebsiteVersionDeploymentLink {

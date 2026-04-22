@@ -62,10 +62,12 @@ interface FooterContent {
 interface BlogIndexPost {
   id: string;
   title: string;
+  subtitle?: string;
   slug: string;
   excerpt: string;
   tags?: string[];
   readingTimeMinutes?: number;
+  articleType?: string;
 }
 
 interface BlogIndexContent {
@@ -98,6 +100,45 @@ interface BlogPostBodyContent {
   sections?: BlogPostBodySection[];
   conclusion?: string;
   callToAction?: string;
+}
+
+interface ArticlePageHeaderContent {
+  kind?: "article-page-header";
+  title?: string;
+  subtitle?: string;
+  excerpt?: string;
+  introduction?: string;
+  authorName?: string;
+  updatedAt?: string;
+  readingTimeMinutes?: number;
+  qualityStatus?: string;
+  tags?: string[];
+  articleType?: string;
+  depth?: string;
+}
+
+interface ArticlePageBodySection extends BlogPostBodySection {
+  takeaways?: string[];
+}
+
+interface ArticlePageBodyContent {
+  kind?: "article-page-body";
+  sections?: ArticlePageBodySection[];
+  conclusion?: string;
+  callToAction?: string;
+}
+
+interface ArticleReferenceItem {
+  title: string;
+  source?: string;
+  url?: string;
+  note?: string;
+}
+
+interface ArticlePageReferencesContent {
+  kind?: "article-page-references";
+  headline?: string;
+  references?: ArticleReferenceItem[];
 }
 
 // ---------------------------------------------------------------------------
@@ -247,9 +288,11 @@ function BlogIndexSectionView({ content }: { content: BlogIndexContent }) {
             <h3 className="gs-blog-card-title">
               <a href={`?page=${encodeURIComponent(post.slug)}`}>{post.title}</a>
             </h3>
+            {post.subtitle ? <p className="gs-blog-card-excerpt">{post.subtitle}</p> : null}
             <p className="gs-blog-card-excerpt">{post.excerpt}</p>
             <p className="gs-blog-card-meta">
               {post.readingTimeMinutes ? `${post.readingTimeMinutes} min read` : null}
+              {post.articleType ? ` • ${post.articleType.replace(/-/g, " ")}` : null}
               {post.tags?.length ? ` • ${post.tags.join(", ")}` : null}
             </p>
           </article>
@@ -300,6 +343,83 @@ function BlogPostBodySectionView({ content }: { content: BlogPostBodyContent }) 
   );
 }
 
+function ArticlePageHeaderSectionView({ content }: { content: ArticlePageHeaderContent }) {
+  return (
+    <section className="gs-section gs-blog-post-header">
+      {content.title ? <h1 className="gs-hero-headline">{content.title}</h1> : null}
+      {content.subtitle ? <p className="gs-hero-subheadline">{content.subtitle}</p> : null}
+      {content.excerpt ? <p className="gs-about-body">{content.excerpt}</p> : null}
+      <p className="gs-blog-post-meta">
+        {content.authorName ? `By ${content.authorName}` : null}
+        {content.updatedAt ? ` • Updated ${new Date(content.updatedAt).toLocaleDateString()}` : null}
+        {content.readingTimeMinutes ? ` • ${content.readingTimeMinutes} min read` : null}
+        {content.articleType ? ` • ${content.articleType.replace(/-/g, " ")}` : null}
+        {content.depth ? ` • ${content.depth}` : null}
+      </p>
+      {content.tags?.length ? <p className="gs-blog-post-tags">{content.tags.join(" • ")}</p> : null}
+      {content.introduction ? <p className="gs-about-body">{content.introduction}</p> : null}
+    </section>
+  );
+}
+
+function ArticlePageBodySectionView({ content }: { content: ArticlePageBodyContent }) {
+  return (
+    <section className="gs-section gs-blog-post-body">
+      {(content.sections ?? []).map((section) => (
+        <article key={section.id} className="gs-blog-post-block">
+          <h2 className="gs-section-headline">{section.heading}</h2>
+          {section.summary ? <p className="gs-about-body">{section.summary}</p> : null}
+          {(section.h3Headings ?? []).map((heading, index) => (
+            <h3 key={`${section.id}_${index}`} className="gs-blog-post-subheading">
+              {heading}
+            </h3>
+          ))}
+          {(section.paragraphs ?? []).map((paragraph, index) => (
+            <p key={`${section.id}_paragraph_${index}`} className="gs-about-body">
+              {paragraph}
+            </p>
+          ))}
+          {section.takeaways?.length ? (
+            <ul className="gs-services-list">
+              {section.takeaways.map((takeaway, index) => (
+                <li key={`${section.id}_takeaway_${index}`} className="gs-service-item">
+                  {takeaway}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </article>
+      ))}
+      {content.conclusion ? <p className="gs-about-body">{content.conclusion}</p> : null}
+      {content.callToAction ? <p className="gs-cta-headline">{content.callToAction}</p> : null}
+    </section>
+  );
+}
+
+function ArticlePageReferencesSectionView({ content }: { content: ArticlePageReferencesContent }) {
+  if (!content.references?.length) return null;
+
+  return (
+    <section className="gs-section gs-about">
+      {content.headline ? <h2 className="gs-section-headline">{content.headline}</h2> : null}
+      <ul className="gs-services-list">
+        {content.references.map((reference, index) => (
+          <li key={`${reference.title}_${index}`} className="gs-service-item">
+            <strong className="gs-service-name">{reference.title}</strong>
+            {reference.source ? <p className="gs-service-description">{reference.source}</p> : null}
+            {reference.note ? <p className="gs-service-description">{reference.note}</p> : null}
+            {reference.url ? (
+              <p className="gs-service-description">
+                <a href={reference.url}>{reference.url}</a>
+              </p>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Public section renderer
 // ---------------------------------------------------------------------------
@@ -323,6 +443,18 @@ export function SectionRenderer({ section }: SectionRendererProps) {
     }
     if (customKind === "blog-post-body") {
       return <BlogPostBodySectionView content={section.content as BlogPostBodyContent} />;
+    }
+    if (customKind === "article-index") {
+      return <BlogIndexSectionView content={section.content as BlogIndexContent} />;
+    }
+    if (customKind === "article-page-header") {
+      return <ArticlePageHeaderSectionView content={section.content as ArticlePageHeaderContent} />;
+    }
+    if (customKind === "article-page-body") {
+      return <ArticlePageBodySectionView content={section.content as ArticlePageBodyContent} />;
+    }
+    if (customKind === "article-page-references") {
+      return <ArticlePageReferencesSectionView content={section.content as ArticlePageReferencesContent} />;
     }
   }
 
