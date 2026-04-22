@@ -19,31 +19,84 @@ export const CONTENT_OUTPUT_CONTRACT_EXAMPLE = {
         pageSubheadline: "A concise supporting line",
         valueProposition: "Single-sentence value proposition",
       },
-      sections: {
-        hero: {
-          headline: "Hero headline",
-          subheadline: "Hero subheadline",
-          supportingCopy: "A concise supporting paragraph",
-          primaryCta: "Book a call",
-          secondaryCta: "Learn more",
-        },
-        about: {
-          headline: "About",
-          paragraphs: ["Short paragraph"],
-          bullets: ["Proof point"],
-        },
-        services: {
-          headline: "Services",
-          items: [{ name: "Service", description: "Outcome-focused copy" }],
-        },
-        cta: {
-          headline: "Ready to start?",
-          supportingLine: "Clear conversion-focused supporting line",
-          ctaText: "Get started",
-        },
-        contact: {
-          headline: "Contact",
-          channels: [{ label: "Email", value: "hello@example.com" }],
+        sections: {
+          hero: {
+            variant: "with-image",
+            eyebrow: "For ambitious teams",
+            headline: "Hero headline",
+            subheadline: "Hero subheadline",
+            supportingCopy: "A concise supporting paragraph",
+            primaryCta: "Book a call",
+            secondaryCta: "Learn more",
+            ctaHref: "#contact",
+            image: {
+              alt: "Hero illustration placeholder",
+              promptHint: "Abstract product image placeholder",
+            },
+          },
+          about: {
+            variant: "stacked",
+            headline: "About",
+            description: "Why this brand matters",
+            paragraphs: ["Short paragraph"],
+            bullets: ["Proof point"],
+          },
+          services: {
+            variant: "grid",
+            headline: "Services",
+            items: [{ name: "Service", description: "Outcome-focused copy" }],
+          },
+          features: {
+            variant: "grid",
+            headline: "Features",
+            items: [{ title: "Feature", description: "Scannable value-focused explanation" }],
+          },
+          benefits: {
+            variant: "grid",
+            headline: "Benefits",
+            items: [{ title: "Benefit", description: "Outcome-focused summary" }],
+          },
+          testimonials: {
+            variant: "quote-grid",
+            headline: "Proof",
+            items: [
+              {
+                quote: "Synthetic but useful testimonial placeholder",
+                author: "Example Customer",
+                company: "Placeholder Co.",
+                isPlaceholder: true,
+              },
+            ],
+          },
+          faq: {
+            variant: "expanded",
+            headline: "FAQ",
+            items: [{ question: "Common question?", answer: "Clear answer." }],
+          },
+          cta: {
+            variant: "banner",
+            headline: "Ready to start?",
+            supportingLine: "Clear conversion-focused supporting line",
+            ctaText: "Get started",
+            ctaHref: "#contact",
+          },
+          pricing: {
+            variant: "two-tier",
+            headline: "Simple pricing",
+            tiers: [
+              {
+                name: "Starter",
+                price: "$199",
+                billingPeriod: "/mo",
+                description: "Intro placeholder offer",
+                features: ["Core feature"],
+                ctaText: "Choose Starter",
+              },
+            ],
+          },
+          contact: {
+            headline: "Contact",
+            channels: [{ label: "Email", value: "hello@example.com" }],
         },
         footer: {
           shortBlurb: "Short trust-building footer blurb",

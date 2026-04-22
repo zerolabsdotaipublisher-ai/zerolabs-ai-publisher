@@ -14,7 +14,20 @@ interface EditorSectionSelectorProps {
   onAdd: (type: SectionType) => void;
 }
 
-const SECTION_TYPES: SectionType[] = ["hero", "about", "services", "testimonials", "cta", "contact", "footer", "custom"];
+const SECTION_TYPES: SectionType[] = [
+  "hero",
+  "about",
+  "services",
+  "features",
+  "benefits",
+  "testimonials",
+  "faq",
+  "pricing",
+  "cta",
+  "contact",
+  "footer",
+  "custom",
+];
 
 export function EditorSectionSelector({
   sections,

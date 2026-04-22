@@ -10,6 +10,8 @@ export type {
   TestimonialsSectionContent,
   FaqSectionContent,
   CtaSectionContent,
+  PricingTierContent,
+  PricingSectionContent,
   ContactSectionContent,
   FooterSectionContent,
   MicrocopyContent,
@@ -55,6 +57,8 @@ export { regenerateWebsiteContent } from "./regeneration";
 
 export {
   storeWebsiteGeneratedContent,
+  storeWebsiteStructureContentSnapshot,
+  getWebsiteGeneratedContent,
   deleteWebsiteGeneratedContent,
 } from "./storage";
 
