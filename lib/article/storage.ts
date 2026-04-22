@@ -6,6 +6,11 @@ import { logger } from "@/lib/observability";
 import { getSupabaseServiceClient } from "@/lib/supabase/server";
 import type { ArticleRow, GeneratedArticle } from "./types";
 
+export interface ArticlePublicationMetadataUpdate {
+  scheduledPublishAt?: string | null;
+  publishedAt?: string | null;
+}
+
 function toRow(article: GeneratedArticle, userId: string): ArticleRow {
   return {
     id: article.id,
@@ -203,4 +208,30 @@ export async function deleteArticleByStructureId(
     });
     throw error;
   }
+}
+
+export async function updateArticlePublicationMetadata(
+  structureId: string,
+  userId: string,
+  updates: ArticlePublicationMetadataUpdate,
+): Promise<GeneratedArticle | null> {
+  const existing = await getArticleByStructureId(structureId, userId);
+  if (!existing) {
+    return null;
+  }
+
+  const next: GeneratedArticle = {
+    ...existing,
+    scheduledPublishAt:
+      updates.scheduledPublishAt === undefined
+        ? existing.scheduledPublishAt
+        : updates.scheduledPublishAt ?? undefined,
+    publishedAt:
+      updates.publishedAt === undefined
+        ? existing.publishedAt
+        : updates.publishedAt ?? undefined,
+    updatedAt: new Date().toISOString(),
+  };
+
+  return upsertArticle(next, userId);
 }

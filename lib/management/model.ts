@@ -1,6 +1,7 @@
 import { routes } from "@/config/routes";
 import type { WebsiteStructure } from "@/lib/ai/structure";
 import { detectPublicationState } from "@/lib/publish";
+import type { ContentScheduleSummary } from "@/lib/scheduling";
 import type { WebsiteLifecycleStatus, WebsiteManagementRecord } from "./types";
 
 export function isSoftDeleted(structure: WebsiteStructure): boolean {
@@ -19,7 +20,10 @@ export function deriveWebsiteLifecycleStatus(structure: WebsiteStructure): Websi
   return detectPublicationState(structure).state;
 }
 
-export function toWebsiteManagementRecord(structure: WebsiteStructure): WebsiteManagementRecord {
+export function toWebsiteManagementRecord(
+  structure: WebsiteStructure,
+  schedule?: ContentScheduleSummary,
+): WebsiteManagementRecord {
   const publication = detectPublicationState(structure);
   const title = structure.management?.displayName?.trim() || structure.siteTitle;
   const description = structure.management?.description?.trim() || structure.tagline;
@@ -42,5 +46,6 @@ export function toWebsiteManagementRecord(structure: WebsiteStructure): WebsiteM
     deletedAt: structure.management?.deletedAt,
     deletionState: isSoftDeleted(structure) ? "deleted" : "active",
     supportsBulkActions: true,
+    schedule,
   };
 }

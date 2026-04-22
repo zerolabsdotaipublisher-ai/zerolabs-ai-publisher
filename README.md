@@ -52,6 +52,7 @@ It is the **Layer 1 Product Application** within the broader [ZeroFlow](#archite
 Key capabilities include:
 
 - AI-powered content generation via OpenAI
+- Timezone-aware AI content scheduling with recurring publish/update support
 - Semantic search and recommendations powered by Qdrant vector database
 - Asset storage backed by Wasabi (S3-compatible object storage)
 - User authentication and data persistence via Supabase

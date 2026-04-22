@@ -5,9 +5,14 @@ import { getWebsiteStructure } from "@/lib/ai/structure/storage";
 import { getWebsiteSeoMetadata } from "@/lib/ai/seo";
 import { Renderer } from "@/components/generated-site/renderer";
 import { PublishStatusBadge } from "@/components/publish/publish-status-badge";
+import { ContentSchedulePanel } from "@/components/scheduling/content-schedule-panel";
 import { VersionHistoryPanel } from "@/components/versions/version-history-panel";
 import { detectPublicationState } from "@/lib/publish";
 import { resolveWebsitePageByPath } from "@/lib/routing";
+import {
+  getOwnedContentScheduleByStructureId,
+  listOwnedContentScheduleRuns,
+} from "@/lib/scheduling";
 import { summarizeWebsiteVersionComparison } from "@/lib/versions/compare";
 import { listWebsiteVersions } from "@/lib/versions/storage";
 
@@ -86,6 +91,10 @@ export default async function GeneratedSitePage({ params, searchParams }: PagePr
   }
   const publication = detectPublicationState(structure);
   const versions = await listWebsiteVersions(id, user.id);
+  const schedule = await getOwnedContentScheduleByStructureId(id, user.id);
+  const scheduleRuns = schedule
+    ? await listOwnedContentScheduleRuns(schedule.id, user.id, 10)
+    : [];
   const versionEntries = versions.map((version) => ({
     id: version.id,
     versionNumber: version.versionNumber,
@@ -111,6 +120,12 @@ export default async function GeneratedSitePage({ params, searchParams }: PagePr
           <span className="generated-site-version">v{structure.version}</span>
         </p>
       </div>
+      <ContentSchedulePanel
+        structureId={structure.id}
+        websiteType={structure.websiteType}
+        initialSchedule={schedule}
+        initialRuns={scheduleRuns}
+      />
       <VersionHistoryPanel structureId={structure.id} entries={versionEntries} />
       <Renderer structure={structure} pageSlug={resolvedSearchParams?.page || "/"} />
     </div>

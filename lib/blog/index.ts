@@ -39,6 +39,7 @@ export { generateBlogPost, mapBlogToWebsiteStructure, regenerateBlogPost } from 
 export {
   deleteBlogPostByStructureId,
   getBlogPostByStructureId,
+  updateBlogPublicationMetadata,
   upsertBlogPost,
 } from "./storage";
 export { blogGenerationScenarios } from "./scenarios";

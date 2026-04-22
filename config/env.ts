@@ -155,6 +155,11 @@ export const env = {
     apiKey: optional(process.env.ZEROFLOW_API_KEY),
   },
 
+  scheduler: {
+    executionToken: optional(process.env.CRON_SECRET ?? process.env.SCHEDULER_EXECUTION_TOKEN),
+    batchSize: optionalPositiveInteger(process.env.SCHEDULER_BATCH_SIZE, 5),
+  },
+
   /** Website build and deployment pipeline (MVP-safe adapter orchestration) */
   pipeline: {
     deploymentTarget: process.env.PIPELINE_DEPLOYMENT_TARGET ?? "mock",

@@ -1,5 +1,6 @@
 import type { PublicationState } from "@/lib/publish";
 import type { WebsiteStructure, WebsiteStructureStatus } from "@/lib/ai/structure";
+import type { ContentScheduleSummary } from "@/lib/scheduling";
 
 export type WebsiteLifecycleStatus =
   | "draft"
@@ -31,6 +32,7 @@ export interface WebsiteManagementRecord {
   deletedAt?: string;
   deletionState: "active" | "deleted";
   supportsBulkActions: boolean;
+  schedule?: ContentScheduleSummary;
 }
 
 export interface WebsiteListingOptions {
