@@ -1,3 +1,4 @@
+import { buildSeoPromptGuidance, resolveSeoKeywordStrategy } from "@/lib/seo";
 import { articleOutputContractJson } from "./schema";
 import type { ArticleGenerationInput, ArticleRegenerationOptions, GeneratedArticle } from "./types";
 
@@ -21,6 +22,16 @@ export function buildArticleSystemPrompt(): string {
 }
 
 export function buildArticleGenerationPrompt(input: ArticleGenerationInput): string {
+  const seoGuidance = buildSeoPromptGuidance(
+    resolveSeoKeywordStrategy({
+      title: input.topic,
+      keywords: input.keywords,
+      keywordInput: input.seo,
+      targetAudience: input.targetAudience,
+      searchIntent: input.seo?.searchIntent,
+    }),
+  );
+
   return [
     "Generate one structured article using the JSON contract below.",
     "Honor article type, tone, depth, length, SEO intent, and outline guidance.",
@@ -33,6 +44,7 @@ export function buildArticleGenerationPrompt(input: ArticleGenerationInput): str
     "Ensure the focus keyword appears naturally in the title, subtitle, introduction, one H2, and meta title.",
     "Return a strong subtitle that sharpens the article promise.",
     "Return section takeaways only when they improve usability.",
+    ...seoGuidance,
     "Input:",
     JSON.stringify(input, null, 2),
     "",

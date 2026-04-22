@@ -1,4 +1,4 @@
-import { resolveSectionCount, slugify, targetWordCount } from "./seo";
+import { createArticleSeoMetadata, resolveSectionCount, slugify, targetWordCount } from "./seo";
 import type {
   ArticleGenerationInput,
   ArticleReference,
@@ -58,6 +58,19 @@ function sanitizeSection(section: ArticleSection, index: number): ArticleSection
   };
 }
 
+function sanitizeSeoInput(input: ArticleGenerationInput["seo"]): ArticleGenerationInput["seo"] {
+  if (!input) {
+    return undefined;
+  }
+
+  return {
+    primaryKeyword: trimOrUndefined(input.primaryKeyword),
+    secondaryKeywords: input.secondaryKeywords?.map((keyword) => keyword.trim()).filter(Boolean),
+    targetAudience: trimOrUndefined(input.targetAudience),
+    searchIntent: input.searchIntent,
+  };
+}
+
 export function sanitizeArticleGenerationInput(input: ArticleGenerationInput): ArticleGenerationInput {
   return {
     ...input,
@@ -77,6 +90,7 @@ export function sanitizeArticleGenerationInput(input: ArticleGenerationInput): A
     sectionCount: resolveSectionCount(input.length, input.sectionCount),
     style: input.style ?? "editorial",
     publishAt: normalizeIsoTimestamp(input.publishAt),
+    seo: sanitizeSeoInput(input.seo),
   };
 }
 
@@ -154,6 +168,28 @@ export function collectArticleQualityNotes(article: GeneratedArticle): string[] 
 export function normalizeArticle(article: GeneratedArticle): GeneratedArticle {
   const sections = article.sections.map(sanitizeSection);
   const slug = slugify(article.slug || article.title || article.sourceInput.topic);
+  const generatedSeo = createArticleSeoMetadata({
+    title: article.title.trim(),
+    subtitle: article.subtitle.trim(),
+    slug,
+    excerpt: article.excerpt.trim(),
+    keywords: article.sourceInput.keywords,
+    sections,
+    tags: article.sourceInput.tags,
+    targetAudience: article.sourceInput.targetAudience,
+    searchIntent: article.sourceInput.seo?.searchIntent,
+    keywordInput: article.sourceInput.seo,
+    internalLinkCandidates: [
+      { href: "/", title: article.siteTitle.trim() || "Articles", type: "home" },
+      { href: `/${slug}`, title: article.title.trim(), type: "article" },
+    ],
+    externalReferenceCandidates: article.references?.map((reference) => ({
+      label: reference.title,
+      url: reference.url,
+      reason: reference.note ?? reference.source ?? "Suggested supporting reference",
+    })),
+    targetWordCount: targetWordCount(article.requirements.length),
+  });
   const normalized: GeneratedArticle = {
     ...article,
     siteTitle: article.siteTitle.trim(),
@@ -168,12 +204,18 @@ export function normalizeArticle(article: GeneratedArticle): GeneratedArticle {
     references: article.references?.map(sanitizeReference).filter((reference) => reference.title),
     seo: {
       ...article.seo,
-      metaTitle: article.seo.metaTitle.trim(),
-      metaDescription: article.seo.metaDescription.trim(),
+      metaTitle: article.seo.metaTitle.trim() || generatedSeo.metaTitle,
+      metaDescription: article.seo.metaDescription.trim() || generatedSeo.metaDescription,
       canonicalPath: `/${slug}`,
-      focusKeyword: article.seo.focusKeyword.trim(),
-      secondaryKeywords: article.seo.secondaryKeywords.map((keyword) => keyword.trim()).filter(Boolean),
-      tags: article.seo.tags.map((tag) => tag.trim()).filter(Boolean),
+      focusKeyword: article.seo.focusKeyword.trim() || generatedSeo.focusKeyword,
+      secondaryKeywords: (() => {
+        const secondary = article.seo.secondaryKeywords.map((keyword) => keyword.trim()).filter(Boolean);
+        return secondary.length > 0 ? secondary : generatedSeo.secondaryKeywords;
+      })(),
+      tags: (() => {
+        const tags = article.seo.tags.map((tag) => tag.trim()).filter(Boolean);
+        return tags.length > 0 ? tags : generatedSeo.tags;
+      })(),
       headingOutline: {
         h1: article.title.trim(),
         h2: sections.map((section) => section.heading),
@@ -182,6 +224,19 @@ export function normalizeArticle(article: GeneratedArticle): GeneratedArticle {
       suggestedInternalLinks: Array.from(
         new Set((article.seo.suggestedInternalLinks ?? ["/", `/${slug}`]).map((href) => href.trim()).filter(Boolean)),
       ),
+      optimization: article.seo.optimization
+        ? {
+            ...generatedSeo.optimization,
+            ...article.seo.optimization,
+            titleTag: article.seo.metaTitle.trim() || generatedSeo.metaTitle,
+            metaDescription: article.seo.metaDescription.trim() || generatedSeo.metaDescription,
+            headingStructure: {
+              h1: article.title.trim(),
+              h2: sections.map((section) => section.heading),
+              h3: sections.flatMap((section) => section.h3Headings ?? []),
+            },
+          }
+        : generatedSeo.optimization,
     },
     requirements: {
       ...article.requirements,

@@ -1,3 +1,4 @@
+import { generateSeoContentMetadata } from "@/lib/seo";
 import type {
   ArticleGenerationInput,
   ArticleLengthPreset,
@@ -113,26 +114,56 @@ export function createArticleSeoMetadata(args: {
   keywords: string[];
   sections: ArticleSection[];
   tags?: string[];
+  targetAudience?: string;
+  searchIntent?: ArticleGenerationInput["seo"]["searchIntent"];
+  keywordInput?: ArticleGenerationInput["seo"];
+  internalLinkCandidates?: Array<{ href: string; title: string; type?: string }>;
+  externalReferenceCandidates?: Array<{ label: string; url?: string; reason: string }>;
+  targetWordCount?: number;
 }): ArticleSeoMetadata {
-  const focusKeyword = args.keywords[0] ?? slugify(args.title).replace(/-/g, " ");
-  const secondaryKeywords = args.keywords.slice(1, 6);
-  const metaTitle = trimToSentence(`${args.title} | ${focusKeyword}`, 60);
-  const metaDescription = trimToSentence(args.excerpt || args.subtitle, 160);
   const h3 = args.sections.flatMap((section) => section.h3Headings ?? []);
+  const optimization = generateSeoContentMetadata({
+    contentType: "article",
+    title: args.title,
+    slug: args.slug,
+    summary: args.excerpt || args.subtitle,
+    keywords: args.keywords,
+    keywordInput: args.keywordInput,
+    targetAudience: args.targetAudience,
+    searchIntent: args.searchIntent,
+    headings: {
+      h1: args.title,
+      h2: args.sections.map((section) => section.heading),
+      h3,
+    },
+    bodyText: [
+      args.subtitle,
+      args.excerpt,
+      ...args.sections.flatMap((section) => [
+        section.summary,
+        ...(section.takeaways ?? []),
+        ...section.paragraphs,
+      ]),
+    ],
+    targetWordCount: args.targetWordCount ?? 1400,
+    internalLinkCandidates: args.internalLinkCandidates,
+    externalReferenceCandidates: args.externalReferenceCandidates,
+  });
 
   return {
-    metaTitle,
-    metaDescription,
+    metaTitle: trimToSentence(optimization.titleTag, 60),
+    metaDescription: trimToSentence(optimization.metaDescription, 160),
     canonicalPath: `/${args.slug}`,
-    focusKeyword,
-    secondaryKeywords,
+    focusKeyword: optimization.keywordStrategy.primaryKeyword,
+    secondaryKeywords: optimization.keywordStrategy.secondaryKeywords,
     tags: normalizeTags(args.keywords, args.tags),
     headingOutline: {
       h1: args.title,
       h2: args.sections.map((section) => section.heading),
       h3,
     },
-    suggestedInternalLinks: Array.from(new Set(["/", `/${args.slug}`])),
+    suggestedInternalLinks: optimization.internalLinks.map((link) => link.href),
+    optimization,
   };
 }
 

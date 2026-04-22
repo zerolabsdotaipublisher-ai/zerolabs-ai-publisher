@@ -1,3 +1,4 @@
+import { buildSeoPromptGuidance, resolveSeoKeywordStrategy } from "@/lib/seo";
 import { blogOutputContractJson } from "./schema";
 import type { BlogGenerationInput, BlogRegenerationOptions, GeneratedBlogPost } from "./types";
 
@@ -19,6 +20,16 @@ export function buildBlogSystemPrompt(): string {
 }
 
 export function buildBlogGenerationPrompt(input: BlogGenerationInput): string {
+  const seoGuidance = buildSeoPromptGuidance(
+    resolveSeoKeywordStrategy({
+      title: input.topic,
+      keywords: input.keywords,
+      keywordInput: input.seo,
+      targetAudience: input.targetAudience,
+      searchIntent: input.seo?.searchIntent,
+    }),
+  );
+
   return [
     "Generate a single structured blog post using the following JSON contract.",
     "Honor tone, SEO intent, topic scope, and length requirements.",
@@ -36,6 +47,7 @@ export function buildBlogGenerationPrompt(input: BlogGenerationInput): string {
     "- Meta description should be concise and search-friendly.",
     "- Tags must be short and deduplicated.",
     "- Keep the structure compact enough for website preview and editing.",
+    ...seoGuidance.map((line) => `- ${line}`),
   ].join("\n");
 }
 

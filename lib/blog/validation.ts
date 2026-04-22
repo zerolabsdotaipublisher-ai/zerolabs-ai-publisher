@@ -1,4 +1,4 @@
-import { resolveSectionCount, slugify, targetWordCount } from "./seo";
+import { createBlogSeoMetadata, resolveSectionCount, slugify, targetWordCount } from "./seo";
 import type { BlogGenerationInput, BlogPostSection, GeneratedBlogPost } from "./types";
 
 const BANNED_PHRASES = [
@@ -32,6 +32,19 @@ function sanitizeParagraphs(paragraphs: string[] | undefined): string[] {
     .filter(Boolean);
 }
 
+function sanitizeSeoInput(input: BlogGenerationInput["seo"]): BlogGenerationInput["seo"] {
+  if (!input) {
+    return undefined;
+  }
+
+  return {
+    primaryKeyword: trimOrUndefined(input.primaryKeyword),
+    secondaryKeywords: input.secondaryKeywords?.map((keyword) => keyword.trim()).filter(Boolean),
+    targetAudience: trimOrUndefined(input.targetAudience),
+    searchIntent: input.searchIntent,
+  };
+}
+
 function sanitizeSection(section: BlogPostSection, index: number): BlogPostSection {
   return {
     id: section.id?.trim() || `section_${index + 1}`,
@@ -58,6 +71,7 @@ export function sanitizeBlogGenerationInput(input: BlogGenerationInput): BlogGen
     sectionCount: resolveSectionCount(input.length, input.sectionCount),
     style: input.style ?? "editorial",
     publishAt: normalizeIsoTimestamp(input.publishAt),
+    seo: sanitizeSeoInput(input.seo),
   };
 }
 
@@ -111,6 +125,22 @@ export function collectBlogQualityNotes(blog: GeneratedBlogPost): string[] {
 export function normalizeBlogPost(blog: GeneratedBlogPost): GeneratedBlogPost {
   const sections = blog.sections.map(sanitizeSection);
   const slug = slugify(blog.slug || blog.title || blog.sourceInput.topic);
+  const generatedSeo = createBlogSeoMetadata({
+    title: blog.title.trim(),
+    slug,
+    excerpt: blog.excerpt.trim(),
+    keywords: blog.sourceInput.keywords,
+    sections,
+    tags: blog.sourceInput.tags,
+    targetAudience: blog.sourceInput.targetAudience,
+    searchIntent: blog.sourceInput.seo?.searchIntent,
+    keywordInput: blog.sourceInput.seo,
+    internalLinkCandidates: [
+      { href: "/", title: blog.siteTitle.trim() || "Blog", type: "home" },
+      { href: `/${slug}`, title: blog.title.trim(), type: "blog" },
+    ],
+    targetWordCount: targetWordCount(blog.requirements.length),
+  });
   const normalized: GeneratedBlogPost = {
     ...blog,
     siteTitle: blog.siteTitle.trim(),
@@ -123,17 +153,36 @@ export function normalizeBlogPost(blog: GeneratedBlogPost): GeneratedBlogPost {
     callToAction: blog.callToAction.trim(),
     seo: {
       ...blog.seo,
-      metaTitle: blog.seo.metaTitle.trim(),
-      metaDescription: blog.seo.metaDescription.trim(),
+      metaTitle: blog.seo.metaTitle.trim() || generatedSeo.metaTitle,
+      metaDescription: blog.seo.metaDescription.trim() || generatedSeo.metaDescription,
       canonicalPath: `/${slug}`,
-      focusKeyword: blog.seo.focusKeyword.trim(),
-      secondaryKeywords: blog.seo.secondaryKeywords.map((keyword) => keyword.trim()).filter(Boolean),
-      tags: blog.seo.tags.map((tag) => tag.trim()).filter(Boolean),
+      focusKeyword: blog.seo.focusKeyword.trim() || generatedSeo.focusKeyword,
+      secondaryKeywords: (() => {
+        const secondary = blog.seo.secondaryKeywords.map((keyword) => keyword.trim()).filter(Boolean);
+        return secondary.length > 0 ? secondary : generatedSeo.secondaryKeywords;
+      })(),
+      tags: (() => {
+        const tags = blog.seo.tags.map((tag) => tag.trim()).filter(Boolean);
+        return tags.length > 0 ? tags : generatedSeo.tags;
+      })(),
       headingOutline: {
         h1: blog.title.trim(),
         h2: sections.map((section) => section.heading),
         h3: sections.flatMap((section) => section.h3Headings ?? []),
       },
+      optimization: blog.seo.optimization
+        ? {
+            ...generatedSeo.optimization,
+            ...blog.seo.optimization,
+            titleTag: blog.seo.metaTitle.trim() || generatedSeo.metaTitle,
+            metaDescription: blog.seo.metaDescription.trim() || generatedSeo.metaDescription,
+            headingStructure: {
+              h1: blog.title.trim(),
+              h2: sections.map((section) => section.heading),
+              h3: sections.flatMap((section) => section.h3Headings ?? []),
+            },
+          }
+        : generatedSeo.optimization,
     },
     requirements: {
       ...blog.requirements,

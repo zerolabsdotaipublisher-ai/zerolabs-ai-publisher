@@ -20,6 +20,7 @@ import type {
 import type { WebsiteLayoutModel } from "../layout/types";
 import type { WebsiteNavigation, PageNavigationFlags } from "../navigation/types";
 import type { WebsiteRoutingConfig } from "@/lib/routing";
+import type { SeoContentMetadata, SeoSearchIntent } from "@/lib/seo";
 
 export type { WebsiteType, TonePreset, StylePreset };
 
@@ -126,6 +127,10 @@ export interface PageSeo {
     url: string;
     image?: string;
   };
+  /** Product-owned SEO optimization metadata for preview/edit/storage. */
+  contentOptimization?: SeoContentMetadata;
+  /** Stored search intent for page-level SEO workflows. */
+  searchIntent?: SeoSearchIntent;
 }
 
 // ---------------------------------------------------------------------------
@@ -193,6 +198,10 @@ export interface WebsiteSeo {
     url: string;
     image?: string;
   };
+  /** Product-owned SEO optimization metadata for preview/edit/storage. */
+  contentOptimization?: SeoContentMetadata;
+  /** Stored search intent for page-level SEO workflows. */
+  searchIntent?: SeoSearchIntent;
 }
 
 // ---------------------------------------------------------------------------
