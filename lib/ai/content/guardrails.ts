@@ -44,7 +44,11 @@ export function evaluateSectionQuality(
     }
   }
 
-  if (duplicatePhrase && serialized.toLowerCase().match(new RegExp(duplicatePhrase, "g"))!.length >= 4) {
+  const duplicateMatches = duplicatePhrase
+    ? serialized.toLowerCase().match(new RegExp(duplicatePhrase, "g"))
+    : null;
+
+  if (duplicatePhrase && duplicateMatches && duplicateMatches.length >= 4) {
     errors.push(`${sectionType}: repeats generic phrasing too often`);
   }
 
