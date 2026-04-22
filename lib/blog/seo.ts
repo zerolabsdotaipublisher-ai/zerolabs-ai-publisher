@@ -91,7 +91,7 @@ export function createBlogSeoMetadata(args: {
   sections: BlogPostSection[];
   tags?: string[];
   targetAudience?: string;
-  searchIntent?: BlogGenerationInput["seo"]["searchIntent"];
+  searchIntent?: NonNullable<BlogGenerationInput["seo"]>["searchIntent"];
   keywordInput?: BlogGenerationInput["seo"];
   internalLinkCandidates?: Array<{ href: string; title: string; type?: string }>;
   targetWordCount?: number;

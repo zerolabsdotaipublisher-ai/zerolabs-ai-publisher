@@ -115,7 +115,7 @@ export function createArticleSeoMetadata(args: {
   sections: ArticleSection[];
   tags?: string[];
   targetAudience?: string;
-  searchIntent?: ArticleGenerationInput["seo"]["searchIntent"];
+  searchIntent?: NonNullable<ArticleGenerationInput["seo"]>["searchIntent"];
   keywordInput?: ArticleGenerationInput["seo"];
   internalLinkCandidates?: Array<{ href: string; title: string; type?: string }>;
   externalReferenceCandidates?: Array<{ label: string; url?: string; reason: string }>;
