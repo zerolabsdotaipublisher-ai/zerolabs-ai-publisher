@@ -1,4 +1,5 @@
 import type { StylePreset, TonePreset, WebsiteStructure } from "@/lib/ai/structure";
+import type { SeoContentMetadata, SeoKeywordInput } from "@/lib/seo";
 
 export type ArticleType =
   | "long-form-article"
@@ -51,6 +52,7 @@ export interface ArticleGenerationInput {
   includeReferences?: boolean;
   sectionCount?: number;
   publishAt?: string;
+  seo?: SeoKeywordInput;
 }
 
 export interface ArticleSection {
@@ -76,6 +78,7 @@ export interface ArticleSeoMetadata {
     h3: string[];
   };
   suggestedInternalLinks: string[];
+  optimization?: SeoContentMetadata;
 }
 
 export interface ArticleMetadata {

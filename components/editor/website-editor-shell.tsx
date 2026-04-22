@@ -203,6 +203,90 @@ export function WebsiteEditorShell({ initialStructure, previewPath, generatedSit
     );
   }
 
+  function parseKeywords(value: string): string[] {
+    return value
+      .split(",")
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+  }
+
+  function handleSeoTitleChange(value: string) {
+    setDraft(
+      updateStructurePage(state.draft, state.selectedPageId, (page) => ({
+        ...page,
+        seo: {
+          ...page.seo,
+          title: value,
+          contentOptimization: page.seo.contentOptimization
+            ? {
+                ...page.seo.contentOptimization,
+                titleTag: value,
+              }
+            : page.seo.contentOptimization,
+        },
+      })),
+    );
+  }
+
+  function handleSeoDescriptionChange(value: string) {
+    setDraft(
+      updateStructurePage(state.draft, state.selectedPageId, (page) => ({
+        ...page,
+        seo: {
+          ...page.seo,
+          description: value,
+          contentOptimization: page.seo.contentOptimization
+            ? {
+                ...page.seo.contentOptimization,
+                metaDescription: value,
+              }
+            : page.seo.contentOptimization,
+        },
+      })),
+    );
+  }
+
+  function handleSeoKeywordsChange(value: string) {
+    const keywords = parseKeywords(value);
+    setDraft(
+      updateStructurePage(state.draft, state.selectedPageId, (page) => ({
+        ...page,
+        seo: {
+          ...page.seo,
+          keywords,
+          contentOptimization: (() => {
+            const optimization = page.seo.contentOptimization;
+            if (!optimization) {
+              return optimization;
+            }
+
+            return {
+              ...optimization,
+              keywordStrategy: {
+                ...optimization.keywordStrategy,
+                primaryKeyword: keywords[0] ?? optimization.keywordStrategy.primaryKeyword,
+                secondaryKeywords: keywords.slice(1, 6),
+                keywordCluster: keywords.length ? keywords : optimization.keywordStrategy.keywordCluster,
+              },
+            };
+          })(),
+        },
+      })),
+    );
+  }
+
+  function handleCanonicalUrlChange(value: string) {
+    setDraft(
+      updateStructurePage(state.draft, state.selectedPageId, (page) => ({
+        ...page,
+        seo: {
+          ...page.seo,
+          canonicalUrl: value,
+        },
+      })),
+    );
+  }
+
   function handleNavigationLabelChange(href: string, label: string) {
     setDraft(updateNavigationLabel(state.draft, href, label));
   }
@@ -328,6 +412,10 @@ export function WebsiteEditorShell({ initialStructure, previewPath, generatedSit
             onSlugChange={handlePageSlugChange}
             onNavigationLabelChange={handlePageNavigationLabelChange}
             onVisibilityChange={handlePageVisibilityChange}
+            onSeoTitleChange={handleSeoTitleChange}
+            onSeoDescriptionChange={handleSeoDescriptionChange}
+            onSeoKeywordsChange={handleSeoKeywordsChange}
+            onCanonicalUrlChange={handleCanonicalUrlChange}
           />
           <EditorNavigationPanel
             structure={state.draft}

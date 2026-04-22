@@ -7,6 +7,7 @@ import type { PageSeo, WebsitePage, WebsiteSection, WebsiteStructure } from "@/l
 import { validateWebsiteStructure } from "@/lib/ai/structure";
 import { logger } from "@/lib/observability";
 import { withRegeneratedWebsiteRouting } from "@/lib/routing";
+import { generateSeoContentMetadata } from "@/lib/seo";
 import {
   buildArticleGenerationPrompt,
   buildArticleSectionPrompt,
@@ -118,6 +119,7 @@ function toWebsiteGenerationInput(input: ArticleGenerationInput): WebsiteGenerat
       `article_depth:${input.depth}`,
       `article_length:${input.length}`,
     ],
+    seo: input.seo,
   };
 }
 
@@ -213,6 +215,19 @@ function createFallbackArticle(input: ArticleGenerationInput): GeneratedArticle 
     keywords: input.keywords,
     sections,
     tags: input.tags,
+    targetAudience: input.targetAudience,
+    searchIntent: input.seo?.searchIntent,
+    keywordInput: input.seo,
+    internalLinkCandidates: [
+      { href: "/", title: "Articles", type: "home" },
+      { href: `/${slug}`, title, type: "article" },
+    ],
+    externalReferenceCandidates: references?.map((reference) => ({
+      label: reference.title,
+      url: reference.url,
+      reason: reference.note ?? reference.source ?? "Suggested supporting reference",
+    })),
+    targetWordCount: targetWordCount(input.length),
   });
   const qualityNotes = ["Fallback content used because structured AI output was unavailable."];
 
@@ -264,17 +279,38 @@ function createFallbackArticle(input: ArticleGenerationInput): GeneratedArticle 
 }
 
 function mapListingPageSeo(article: GeneratedArticle): PageSeo {
+  const optimization = generateSeoContentMetadata({
+    contentType: "website-page",
+    title: `${article.siteTitle} Articles`,
+    slug: "/",
+    summary: article.excerpt,
+    keywords: article.metadata.tags,
+    keywordInput: article.sourceInput.seo,
+    targetAudience: article.sourceInput.targetAudience,
+    searchIntent: article.sourceInput.seo?.searchIntent,
+    headings: {
+      h1: article.siteTitle,
+      h2: ["Featured article"],
+      h3: [],
+    },
+    bodyText: [article.subtitle, article.excerpt, article.callToAction],
+    targetWordCount: Math.max(700, Math.floor(article.requirements.targetWordCount * 0.5)),
+    internalLinkCandidates: [{ href: `/${article.slug}`, title: article.title, type: "article" }],
+  });
+
   return {
-    title: `${article.siteTitle} | Articles`,
-    description: article.excerpt,
-    keywords: article.seo.tags,
+    title: optimization.titleTag,
+    description: optimization.metaDescription,
+    keywords: [optimization.keywordStrategy.primaryKeyword, ...optimization.keywordStrategy.secondaryKeywords],
     canonicalUrl: `${config.app.url}/site/${article.structureId}`,
     openGraph: {
-      title: `${article.siteTitle} | Articles`,
-      description: article.excerpt,
+      title: optimization.titleTag,
+      description: optimization.metaDescription,
       type: "website",
       url: `${config.app.url}/site/${article.structureId}`,
     },
+    contentOptimization: optimization,
+    searchIntent: optimization.keywordStrategy.searchIntent,
   };
 }
 
@@ -292,6 +328,8 @@ function mapArticlePageSeo(article: GeneratedArticle): PageSeo {
       type: "article",
       url: canonicalUrl,
     },
+    contentOptimization: article.seo.optimization,
+    searchIntent: article.seo.optimization?.keywordStrategy.searchIntent,
   };
 }
 
@@ -478,6 +516,8 @@ export function mapArticleToWebsiteStructure(article: GeneratedArticle, userId: 
         type: "article",
         url: `${config.app.url}/site/${article.structureId}/${article.slug}`,
       },
+      contentOptimization: article.seo.optimization,
+      searchIntent: article.seo.optimization?.keywordStrategy.searchIntent,
     },
     styleConfig: {
       tone: article.requirements.tone,

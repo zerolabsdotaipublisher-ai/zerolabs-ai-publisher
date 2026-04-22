@@ -57,6 +57,11 @@ export function buildWebsiteSeoPrompt({ input, pages }: SeoPromptArgs): string {
     "- Descriptions should generally be <= 160 characters.",
     "- Keywords should be concise, de-duplicated, and practical.",
     "- Preserve page intent by page type.",
+    input.seo?.primaryKeyword ? `- Primary keyword: ${input.seo.primaryKeyword}` : "- Primary keyword should align with the brand and page intent.",
+    input.seo?.secondaryKeywords?.length
+      ? `- Secondary keywords: ${input.seo.secondaryKeywords.join(" | ")}`
+      : "- Secondary keywords should support the primary keyword naturally.",
+    input.seo?.searchIntent ? `- Search intent: ${input.seo.searchIntent}` : "- Search intent should match the content type.",
     "",
     "PAGE CONTEXTS:",
     ...pages.map((page) => buildPageInstruction(page)),

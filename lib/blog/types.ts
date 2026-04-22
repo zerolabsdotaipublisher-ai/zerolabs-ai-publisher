@@ -1,4 +1,5 @@
 import type { StylePreset, TonePreset, WebsiteStructure } from "@/lib/ai/structure";
+import type { SeoContentMetadata, SeoKeywordInput } from "@/lib/seo";
 
 export type BlogLengthPreset = "short" | "medium" | "long";
 
@@ -27,6 +28,7 @@ export interface BlogGenerationInput {
   tags?: string[];
   sectionCount?: number;
   publishAt?: string;
+  seo?: SeoKeywordInput;
 }
 
 export interface BlogPostSection {
@@ -50,6 +52,7 @@ export interface BlogSeoMetadata {
     h2: string[];
     h3: string[];
   };
+  optimization?: SeoContentMetadata;
 }
 
 export interface BlogPostMetadata {
@@ -118,6 +121,7 @@ export interface BlogPreviewResponse {
       active: boolean;
     }>;
   };
+  optimization?: SeoContentMetadata;
 }
 
 export interface BlogPostRow {

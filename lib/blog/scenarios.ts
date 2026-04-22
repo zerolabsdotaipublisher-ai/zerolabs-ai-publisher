@@ -25,6 +25,12 @@ export const blogGenerationScenarios: BlogScenario[] = [
       tags: ["AI", "SaaS", "SEO"],
       sectionCount: 4,
       publishAt: "2026-04-22T09:00:00.000Z",
+      seo: {
+        primaryKeyword: "AI blog generation",
+        secondaryKeywords: ["SaaS SEO workflow", "content operations"],
+        targetAudience: "SaaS marketing teams",
+        searchIntent: "informational",
+      },
     },
   },
   {

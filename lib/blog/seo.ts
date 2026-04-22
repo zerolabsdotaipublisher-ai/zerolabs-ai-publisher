@@ -1,3 +1,4 @@
+import { generateSeoContentMetadata } from "@/lib/seo";
 import type { BlogGenerationInput, BlogLengthPreset, BlogPostMetadata, BlogPostSection, BlogSeoMetadata } from "./types";
 
 const DEFAULT_AUTHOR = "Zero Labs Editorial";
@@ -89,25 +90,48 @@ export function createBlogSeoMetadata(args: {
   keywords: string[];
   sections: BlogPostSection[];
   tags?: string[];
+  targetAudience?: string;
+  searchIntent?: NonNullable<BlogGenerationInput["seo"]>["searchIntent"];
+  keywordInput?: BlogGenerationInput["seo"];
+  internalLinkCandidates?: Array<{ href: string; title: string; type?: string }>;
+  targetWordCount?: number;
 }): BlogSeoMetadata {
-  const focusKeyword = args.keywords[0] ?? slugify(args.title).replace(/-/g, " ");
-  const secondaryKeywords = args.keywords.slice(1, 6);
-  const metaTitle = trimToSentence(`${args.title} | ${focusKeyword}`, 60);
-  const metaDescription = trimToSentence(args.excerpt, 160);
   const h3 = args.sections.flatMap((section) => section.h3Headings ?? []);
+  const optimization = generateSeoContentMetadata({
+    contentType: "blog",
+    title: args.title,
+    slug: args.slug,
+    summary: args.excerpt,
+    keywords: args.keywords,
+    keywordInput: args.keywordInput,
+    targetAudience: args.targetAudience,
+    searchIntent: args.searchIntent,
+    headings: {
+      h1: args.title,
+      h2: args.sections.map((section) => section.heading),
+      h3,
+    },
+    bodyText: [
+      args.excerpt,
+      ...args.sections.flatMap((section) => [section.summary, ...section.paragraphs]),
+    ],
+    targetWordCount: args.targetWordCount ?? 1100,
+    internalLinkCandidates: args.internalLinkCandidates,
+  });
 
   return {
-    metaTitle,
-    metaDescription,
+    metaTitle: trimToSentence(optimization.titleTag, 60),
+    metaDescription: trimToSentence(optimization.metaDescription, 160),
     canonicalPath: `/${args.slug}`,
-    focusKeyword,
-    secondaryKeywords,
+    focusKeyword: optimization.keywordStrategy.primaryKeyword,
+    secondaryKeywords: optimization.keywordStrategy.secondaryKeywords,
     tags: normalizeTags(args.keywords, args.tags),
     headingOutline: {
       h1: args.title,
       h2: args.sections.map((section) => section.heading),
       h3,
     },
+    optimization,
   };
 }
 

@@ -1,3 +1,4 @@
+import type { SeoContentMetadata } from "@/lib/seo";
 import type { WebsiteGenerationInput, WebsiteType } from "../prompts/types";
 import type { PageType, WebsiteStructure } from "../structure/types";
 
@@ -17,6 +18,7 @@ export interface GeneratedPageMetadata {
   keywords: string[];
   canonicalUrl: string;
   openGraph: SeoOpenGraph;
+  contentOptimization?: SeoContentMetadata;
 }
 
 export interface GeneratedSiteMetadata {
@@ -25,6 +27,7 @@ export interface GeneratedSiteMetadata {
   keywords: string[];
   canonicalBaseUrl: string;
   defaultOpenGraph: SeoOpenGraph;
+  contentOptimization?: SeoContentMetadata;
 }
 
 export interface WebsiteSeoPackage {

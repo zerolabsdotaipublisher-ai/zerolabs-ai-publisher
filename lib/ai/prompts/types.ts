@@ -1,3 +1,5 @@
+import type { SeoKeywordInput } from "@/lib/seo";
+
 export type WebsiteType =
   | "portfolio"
   | "small-business"
@@ -65,6 +67,7 @@ export interface WebsiteGenerationInput {
   constraints?: string[];
   customToneNotes?: string;
   customStyleNotes?: string;
+  seo?: SeoKeywordInput;
 }
 
 export interface SectionBase {

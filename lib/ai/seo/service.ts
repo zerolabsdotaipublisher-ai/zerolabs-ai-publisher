@@ -1,5 +1,6 @@
 import { config, routes } from "@/config";
 import { logger } from "@/lib/observability";
+import { generateSeoContentMetadata } from "@/lib/seo";
 import type { WebsiteGenerationInput } from "../prompts/types";
 import type { WebsiteStructure } from "../structure/types";
 import { buildCanonicalUrl } from "./canonical";
@@ -115,6 +116,8 @@ function applySeoToStructure(structure: WebsiteStructure, seo: WebsiteSeoPackage
     keywords: seo.site.keywords,
     canonicalBaseUrl: seo.site.canonicalBaseUrl,
     openGraph: seo.site.defaultOpenGraph,
+    contentOptimization: seo.site.contentOptimization,
+    searchIntent: seo.site.contentOptimization?.keywordStrategy.searchIntent,
   };
 
   return {
@@ -133,6 +136,8 @@ function applySeoToStructure(structure: WebsiteStructure, seo: WebsiteSeoPackage
           keywords: pageMetadata.keywords,
           canonicalUrl: pageMetadata.canonicalUrl,
           openGraph: pageMetadata.openGraph,
+          contentOptimization: pageMetadata.contentOptimization,
+          searchIntent: pageMetadata.contentOptimization?.keywordStrategy.searchIntent,
         },
       };
     }),
@@ -176,6 +181,26 @@ function normalizePageMetadata(args: {
       ...strategy.keywordHints,
       ...fallbackPage.keywords,
     ]);
+    const contentOptimization = generateSeoContentMetadata({
+      contentType: "website-page",
+      title,
+      slug: fallbackPage.pageSlug,
+      summary: description,
+      keywords,
+      keywordInput: args.input.seo,
+      targetAudience: args.input.targetAudience,
+      searchIntent: args.input.seo?.searchIntent,
+      headings: {
+        h1: context.pageTitle,
+        h2: context.sectionHeadlines,
+        h3: [],
+      },
+      bodyText: [description, ...context.sectionHeadlines],
+      targetWordCount: 700,
+      internalLinkCandidates: args.structure.pages
+        .filter((page) => page.slug !== fallbackPage.pageSlug)
+        .map((page) => ({ href: page.slug, title: page.title, type: page.type })),
+    });
 
     return {
       ...fallbackPage,
@@ -183,6 +208,7 @@ function normalizePageMetadata(args: {
       description,
       canonicalUrl,
       keywords,
+      contentOptimization,
       openGraph: buildOpenGraphMetadata({
         title,
         description,
@@ -265,6 +291,28 @@ export async function generateWebsiteSeo(
           fallback.site.description,
         ),
         keywords: normalizeKeywords(parsed.site?.keywords, fallback.site.keywords),
+        contentOptimization: generateSeoContentMetadata({
+          contentType: "website-page",
+          title: normalizeSeoTitle(parsed.site?.title || "", fallback.site.title),
+          slug: "/",
+          summary: normalizeSeoDescription(parsed.site?.description || "", fallback.site.description),
+          keywords: normalizeKeywords(parsed.site?.keywords, fallback.site.keywords),
+          keywordInput: input.seo,
+          targetAudience: input.targetAudience,
+          searchIntent: input.seo?.searchIntent,
+          headings: {
+            h1: input.brandName,
+            h2: structure.pages.map((page) => page.title).slice(0, 5),
+            h3: [],
+          },
+          bodyText: [input.description, ...structure.pages.map((page) => page.title)],
+          targetWordCount: 700,
+          internalLinkCandidates: structure.pages.map((page) => ({
+            href: page.slug,
+            title: page.title,
+            type: page.type,
+          })),
+        }),
       },
       pages: selectedSlugs
         ? [...fallback.pages.filter((page) => !selectedSlugs.has(page.pageSlug)), ...normalizedPages]

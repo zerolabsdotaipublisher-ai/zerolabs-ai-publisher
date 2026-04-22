@@ -7,6 +7,7 @@ import type { PageSeo, WebsitePage, WebsiteSection, WebsiteStructure } from "@/l
 import { validateWebsiteStructure } from "@/lib/ai/structure";
 import { logger } from "@/lib/observability";
 import { withRegeneratedWebsiteRouting } from "@/lib/routing";
+import { generateSeoContentMetadata } from "@/lib/seo";
 import {
   buildBlogGenerationPrompt,
   buildBlogSectionPrompt,
@@ -112,6 +113,7 @@ function toWebsiteGenerationInput(input: BlogGenerationInput): WebsiteGeneration
     style: input.style ?? "editorial",
     primaryCta: input.callToAction ?? "Read the article",
     services: input.keywords,
+    seo: input.seo,
   };
 }
 
@@ -157,6 +159,14 @@ function createFallbackBlogPost(input: BlogGenerationInput): GeneratedBlogPost {
     keywords: input.keywords,
     sections,
     tags: input.tags,
+    targetAudience: input.targetAudience,
+    searchIntent: input.seo?.searchIntent,
+    keywordInput: input.seo,
+    internalLinkCandidates: [
+      { href: "/", title: "Blog", type: "home" },
+      { href: `/${slug}`, title, type: "blog" },
+    ],
+    targetWordCount: targetWordCount(input.length),
   });
   const qualityNotes = [
     "Fallback content used because structured AI output was unavailable.",
@@ -201,17 +211,38 @@ function createFallbackBlogPost(input: BlogGenerationInput): GeneratedBlogPost {
 }
 
 function mapListingPageSeo(blog: GeneratedBlogPost): PageSeo {
+  const optimization = generateSeoContentMetadata({
+    contentType: "website-page",
+    title: `${blog.siteTitle} Blog`,
+    slug: "/",
+    summary: blog.excerpt,
+    keywords: blog.metadata.tags,
+    keywordInput: blog.sourceInput.seo,
+    targetAudience: blog.sourceInput.targetAudience,
+    searchIntent: blog.sourceInput.seo?.searchIntent,
+    headings: {
+      h1: blog.siteTitle,
+      h2: ["Latest article"],
+      h3: [],
+    },
+    bodyText: [blog.excerpt, blog.introduction, blog.callToAction],
+    targetWordCount: Math.max(600, Math.floor(blog.requirements.targetWordCount * 0.5)),
+    internalLinkCandidates: [{ href: `/${blog.slug}`, title: blog.title, type: "blog" }],
+  });
+
   return {
-    title: `${blog.siteTitle} | Blog`,
-    description: blog.excerpt,
-    keywords: blog.seo.tags,
+    title: optimization.titleTag,
+    description: optimization.metaDescription,
+    keywords: [optimization.keywordStrategy.primaryKeyword, ...optimization.keywordStrategy.secondaryKeywords],
     canonicalUrl: `${config.app.url}/site/${blog.structureId}`,
     openGraph: {
-      title: `${blog.siteTitle} | Blog`,
-      description: blog.excerpt,
+      title: optimization.titleTag,
+      description: optimization.metaDescription,
       type: "website",
       url: `${config.app.url}/site/${blog.structureId}`,
     },
+    contentOptimization: optimization,
+    searchIntent: optimization.keywordStrategy.searchIntent,
   };
 }
 
@@ -229,6 +260,8 @@ function mapArticlePageSeo(blog: GeneratedBlogPost): PageSeo {
       type: "article",
       url: canonicalUrl,
     },
+    contentOptimization: blog.seo.optimization,
+    searchIntent: blog.seo.optimization?.keywordStrategy.searchIntent,
   };
 }
 
@@ -396,6 +429,8 @@ export function mapBlogToWebsiteStructure(blog: GeneratedBlogPost, userId: strin
         type: "article",
         url: `${config.app.url}/site/${blog.structureId}/${blog.slug}`,
       },
+      contentOptimization: blog.seo.optimization,
+      searchIntent: blog.seo.optimization?.keywordStrategy.searchIntent,
     },
     styleConfig: {
       tone: blog.requirements.tone,

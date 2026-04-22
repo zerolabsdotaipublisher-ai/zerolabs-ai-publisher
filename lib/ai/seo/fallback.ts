@@ -1,4 +1,5 @@
 import { routes, config } from "@/config";
+import { generateSeoContentMetadata } from "@/lib/seo";
 import type { WebsiteGenerationInput } from "../prompts/types";
 import type { WebsiteStructure } from "../structure/types";
 import { buildCanonicalUrl, normalizeCanonicalBaseUrl } from "./canonical";
@@ -68,6 +69,24 @@ export function createFallbackSiteMetadata(
   ).slice(0, SEO_METADATA_REQUIREMENTS.maxKeywordsPerPage);
 
   const canonical = buildCanonicalUrl(canonicalBaseUrl, routes.generatedSite("preview"), "/");
+  const contentOptimization = generateSeoContentMetadata({
+    contentType: "website-page",
+    title,
+    slug: "/",
+    summary: description,
+    keywords,
+    keywordInput: input.seo,
+    targetAudience: input.targetAudience,
+    searchIntent: input.seo?.searchIntent,
+    headings: {
+      h1: input.brandName,
+      h2: input.services.slice(0, 3),
+      h3: [],
+    },
+    bodyText: [input.description, ...input.services],
+    targetWordCount: 700,
+    internalLinkCandidates: [{ href: "/", title: input.brandName, type: "home" }],
+  });
 
   return {
     title,
@@ -80,6 +99,7 @@ export function createFallbackSiteMetadata(
       canonicalUrl: canonical,
       type: "website",
     }),
+    contentOptimization,
   };
 }
 
@@ -96,6 +116,22 @@ export function createFallbackPageMetadata(
     routes.generatedSite(structureId),
     page.pageSlug,
   );
+  const contentOptimization = generateSeoContentMetadata({
+    contentType: "website-page",
+    title,
+    slug: page.pageSlug,
+    summary: description,
+    keywords: [brandName, page.pageType, ...page.sectionHeadlines],
+    targetAudience: brandName,
+    headings: {
+      h1: page.pageTitle,
+      h2: page.sectionHeadlines,
+      h3: [],
+    },
+    bodyText: [description, ...page.sectionHeadlines],
+    targetWordCount: 700,
+    internalLinkCandidates: [{ href: "/", title: brandName, type: "home" }],
+  });
 
   return {
     pageSlug: page.pageSlug,
@@ -113,6 +149,7 @@ export function createFallbackPageMetadata(
       canonicalUrl,
       type: page.pageType === "custom" ? "article" : "website",
     }),
+    contentOptimization,
   };
 }
 

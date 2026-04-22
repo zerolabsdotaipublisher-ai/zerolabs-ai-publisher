@@ -6,6 +6,10 @@ interface EditorPageSettingsPanelProps {
   onSlugChange: (value: string) => void;
   onNavigationLabelChange: (value: string) => void;
   onVisibilityChange: (visible: boolean) => void;
+  onSeoTitleChange: (value: string) => void;
+  onSeoDescriptionChange: (value: string) => void;
+  onSeoKeywordsChange: (value: string) => void;
+  onCanonicalUrlChange: (value: string) => void;
 }
 
 export function EditorPageSettingsPanel({
@@ -14,6 +18,10 @@ export function EditorPageSettingsPanel({
   onSlugChange,
   onNavigationLabelChange,
   onVisibilityChange,
+  onSeoTitleChange,
+  onSeoDescriptionChange,
+  onSeoKeywordsChange,
+  onCanonicalUrlChange,
 }: EditorPageSettingsPanelProps) {
   if (!page) {
     return (
@@ -51,6 +59,45 @@ export function EditorPageSettingsPanel({
             onChange={(event) => onVisibilityChange(event.target.checked)}
           />
           <span>Page visible</span>
+        </label>
+        <label>
+          <span>SEO title</span>
+          <input
+            type="text"
+            value={page.seo.contentOptimization?.titleTag ?? page.seo.title}
+            onChange={(event) => onSeoTitleChange(event.target.value)}
+          />
+        </label>
+        <label>
+          <span>Meta description</span>
+          <textarea
+            value={page.seo.contentOptimization?.metaDescription ?? page.seo.description}
+            onChange={(event) => onSeoDescriptionChange(event.target.value)}
+            rows={4}
+          />
+        </label>
+        <label>
+          <span>Keywords</span>
+          <input
+            type="text"
+            value={
+              page.seo.contentOptimization
+                ? [
+                    page.seo.contentOptimization.keywordStrategy.primaryKeyword,
+                    ...page.seo.contentOptimization.keywordStrategy.secondaryKeywords,
+                  ].join(", ")
+                : page.seo.keywords.join(", ")
+            }
+            onChange={(event) => onSeoKeywordsChange(event.target.value)}
+          />
+        </label>
+        <label>
+          <span>Canonical URL</span>
+          <input
+            type="text"
+            value={page.seo.canonicalUrl ?? ""}
+            onChange={(event) => onCanonicalUrlChange(event.target.value)}
+          />
         </label>
       </div>
     </section>
