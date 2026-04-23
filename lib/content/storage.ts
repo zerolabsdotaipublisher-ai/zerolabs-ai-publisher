@@ -17,7 +17,11 @@ function deriveBundleStatus(args: {
   hasActiveSchedule: boolean;
   isDeleted: boolean;
 }): GeneratedContentLifecycleStatus {
-  if (args.isDeleted || args.structureStatus === "deleted") {
+  // TODO(ZLAP-STORY-6-6): remove dual-source deletion check after legacy records
+  // are fully backfilled to structure.status='deleted' in a follow-up migration.
+  // For now deletion may be represented in either management metadata or status.
+  const deleted = args.isDeleted || args.structureStatus === "deleted";
+  if (deleted) {
     return "deleted";
   }
 

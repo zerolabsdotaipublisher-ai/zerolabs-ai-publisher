@@ -11,6 +11,9 @@ import type {
 
 // Base64url-encoded fallback key for the root page slug when no slug is present.
 const ROOT_PAGE_SLUG_KEY = "cm9vdA";
+// Constraint marker persisted by blog/article mappings when publish scheduling metadata exists.
+// Example: blog_scheduled_publish_at:<ISO timestamp>.
+const SCHEDULED_CONSTRAINT_MARKER = "_scheduled_publish_at:";
 type ContentLifecycleStatus =
   | "draft"
   | "generated"
@@ -41,7 +44,7 @@ function inferContentStatus(content: WebsiteContentPackage): ContentLifecycleSta
     ? content.generatedFromInput.constraints
     : [];
 
-  if (constraints.some((constraint) => constraint.includes("_scheduled_publish_at:"))) {
+  if (constraints.some((constraint) => constraint.includes(SCHEDULED_CONSTRAINT_MARKER))) {
     return "scheduled";
   }
 

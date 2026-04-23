@@ -33,8 +33,11 @@ function deriveArticleContentStatus(article: GeneratedArticle): ArticleContentSt
   return "generated";
 }
 
-function toRow(article: GeneratedArticle, userId: string): ArticleRow {
-  const status = deriveArticleContentStatus(article);
+function toRow(
+  article: GeneratedArticle,
+  userId: string,
+  status = deriveArticleContentStatus(article),
+): ArticleRow {
   return {
     id: article.id,
     structure_id: article.structureId,
@@ -48,8 +51,8 @@ function toRow(article: GeneratedArticle, userId: string): ArticleRow {
     article_json: article,
     source_input: article.sourceInput,
     version: article.version,
-    archived_at: status === "archived" ? article.updatedAt : null,
-    deleted_at: status === "deleted" ? article.updatedAt : null,
+    archived_at: null,
+    deleted_at: null,
     generated_at: article.generatedAt,
     updated_at: article.updatedAt,
     scheduled_publish_at: article.scheduledPublishAt ?? null,
@@ -170,7 +173,8 @@ function toWebsiteContentPackage(article: GeneratedArticle, userId: string): Web
 
 export async function upsertArticle(article: GeneratedArticle, userId: string): Promise<GeneratedArticle> {
   const supabase = getSupabaseServiceClient();
-  const row = toRow(article, userId);
+  const status = deriveArticleContentStatus(article);
+  const row = toRow(article, userId, status);
 
   const { error } = await supabase.from("article_posts").upsert(row, { onConflict: "id" });
 
@@ -186,7 +190,7 @@ export async function upsertArticle(article: GeneratedArticle, userId: string): 
 
   await storeWebsiteGeneratedContent(toWebsiteContentPackage(article, userId), {
     contentType: "article",
-    contentStatus: deriveArticleContentStatus(article),
+    contentStatus: status,
     scheduleState: article.scheduledPublishAt ? "active" : "none",
   });
 

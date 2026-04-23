@@ -33,8 +33,11 @@ function deriveBlogContentStatus(blog: GeneratedBlogPost): BlogContentStatus {
   return "generated";
 }
 
-function toRow(blog: GeneratedBlogPost, userId: string): BlogPostRow {
-  const status = deriveBlogContentStatus(blog);
+function toRow(
+  blog: GeneratedBlogPost,
+  userId: string,
+  status = deriveBlogContentStatus(blog),
+): BlogPostRow {
   return {
     id: blog.id,
     structure_id: blog.structureId,
@@ -47,8 +50,8 @@ function toRow(blog: GeneratedBlogPost, userId: string): BlogPostRow {
     blog_json: blog,
     source_input: blog.sourceInput,
     version: blog.version,
-    archived_at: status === "archived" ? blog.updatedAt : null,
-    deleted_at: status === "deleted" ? blog.updatedAt : null,
+    archived_at: null,
+    deleted_at: null,
     generated_at: blog.generatedAt,
     updated_at: blog.updatedAt,
     scheduled_publish_at: blog.scheduledPublishAt ?? null,
@@ -173,7 +176,8 @@ function toWebsiteContentPackage(
 
 export async function upsertBlogPost(blog: GeneratedBlogPost, userId: string): Promise<GeneratedBlogPost> {
   const supabase = getSupabaseServiceClient();
-  const row = toRow(blog, userId);
+  const status = deriveBlogContentStatus(blog);
+  const row = toRow(blog, userId, status);
 
   const { error } = await supabase.from("blog_posts").upsert(row, { onConflict: "id" });
 
@@ -189,7 +193,7 @@ export async function upsertBlogPost(blog: GeneratedBlogPost, userId: string): P
 
   await storeWebsiteGeneratedContent(toWebsiteContentPackage(blog, userId), {
     contentType: "blog",
-    contentStatus: deriveBlogContentStatus(blog),
+    contentStatus: status,
     scheduleState: blog.scheduledPublishAt ? "active" : "none",
   });
 

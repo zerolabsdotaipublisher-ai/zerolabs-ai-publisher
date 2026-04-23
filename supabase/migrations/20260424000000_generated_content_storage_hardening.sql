@@ -66,6 +66,13 @@ alter table public.website_generated_content
   drop constraint if exists website_generated_content_status_check;
 
 alter table public.website_generated_content
+  drop constraint if exists website_generated_content_type_check;
+
+alter table public.website_generated_content
+  add constraint website_generated_content_type_check
+  check (content_type in ('website', 'blog', 'article'));
+
+alter table public.website_generated_content
   add constraint website_generated_content_status_check
   check (content_status in ('draft', 'generated', 'edited', 'scheduled', 'published', 'archived', 'deleted'));
 
