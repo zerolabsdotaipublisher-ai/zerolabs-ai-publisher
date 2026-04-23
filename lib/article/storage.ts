@@ -11,17 +11,48 @@ export interface ArticlePublicationMetadataUpdate {
   publishedAt?: string | null;
 }
 
-function toRow(article: GeneratedArticle, userId: string): ArticleRow {
+type ArticleContentStatus =
+  | "draft"
+  | "generated"
+  | "edited"
+  | "scheduled"
+  | "published"
+  | "archived"
+  | "deleted";
+
+function deriveArticleContentStatus(article: GeneratedArticle): ArticleContentStatus {
+  if (article.publishedAt) {
+    return "published";
+  }
+  if (article.scheduledPublishAt) {
+    return "scheduled";
+  }
+  if (article.version > 1) {
+    return "edited";
+  }
+  return "generated";
+}
+
+function toRow(
+  article: GeneratedArticle,
+  userId: string,
+  status = deriveArticleContentStatus(article),
+): ArticleRow {
   return {
     id: article.id,
     structure_id: article.structureId,
     user_id: userId,
+    content_status: status,
+    created_by: userId,
+    updated_by: userId,
     title: article.title,
     slug: article.slug,
     article_type: article.articleType,
     article_json: article,
     source_input: article.sourceInput,
     version: article.version,
+    archived_at: null,
+    deleted_at: null,
     generated_at: article.generatedAt,
     updated_at: article.updatedAt,
     scheduled_publish_at: article.scheduledPublishAt ?? null,
@@ -142,7 +173,8 @@ function toWebsiteContentPackage(article: GeneratedArticle, userId: string): Web
 
 export async function upsertArticle(article: GeneratedArticle, userId: string): Promise<GeneratedArticle> {
   const supabase = getSupabaseServiceClient();
-  const row = toRow(article, userId);
+  const status = deriveArticleContentStatus(article);
+  const row = toRow(article, userId, status);
 
   const { error } = await supabase.from("article_posts").upsert(row, { onConflict: "id" });
 
@@ -156,7 +188,11 @@ export async function upsertArticle(article: GeneratedArticle, userId: string): 
     throw error;
   }
 
-  await storeWebsiteGeneratedContent(toWebsiteContentPackage(article, userId));
+  await storeWebsiteGeneratedContent(toWebsiteContentPackage(article, userId), {
+    contentType: "article",
+    contentStatus: status,
+    scheduleState: article.scheduledPublishAt ? "active" : "none",
+  });
 
   return article;
 }
@@ -171,6 +207,7 @@ export async function getArticleByStructureId(
     .select("*")
     .eq("structure_id", structureId)
     .eq("user_id", userId)
+    .is("deleted_at", null)
     .single();
 
   if (error) {
@@ -193,11 +230,19 @@ export async function deleteArticleByStructureId(
   userId: string,
 ): Promise<void> {
   const supabase = getSupabaseServiceClient();
+  const now = new Date().toISOString();
   const { error } = await supabase
     .from("article_posts")
-    .delete()
+    .update({
+      content_status: "deleted",
+      archived_at: now,
+      deleted_at: now,
+      updated_by: userId,
+      updated_at: now,
+    })
     .eq("structure_id", structureId)
-    .eq("user_id", userId);
+    .eq("user_id", userId)
+    .is("deleted_at", null);
 
   if (error) {
     logger.error("Failed to delete article", {

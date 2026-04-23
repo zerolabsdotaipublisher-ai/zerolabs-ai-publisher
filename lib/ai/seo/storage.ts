@@ -21,27 +21,37 @@ function toRows(seo: WebsiteSeoPackage): WebsiteSeoMetadataRow[] {
       id: generateRowId(seo.structureId, SITE_ROW_SLUG),
       structure_id: seo.structureId,
       user_id: seo.userId,
+      content_status: seo.version > 1 ? "edited" : "generated",
+      created_by: seo.userId,
+      updated_by: seo.userId,
       page_slug: SITE_ROW_SLUG,
       metadata_json: seo.site,
       generated_from_input: seo.generatedFromInput,
       version: seo.version,
+      archived_at: null,
+      deleted_at: null,
       created_at: seo.generatedAt,
       updated_at: seo.updatedAt,
     },
   ];
 
   seo.pages.forEach((page) => {
-    rows.push({
-      id: generateRowId(seo.structureId, page.pageSlug),
-      structure_id: seo.structureId,
-      user_id: seo.userId,
-      page_slug: page.pageSlug,
-      metadata_json: page,
-      generated_from_input: seo.generatedFromInput,
-      version: seo.version,
-      created_at: seo.generatedAt,
-      updated_at: seo.updatedAt,
-    });
+      rows.push({
+        id: generateRowId(seo.structureId, page.pageSlug),
+        structure_id: seo.structureId,
+        user_id: seo.userId,
+        content_status: seo.version > 1 ? "edited" : "generated",
+        created_by: seo.userId,
+        updated_by: seo.userId,
+        page_slug: page.pageSlug,
+        metadata_json: page,
+        generated_from_input: seo.generatedFromInput,
+        version: seo.version,
+        archived_at: null,
+        deleted_at: null,
+        created_at: seo.generatedAt,
+        updated_at: seo.updatedAt,
+      });
   });
 
   return rows;
@@ -105,6 +115,7 @@ export async function getWebsiteSeoMetadata(
     .select("*")
     .eq("structure_id", structureId)
     .eq("user_id", userId)
+    .is("deleted_at", null)
     .order("version", { ascending: false });
 
   if (error) {

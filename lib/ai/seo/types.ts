@@ -79,10 +79,15 @@ export interface WebsiteSeoMetadataRow {
   id: string;
   structure_id: string;
   user_id: string;
+  content_status?: "draft" | "generated" | "edited" | "scheduled" | "published" | "archived" | "deleted";
+  created_by?: string | null;
+  updated_by?: string | null;
   page_slug: string;
   metadata_json: unknown;
   generated_from_input: unknown;
   version: number;
+  archived_at?: string | null;
+  deleted_at?: string | null;
   created_at: string;
   updated_at: string;
 }

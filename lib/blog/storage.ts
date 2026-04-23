@@ -11,16 +11,47 @@ export interface BlogPublicationMetadataUpdate {
   publishedAt?: string | null;
 }
 
-function toRow(blog: GeneratedBlogPost, userId: string): BlogPostRow {
+type BlogContentStatus =
+  | "draft"
+  | "generated"
+  | "edited"
+  | "scheduled"
+  | "published"
+  | "archived"
+  | "deleted";
+
+function deriveBlogContentStatus(blog: GeneratedBlogPost): BlogContentStatus {
+  if (blog.publishedAt) {
+    return "published";
+  }
+  if (blog.scheduledPublishAt) {
+    return "scheduled";
+  }
+  if (blog.version > 1) {
+    return "edited";
+  }
+  return "generated";
+}
+
+function toRow(
+  blog: GeneratedBlogPost,
+  userId: string,
+  status = deriveBlogContentStatus(blog),
+): BlogPostRow {
   return {
     id: blog.id,
     structure_id: blog.structureId,
     user_id: userId,
+    content_status: status,
+    created_by: userId,
+    updated_by: userId,
     title: blog.title,
     slug: blog.slug,
     blog_json: blog,
     source_input: blog.sourceInput,
     version: blog.version,
+    archived_at: null,
+    deleted_at: null,
     generated_at: blog.generatedAt,
     updated_at: blog.updatedAt,
     scheduled_publish_at: blog.scheduledPublishAt ?? null,
@@ -145,7 +176,8 @@ function toWebsiteContentPackage(
 
 export async function upsertBlogPost(blog: GeneratedBlogPost, userId: string): Promise<GeneratedBlogPost> {
   const supabase = getSupabaseServiceClient();
-  const row = toRow(blog, userId);
+  const status = deriveBlogContentStatus(blog);
+  const row = toRow(blog, userId, status);
 
   const { error } = await supabase.from("blog_posts").upsert(row, { onConflict: "id" });
 
@@ -159,7 +191,11 @@ export async function upsertBlogPost(blog: GeneratedBlogPost, userId: string): P
     throw error;
   }
 
-  await storeWebsiteGeneratedContent(toWebsiteContentPackage(blog, userId));
+  await storeWebsiteGeneratedContent(toWebsiteContentPackage(blog, userId), {
+    contentType: "blog",
+    contentStatus: status,
+    scheduleState: blog.scheduledPublishAt ? "active" : "none",
+  });
 
   return blog;
 }
@@ -174,6 +210,7 @@ export async function getBlogPostByStructureId(
     .select("*")
     .eq("structure_id", structureId)
     .eq("user_id", userId)
+    .is("deleted_at", null)
     .single();
 
   if (error) {
@@ -196,11 +233,19 @@ export async function deleteBlogPostByStructureId(
   userId: string,
 ): Promise<void> {
   const supabase = getSupabaseServiceClient();
+  const now = new Date().toISOString();
   const { error } = await supabase
     .from("blog_posts")
-    .delete()
+    .update({
+      content_status: "deleted",
+      archived_at: now,
+      deleted_at: now,
+      updated_by: userId,
+      updated_at: now,
+    })
     .eq("structure_id", structureId)
-    .eq("user_id", userId);
+    .eq("user_id", userId)
+    .is("deleted_at", null);
 
   if (error) {
     logger.error("Failed to delete blog post", {
