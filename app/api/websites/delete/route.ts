@@ -7,6 +7,7 @@ import {
   saveOwnedWebsiteStructure,
   type WebsiteDeletePayload,
 } from "@/lib/management";
+import { archiveOwnedGeneratedContent } from "@/lib/content";
 import { getServerUser } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -39,6 +40,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const now = new Date().toISOString();
     const deletedWebsite = softDeleteWebsite(ownership.website, user.id, now);
     const saved = await saveOwnedWebsiteStructure(deletedWebsite);
+    await archiveOwnedGeneratedContent(body.structureId, user.id);
 
     return NextResponse.json({
       ok: true,

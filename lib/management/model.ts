@@ -9,7 +9,7 @@ export function isSoftDeleted(structure: WebsiteStructure): boolean {
 }
 
 export function deriveWebsiteLifecycleStatus(structure: WebsiteStructure): WebsiteLifecycleStatus {
-  if (isSoftDeleted(structure)) {
+  if (isSoftDeleted(structure) || structure.status === "deleted") {
     return "deleted";
   }
 

@@ -243,11 +243,19 @@ export interface WebsiteGeneratedContentRow {
   id: string;
   structure_id: string;
   user_id: string;
+  content_type: string;
+  content_status: "draft" | "generated" | "edited" | "scheduled" | "published" | "archived" | "deleted";
+  schedule_state?: "none" | "active" | "paused" | "running" | "completed" | "failed" | "cancelled" | null;
   page_slug: string;
   section_key: string;
   content_json: unknown;
   generated_from_input: unknown;
   version: number;
+  created_by?: string | null;
+  updated_by?: string | null;
+  is_archived?: boolean;
+  archived_at?: string | null;
+  deleted_at?: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -14,7 +14,7 @@ export function softDeleteWebsite(structure: WebsiteStructure, userId: string, n
 
   return {
     ...structure,
-    status: "archived",
+    status: "deleted",
     updatedAt: now,
     management: {
       ...structure.management,
@@ -35,6 +35,7 @@ export function softDeleteWebsite(structure: WebsiteStructure, userId: string, n
 export function restoreSoftDeletedWebsite(structure: WebsiteStructure, now: string): WebsiteStructure {
   return {
     ...structure,
+    status: "draft",
     updatedAt: now,
     management: {
       ...structure.management,

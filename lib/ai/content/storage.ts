@@ -11,6 +11,22 @@ import type {
 
 // Base64url-encoded fallback key for the root page slug when no slug is present.
 const ROOT_PAGE_SLUG_KEY = "cm9vdA";
+type ContentLifecycleStatus =
+  | "draft"
+  | "generated"
+  | "edited"
+  | "scheduled"
+  | "published"
+  | "archived"
+  | "deleted";
+type ContentScheduleState = "none" | "active" | "paused" | "running" | "completed" | "failed" | "cancelled";
+type ContentType = "website" | "blog" | "article";
+
+interface StoreWebsiteGeneratedContentOptions {
+  contentStatus?: ContentLifecycleStatus;
+  contentType?: ContentType;
+  scheduleState?: ContentScheduleState;
+}
 
 function generateRowId(structureId: string, pageSlug: string, sectionKey: string): string {
   const normalizedSlug = pageSlug.trim();
@@ -20,19 +36,87 @@ function generateRowId(structureId: string, pageSlug: string, sectionKey: string
   return `${structureId}:${slug}:${sectionKey}`;
 }
 
-function serializePageRows(content: WebsiteContentPackage): WebsiteGeneratedContentRow[] {
+function inferContentStatus(content: WebsiteContentPackage): ContentLifecycleStatus {
+  const constraints = Array.isArray(content.generatedFromInput.constraints)
+    ? content.generatedFromInput.constraints
+    : [];
+
+  if (constraints.some((constraint) => constraint.includes("_scheduled_publish_at:"))) {
+    return "scheduled";
+  }
+
+  return content.version > 1 ? "edited" : "generated";
+}
+
+function inferContentType(content: WebsiteContentPackage): ContentType {
+  if (content.websiteType === "blog" || content.websiteType === "article") {
+    return content.websiteType;
+  }
+  return "website";
+}
+
+function validateWebsiteContentPackage(content: WebsiteContentPackage): void {
+  if (!content.structureId.trim() || !content.userId.trim()) {
+    throw new Error("Generated content requires structureId and userId.");
+  }
+
+  if (!Array.isArray(content.pages) || content.pages.length === 0) {
+    throw new Error("Generated content must contain at least one page.");
+  }
+
+  const seen = new Set<string>();
+  for (const page of content.pages) {
+    const slug = page.pageSlug.trim();
+    if (!slug) {
+      throw new Error("Generated content pages require a non-empty pageSlug.");
+    }
+
+    const pageKey = `${slug}:__page__`;
+    if (seen.has(pageKey)) {
+      throw new Error(`Duplicate generated content page entry for slug '${slug}'.`);
+    }
+    seen.add(pageKey);
+
+    for (const sectionKey of Object.keys(page.sections)) {
+      if (!sectionKey.trim()) {
+        throw new Error(`Generated content section key cannot be empty for slug '${slug}'.`);
+      }
+      const composite = `${slug}:${sectionKey}`;
+      if (seen.has(composite)) {
+        throw new Error(`Duplicate generated content section '${sectionKey}' for slug '${slug}'.`);
+      }
+      seen.add(composite);
+    }
+  }
+}
+
+function serializePageRows(
+  content: WebsiteContentPackage,
+  options?: StoreWebsiteGeneratedContentOptions,
+): WebsiteGeneratedContentRow[] {
   const rows: WebsiteGeneratedContentRow[] = [];
+  const contentStatus = options?.contentStatus ?? inferContentStatus(content);
+  const contentType = options?.contentType ?? inferContentType(content);
+  const scheduleState = options?.scheduleState ?? "none";
 
   content.pages.forEach((page: GeneratedPageContent) => {
     rows.push({
       id: generateRowId(content.structureId, page.pageSlug, "__page__"),
       structure_id: content.structureId,
       user_id: content.userId,
+      content_type: contentType,
+      content_status: contentStatus,
+      schedule_state: scheduleState,
       page_slug: page.pageSlug,
       section_key: "__page__",
       content_json: page.messaging,
       generated_from_input: content.generatedFromInput,
       version: content.version,
+      created_by: content.userId,
+      updated_by: content.userId,
+      is_archived: false,
+      archived_at: null,
+      deleted_at: null,
       created_at: content.generatedAt,
       updated_at: content.updatedAt,
     });
@@ -42,11 +126,19 @@ function serializePageRows(content: WebsiteContentPackage): WebsiteGeneratedCont
         id: generateRowId(content.structureId, page.pageSlug, sectionKey),
         structure_id: content.structureId,
         user_id: content.userId,
+        content_type: contentType,
+        content_status: contentStatus,
+        schedule_state: scheduleState,
         page_slug: page.pageSlug,
         section_key: sectionKey,
         content_json: sectionContent,
         generated_from_input: content.generatedFromInput,
         version: content.version,
+        created_by: content.userId,
+        updated_by: content.userId,
+        is_archived: false,
+        archived_at: null,
+        deleted_at: null,
         created_at: content.generatedAt,
         updated_at: content.updatedAt,
       });
@@ -114,9 +206,11 @@ function inferPageTypeFromSlug(slug: string): GeneratedPageContent["pageType"] {
 
 export async function storeWebsiteGeneratedContent(
   content: WebsiteContentPackage,
+  options?: StoreWebsiteGeneratedContentOptions,
 ): Promise<WebsiteContentPackage> {
   const supabase = getSupabaseServiceClient();
-  const rows = serializePageRows(content);
+  validateWebsiteContentPackage(content);
+  const rows = serializePageRows(content, options);
 
   const { error } = await supabase
     .from("website_generated_content")
@@ -140,7 +234,10 @@ export async function storeWebsiteStructureContentSnapshot(
   userId: string,
 ): Promise<WebsiteContentPackage> {
   const content = toStructuredContentPackage(structure, userId);
-  return storeWebsiteGeneratedContent(content);
+  return storeWebsiteGeneratedContent(content, {
+    contentType: inferContentType(content),
+    contentStatus: structure.version > 1 ? "edited" : "generated",
+  });
 }
 
 export async function getWebsiteGeneratedContent(
@@ -153,6 +250,8 @@ export async function getWebsiteGeneratedContent(
     .select("*")
     .eq("structure_id", structureId)
     .eq("user_id", userId)
+    .is("deleted_at", null)
+    .eq("is_archived", false)
     .order("page_slug", { ascending: true })
     .order("section_key", { ascending: true });
 
@@ -224,12 +323,21 @@ export async function deleteWebsiteGeneratedContent(
   userId: string,
 ): Promise<void> {
   const supabase = getSupabaseServiceClient();
+  const now = new Date().toISOString();
 
   const { error } = await supabase
     .from("website_generated_content")
-    .delete()
+    .update({
+      content_status: "deleted",
+      is_archived: true,
+      archived_at: now,
+      deleted_at: now,
+      updated_by: userId,
+      updated_at: now,
+    })
     .eq("structure_id", structureId)
-    .eq("user_id", userId);
+    .eq("user_id", userId)
+    .is("deleted_at", null);
 
   if (error) {
     logger.error("Failed to delete generated website content", {
