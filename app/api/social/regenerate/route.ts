@@ -6,6 +6,7 @@ import {
   type SocialPlatform,
   upsertSocialPost,
 } from "@/lib/social";
+import { logger } from "@/lib/observability";
 import { getServerUser } from "@/lib/supabase/server";
 
 interface RegenerateSocialBody {
@@ -50,7 +51,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       usedFallback: regenerated.usedFallback,
       validationErrors: regenerated.validationErrors,
     });
-  } catch {
+  } catch (error) {
+    logger.error("social regenerate route failed", {
+      category: "error",
+      service: "openai",
+      metadata: {
+        postId: body.postId,
+        platform: body.platform,
+      },
+      error: {
+        name: "SocialRegenerateRouteError",
+        message: error instanceof Error ? error.message : "Unknown error",
+      },
+    });
     return NextResponse.json({ error: "Social post regeneration failed" }, { status: 500 });
   }
 }

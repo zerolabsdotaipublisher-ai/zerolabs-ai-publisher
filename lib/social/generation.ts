@@ -41,10 +41,16 @@ interface OpenAIChatResponse {
   }>;
 }
 
+const SOURCE_BODY_MAX_LENGTH = 3000;
+
 function generateId(prefix: string): string {
   const ts = Date.now().toString(36);
   const rnd = Math.random().toString(36).slice(2, 10);
   return `${prefix}_${ts}_${rnd}`;
+}
+
+function truncateSourceBody(value: string): string {
+  return value.length > SOURCE_BODY_MAX_LENGTH ? `${value.slice(0, SOURCE_BODY_MAX_LENGTH)}…` : value;
 }
 
 function parseJson<T>(raw: string): T | null {
@@ -199,8 +205,10 @@ async function resolveSourceSnapshot(
       snapshot: {
         title: blog.title,
         summary: blog.excerpt,
-        body: [blog.introduction, ...blog.sections.flatMap((section) => section.paragraphs), blog.conclusion].join(
-          " ",
+        body: truncateSourceBody(
+          [blog.introduction, ...blog.sections.flatMap((section) => section.paragraphs), blog.conclusion].join(
+            " ",
+          ),
         ),
       },
     };
@@ -216,11 +224,13 @@ async function resolveSourceSnapshot(
       snapshot: {
         title: article.title,
         summary: article.excerpt,
-        body: [
-          article.introduction,
-          ...article.sections.flatMap((section) => section.paragraphs),
-          article.conclusion,
-        ].join(" "),
+        body: truncateSourceBody(
+          [
+            article.introduction,
+            ...article.sections.flatMap((section) => section.paragraphs),
+            article.conclusion,
+          ].join(" "),
+        ),
       },
     };
   }
@@ -235,10 +245,12 @@ async function resolveSourceSnapshot(
       snapshot: {
         title: structure.siteTitle,
         summary: structure.tagline,
-        body: structure.pages
-          .flatMap((page) => page.sections)
-          .map((section) => Object.values(section.content).join(" "))
-          .join(" "),
+        body: truncateSourceBody(
+          structure.pages
+            .flatMap((page) => page.sections)
+            .map((section) => Object.values(section.content).join(" "))
+            .join(" "),
+        ),
       },
     };
   }

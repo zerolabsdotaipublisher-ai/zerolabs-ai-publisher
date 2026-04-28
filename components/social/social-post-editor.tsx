@@ -30,7 +30,6 @@ export function SocialPostEditor({ socialPost, onChange }: SocialPostEditorProps
       variants: socialPost.variants.map((variant) =>
         variant.platform === selectedPlatform ? updater(variant) : variant,
       ),
-      updatedAt: new Date().toISOString(),
     });
   };
 

@@ -8,6 +8,7 @@ import type {
 } from "./types";
 
 const BANNED_PHRASES = ["as an ai", "language model", "game-changing", "revolutionary", "unlock"];
+const MIN_WORD_BOUNDARY_INDEX = 40;
 
 function trimOrUndefined(value?: string): string | undefined {
   const trimmed = value?.trim();
@@ -119,10 +120,11 @@ export function validateSocialGenerationInput(input: SocialGenerationInput): str
 }
 
 function truncateByWordBoundary(value: string, maxLength: number): string {
+  if (maxLength <= 0) return "";
   if (value.length <= maxLength) return value;
   const clipped = value.slice(0, Math.max(0, maxLength - 1));
   const lastSpace = clipped.lastIndexOf(" ");
-  const safe = lastSpace > 40 ? clipped.slice(0, lastSpace) : clipped;
+  const safe = lastSpace > MIN_WORD_BOUNDARY_INDEX ? clipped.slice(0, lastSpace) : clipped;
   return `${safe.trimEnd()}…`;
 }
 
