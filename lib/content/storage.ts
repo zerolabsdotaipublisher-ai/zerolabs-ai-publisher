@@ -5,6 +5,7 @@ import { getWebsiteSeoMetadata } from "@/lib/ai/seo";
 import { getWebsiteStructure } from "@/lib/ai/structure";
 import { deleteArticleByStructureId, getArticleByStructureId } from "@/lib/article";
 import { deleteBlogPostByStructureId, getBlogPostByStructureId } from "@/lib/blog";
+import { deleteSocialPostsByStructureId, listSocialPostsByStructureId } from "@/lib/social";
 import { getOwnedContentScheduleByStructureId } from "@/lib/scheduling";
 import { listWebsiteVersions } from "@/lib/versions";
 import type { GeneratedContentBundle, GeneratedContentLifecycleStatus } from "./types";
@@ -13,7 +14,9 @@ function deriveBundleStatus(args: {
   structureStatus: string;
   hasPublishedBlog: boolean;
   hasPublishedArticle: boolean;
+  hasPublishedSocialPost: boolean;
   hasScheduledContent: boolean;
+  hasScheduledSocialPost: boolean;
   hasActiveSchedule: boolean;
   isDeleted: boolean;
 }): GeneratedContentLifecycleStatus {
@@ -29,11 +32,21 @@ function deriveBundleStatus(args: {
     return "archived";
   }
 
-  if (args.structureStatus === "published" || args.hasPublishedBlog || args.hasPublishedArticle) {
+  if (
+    args.structureStatus === "published" ||
+    args.hasPublishedBlog ||
+    args.hasPublishedArticle ||
+    args.hasPublishedSocialPost
+  ) {
     return "published";
   }
 
-  if (args.hasScheduledContent || args.hasActiveSchedule || args.structureStatus === "scheduled") {
+  if (
+    args.hasScheduledContent ||
+    args.hasScheduledSocialPost ||
+    args.hasActiveSchedule ||
+    args.structureStatus === "scheduled"
+  ) {
     return "scheduled";
   }
 
@@ -61,11 +74,12 @@ export async function getOwnedGeneratedContentBundle(
     return null;
   }
 
-  const [generatedContent, seo, blog, article, schedule, versions] = await Promise.all([
+  const [generatedContent, seo, blog, article, socialPosts, schedule, versions] = await Promise.all([
     getWebsiteGeneratedContent(structureId, userId),
     getWebsiteSeoMetadata(structureId, userId),
     getBlogPostByStructureId(structureId, userId),
     getArticleByStructureId(structureId, userId),
+    listSocialPostsByStructureId(structureId, userId),
     getOwnedContentScheduleByStructureId(structureId, userId),
     listWebsiteVersions(structureId, userId, { limit: 25 }),
   ]);
@@ -74,7 +88,9 @@ export async function getOwnedGeneratedContentBundle(
     structureStatus: structure.status,
     hasPublishedBlog: Boolean(blog?.publishedAt),
     hasPublishedArticle: Boolean(article?.publishedAt),
+    hasPublishedSocialPost: socialPosts.some((post) => Boolean(post.publishedAt)),
     hasScheduledContent: Boolean(blog?.scheduledPublishAt || article?.scheduledPublishAt),
+    hasScheduledSocialPost: socialPosts.some((post) => Boolean(post.scheduledPublishAt)),
     hasActiveSchedule: schedule?.status === "active" || schedule?.status === "running",
     isDeleted: Boolean(structure.management?.deletedAt),
   });
@@ -85,6 +101,7 @@ export async function getOwnedGeneratedContentBundle(
     seo,
     blog,
     article,
+    socialPosts,
     schedule,
     versions,
     status,
@@ -100,5 +117,6 @@ export async function archiveOwnedGeneratedContent(structureId: string, userId: 
     deleteWebsiteGeneratedContent(structureId, userId),
     deleteBlogPostByStructureId(structureId, userId),
     deleteArticleByStructureId(structureId, userId),
+    deleteSocialPostsByStructureId(structureId, userId),
   ]);
 }
