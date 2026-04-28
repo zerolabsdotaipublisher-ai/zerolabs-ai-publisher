@@ -160,6 +160,13 @@ export const env = {
     batchSize: optionalPositiveInteger(process.env.SCHEDULER_BATCH_SIZE, 5),
   },
 
+  meta: {
+    appId: optional(process.env.META_APP_ID),
+    appSecret: optional(process.env.META_APP_SECRET),
+    redirectUri: optional(process.env.META_REDIRECT_URI),
+    instagramGraphApiVersion: process.env.INSTAGRAM_GRAPH_API_VERSION ?? "v23.0",
+  },
+
   /** Website build and deployment pipeline (MVP-safe adapter orchestration) */
   pipeline: {
     deploymentTarget: process.env.PIPELINE_DEPLOYMENT_TARGET ?? "mock",
