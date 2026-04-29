@@ -98,6 +98,17 @@ export interface SchedulerConfig {
   batchSize: number;
 }
 
+export interface MetaConfig {
+  /** Meta App ID used for OAuth with Facebook/Instagram Graph APIs. */
+  appId: string | undefined;
+  /** Meta App Secret used for OAuth code exchange. */
+  appSecret: string | undefined;
+  /** OAuth callback URI configured in Meta developer settings. */
+  redirectUri: string | undefined;
+  /** Instagram Graph API version (e.g. v23.0). */
+  instagramGraphApiVersion: string;
+}
+
 export interface PipelineConfig {
   /** Deployment adapter target. Validated by lib/pipeline before use. */
   deploymentTarget: string;
@@ -148,6 +159,7 @@ export interface ServiceConfig {
   email: EmailConfig;
   zeroflow: ZeroFlowConfig;
   scheduler: SchedulerConfig;
+  meta: MetaConfig;
   pipeline: PipelineConfig;
   auth: AuthConfig;
 }
@@ -207,6 +219,13 @@ export const servicesConfig: ServiceConfig = {
   scheduler: {
     executionToken: env.scheduler.executionToken,
     batchSize: env.scheduler.batchSize,
+  },
+
+  meta: {
+    appId: env.meta.appId,
+    appSecret: env.meta.appSecret,
+    redirectUri: env.meta.redirectUri,
+    instagramGraphApiVersion: env.meta.instagramGraphApiVersion,
   },
 
   pipeline: {

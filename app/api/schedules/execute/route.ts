@@ -1,6 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { config } from "@/config";
+import { logger } from "@/lib/observability";
 import { executeDueContentSchedules } from "@/lib/scheduling";
+import { executeDueInstagramPublishJobs } from "@/lib/social/instagram";
 
 function readBearerToken(request: NextRequest): string | undefined {
   const header = request.headers.get("authorization");
@@ -26,9 +28,53 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
-  const result = await executeDueContentSchedules(config.services.scheduler.batchSize);
+  const [contentSchedulesResult, instagramPublishResult] = await Promise.allSettled([
+    executeDueContentSchedules(config.services.scheduler.batchSize),
+    executeDueInstagramPublishJobs(config.services.scheduler.batchSize),
+  ]);
+
+  const contentSchedules =
+    contentSchedulesResult.status === "fulfilled"
+      ? contentSchedulesResult.value
+      : { claimedCount: 0, processedCount: 0, schedules: [] };
+  const instagramPublish =
+    instagramPublishResult.status === "fulfilled"
+      ? instagramPublishResult.value
+      : { claimedCount: 0, processedCount: 0, jobs: [] };
+
+  if (contentSchedulesResult.status === "rejected") {
+    logger.error("Scheduler content execution failed", {
+      category: "error",
+      service: "scheduling",
+      error: {
+        name: "ContentScheduleBatchExecutionError",
+        message:
+          contentSchedulesResult.reason instanceof Error
+            ? contentSchedulesResult.reason.message
+            : "Unknown error",
+      },
+    });
+  }
+
+  if (instagramPublishResult.status === "rejected") {
+    logger.error("Scheduler instagram execution failed", {
+      category: "error",
+      service: "instagram",
+      error: {
+        name: "InstagramScheduleBatchExecutionError",
+        message:
+          instagramPublishResult.reason instanceof Error
+            ? instagramPublishResult.reason.message
+            : "Unknown error",
+      },
+    });
+  }
+
   return NextResponse.json({
     ok: true,
-    result,
+    result: {
+      contentSchedules,
+      instagramPublish,
+    },
   });
 }
