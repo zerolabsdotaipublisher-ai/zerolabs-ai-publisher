@@ -1,5 +1,6 @@
 import type { GeneratedSocialPost, SocialPlatform } from "@/lib/social/types";
 import {
+  SOCIAL_SCHEDULE_DEFAULT_TITLE,
   SOCIAL_SCHEDULE_DEFAULT_RECURRENCE,
   SOCIAL_SCHEDULE_DEFAULT_RETRY_POLICY,
   SOCIAL_SCHEDULE_REQUIREMENTS,
@@ -86,7 +87,7 @@ export function normalizeSocialScheduleInput(input: SocialScheduleUpsertInput): 
   status: "draft" | "scheduled";
 } {
   return {
-    title: input.title?.trim() || "Scheduled social publish",
+    title: input.title?.trim() || SOCIAL_SCHEDULE_DEFAULT_TITLE,
     description: input.description?.trim() || undefined,
     timezone: input.timezone.trim() || "UTC",
     startsAtLocal: normalizeLocalDateTimeInput(input.startsAtLocal),

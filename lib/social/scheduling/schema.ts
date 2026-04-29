@@ -36,6 +36,8 @@ export const SOCIAL_SCHEDULE_DEFAULT_TARGETS: SocialScheduleTarget[] = [
   { platform: "instagram", enabled: true },
 ];
 
+export const SOCIAL_SCHEDULE_DEFAULT_TITLE = "Scheduled social publish";
+
 export const SOCIAL_SCHEDULE_REQUIREMENTS = {
   mvpPlatforms: ["instagram"] as const,
   futurePlatforms: ["facebook", "linkedin", "x"] as const,

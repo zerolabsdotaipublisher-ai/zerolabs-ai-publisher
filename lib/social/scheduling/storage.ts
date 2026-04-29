@@ -178,11 +178,21 @@ async function setSocialPostScheduleMetadata(
   userId: string,
   updates: { scheduledPublishAt?: string | null; publishedAt?: string | null },
 ): Promise<void> {
+  const resolveValue = (
+    current: string | undefined,
+    next: string | null | undefined,
+  ): string | undefined => {
+    if (next === undefined) {
+      return current;
+    }
+    return next ?? undefined;
+  };
+
   await upsertSocialPost(
     {
       ...post,
-      scheduledPublishAt: updates.scheduledPublishAt === undefined ? post.scheduledPublishAt : updates.scheduledPublishAt ?? undefined,
-      publishedAt: updates.publishedAt === undefined ? post.publishedAt : updates.publishedAt ?? undefined,
+      scheduledPublishAt: resolveValue(post.scheduledPublishAt, updates.scheduledPublishAt),
+      publishedAt: resolveValue(post.publishedAt, updates.publishedAt),
       updatedAt: new Date().toISOString(),
       version: post.version + 1,
     },
@@ -560,13 +570,7 @@ export async function updateOwnedSocialSchedule(
 
   const next = await upsertOwnedSocialSchedule(mergedInput, userId);
   if (next.id !== scheduleId) {
-    return saveSocialSchedule({
-      ...next,
-      id: scheduleId,
-      version: existing.version + 1,
-      createdAt: existing.createdAt,
-      updatedAt: new Date().toISOString(),
-    });
+    throw new Error("Schedule ownership mismatch detected during update.");
   }
 
   return next;

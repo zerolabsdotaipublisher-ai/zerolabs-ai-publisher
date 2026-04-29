@@ -44,14 +44,19 @@ function createDefaultStart(): string {
   const date = new Date();
   date.setHours(date.getHours() + 1);
   date.setMinutes(0, 0, 0);
-  return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const hour = String(date.getHours()).padStart(2, "0");
+  const minute = String(date.getMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day}T${hour}:${minute}`;
 }
 
 function parseMonthDays(value: string): number[] | undefined {
   const parsed = value
     .split(",")
     .map((entry) => Number.parseInt(entry.trim(), 10))
-    .filter((entry) => Number.isFinite(entry));
+    .filter((entry) => Number.isFinite(entry) && entry >= 1 && entry <= 31);
 
   return parsed.length > 0 ? parsed : undefined;
 }
@@ -99,14 +104,15 @@ export function SocialSchedulePanel({
   useEffect(() => {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
     setBrowserTimeZone(tz);
+    setForm((current) =>
+      current.timezone === "UTC"
+        ? {
+            ...current,
+            timezone: tz,
+          }
+        : current,
+    );
   }, []);
-
-  useEffect(() => {
-    setSchedules(initialSchedules);
-    const activeId = initialSchedules[0]?.id;
-    setSelectedScheduleId(activeId);
-    setForm(toFormState(initialSchedules[0], socialPosts[0]?.id ?? "", browserTimeZone));
-  }, [initialSchedules, socialPosts, browserTimeZone]);
 
   async function reload() {
     const response = await fetch(`/api/social/schedules?structureId=${encodeURIComponent(structureId)}`);

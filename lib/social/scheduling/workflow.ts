@@ -179,7 +179,7 @@ async function finalizeSuccess(
     completedOccurrences: schedule.lifecycle.completedOccurrences + 1,
   };
 
-  const nextReference = new Date(new Date(run.scheduledFor).getTime() + 1_000).toISOString();
+  const nextReference = completedAt;
   const nextScheduledFor = computeNextSocialScheduleRunAt(
     {
       ...schedule,
@@ -389,7 +389,7 @@ async function executeClaimedSchedule(
           failedPlatforms: [...nextRun.failedPlatforms, platform],
           logs: appendLog(
             nextRun.logs,
-            createLog("publish", `Platform ${platform} is future-ready but not enabled for live delivery in MVP.`, {
+            createLog("publish", `Platform ${platform} is not currently supported for live publishing.`, {
               level: "warn",
             }),
           ),
@@ -423,8 +423,6 @@ async function executeClaimedSchedule(
       };
     }
 
-    metrics.recordDuration("socialScheduleExecutionMs", Date.now() - executionStartedAt);
-
     if (nextRun.publishedPlatforms.length > 0) {
       return finalizeSuccess(schedulePublishing, nextRun);
     }
@@ -448,6 +446,8 @@ async function executeClaimedSchedule(
     });
 
     return finalizeFailure(claimedSchedule, run, error);
+  } finally {
+    metrics.recordDuration("socialScheduleExecutionMs", Date.now() - executionStartedAt);
   }
 }
 
@@ -489,6 +489,11 @@ export async function executeSocialScheduleNow(
     throw new Error("This schedule is already running or unavailable.");
   }
 
-  claimed.scheduledFor = new Date().toISOString();
-  return executeClaimedSchedule(claimed, "manual");
+  return executeClaimedSchedule(
+    {
+      ...claimed,
+      scheduledFor: new Date().toISOString(),
+    },
+    "manual",
+  );
 }
