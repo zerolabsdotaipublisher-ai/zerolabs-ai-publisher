@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { config } from "@/config";
 import { logger } from "@/lib/observability";
+import { executeDueSocialSchedules } from "@/lib/social/scheduling";
 import { executeDueContentSchedules } from "@/lib/scheduling";
 import { executeDueInstagramPublishJobs } from "@/lib/social/instagram";
 
@@ -28,8 +29,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
-  const [contentSchedulesResult, instagramPublishResult] = await Promise.allSettled([
+  const [contentSchedulesResult, socialSchedulesResult, instagramPublishResult] = await Promise.allSettled([
     executeDueContentSchedules(config.services.scheduler.batchSize),
+    executeDueSocialSchedules(config.services.scheduler.batchSize),
     executeDueInstagramPublishJobs(config.services.scheduler.batchSize),
   ]);
 
@@ -41,6 +43,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     instagramPublishResult.status === "fulfilled"
       ? instagramPublishResult.value
       : { claimedCount: 0, processedCount: 0, jobs: [] };
+  const socialSchedules =
+    socialSchedulesResult.status === "fulfilled"
+      ? socialSchedulesResult.value
+      : { claimedCount: 0, processedCount: 0, schedules: [] };
 
   if (contentSchedulesResult.status === "rejected") {
     logger.error("Scheduler content execution failed", {
@@ -70,11 +76,26 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
   }
 
+  if (socialSchedulesResult.status === "rejected") {
+    logger.error("Scheduler social execution failed", {
+      category: "error",
+      service: "social_scheduling",
+      error: {
+        name: "SocialScheduleBatchExecutionError",
+        message:
+          socialSchedulesResult.reason instanceof Error
+            ? socialSchedulesResult.reason.message
+            : "Unknown error",
+      },
+    });
+  }
+
   return NextResponse.json({
     ok: true,
     result: {
-      contentSchedules,
-      instagramPublish,
-    },
-  });
+        contentSchedules,
+        socialSchedules,
+        instagramPublish,
+      },
+    });
 }
