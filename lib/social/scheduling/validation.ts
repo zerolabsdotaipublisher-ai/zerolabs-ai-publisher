@@ -152,11 +152,14 @@ export function validateSocialScheduleInput(
     errors.push("Social post must be valid before scheduling.");
   }
 
-  const unsupported = enabledTargets.filter(
-    (target) => !SOCIAL_SCHEDULE_REQUIREMENTS.mvpPlatforms.includes(target.platform),
-  );
+  const mvpPlatforms = new Set<SocialPlatform>(SOCIAL_SCHEDULE_REQUIREMENTS.mvpPlatforms);
+  const unsupported = enabledTargets.filter((target) => !mvpPlatforms.has(target.platform));
   if (unsupported.length > 0) {
-    // Future-ready support is allowed, but operators should know only instagram is active delivery for MVP.
+    errors.push(
+      `Live delivery is currently available for Instagram only. Unsupported targets in MVP: ${unsupported
+        .map((entry) => entry.platform)
+        .join(", ")}.`,
+    );
   }
 
   return errors;

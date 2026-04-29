@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type { GeneratedSocialPost } from "@/lib/social";
 import type {
   SocialSchedule,
@@ -89,10 +89,6 @@ export function SocialSchedulePanel({
   const [browserTimeZone, setBrowserTimeZone] = useState("UTC");
   const [schedules, setSchedules] = useState<SocialScheduleWithActivity[]>(initialSchedules);
   const [selectedScheduleId, setSelectedScheduleId] = useState<string | undefined>(initialSchedules[0]?.id);
-  const selectedSchedule = useMemo(
-    () => schedules.find((entry) => entry.id === selectedScheduleId),
-    [schedules, selectedScheduleId],
-  );
   const [form, setForm] = useState<FormState>(() =>
     toFormState(initialSchedules[0], socialPosts[0]?.id ?? "", "UTC"),
   );
