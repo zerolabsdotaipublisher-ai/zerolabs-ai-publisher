@@ -992,6 +992,39 @@ a {
   gap: 0.2rem;
 }
 
+.social-schedule-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.social-schedule-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.social-schedule-card-header,
+.social-schedule-card-badges,
+.social-schedule-card-meta {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.social-schedule-card-header {
+  justify-content: space-between;
+}
+
+.social-schedule-card-header p,
+.social-schedule-card-event {
+  color: #6b7280;
+}
+
 .website-management-shell {
   width: 100%;
   max-width: 72rem;

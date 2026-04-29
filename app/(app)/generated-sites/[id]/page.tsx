@@ -9,6 +9,13 @@ import { ContentSchedulePanel } from "@/components/scheduling/content-schedule-p
 import { VersionHistoryPanel } from "@/components/versions/version-history-panel";
 import { detectPublicationState } from "@/lib/publish";
 import { resolveWebsitePageByPath } from "@/lib/routing";
+import { SocialSchedulePanel } from "@/components/social/social-schedule-panel";
+import { listSocialPostsByStructureId } from "@/lib/social";
+import {
+  listOwnedSocialScheduleEvents,
+  listOwnedSocialScheduleRuns,
+  listOwnedSocialSchedules,
+} from "@/lib/social/scheduling";
 import {
   getOwnedContentScheduleByStructureId,
   listOwnedContentScheduleRuns,
@@ -91,10 +98,21 @@ export default async function GeneratedSitePage({ params, searchParams }: PagePr
   }
   const publication = detectPublicationState(structure);
   const versions = await listWebsiteVersions(id, user.id);
-  const schedule = await getOwnedContentScheduleByStructureId(id, user.id);
-  const scheduleRuns = schedule
-    ? await listOwnedContentScheduleRuns(schedule.id, user.id, 10)
-    : [];
+  const [schedule, socialPosts, socialSchedules] = await Promise.all([
+    getOwnedContentScheduleByStructureId(id, user.id),
+    listSocialPostsByStructureId(id, user.id),
+    listOwnedSocialSchedules(user.id, { structureId: id }),
+  ]);
+  const [scheduleRuns, socialScheduleDetails] = await Promise.all([
+    schedule ? listOwnedContentScheduleRuns(schedule.id, user.id, 10) : Promise.resolve([]),
+    Promise.all(
+      socialSchedules.map(async (socialSchedule) => ({
+        ...socialSchedule,
+        runs: await listOwnedSocialScheduleRuns(socialSchedule.id, user.id, 10),
+        events: await listOwnedSocialScheduleEvents(socialSchedule.id, user.id, 10),
+      })),
+    ),
+  ]);
   const versionEntries = versions.map((version) => ({
     id: version.id,
     versionNumber: version.versionNumber,
@@ -125,6 +143,11 @@ export default async function GeneratedSitePage({ params, searchParams }: PagePr
         websiteType={structure.websiteType}
         initialSchedule={schedule}
         initialRuns={scheduleRuns}
+      />
+      <SocialSchedulePanel
+        structureId={structure.id}
+        socialPosts={socialPosts}
+        initialSchedules={socialScheduleDetails}
       />
       <VersionHistoryPanel structureId={structure.id} entries={versionEntries} />
       <Renderer structure={structure} pageSlug={resolvedSearchParams?.page || "/"} />
