@@ -1025,6 +1025,33 @@ a {
   color: #6b7280;
 }
 
+.social-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.social-history-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.social-history-card-header {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.social-history-card-header p {
+  color: #6b7280;
+}
+
 .website-management-shell {
   width: 100%;
   max-width: 72rem;

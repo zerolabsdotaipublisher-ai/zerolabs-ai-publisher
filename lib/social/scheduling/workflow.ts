@@ -1,8 +1,15 @@
 import "server-only";
 
+import { createSocialPublishHistoryForInstagramJob } from "@/lib/social/history";
 import { logger, metrics } from "@/lib/observability";
 import { getSocialPostById } from "@/lib/social/storage";
-import { executeInstagramPublishJob, getInstagramConnection, prepareInstagramPublishPayload, createInstagramPublishJob } from "@/lib/social/instagram";
+import {
+  executeInstagramPublishJob,
+  getInstagramConnection,
+  prepareInstagramPublishPayload,
+  createInstagramPublishJob,
+  updateInstagramPublishJob,
+} from "@/lib/social/instagram";
 import type { SocialPlatform } from "@/lib/social/types";
 import {
   assertSocialQueueCapacity,
@@ -146,10 +153,29 @@ async function executeInstagramTarget(args: {
     facebookPageId: connection.facebookPageId,
     scheduledFor,
     maxAttempts: schedule.retryPolicy.maxAttempts,
-    metadata: {
-      source: "social_schedule",
-      socialScheduleId: schedule.id,
-      socialPlatform: platform,
+      metadata: {
+        source: "social_schedule",
+        socialScheduleId: schedule.id,
+        socialPlatform: platform,
+        structureId: schedule.structureId,
+      },
+    });
+
+  const history = await createSocialPublishHistoryForInstagramJob({
+    job,
+    source: "schedule",
+    sourceRefId: schedule.id,
+    structureId: schedule.structureId,
+    socialPostId: schedule.socialPostId,
+    contentMetadata: {
+      scheduleId: schedule.id,
+      trigger: "social_schedule",
+    },
+  });
+  await updateInstagramPublishJob(job.id, schedule.userId, {
+    metadata_json: {
+      ...job.metadata,
+      historyJobId: history.id,
     },
   });
 

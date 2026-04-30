@@ -1,5 +1,9 @@
 import "server-only";
 
+import {
+  ensureSocialPublishHistoryForInstagramJob,
+  transitionSocialPublishHistory,
+} from "@/lib/social/history";
 import { logger } from "@/lib/observability";
 import { metrics } from "@/lib/observability/metrics";
 import type { SocialPostVariant } from "@/lib/social/types";
@@ -144,6 +148,12 @@ export async function executeInstagramPublishJob(jobId: string, userId: string):
     return job;
   }
 
+  const history = await ensureSocialPublishHistoryForInstagramJob({
+    job,
+    fallbackSource: "manual",
+    fallbackSourceRefId: "instagram_publish_execute",
+  });
+
   metrics.increment("requestCount");
   const nextAttemptCount = job.attemptCount + 1;
   const attemptStartedAt = new Date().toISOString();
@@ -151,6 +161,13 @@ export async function executeInstagramPublishJob(jobId: string, userId: string):
   let attemptStarted = false;
 
   try {
+    await transitionSocialPublishHistory({
+      historyJobId: history.id,
+      userId,
+      status: "queued",
+      message: "Instagram publish job queued for execution.",
+    });
+
     const { token } = await requireInstagramAccessToken(userId);
 
     await updateInstagramPublishJob(job.id, job.userId, {
@@ -173,6 +190,18 @@ export async function executeInstagramPublishJob(jobId: string, userId: string):
     });
     attemptId = attempt.id;
     attemptStarted = true;
+
+    await transitionSocialPublishHistory({
+      historyJobId: history.id,
+      userId,
+      status: "publishing",
+      message: "Instagram API request started.",
+      requestPayload: {
+        caption: job.caption,
+        mediaUrl: job.mediaUrl,
+        instagramAccountId: job.instagramAccountId,
+      },
+    });
 
     const container = await createInstagramMediaContainer({
       instagramAccountId: job.instagramAccountId,
@@ -218,6 +247,17 @@ export async function executeInstagramPublishJob(jobId: string, userId: string):
       },
     });
 
+    await transitionSocialPublishHistory({
+      historyJobId: history.id,
+      userId,
+      status: "published",
+      message: "Instagram API publish completed.",
+      responsePayload: {
+        creationId: container.id,
+        mediaId: publishResult.id,
+      },
+    });
+
     metrics.recordDuration("instagramPublishExecutionMs", Date.now() - startedAt);
     return published;
   } catch (error) {
@@ -240,12 +280,32 @@ export async function executeInstagramPublishJob(jobId: string, userId: string):
       },
     });
 
-    return finalizeRetryOrFailure(job, normalizedError, {
+    const failedOrRetry = await finalizeRetryOrFailure(job, normalizedError, {
       attemptStarted,
       attemptCount: nextAttemptCount,
       attemptStartedAt,
       attemptId,
     });
+
+    await transitionSocialPublishHistory({
+      historyJobId: history.id,
+      userId,
+      status: failedOrRetry.status === "retry_pending" ? "retry" : "failed",
+      message:
+        failedOrRetry.status === "retry_pending"
+          ? "Instagram publish failed and moved to retry."
+          : "Instagram publish failed.",
+      error: {
+        code: normalizedError.code,
+        message: normalizedError.message,
+        retryable: normalizedError.retryable,
+        details: normalizedError.metadata,
+      },
+      retryAt: failedOrRetry.nextAttemptAt,
+      responsePayload: normalizedError.metadata ?? {},
+    });
+
+    return failedOrRetry;
   }
 }
 
