@@ -2,17 +2,20 @@
 
 import { useEffect, useState } from "react";
 import type { GeneratedSocialPost } from "@/lib/social";
+import type { SocialPublishHistoryJob } from "@/lib/social/history";
 import type {
   SocialSchedule,
   SocialScheduleFrequency,
   SocialScheduleTarget,
 } from "@/lib/social/scheduling";
+import { SocialHistoryPanel } from "./social-history-panel";
 import { SocialScheduleList, type SocialScheduleWithActivity } from "./social-schedule-list";
 
 interface SocialSchedulePanelProps {
   structureId: string;
   socialPosts: GeneratedSocialPost[];
   initialSchedules: SocialScheduleWithActivity[];
+  initialHistory: SocialPublishHistoryJob[];
 }
 
 interface ScheduleApiResponse {
@@ -90,6 +93,7 @@ export function SocialSchedulePanel({
   structureId,
   socialPosts,
   initialSchedules,
+  initialHistory,
 }: SocialSchedulePanelProps) {
   const [browserTimeZone, setBrowserTimeZone] = useState("UTC");
   const [schedules, setSchedules] = useState<SocialScheduleWithActivity[]>(initialSchedules);
@@ -418,6 +422,8 @@ export function SocialSchedulePanel({
         onCancel={handleCancel}
         onRunNow={handleRunNow}
       />
+
+      <SocialHistoryPanel initialItems={initialHistory} />
     </section>
   );
 }

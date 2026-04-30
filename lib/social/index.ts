@@ -57,3 +57,4 @@ export { buildSocialPreviewResponse } from "./preview";
 
 export { socialGenerationScenarios } from "./scenarios";
 export * from "./scheduling";
+export * from "./history";

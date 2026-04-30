@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { createSocialPublishHistoryForInstagramJob } from "@/lib/social/history";
 import { logger } from "@/lib/observability";
 import { getSocialPostById } from "@/lib/social";
 import {
@@ -6,6 +7,7 @@ import {
   executeInstagramPublishJob,
   getInstagramConnection,
   prepareInstagramPublishPayload,
+  updateInstagramPublishJob,
 } from "@/lib/social/instagram";
 import { getServerUser } from "@/lib/supabase/server";
 
@@ -76,6 +78,30 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       maxAttempts: body.maxAttempts,
       metadata: {
         source: "api/social/instagram/publish",
+        structureId: socialPost.structureId,
+      },
+    });
+
+    const history = await createSocialPublishHistoryForInstagramJob({
+      job,
+      source: "manual",
+      sourceRefId: "api/social/instagram/publish",
+      structureId: socialPost.structureId,
+      socialPostId: socialPost.id,
+      tenantId:
+        (typeof user.app_metadata?.tenantId === "string" && user.app_metadata.tenantId) ||
+        (typeof user.user_metadata?.tenantId === "string" && user.user_metadata.tenantId) ||
+        undefined,
+      contentMetadata: {
+        hashtags: variant.hashtags,
+        callToAction: variant.callToAction,
+        metadata: variant.metadata,
+      },
+    });
+    await updateInstagramPublishJob(job.id, user.id, {
+      metadata_json: {
+        ...job.metadata,
+        historyJobId: history.id,
       },
     });
 
