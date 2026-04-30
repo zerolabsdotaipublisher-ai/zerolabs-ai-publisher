@@ -326,7 +326,7 @@ export async function retrySocialPublishFromHistory(
   }
 
   logger.info("Manual social publish retry triggered from history", {
-    category: "business",
+    category: "request",
     service: "social_history",
     historyJobId,
     publishJobId: publishJob.id,
