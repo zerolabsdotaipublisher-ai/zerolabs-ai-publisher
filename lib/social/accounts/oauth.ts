@@ -1,11 +1,14 @@
 import { randomBytes } from "node:crypto";
 import {
   assertInstagramMetaConfig,
+  DEFAULT_INSTAGRAM_SCOPES,
+  getInstagramGraphApiBaseUrl,
+} from "@/lib/social/instagram/config";
+import {
   buildInstagramOAuthAuthorizeUrl,
   exchangeCodeForMetaAccessToken,
   getInstagramBusinessAccountFromPages,
-  getInstagramGraphApiBaseUrl,
-} from "@/lib/social/instagram";
+} from "@/lib/social/instagram/oauth";
 import { getSocialAccountProvider } from "./providers";
 import type {
   SocialAccountPlatform,
@@ -39,7 +42,10 @@ export function buildSocialOAuthAuthorizeUrl(
   }
 
   if (platform === "instagram") {
-    return buildInstagramOAuthAuthorizeUrl(state, scopes);
+    return buildInstagramOAuthAuthorizeUrl(
+      state,
+      scopes as Array<(typeof DEFAULT_INSTAGRAM_SCOPES)[number]>,
+    );
   }
 
   throw new SocialAccountError("OAuth provider is not implemented.", {
