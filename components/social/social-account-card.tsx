@@ -17,7 +17,10 @@ function badgeClass(status: SocialAccountConnection["status"]): string {
 
 function formatDate(value?: string): string {
   if (!value) return "n/a";
-  return new Date(value).toLocaleString();
+  return new Date(value).toLocaleString(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
 }
 
 export function SocialAccountCard({ account, loading, onRefresh, onDisconnect }: SocialAccountCardProps) {

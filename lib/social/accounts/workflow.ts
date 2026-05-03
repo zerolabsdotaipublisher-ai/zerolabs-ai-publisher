@@ -23,6 +23,8 @@ import {
 import type { SocialAccountConnection, SocialAccountPlatform } from "./types";
 import { SocialAccountError } from "./validation";
 
+const TOKEN_EXPIRY_BUFFER_MS = 60_000;
+
 function mapProviderError(error: unknown): SocialAccountError {
   if (error instanceof SocialAccountError) {
     return error;
@@ -268,7 +270,7 @@ export async function getInstagramPublishingAccount(userId: string): Promise<Soc
   if (!account) return null;
 
   if (account.status === "connected") {
-    if (account.tokenExpiresAt && new Date(account.tokenExpiresAt).getTime() <= Date.now()) {
+    if (account.tokenExpiresAt && new Date(account.tokenExpiresAt).getTime() < Date.now() + TOKEN_EXPIRY_BUFFER_MS) {
       await markSocialAccountStatus({
         accountId: account.id,
         userId,

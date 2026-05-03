@@ -16,15 +16,18 @@ export function createSocialAccountConnectionId(userId: string, platform: Social
 
 function toConnection(row: SocialAccountConnectionRow): SocialAccountConnection {
   const status = normalizeConnectionStatus(row.connection_status, row.reauthorization_required);
+  // Backward compatibility for rows created before generalized account columns existed.
+  const fallbackFromInstagram = <T>(primary: T | null | undefined, legacy: T | null | undefined): T | undefined =>
+    primary ?? legacy ?? undefined;
 
   return {
     id: row.id,
     userId: row.user_id,
     platform: row.platform,
     status,
-    platformAccountId: row.platform_account_id ?? row.instagram_account_id ?? undefined,
-    displayName: row.account_display_name ?? row.instagram_username ?? undefined,
-    username: row.account_username ?? row.instagram_username ?? undefined,
+    platformAccountId: fallbackFromInstagram(row.platform_account_id, row.instagram_account_id),
+    displayName: fallbackFromInstagram(row.account_display_name, row.instagram_username),
+    username: fallbackFromInstagram(row.account_username, row.instagram_username),
     profileUrl: row.profile_url ?? undefined,
     profilePictureUrl: row.profile_picture_url ?? undefined,
     scopes: row.scopes ?? [],

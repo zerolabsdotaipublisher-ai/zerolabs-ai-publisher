@@ -7,19 +7,8 @@ import {
   markSocialAccountStatus,
   SocialAccountError,
 } from "@/lib/social/accounts";
+import { appendOAuthRedirectState } from "@/lib/social/accounts/redirect";
 import { getServerUser } from "@/lib/supabase/server";
-
-function appendRedirectState(url: string | undefined, key: string, value: string): string | undefined {
-  if (!url) return undefined;
-
-  try {
-    const parsed = new URL(url);
-    parsed.searchParams.set(key, value);
-    return parsed.toString();
-  } catch {
-    return undefined;
-  }
-}
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const user = await getServerUser();
@@ -46,7 +35,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       });
     }
 
-    const redirectUrl = appendRedirectState(returnTo, "socialAccountError", deniedError);
+    const redirectUrl = appendOAuthRedirectState(returnTo, "socialAccountError", deniedError);
     if (redirectUrl) {
       return NextResponse.redirect(redirectUrl);
     }
@@ -67,7 +56,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       state: payload.state,
     });
 
-    const redirectUrl = appendRedirectState(returnTo, "socialAccountConnected", connection.platform);
+    const redirectUrl = appendOAuthRedirectState(returnTo, "socialAccountConnected", connection.platform);
     if (redirectUrl) {
       return NextResponse.redirect(redirectUrl);
     }
@@ -102,7 +91,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       },
     });
 
-    const redirectUrl = appendRedirectState(returnTo, "socialAccountError", normalized.message);
+    const redirectUrl = appendOAuthRedirectState(returnTo, "socialAccountError", normalized.message);
     if (redirectUrl) {
       return NextResponse.redirect(redirectUrl);
     }
