@@ -44,7 +44,10 @@ export function normalizeConnectionStatus(
   status: string,
   reauthorizationRequired: boolean,
 ): SocialAccountConnectionStatus {
-  // Backward compatibility for pre-story-7-6 rows that used legacy status names.
+  // Backward compatibility for pre-story-7-6 rows that used legacy Story 7-3 naming:
+  // - reconnect_required: account needs user reauth after auth/provider errors.
+  // - token_expiring: token lifetime warning state now represented as expired/reauth required.
+  // - revoked: provider-side revocation/invalid credentials state now represented as invalid.
   if (status === "reconnect_required") return "reauthorization_required";
   if (status === "token_expiring") return "expired";
   if (status === "revoked") return "invalid";
