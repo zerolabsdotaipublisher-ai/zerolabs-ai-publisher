@@ -272,7 +272,7 @@ export async function markInstagramConnectionError(userId: string, message: stri
   const { error } = await supabase
     .from("social_account_connections")
     .update({
-      connection_status: "reconnect_required",
+      connection_status: "reauthorization_required",
       reauthorization_required: true,
       last_error: message,
     })

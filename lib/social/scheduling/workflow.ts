@@ -2,10 +2,10 @@ import "server-only";
 
 import { createSocialPublishHistoryForInstagramJob } from "@/lib/social/history";
 import { logger, metrics } from "@/lib/observability";
+import { getInstagramPublishingAccount } from "@/lib/social/accounts";
 import { getSocialPostById } from "@/lib/social/storage";
 import {
   executeInstagramPublishJob,
-  getInstagramConnection,
   prepareInstagramPublishPayload,
   createInstagramPublishJob,
   updateInstagramPublishJob,
@@ -138,8 +138,8 @@ async function executeInstagramTarget(args: {
     throw new Error(`No ${platform} variant is available for scheduled publishing.`);
   }
 
-  const connection = await getInstagramConnection(schedule.userId);
-  if (!connection || connection.connectionStatus !== "connected" || !connection.instagramAccountId) {
+  const connection = await getInstagramPublishingAccount(schedule.userId);
+  if (!connection || connection.status !== "connected" || !connection.instagramAccountId) {
     throw new Error("Instagram account is not connected for this user.");
   }
 

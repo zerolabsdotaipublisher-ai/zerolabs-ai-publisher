@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { SocialAccountConnection, SocialAccountProvider } from "@/lib/social/accounts/types";
 import type { GeneratedSocialPost } from "@/lib/social";
 import type { SocialPublishHistoryJob } from "@/lib/social/history";
 import type {
@@ -8,6 +9,7 @@ import type {
   SocialScheduleFrequency,
   SocialScheduleTarget,
 } from "@/lib/social/scheduling";
+import { SocialAccountManager } from "./social-account-manager";
 import { SocialHistoryPanel } from "./social-history-panel";
 import { SocialScheduleList, type SocialScheduleWithActivity } from "./social-schedule-list";
 
@@ -16,6 +18,8 @@ interface SocialSchedulePanelProps {
   socialPosts: GeneratedSocialPost[];
   initialSchedules: SocialScheduleWithActivity[];
   initialHistory: SocialPublishHistoryJob[];
+  initialAccounts: SocialAccountConnection[];
+  initialAccountProviders: SocialAccountProvider[];
 }
 
 interface ScheduleApiResponse {
@@ -94,6 +98,8 @@ export function SocialSchedulePanel({
   socialPosts,
   initialSchedules,
   initialHistory,
+  initialAccounts,
+  initialAccountProviders,
 }: SocialSchedulePanelProps) {
   const [browserTimeZone, setBrowserTimeZone] = useState("UTC");
   const [schedules, setSchedules] = useState<SocialScheduleWithActivity[]>(initialSchedules);
@@ -240,6 +246,7 @@ export function SocialSchedulePanel({
 
   return (
     <section className="content-schedule-panel" id="social-schedule" aria-label="Social schedule management">
+      <SocialAccountManager initialAccounts={initialAccounts} initialProviders={initialAccountProviders} />
       <div className="content-schedule-header">
         <div>
           <h2>Social schedule</h2>

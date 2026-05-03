@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { getInstagramPublishingAccount } from "@/lib/social/accounts";
 import {
-  getInstagramConnection,
   getInstagramPublishJob,
   listInstagramPublishJobs,
 } from "@/lib/social/instagram";
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   }
 
   const [connection, jobs] = await Promise.all([
-    getInstagramConnection(user.id),
+    getInstagramPublishingAccount(user.id),
     listInstagramPublishJobs(user.id, 25),
   ]);
   return NextResponse.json({

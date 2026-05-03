@@ -1,22 +1,41 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { logger } from "@/lib/observability";
 import {
   assertOAuthCallbackInput,
   finalizeSocialAccountCallback,
   getOwnedSocialAccountConnectionByPlatform,
   markSocialAccountStatus,
+  requireSocialAccountPlatform,
   SocialAccountError,
 } from "@/lib/social/accounts";
 import { appendOAuthRedirectState } from "@/lib/social/accounts/redirect";
 import { getServerUser } from "@/lib/supabase/server";
 
-export async function GET(request: NextRequest): Promise<NextResponse> {
+interface RouteContext {
+  params: Promise<{ platform: string }>;
+}
+
+export async function GET(request: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   const user = await getServerUser();
   if (!user) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
-  const existing = await getOwnedSocialAccountConnectionByPlatform(user.id, "instagram");
+  let platform;
+  try {
+    const { platform: platformParam } = await params;
+    platform = requireSocialAccountPlatform(platformParam);
+  } catch (error) {
+    const normalized =
+      error instanceof SocialAccountError
+        ? error
+        : new SocialAccountError("Unsupported social account provider.", {
+            code: "social_account_provider_unsupported",
+            statusCode: 422,
+          });
+    return NextResponse.json({ ok: false, error: normalized.message, code: normalized.code }, { status: normalized.statusCode });
+  }
+
+  const existing = await getOwnedSocialAccountConnectionByPlatform(user.id, platform);
   const returnTo =
     typeof existing?.metadata.oauthReturnTo === "string" && existing.metadata.oauthReturnTo
       ? existing.metadata.oauthReturnTo
@@ -40,7 +59,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       return NextResponse.redirect(redirectUrl);
     }
 
-    return NextResponse.json({ ok: false, error: deniedError }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: deniedError, code: "social_account_oauth_permission_denied" },
+      { status: 400 },
+    );
   }
 
   try {
@@ -51,7 +73,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     const connection = await finalizeSocialAccountCallback({
       userId: user.id,
-      platform: "instagram",
+      platform,
       code: payload.code,
       state: payload.state,
     });
@@ -62,11 +84,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     }
 
     return NextResponse.json({ ok: true, connection });
-  } catch (callbackError) {
+  } catch (error) {
     const normalized =
-      callbackError instanceof SocialAccountError
-        ? callbackError
-        : new SocialAccountError(callbackError instanceof Error ? callbackError.message : "Instagram callback failed.", {
+      error instanceof SocialAccountError
+        ? error
+        : new SocialAccountError(error instanceof Error ? error.message : "Social account callback failed.", {
             code: "social_account_callback_failed",
             statusCode: 500,
           });
@@ -81,24 +103,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       });
     }
 
-    logger.error("Instagram callback handling failed", {
-      category: "error",
-      service: "instagram",
-      userId: user.id,
-      error: {
-        name: "InstagramCallbackError",
-        message: normalized.message,
-      },
-    });
-
     const redirectUrl = appendOAuthRedirectState(returnTo, "socialAccountError", normalized.message);
     if (redirectUrl) {
       return NextResponse.redirect(redirectUrl);
     }
 
-    return NextResponse.json(
-      { ok: false, error: normalized.message, code: normalized.code },
-      { status: normalized.statusCode },
-    );
+    return NextResponse.json({ ok: false, error: normalized.message, code: normalized.code }, { status: normalized.statusCode });
   }
 }

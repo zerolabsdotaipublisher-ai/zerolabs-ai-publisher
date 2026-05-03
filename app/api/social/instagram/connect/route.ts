@@ -1,26 +1,19 @@
-import { NextResponse } from "next/server";
-import {
-  buildInstagramOAuthAuthorizeUrl,
-  createInstagramOAuthState,
-  DEFAULT_INSTAGRAM_SCOPES,
-  setInstagramConnectionConnecting,
-} from "@/lib/social/instagram";
+import { type NextRequest, NextResponse } from "next/server";
+import { beginSocialAccountConnection } from "@/lib/social/accounts";
+import { normalizeSafeOAuthReturnTo } from "@/lib/social/accounts/redirect";
 import { getServerUser } from "@/lib/supabase/server";
 
-export async function GET(): Promise<NextResponse> {
+export async function GET(request: NextRequest): Promise<NextResponse> {
   const user = await getServerUser();
   if (!user) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
-  const oauthState = createInstagramOAuthState();
-  await setInstagramConnectionConnecting({
+  const returnTo = normalizeSafeOAuthReturnTo(request.nextUrl.searchParams.get("returnTo"), request.nextUrl.origin);
+  const result = await beginSocialAccountConnection({
     userId: user.id,
-    state: oauthState.state,
-    expiresAt: oauthState.expiresAt,
-    scopes: [...DEFAULT_INSTAGRAM_SCOPES],
+    platform: "instagram",
+    returnTo,
   });
-
-  const redirectUrl = buildInstagramOAuthAuthorizeUrl(oauthState.state);
-  return NextResponse.redirect(redirectUrl);
+  return NextResponse.redirect(result.authorizeUrl);
 }
