@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { disconnectInstagramConnection } from "@/lib/social/instagram";
+import {
+  disconnectSocialAccountConnection,
+  getOwnedSocialAccountConnectionByPlatform,
+} from "@/lib/social/accounts";
 import { getServerUser } from "@/lib/supabase/server";
 
 export async function POST(): Promise<NextResponse> {
@@ -8,6 +11,11 @@ export async function POST(): Promise<NextResponse> {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
-  await disconnectInstagramConnection(user.id);
+  const account = await getOwnedSocialAccountConnectionByPlatform(user.id, "instagram");
+  if (!account) {
+    return NextResponse.json({ ok: false, error: "Instagram account is not connected." }, { status: 404 });
+  }
+
+  await disconnectSocialAccountConnection(account.id, user.id);
   return NextResponse.json({ ok: true });
 }

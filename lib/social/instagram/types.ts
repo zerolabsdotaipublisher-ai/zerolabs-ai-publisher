@@ -6,7 +6,10 @@ export type SocialConnectionStatus =
   | "connected"
   | "token_expiring"
   | "reconnect_required"
-  | "revoked";
+  | "revoked"
+  | "expired"
+  | "invalid"
+  | "reauthorization_required";
 
 export type InstagramPublishStatus =
   | "draft"

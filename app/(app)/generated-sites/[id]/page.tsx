@@ -10,6 +10,8 @@ import { VersionHistoryPanel } from "@/components/versions/version-history-panel
 import { detectPublicationState } from "@/lib/publish";
 import { resolveWebsitePageByPath } from "@/lib/routing";
 import { SocialSchedulePanel } from "@/components/social/social-schedule-panel";
+import { listSocialAccountProviders } from "@/lib/social/accounts";
+import { listSocialAccountConnections } from "@/lib/social/accounts/workflow";
 import { listOwnedSocialPublishHistoryJobs } from "@/lib/social/history";
 import { listSocialPostsByStructureId } from "@/lib/social";
 import {
@@ -99,11 +101,14 @@ export default async function GeneratedSitePage({ params, searchParams }: PagePr
   }
   const publication = detectPublicationState(structure);
   const versions = await listWebsiteVersions(id, user.id);
-  const [schedule, socialPosts, socialSchedules, socialHistoryResult] = await Promise.all([
+  const [schedule, socialPosts, socialSchedules, socialHistoryResult, socialAccounts, socialAccountProviders] =
+    await Promise.all([
     getOwnedContentScheduleByStructureId(id, user.id),
     listSocialPostsByStructureId(id, user.id),
     listOwnedSocialSchedules(user.id, { structureId: id }),
     listOwnedSocialPublishHistoryJobs(user.id, { page: 1, perPage: 20, platform: undefined, status: undefined }),
+    listSocialAccountConnections(user.id),
+    Promise.resolve(listSocialAccountProviders()),
   ]);
   const [scheduleRuns, socialScheduleDetails] = await Promise.all([
     schedule ? listOwnedContentScheduleRuns(schedule.id, user.id, 10) : Promise.resolve([]),
@@ -151,6 +156,8 @@ export default async function GeneratedSitePage({ params, searchParams }: PagePr
         socialPosts={socialPosts}
         initialSchedules={socialScheduleDetails}
         initialHistory={socialHistoryResult.items}
+        initialAccounts={socialAccounts}
+        initialAccountProviders={socialAccountProviders}
       />
       <VersionHistoryPanel structureId={structure.id} entries={versionEntries} />
       <Renderer structure={structure} pageSlug={resolvedSearchParams?.page || "/"} />

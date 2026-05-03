@@ -1,11 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createSocialPublishHistoryForInstagramJob } from "@/lib/social/history";
 import { logger } from "@/lib/observability";
+import { getInstagramPublishingAccount } from "@/lib/social/accounts";
 import { getSocialPostById } from "@/lib/social";
 import {
   createInstagramPublishJob,
   executeInstagramPublishJob,
-  getInstagramConnection,
   prepareInstagramPublishPayload,
   updateInstagramPublishJob,
 } from "@/lib/social/instagram";
@@ -56,8 +56,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
-  const connection = await getInstagramConnection(user.id);
-  if (!connection || connection.connectionStatus !== "connected" || !connection.instagramAccountId) {
+  const connection = await getInstagramPublishingAccount(user.id);
+  if (!connection || connection.status !== "connected" || !connection.instagramAccountId) {
     return NextResponse.json(
       { ok: false, error: "Instagram account is not connected for this user." },
       { status: 409 },
