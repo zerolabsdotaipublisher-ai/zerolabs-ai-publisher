@@ -12,6 +12,15 @@ interface BuildDashboardSummaryOptions {
   displayName?: string;
 }
 
+export function getDashboardUserDisplayName(userMetadata: unknown): string | undefined {
+  if (!userMetadata || typeof userMetadata !== "object") {
+    return undefined;
+  }
+
+  const value = (userMetadata as { full_name?: unknown }).full_name;
+  return typeof value === "string" ? value : undefined;
+}
+
 export async function buildDashboardSummary(options: BuildDashboardSummaryOptions): Promise<DashboardSummary> {
   const snapshot = await fetchDashboardStorageSnapshot(options.userId);
   const websitesByRecentUpdate = [...snapshot.websites].sort(

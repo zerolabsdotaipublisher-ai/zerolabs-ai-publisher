@@ -1,5 +1,10 @@
 import { DashboardHome } from "@/components/dashboard/dashboard-home";
-import { buildDashboardSummary, getDefaultDashboardErrorMessage } from "@/lib/dashboard";
+import {
+  buildDashboardSummary,
+  getDashboardUserDisplayName,
+  getDefaultDashboardErrorMessage,
+  type DashboardSummary,
+} from "@/lib/dashboard";
 import { getServerUser } from "@/lib/supabase/server";
 
 export default async function DashboardPage() {
@@ -9,15 +14,18 @@ export default async function DashboardPage() {
     return <DashboardHome initialError={getDefaultDashboardErrorMessage()} />;
   }
 
+  let initialError: string | undefined;
+  let initialSummary: DashboardSummary | undefined;
+
   try {
-    const summary = await buildDashboardSummary({
+    initialSummary = await buildDashboardSummary({
       userId: user.id,
       email: user.email ?? "",
-      displayName: typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name : undefined,
+      displayName: getDashboardUserDisplayName(user.user_metadata),
     });
-
-    return <DashboardHome initialSummary={summary} />;
   } catch {
-    return <DashboardHome initialError={getDefaultDashboardErrorMessage()} />;
+    initialError = getDefaultDashboardErrorMessage();
   }
+
+  return <DashboardHome initialSummary={initialSummary} initialError={initialError} />;
 }

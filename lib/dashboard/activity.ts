@@ -27,7 +27,7 @@ function toPublishActivity(snapshot: DashboardStorageSnapshot): DashboardRecentA
       href: website.generatedSitePath,
     }));
 
-  const resolveSocialPublishStatus = (
+  const getSocialPublishStatusForDisplay = (
     status: string,
   ): DashboardRecentActivityItem["status"] => {
     if (status === "failed") return "error";
@@ -41,7 +41,7 @@ function toPublishActivity(snapshot: DashboardStorageSnapshot): DashboardRecentA
     title: `Social publish (${history.platform})`,
     detail: `Status: ${history.status}`,
     timestamp: history.updatedAt,
-    status: resolveSocialPublishStatus(history.status),
+    status: getSocialPublishStatusForDisplay(history.status),
     href: routes.websites,
   }));
 

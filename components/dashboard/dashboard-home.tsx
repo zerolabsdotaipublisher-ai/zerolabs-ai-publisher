@@ -65,6 +65,11 @@ export function DashboardHome({ initialSummary, initialError }: DashboardHomePro
     }
   }
 
+  async function handleRefresh() {
+    await handleTrack("dashboard_refresh_clicked");
+    await loadSummary();
+  }
+
   if (loading && !summary) {
     return (
       <section className="dashboard-home-shell" aria-busy="true" aria-label="Loading dashboard">
@@ -111,10 +116,7 @@ export function DashboardHome({ initialSummary, initialError }: DashboardHomePro
         <button
           type="button"
           className="wizard-button-secondary"
-          onClick={() => {
-            void handleTrack("dashboard_refresh_clicked");
-            void loadSummary();
-          }}
+          onClick={() => void handleRefresh()}
           disabled={loading}
         >
           {loading ? "Refreshing..." : "Refresh"}

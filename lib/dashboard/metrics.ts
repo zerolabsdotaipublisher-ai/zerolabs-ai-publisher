@@ -7,11 +7,11 @@ export function buildDashboardMetrics(snapshot: DashboardStorageSnapshot): Dashb
     (website) => website.schedule?.status === "active" || website.schedule?.status === "running",
   ).length;
   const scheduledSocial = snapshot.socialSchedules.filter((schedule) =>
-    ["scheduled", "queued"].includes(schedule.status),
+    ["scheduled", "queued", "retry_pending"].includes(schedule.status),
   ).length;
   const failedSchedules =
     snapshot.websites.filter((website) => website.schedule?.status === "failed").length +
-    snapshot.socialSchedules.filter((schedule) => ["failed", "retry_pending"].includes(schedule.status)).length;
+    snapshot.socialSchedules.filter((schedule) => schedule.status === "failed").length;
 
   const failedPublishes =
     snapshot.websites.filter((website) => website.status === "update_failed").length +
