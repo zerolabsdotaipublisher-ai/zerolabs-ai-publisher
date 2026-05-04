@@ -120,7 +120,7 @@ Variables are classified along two axes:
 
 | Variable | Public | Required | Default | Description |
 |---|---|---|---|---|
-| `NEXT_PUBLIC_APP_NAME` | ✅ | Required now | `AI Publisher` | Display name shown in the UI |
+| `NEXT_PUBLIC_APP_NAME` | ✅ | Required now | `ZeroLabs AI Publisher` | Display name shown in the UI |
 | `NEXT_PUBLIC_APP_URL` | ✅ | Required now | `http://localhost:3000` | Canonical URL for this deployment |
 | `NODE_ENV` | — | Set by runtime | `development` | Set automatically by Next.js and Vercel; do not override |
 
@@ -351,12 +351,13 @@ Vercel variables can be scoped to one or more environments:
 
 1. Open [vercel.com](https://vercel.com) → select the `zerolabs-ai-publisher` project.
 2. Go to **Settings → Environment Variables**.
-3. Add each required variable for the **Production** and **Preview** scopes:
+3. Add each required variable for the **Production**, **Preview**, and **Development** scopes:
 
    ```
-   NEXT_PUBLIC_APP_NAME       = AI Publisher
+   NEXT_PUBLIC_APP_NAME       = ZeroLabs AI Publisher
    NEXT_PUBLIC_APP_URL        = https://your-production-domain.com   (Production)
    NEXT_PUBLIC_APP_URL        = https://your-preview-slug.vercel.app (Preview)
+   NEXT_PUBLIC_APP_URL        = http://localhost:3000                (Development)
    NEXT_PUBLIC_SUPABASE_URL   = https://your-project.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY = <from Supabase console>
    SUPABASE_SERVICE_ROLE_KEY  = <from Supabase console>
@@ -372,6 +373,17 @@ vercel env pull .env.local
 ```
 
 This populates `.env.local` from the Vercel **Development** scope. Only run this if you have the Vercel CLI installed and are a project collaborator.
+
+## GitHub validation setup
+
+If your repository uses GitHub Actions for lint/build validation, ensure the build step receives:
+
+```yaml
+env:
+  NEXT_PUBLIC_APP_NAME: ZeroLabs AI Publisher
+```
+
+Also provide other required non-secret and secret variables used by `config/env.ts` so `npm run build` can pass in CI.
 
 ---
 
