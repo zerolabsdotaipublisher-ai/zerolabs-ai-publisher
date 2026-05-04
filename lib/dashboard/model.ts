@@ -14,6 +14,9 @@ interface BuildDashboardSummaryOptions {
 
 export async function buildDashboardSummary(options: BuildDashboardSummaryOptions): Promise<DashboardSummary> {
   const snapshot = await fetchDashboardStorageSnapshot(options.userId);
+  const websitesByRecentUpdate = [...snapshot.websites].sort(
+    (left, right) => new Date(right.lastUpdatedAt).getTime() - new Date(left.lastUpdatedAt).getTime(),
+  );
 
   const websiteSummary = {
     total: snapshot.websites.length,
@@ -21,7 +24,7 @@ export async function buildDashboardSummary(options: BuildDashboardSummaryOption
     draft: snapshot.websites.filter((website) => website.status === "draft").length,
     archived: snapshot.websites.filter((website) => website.status === "archived").length,
     attentionRequired: snapshot.websites.filter((website) => website.status === "update_failed").length,
-    recentlyUpdated: snapshot.websites.slice(0, 6).map((website) => ({
+    recentlyUpdated: websitesByRecentUpdate.slice(0, 6).map((website) => ({
       id: website.id,
       title: website.title,
       status: website.status,

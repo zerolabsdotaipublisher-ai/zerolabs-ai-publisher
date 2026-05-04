@@ -6,7 +6,7 @@ export function buildDashboardMetrics(snapshot: DashboardStorageSnapshot): Dashb
     (website) => website.schedule?.status === "active" || website.schedule?.status === "running",
   ).length;
   const scheduledSocial = snapshot.socialSchedules.filter((schedule) =>
-    ["scheduled", "queued", "retry_pending"].includes(schedule.status),
+    ["scheduled", "queued"].includes(schedule.status),
   ).length;
   const failedSchedules =
     snapshot.websites.filter((website) => website.schedule?.status === "failed").length +

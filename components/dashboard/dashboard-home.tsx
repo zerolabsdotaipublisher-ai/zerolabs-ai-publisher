@@ -130,7 +130,7 @@ export function DashboardHome({ initialSummary, initialError }: DashboardHomePro
           hint="Owned website records"
         />
         <DashboardMetricCard
-          label="Published websites/content"
+          label="Published websites + content"
           value={summary.metrics.publishedItems}
           hint="Live websites and published generated content"
         />

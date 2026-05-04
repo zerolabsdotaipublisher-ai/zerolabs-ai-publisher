@@ -47,7 +47,7 @@ function toContentActivity(snapshot: DashboardStorageSnapshot): DashboardRecentA
     title: `Generated ${row.content_type} content`,
     detail: `Page: ${row.page_slug}`,
     timestamp: row.updated_at,
-    status: row.content_status === "scheduled" ? "warning" : "info",
+    status: "info",
     href: routes.websites,
   }));
 }
