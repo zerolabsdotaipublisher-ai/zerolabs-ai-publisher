@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { getDefaultDashboardErrorMessage, isDashboardSummaryEmpty, type DashboardSummary } from "@/lib/dashboard";
+import { getDefaultDashboardErrorMessage, isDashboardSummaryEmpty } from "@/lib/dashboard/client";
+import type { DashboardSummary } from "@/lib/dashboard/types";
 import { DashboardAlerts } from "./dashboard-alerts";
 import { DashboardContentSummarySection } from "./dashboard-content-summary";
 import { DashboardMetricCard } from "./dashboard-metric-card";

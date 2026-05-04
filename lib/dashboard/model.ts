@@ -5,6 +5,7 @@ import { DASHBOARD_MVP_BOUNDARIES, DASHBOARD_QUICK_ACTIONS, isAccountAttentionRe
 import { fetchDashboardStorageSnapshot } from "./storage";
 import { buildDashboardMetrics } from "./metrics";
 import type { DashboardSummary } from "./types";
+export { isDashboardSummaryEmpty, getDefaultDashboardErrorMessage } from "./client";
 
 interface BuildDashboardSummaryOptions {
   userId: string;
@@ -82,19 +83,6 @@ export async function buildDashboardSummary(options: BuildDashboardSummaryOption
     alerts: buildDashboardAlerts(snapshot),
     mvpBoundaries: [...DASHBOARD_MVP_BOUNDARIES],
   };
-}
-
-export function isDashboardSummaryEmpty(summary: DashboardSummary): boolean {
-  return (
-    summary.metrics.totalWebsites === 0 &&
-    summary.metrics.generatedContentCount === 0 &&
-    summary.socialSummary.generatedPosts === 0 &&
-    summary.socialSummary.connectedAccounts === 0
-  );
-}
-
-export function getDefaultDashboardErrorMessage(): string {
-  return "Unable to load dashboard summary right now. Please retry.";
 }
 
 export function getDashboardFallbackHref(): string {
