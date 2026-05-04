@@ -1,12 +1,11 @@
-import { DashboardHome } from "@/components/dashboard/dashboard-home";
+import { NextResponse } from "next/server";
 import { buildDashboardSummary, getDefaultDashboardErrorMessage } from "@/lib/dashboard";
 import { getServerUser } from "@/lib/supabase/server";
 
-export default async function DashboardPage() {
+export async function GET(): Promise<NextResponse> {
   const user = await getServerUser();
-
   if (!user) {
-    return <DashboardHome initialError={getDefaultDashboardErrorMessage()} />;
+    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
   try {
@@ -16,8 +15,8 @@ export default async function DashboardPage() {
       displayName: typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name : undefined,
     });
 
-    return <DashboardHome initialSummary={summary} />;
+    return NextResponse.json({ ok: true, summary });
   } catch {
-    return <DashboardHome initialError={getDefaultDashboardErrorMessage()} />;
+    return NextResponse.json({ ok: false, error: getDefaultDashboardErrorMessage() }, { status: 500 });
   }
 }
