@@ -1,4 +1,5 @@
 import type { DashboardMetricSummary, DashboardStorageSnapshot } from "./types";
+import { isAccountAttentionRequired } from "./schema";
 
 export function buildDashboardMetrics(snapshot: DashboardStorageSnapshot): DashboardMetricSummary {
   const publishedWebsites = snapshot.websites.filter((website) => website.status === "published").length;
@@ -16,9 +17,7 @@ export function buildDashboardMetrics(snapshot: DashboardStorageSnapshot): Dashb
     snapshot.websites.filter((website) => website.status === "update_failed").length +
     snapshot.socialHistory.filter((history) => history.status === "failed").length;
 
-  const accountAttention = snapshot.socialAccounts.filter(
-    (account) => account.reauthorizationRequired || ["expired", "invalid", "reauthorization_required"].includes(account.status),
-  ).length;
+  const accountAttention = snapshot.socialAccounts.filter(isAccountAttentionRequired).length;
 
   return {
     totalWebsites: snapshot.websites.length,

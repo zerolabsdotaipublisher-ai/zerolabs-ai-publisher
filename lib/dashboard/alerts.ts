@@ -1,4 +1,5 @@
 import { routes } from "@/config/routes";
+import { isAccountAttentionRequired } from "./schema";
 import type { DashboardAlert, DashboardStorageSnapshot } from "./types";
 
 export function buildDashboardAlerts(snapshot: DashboardStorageSnapshot): DashboardAlert[] {
@@ -42,9 +43,7 @@ export function buildDashboardAlerts(snapshot: DashboardStorageSnapshot): Dashbo
     });
   }
 
-  const accountsNeedingReauth = snapshot.socialAccounts.filter(
-    (account) => account.reauthorizationRequired || ["expired", "invalid", "reauthorization_required"].includes(account.status),
-  ).length;
+  const accountsNeedingReauth = snapshot.socialAccounts.filter(isAccountAttentionRequired).length;
   if (accountsNeedingReauth > 0) {
     alerts.push({
       id: "social-account-reauth",

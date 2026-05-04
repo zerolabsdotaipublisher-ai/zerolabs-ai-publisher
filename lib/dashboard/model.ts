@@ -1,7 +1,7 @@
 import { routes } from "@/config/routes";
 import { buildDashboardRecentActivity } from "./activity";
 import { buildDashboardAlerts } from "./alerts";
-import { DASHBOARD_MVP_BOUNDARIES, DASHBOARD_QUICK_ACTIONS } from "./schema";
+import { DASHBOARD_MVP_BOUNDARIES, DASHBOARD_QUICK_ACTIONS, isAccountAttentionRequired } from "./schema";
 import { fetchDashboardStorageSnapshot } from "./storage";
 import { buildDashboardMetrics } from "./metrics";
 import type { DashboardSummary } from "./types";
@@ -48,9 +48,7 @@ export async function buildDashboardSummary(options: BuildDashboardSummaryOption
 
   const socialSummary = {
     connectedAccounts: snapshot.socialAccounts.filter((account) => account.status === "connected").length,
-    accountsNeedingAttention: snapshot.socialAccounts.filter(
-      (account) => account.reauthorizationRequired || ["expired", "invalid", "reauthorization_required"].includes(account.status),
-    ).length,
+    accountsNeedingAttention: snapshot.socialAccounts.filter(isAccountAttentionRequired).length,
     generatedPosts: snapshot.socialPosts.length,
     scheduledPosts: snapshot.socialSchedules.filter((schedule) =>
       ["scheduled", "queued", "retry_pending"].includes(schedule.status),

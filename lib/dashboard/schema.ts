@@ -1,4 +1,5 @@
 import { routes } from "@/config/routes";
+import type { SocialAccountConnection } from "@/lib/social/accounts";
 import type { DashboardQuickAction } from "./types";
 
 export const DASHBOARD_MAX_RECENT_ACTIVITY = 12;
@@ -48,3 +49,10 @@ export const DASHBOARD_MVP_BOUNDARIES = [
   "Social account connection action targets current MVP-supported provider flow (Instagram).",
   "Alerting is lightweight and in-app only; no external notification delivery is introduced.",
 ] as const;
+
+export function isAccountAttentionRequired(account: SocialAccountConnection): boolean {
+  return (
+    account.reauthorizationRequired ||
+    ["expired", "invalid", "reauthorization_required"].includes(account.status)
+  );
+}

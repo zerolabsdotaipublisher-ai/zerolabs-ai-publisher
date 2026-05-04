@@ -1,5 +1,5 @@
 import { routes } from "@/config/routes";
-import { DASHBOARD_MAX_RECENT_ACTIVITY } from "./schema";
+import { DASHBOARD_MAX_RECENT_ACTIVITY, isAccountAttentionRequired } from "./schema";
 import type { DashboardRecentActivityItem, DashboardStorageSnapshot } from "./types";
 
 function toWebsiteActivity(snapshot: DashboardStorageSnapshot): DashboardRecentActivityItem[] {
@@ -27,13 +27,21 @@ function toPublishActivity(snapshot: DashboardStorageSnapshot): DashboardRecentA
       href: website.generatedSitePath,
     }));
 
+  const resolveSocialPublishStatus = (
+    status: string,
+  ): DashboardRecentActivityItem["status"] => {
+    if (status === "failed") return "error";
+    if (status === "published") return "success";
+    return "info";
+  };
+
   const socialPublishes = snapshot.socialHistory.slice(0, 10).map((history) => ({
     id: `publish_social_${history.id}_${history.updatedAt}`,
     type: "social_publish" as const,
     title: `Social publish (${history.platform})`,
     detail: `Status: ${history.status}`,
     timestamp: history.updatedAt,
-    status: history.status === "failed" ? "error" : history.status === "published" ? "success" : "info",
+    status: resolveSocialPublishStatus(history.status),
     href: routes.websites,
   }));
 
@@ -71,10 +79,7 @@ function toAccountActivity(snapshot: DashboardStorageSnapshot): DashboardRecentA
     title: `${account.platform} account`,
     detail: `Connection status: ${account.status}`,
     timestamp: account.updatedAt,
-    status:
-      account.reauthorizationRequired || ["expired", "invalid", "reauthorization_required"].includes(account.status)
-        ? "warning"
-        : "info",
+    status: isAccountAttentionRequired(account) ? "warning" : "info",
     href: routes.websites,
   }));
 }
