@@ -24,7 +24,7 @@ Open `.env.local` and provide real credentials for each **required now** variabl
 
 | Variable | Required | Description |
 |---|---|---|
-| `NEXT_PUBLIC_APP_NAME` | ✅ | Display name shown in the UI |
+| `NEXT_PUBLIC_APP_NAME` | ✅ | Display name shown in the UI (`ZeroLabs AI Publisher`) |
 | `NEXT_PUBLIC_APP_URL` | ✅ | Canonical URL — use `http://localhost:3000` locally |
 
 ### Supabase
@@ -99,7 +99,8 @@ To populate variables in the Vercel project for Preview and Production deploymen
 1. Open [vercel.com](https://vercel.com) → select the `zerolabs-ai-publisher` project.
 2. Go to **Settings → Environment Variables**.
 3. Add the required variables (see [docs/environment-variables.md — Vercel Environment Setup](../environment-variables.md#vercel-environment-setup)) for **Production** and **Preview** scopes.
-4. Trigger a redeploy after adding variables.
+4. Ensure `NEXT_PUBLIC_APP_NAME` is set to `ZeroLabs AI Publisher` in **Production**, **Preview**, and **Development** scopes.
+5. Trigger a redeploy after adding variables.
 
 Alternatively, pull Vercel variables to your local `.env.local` using the Vercel CLI:
 

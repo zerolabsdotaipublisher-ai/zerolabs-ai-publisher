@@ -1,17 +1,31 @@
-import Link from "next/link";
-import { routes } from "@/config/routes";
+import { DashboardHome } from "@/components/dashboard/dashboard-home";
+import {
+  buildDashboardSummary,
+  getDashboardUserDisplayName,
+  getDefaultDashboardErrorMessage,
+  type DashboardSummary,
+} from "@/lib/dashboard";
 import { getServerUser } from "@/lib/supabase/server";
 
 export default async function DashboardPage() {
   const user = await getServerUser();
 
-  return (
-    <section className="dashboard-panel">
-      <h1>Dashboard</h1>
-      <p>Signed in as {user?.email}</p>
-      <p>Ready to generate a new website?</p>
-      <Link href={routes.createWebsite}>Create website</Link>
-      <Link href={routes.websites}>Manage websites</Link>
-    </section>
-  );
+  if (!user) {
+    return <DashboardHome initialError={getDefaultDashboardErrorMessage()} />;
+  }
+
+  let initialError: string | undefined;
+  let initialSummary: DashboardSummary | undefined;
+
+  try {
+    initialSummary = await buildDashboardSummary({
+      userId: user.id,
+      email: user.email ?? "",
+      displayName: getDashboardUserDisplayName(user.user_metadata),
+    });
+  } catch {
+    initialError = getDefaultDashboardErrorMessage();
+  }
+
+  return <DashboardHome initialSummary={initialSummary} initialError={initialError} />;
 }

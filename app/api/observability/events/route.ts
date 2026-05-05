@@ -15,6 +15,12 @@ const allowedEvents = new Set([
   "publish_retry_clicked",
   "update_completed",
   "update_noop",
+  "dashboard_refresh_clicked",
+  "dashboard_quick_action_create_website",
+  "dashboard_quick_action_generate_content",
+  "dashboard_quick_action_view_websites",
+  "dashboard_quick_action_schedule_social_post",
+  "dashboard_quick_action_connect_social_account",
 ]);
 
 interface EventBody {
