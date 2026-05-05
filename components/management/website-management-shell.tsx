@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type {
   WebsiteListPage,
   WebsiteManagementRecord,
@@ -59,9 +59,9 @@ export function WebsiteManagementShell({ initialListing }: WebsiteManagementShel
     return () => clearTimeout(timeout);
   }, [query]);
 
-  async function loadWebsites(options: { append: boolean; targetPage?: number }) {
+  const loadWebsites = useCallback(async (options: { append: boolean; targetPage: number }) => {
     const controller = new AbortController();
-    const nextPage = options.targetPage ?? (options.append ? page + 1 : 1);
+    const nextPage = options.targetPage;
 
     if (options.append) {
       setLoadingMore(true);
@@ -94,7 +94,7 @@ export function WebsiteManagementShell({ initialListing }: WebsiteManagementShel
       setWebsites((current) => (options.append ? [...current, ...body.websites!] : body.websites!));
       setTotal(body.total ?? body.websites.length);
       setPage(body.page ?? nextPage);
-      setPerPage(body.perPage ?? perPage);
+      setPerPage(body.perPage ?? perPage ?? DEFAULT_PER_PAGE);
       setHasMore(Boolean(body.hasMore));
       if (!options.append) {
         setSelectedIds([]);
@@ -107,11 +107,11 @@ export function WebsiteManagementShell({ initialListing }: WebsiteManagementShel
       setLoading(false);
       setLoadingMore(false);
     }
-  }
+  }, [debouncedQuery, includeDeleted, perPage, publishState, status, websiteType]);
 
   useEffect(() => {
     void loadWebsites({ append: false, targetPage: 1 });
-  }, [debouncedQuery, status, publishState, websiteType, includeDeleted]);
+  }, [loadWebsites]);
 
   async function runMutation(path: string, payload: object): Promise<WebsiteMutationResponse> {
     const response = await fetch(path, {
@@ -306,7 +306,7 @@ export function WebsiteManagementShell({ initialListing }: WebsiteManagementShel
             <button
               type="button"
               className="wizard-button-secondary"
-              onClick={() => void loadWebsites({ append: true })}
+              onClick={() => void loadWebsites({ append: true, targetPage: page + 1 })}
               disabled={loading || loadingMore}
             >
               Load more
