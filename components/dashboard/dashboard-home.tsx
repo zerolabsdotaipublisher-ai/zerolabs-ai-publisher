@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getDefaultDashboardErrorMessage, isDashboardSummaryEmpty } from "@/lib/dashboard/client";
 import type { DashboardSummary } from "@/lib/dashboard/types";
 import { DashboardAlerts } from "./dashboard-alerts";
@@ -35,8 +35,10 @@ export function DashboardHome({ initialSummary, initialError }: DashboardHomePro
   const [loading, setLoading] = useState(!initialSummary && !initialError);
   const [error, setError] = useState<string | undefined>(initialError);
 
-  async function loadSummary() {
-    setLoading(true);
+  const loadSummary = useCallback(async (options: { silent?: boolean } = {}) => {
+    if (!options.silent) {
+      setLoading(true);
+    }
     setError(undefined);
 
     try {
@@ -54,9 +56,19 @@ export function DashboardHome({ initialSummary, initialError }: DashboardHomePro
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : getDefaultDashboardErrorMessage());
     } finally {
-      setLoading(false);
+      if (!options.silent) {
+        setLoading(false);
+      }
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      void loadSummary({ silent: true });
+    }, 30000);
+
+    return () => clearInterval(intervalId);
+  }, [loadSummary]);
 
   async function handleTrack(eventName: string) {
     try {
@@ -95,7 +107,7 @@ export function DashboardHome({ initialSummary, initialError }: DashboardHomePro
           <p>We could not load your dashboard summary.</p>
         </header>
         <p className="dashboard-error-state">{error || getDefaultDashboardErrorMessage()}</p>
-        <button type="button" onClick={() => void loadSummary()}>
+          <button type="button" onClick={() => void loadSummary()}>
           Retry
         </button>
       </section>

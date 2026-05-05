@@ -1,18 +1,10 @@
-import type { PublicationState } from "@/lib/publish";
+import type { PublishingStatusUiState } from "@/lib/publish/status";
+import { toPublishingStatusLabel } from "@/lib/publish/status";
 
 interface PublishStatusBadgeProps {
-  state: PublicationState;
+  state: PublishingStatusUiState;
 }
 
-const labels: Record<PublicationState, string> = {
-  draft: "Draft",
-  publishing: "Publishing",
-  published: "Published",
-  update_pending: "Unpublished changes",
-  update_failed: "Update failed",
-  unpublished: "Unpublished",
-};
-
 export function PublishStatusBadge({ state }: PublishStatusBadgeProps) {
-  return <span className={`publish-status-badge publish-status-${state}`}>{labels[state]}</span>;
+  return <span className={`publish-status-badge publish-status-${state}`}>{toPublishingStatusLabel(state)}</span>;
 }

@@ -1,19 +1,11 @@
-import type { PublicationState } from "@/lib/publish";
 import type { WebsiteStructure, WebsiteStructureStatus, WebsiteType } from "@/lib/ai/structure";
+import type { PublishingStatusModel, PublishingStatusUiState } from "@/lib/publish/status";
 import type { ContentScheduleSummary } from "@/lib/scheduling";
 
-export type WebsiteLifecycleStatus =
-  | "draft"
-  | "published"
-  | "update_pending"
-  | "publishing"
-  | "update_failed"
-  | "unpublished"
-  | "archived"
-  | "deleted";
+export type WebsiteLifecycleStatus = PublishingStatusUiState;
 
 export type WebsiteStatusFilter = WebsiteLifecycleStatus | "all";
-export type WebsitePublishStateFilter = PublicationState | "all";
+export type WebsitePublishStateFilter = PublishingStatusUiState | "all";
 export type WebsiteTypeFilter = WebsiteType | "all";
 
 export interface WebsiteManagementRecord {
@@ -24,7 +16,8 @@ export interface WebsiteManagementRecord {
   status: WebsiteLifecycleStatus;
   structureStatus: WebsiteStructureStatus;
   websiteType: WebsiteType;
-  publicationState: PublicationState;
+  publicationState: PublishingStatusUiState;
+  publishStatus: PublishingStatusModel;
   lastUpdatedAt: string;
   lastPublishedAt?: string;
   generatedAt: string;

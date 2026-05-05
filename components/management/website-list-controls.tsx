@@ -20,11 +20,11 @@ interface WebsiteListControlsProps {
 const STATUS_OPTIONS: Array<{ value: WebsiteStatusFilter; label: string }> = [
   { value: "all", label: "All lifecycle statuses" },
   { value: "draft", label: "Draft" },
-  { value: "published", label: "Published" },
-  { value: "update_pending", label: "Update pending" },
+  { value: "live", label: "Live" },
+  { value: "unpublished_changes", label: "Updates pending" },
   { value: "publishing", label: "Publishing" },
-  { value: "update_failed", label: "Update failed" },
-  { value: "unpublished", label: "Unpublished" },
+  { value: "updating", label: "Updating" },
+  { value: "failed", label: "Failed" },
   { value: "archived", label: "Archived" },
   { value: "deleted", label: "Deleted" },
 ];
@@ -33,10 +33,12 @@ const PUBLISH_STATE_OPTIONS: Array<{ value: WebsitePublishStateFilter; label: st
   { value: "all", label: "All publish states" },
   { value: "draft", label: "Draft" },
   { value: "publishing", label: "Publishing" },
-  { value: "published", label: "Published" },
-  { value: "update_pending", label: "Update pending" },
-  { value: "update_failed", label: "Update failed" },
-  { value: "unpublished", label: "Unpublished" },
+  { value: "updating", label: "Updating" },
+  { value: "live", label: "Live" },
+  { value: "unpublished_changes", label: "Updates pending" },
+  { value: "failed", label: "Failed" },
+  { value: "archived", label: "Archived" },
+  { value: "deleted", label: "Deleted" },
 ];
 
 const WEBSITE_TYPE_OPTIONS: Array<{ value: WebsiteTypeFilter; label: string }> = [
