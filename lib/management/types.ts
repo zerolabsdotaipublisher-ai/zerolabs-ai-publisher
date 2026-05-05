@@ -1,5 +1,5 @@
 import type { PublicationState } from "@/lib/publish";
-import type { WebsiteStructure, WebsiteStructureStatus } from "@/lib/ai/structure";
+import type { WebsiteStructure, WebsiteStructureStatus, WebsiteType } from "@/lib/ai/structure";
 import type { ContentScheduleSummary } from "@/lib/scheduling";
 
 export type WebsiteLifecycleStatus =
@@ -13,6 +13,8 @@ export type WebsiteLifecycleStatus =
   | "deleted";
 
 export type WebsiteStatusFilter = WebsiteLifecycleStatus | "all";
+export type WebsitePublishStateFilter = PublicationState | "all";
+export type WebsiteTypeFilter = WebsiteType | "all";
 
 export interface WebsiteManagementRecord {
   id: string;
@@ -21,6 +23,7 @@ export interface WebsiteManagementRecord {
   description?: string;
   status: WebsiteLifecycleStatus;
   structureStatus: WebsiteStructureStatus;
+  websiteType: WebsiteType;
   publicationState: PublicationState;
   lastUpdatedAt: string;
   lastPublishedAt?: string;
@@ -38,12 +41,28 @@ export interface WebsiteManagementRecord {
 export interface WebsiteListingOptions {
   query?: string;
   status?: WebsiteStatusFilter;
+  publishState?: WebsitePublishStateFilter;
+  websiteType?: WebsiteTypeFilter;
   includeDeleted?: boolean;
+  page?: number;
+  perPage?: number;
+}
+
+export interface WebsiteListPage {
+  websites: WebsiteManagementRecord[];
+  total: number;
+  page: number;
+  perPage: number;
+  hasMore: boolean;
 }
 
 export interface WebsiteListResponse {
   ok: true;
   websites: WebsiteManagementRecord[];
+  total: number;
+  page: number;
+  perPage: number;
+  hasMore: boolean;
 }
 
 export interface WebsiteMutationResponse {

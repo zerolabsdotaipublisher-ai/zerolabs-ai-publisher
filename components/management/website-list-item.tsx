@@ -48,6 +48,9 @@ export function WebsiteListItem({
 }: WebsiteListItemProps) {
   const isDeleted = website.status === "deleted";
   const statusActionLabel = website.structureStatus === "archived" ? "Activate" : "Archive";
+  const publishLabel = website.publicationState.replaceAll("_", " ");
+  const websiteTypeLabel = website.websiteType.replaceAll("-", " ");
+  const hasSocialSignals = Boolean(website.schedule);
 
   return (
     <article className="website-list-item">
@@ -69,6 +72,14 @@ export function WebsiteListItem({
       </header>
 
       <dl className="website-list-item-meta">
+        <div>
+          <dt>Website type</dt>
+          <dd>{websiteTypeLabel}</dd>
+        </div>
+        <div>
+          <dt>Publish state</dt>
+          <dd>{publishLabel}</dd>
+        </div>
         <div>
           <dt>Updated</dt>
           <dd>{new Date(website.lastUpdatedAt).toLocaleString()}</dd>
@@ -93,12 +104,17 @@ export function WebsiteListItem({
                 : "Not scheduled"}
           </dd>
         </div>
+        <div>
+          <dt>Social</dt>
+          <dd>{hasSocialSignals ? "Schedule-linked" : "No social signal"}</dd>
+        </div>
       </dl>
 
       <div className="website-list-item-links">
-        <Link href={website.generatedSitePath}>View</Link>
+        <Link href={website.generatedSitePath}>Manage</Link>
         <Link href={website.previewPath}>Preview</Link>
         <Link href={website.editorPath}>Edit</Link>
+        <Link href={website.previewPath}>Publish</Link>
         <Link href={`${website.generatedSitePath}#content-schedule`}>Schedule</Link>
         {website.liveUrl ? (
           <a href={website.liveUrl} target="_blank" rel="noreferrer">

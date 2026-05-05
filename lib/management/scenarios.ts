@@ -13,7 +13,8 @@ export const websiteManagementScenarios: WebsiteManagementScenario[] = [
   {
     id: "search-filter",
     name: "Search and filter",
-    expectedBehavior: "Search narrows by title/description while status filter reflects draft/published/archived/deleted states.",
+    expectedBehavior:
+      "Search narrows by website name while status/publish-state/type filters keep only matching owner-scoped records.",
   },
   {
     id: "rename-website",
@@ -44,5 +45,15 @@ export const websiteManagementScenarios: WebsiteManagementScenario[] = [
     id: "status-badge-correctness",
     name: "Status badge correctness",
     expectedBehavior: "Published/pending/archived/deleted badges reflect publish metadata plus management deletion metadata.",
+  },
+  {
+    id: "pagination-load-more",
+    name: "Incremental loading",
+    expectedBehavior: "Listing returns paginated records ordered by most recently updated and appends additional pages on demand.",
+  },
+  {
+    id: "loading-error-state",
+    name: "Loading and error handling",
+    expectedBehavior: "List shows loading skeletons while fetching and an actionable retry state on retrieval failure.",
   },
 ];
