@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { routes } from "@/config/routes";
 import type { DashboardWebsiteSummary } from "@/lib/dashboard";
 
 interface DashboardWebsiteSummaryProps {
@@ -47,6 +48,7 @@ export function DashboardWebsiteSummarySection({ summary }: DashboardWebsiteSumm
       ) : (
         <p className="dashboard-empty-note">No websites found yet.</p>
       )}
+      <Link href={routes.websites}>Manage all websites</Link>
     </section>
   );
 }

@@ -1,20 +1,50 @@
-import type { WebsiteManagementRecord, WebsiteStatusFilter } from "./types";
+import type {
+  WebsiteManagementRecord,
+  WebsitePublishStateFilter,
+  WebsiteStatusFilter,
+  WebsiteTypeFilter,
+} from "./types";
 
 export function filterWebsitesByStatus(
   websites: WebsiteManagementRecord[],
   status: WebsiteStatusFilter = "all",
   includeDeleted = false,
 ): WebsiteManagementRecord[] {
+  return filterWebsites(websites, { status, includeDeleted });
+}
+
+export function filterWebsites(
+  websites: WebsiteManagementRecord[],
+  options: {
+    status?: WebsiteStatusFilter;
+    publishState?: WebsitePublishStateFilter;
+    websiteType?: WebsiteTypeFilter;
+    includeDeleted?: boolean;
+  } = {},
+): WebsiteManagementRecord[] {
+  const status = options.status ?? "all";
+  const publishState = options.publishState ?? "all";
+  const websiteType = options.websiteType ?? "all";
+  const includeDeleted = options.includeDeleted ?? false;
+
   return websites.filter((website) => {
     if (!includeDeleted && website.status === "deleted") {
       return false;
     }
 
-    if (status === "all") {
-      return true;
+    if (status !== "all" && website.status !== status) {
+      return false;
     }
 
-    return website.status === status;
+    if (publishState !== "all" && website.publicationState !== publishState) {
+      return false;
+    }
+
+    if (websiteType !== "all" && website.websiteType !== websiteType) {
+      return false;
+    }
+
+    return true;
   });
 }
 

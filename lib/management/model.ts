@@ -35,6 +35,7 @@ export function toWebsiteManagementRecord(
     description,
     status: deriveWebsiteLifecycleStatus(structure),
     structureStatus: structure.status,
+    websiteType: structure.websiteType,
     publicationState: publication.state,
     generatedAt: structure.generatedAt,
     lastUpdatedAt: structure.updatedAt,
