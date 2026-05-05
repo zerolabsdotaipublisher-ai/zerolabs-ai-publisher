@@ -9,11 +9,22 @@ const DEFAULT_PAGE = 1;
 const DEFAULT_PER_PAGE = 12;
 const MAX_PER_PAGE = 50;
 
+function parsePositiveInt(value: number | string | undefined, fallback: number): number {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? Math.trunc(value) : fallback;
+  }
+  if (typeof value !== "string" || value.trim() === "") {
+    return fallback;
+  }
+  const parsed = Number.parseInt(value, 10);
+  return Number.isNaN(parsed) ? fallback : parsed;
+}
+
 function normalizePagination(options: WebsiteListingOptions): { page: number; perPage: number } {
-  const page = Math.max(DEFAULT_PAGE, Number.parseInt(String(options.page ?? DEFAULT_PAGE), 10) || DEFAULT_PAGE);
+  const page = Math.max(DEFAULT_PAGE, parsePositiveInt(options.page, DEFAULT_PAGE));
   const perPage = Math.min(
     MAX_PER_PAGE,
-    Math.max(1, Number.parseInt(String(options.perPage ?? DEFAULT_PER_PAGE), 10) || DEFAULT_PER_PAGE),
+    Math.max(1, parsePositiveInt(options.perPage, DEFAULT_PER_PAGE)),
   );
   return { page, perPage };
 }

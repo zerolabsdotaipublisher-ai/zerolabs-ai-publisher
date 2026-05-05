@@ -26,6 +26,16 @@ interface WebsiteListItemProps {
   onActivate: () => void;
 }
 
+function formatLabel(value: string): string {
+  return value
+    .replaceAll("_", " ")
+    .replaceAll("-", " ")
+    .split(" ")
+    .filter(Boolean)
+    .map((token) => `${token.charAt(0).toUpperCase()}${token.slice(1)}`)
+    .join(" ");
+}
+
 export function WebsiteListItem({
   website,
   deleting,
@@ -48,8 +58,8 @@ export function WebsiteListItem({
 }: WebsiteListItemProps) {
   const isDeleted = website.status === "deleted";
   const statusActionLabel = website.structureStatus === "archived" ? "Activate" : "Archive";
-  const publishLabel = website.publicationState.replaceAll("_", " ");
-  const websiteTypeLabel = website.websiteType.replaceAll("-", " ");
+  const publishLabel = formatLabel(website.publicationState);
+  const websiteTypeLabel = formatLabel(website.websiteType);
   const hasSocialSignals = Boolean(website.schedule);
 
   return (
@@ -114,7 +124,7 @@ export function WebsiteListItem({
         <Link href={website.generatedSitePath}>Manage</Link>
         <Link href={website.previewPath}>Preview</Link>
         <Link href={website.editorPath}>Edit</Link>
-        <Link href={website.previewPath}>Publish</Link>
+        <Link href={`${website.previewPath}?panel=publish`}>Open publish controls</Link>
         <Link href={`${website.generatedSitePath}#content-schedule`}>Schedule</Link>
         {website.liveUrl ? (
           <a href={website.liveUrl} target="_blank" rel="noreferrer">

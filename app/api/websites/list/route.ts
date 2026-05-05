@@ -74,11 +74,14 @@ function parseWebsiteTypeFilter(value: string | null): WebsiteTypeFilter {
 }
 
 function parsePage(value: string | null): number {
-  return Math.max(1, Number.parseInt(value ?? "1", 10) || 1);
+  const parsed = Number.parseInt(value ?? "", 10);
+  return Math.max(1, Number.isNaN(parsed) ? 1 : parsed);
 }
 
 function parsePerPage(value: string | null): number {
-  return Math.min(50, Math.max(1, Number.parseInt(value ?? "12", 10) || 12));
+  const parsed = Number.parseInt(value ?? "", 10);
+  const perPage = Number.isNaN(parsed) ? 12 : parsed;
+  return Math.min(50, Math.max(1, perPage));
 }
 
 export async function GET(request: NextRequest): Promise<NextResponse> {

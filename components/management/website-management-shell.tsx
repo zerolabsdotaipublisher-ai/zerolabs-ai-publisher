@@ -29,6 +29,7 @@ interface WebsiteListApiResponse {
 }
 
 const DEFAULT_PER_PAGE = 12;
+const SEARCH_DEBOUNCE_MS = 250;
 
 export function WebsiteManagementShell({ initialListing }: WebsiteManagementShellProps) {
   const [websites, setWebsites] = useState(initialListing.websites);
@@ -55,7 +56,7 @@ export function WebsiteManagementShell({ initialListing }: WebsiteManagementShel
   const [deleteErrorById, setDeleteErrorById] = useState<Record<string, string | undefined>>({});
 
   useEffect(() => {
-    const timeout = setTimeout(() => setDebouncedQuery(query.trim()), 250);
+    const timeout = setTimeout(() => setDebouncedQuery(query.trim()), SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(timeout);
   }, [query]);
 

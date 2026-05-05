@@ -10,17 +10,7 @@ export function filterWebsitesByStatus(
   status: WebsiteStatusFilter = "all",
   includeDeleted = false,
 ): WebsiteManagementRecord[] {
-  return websites.filter((website) => {
-    if (!includeDeleted && website.status === "deleted") {
-      return false;
-    }
-
-    if (status === "all") {
-      return true;
-    }
-
-    return website.status === status;
-  });
+  return filterWebsites(websites, { status, includeDeleted });
 }
 
 export function filterWebsites(
