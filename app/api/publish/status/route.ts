@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { getOwnedPublishingStatus } from "@/lib/publish/status";
+import { getOwnedPublishingStatus } from "@/lib/publish/status/storage";
 import { getServerUser } from "@/lib/supabase/server";
 
 export async function GET(request: NextRequest): Promise<NextResponse> {

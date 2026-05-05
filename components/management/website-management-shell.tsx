@@ -30,6 +30,7 @@ interface WebsiteListApiResponse {
 
 const DEFAULT_PER_PAGE = 12;
 const SEARCH_DEBOUNCE_MS = 250;
+const WEBSITE_LIST_POLL_INTERVAL_MS = 30_000;
 
 export function WebsiteManagementShell({ initialListing }: WebsiteManagementShellProps) {
   const [websites, setWebsites] = useState(initialListing.websites);
@@ -123,7 +124,7 @@ export function WebsiteManagementShell({ initialListing }: WebsiteManagementShel
   useEffect(() => {
     const intervalId = setInterval(() => {
       void loadWebsites({ append: false, targetPage: 1, silent: true });
-    }, 30000);
+    }, WEBSITE_LIST_POLL_INTERVAL_MS);
     return () => clearInterval(intervalId);
   }, [loadWebsites]);
 

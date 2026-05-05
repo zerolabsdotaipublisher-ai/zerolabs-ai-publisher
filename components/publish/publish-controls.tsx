@@ -21,6 +21,8 @@ interface PublishControlsProps {
   context: "editor" | "preview";
 }
 
+const PUBLISH_STATUS_POLL_INTERVAL_MS = 15_000;
+
 export function PublishControls({ structure, hasUnsavedChanges = false, context }: PublishControlsProps) {
   const [website, setWebsite] = useState<WebsiteStructure>(structure);
   const [loading, setLoading] = useState(false);
@@ -51,7 +53,6 @@ export function PublishControls({ structure, hasUnsavedChanges = false, context 
 
   useEffect(() => {
     let active = true;
-    let intervalId: ReturnType<typeof setInterval> | undefined;
 
     async function loadStatus(silent = true) {
       if (!silent) {
@@ -89,9 +90,9 @@ export function PublishControls({ structure, hasUnsavedChanges = false, context 
     }
 
     void loadStatus(false);
-    intervalId = setInterval(() => {
+    const intervalId = setInterval(() => {
       void loadStatus(true);
-    }, 15000);
+    }, PUBLISH_STATUS_POLL_INTERVAL_MS);
 
     return () => {
       active = false;
@@ -112,8 +113,8 @@ export function PublishControls({ structure, hasUnsavedChanges = false, context 
       event: "publish_started",
       structureId: website.id,
       action: selectedAction,
-        state: detection.state,
-      });
+      state: detection.state,
+    });
 
     try {
       const response = await fetch(endpoint, {

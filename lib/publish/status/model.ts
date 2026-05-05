@@ -3,6 +3,21 @@ import { validatePublishEligibility } from "@/lib/publish/validation";
 import type { BuildPublishingStatusModelParams, PublishingStatusModel } from "./types";
 import { mapBackendStatusToUiState, toPublishingStatusLabel } from "./mapping";
 
+function resolvePublishActionLabel(params: {
+  neverPublished: boolean;
+  hasUnpublishedChanges: boolean;
+}): string {
+  if (params.neverPublished) {
+    return "Publish website";
+  }
+
+  if (params.hasUnpublishedChanges) {
+    return "Publish updates";
+  }
+
+  return "Update live website";
+}
+
 export function buildPublishingStatusModel({
   structure,
   detection,
@@ -10,21 +25,20 @@ export function buildPublishingStatusModel({
 }: BuildPublishingStatusModelParams): PublishingStatusModel {
   const uiState = mapBackendStatusToUiState({ structure, detection });
   const publishAction = detection.neverPublished ? "publish" : "update";
-  const publishActionLabel = detection.neverPublished
-    ? "Publish website"
-    : detection.hasUnpublishedChanges
-      ? "Publish updates"
-      : "Update live website";
+  const publishActionLabel = resolvePublishActionLabel({
+    neverPublished: detection.neverPublished,
+    hasUnpublishedChanges: detection.hasUnpublishedChanges,
+  });
 
-  let disableReason: string | undefined;
+  let publishDisableReason: string | undefined;
   if (uiState === "deleted") {
-    disableReason = "Deleted websites cannot be published.";
+    publishDisableReason = "Deleted websites cannot be published.";
   } else if (uiState === "archived") {
-    disableReason = "Archived websites cannot be published.";
+    publishDisableReason = "Archived websites cannot be published.";
   } else if (uiState === "publishing" || uiState === "updating") {
-    disableReason = "A publish operation is already in progress.";
+    publishDisableReason = "A publish operation is already in progress.";
   } else if (!validation.eligible) {
-    disableReason = "This website is not eligible for publishing.";
+    publishDisableReason = "This website is not eligible for publishing.";
   }
 
   return {
@@ -52,8 +66,8 @@ export function buildPublishingStatusModel({
     action: {
       publishAction,
       publishActionLabel,
-      canTriggerPublishAction: !disableReason,
-      disableReason,
+      canTriggerPublishAction: !publishDisableReason,
+      disableReason: publishDisableReason,
     },
   };
 }

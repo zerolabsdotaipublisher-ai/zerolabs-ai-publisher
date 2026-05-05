@@ -22,6 +22,8 @@ interface DashboardHomeProps {
   initialError?: string;
 }
 
+const DASHBOARD_SUMMARY_POLL_INTERVAL_MS = 30_000;
+
 async function trackDashboardEvent(eventName: string): Promise<void> {
   await fetch("/api/observability/events", {
     method: "POST",
@@ -65,7 +67,7 @@ export function DashboardHome({ initialSummary, initialError }: DashboardHomePro
   useEffect(() => {
     const intervalId = setInterval(() => {
       void loadSummary({ silent: true });
-    }, 30000);
+    }, DASHBOARD_SUMMARY_POLL_INTERVAL_MS);
 
     return () => clearInterval(intervalId);
   }, [loadSummary]);
@@ -107,7 +109,7 @@ export function DashboardHome({ initialSummary, initialError }: DashboardHomePro
           <p>We could not load your dashboard summary.</p>
         </header>
         <p className="dashboard-error-state">{error || getDefaultDashboardErrorMessage()}</p>
-          <button type="button" onClick={() => void loadSummary()}>
+        <button type="button" onClick={() => void loadSummary()}>
           Retry
         </button>
       </section>
