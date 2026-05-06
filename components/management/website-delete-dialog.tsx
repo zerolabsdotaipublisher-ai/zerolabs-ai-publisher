@@ -22,7 +22,7 @@ export function WebsiteDeleteDialog({
   }
 
   return (
-    <div className="website-delete-dialog" role="alertdialog" aria-live="polite">
+    <div className="website-delete-dialog" role="alertdialog" aria-label="Delete website confirmation">
       <p>
         Delete <strong>{title}</strong>? This is a soft delete for MVP and removes the website from default management
         listings.

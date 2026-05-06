@@ -52,10 +52,8 @@ export function resolveWebsiteManagementControls(
           action: publishAction,
           label: publishAction === "publish" ? "Publish" : "Publish updates",
           disabled: publishDisabled,
-          reason:
-            website.publishStatus.isTransitional
-              ? "A publish action is already in progress."
-              : website.publishStatus.action.disableReason,
+          reason: website.publishStatus.action.disableReason
+            || (website.publishStatus.isTransitional ? "A publish action is already in progress." : undefined),
           requireConfirmation: true,
         }
       : undefined,

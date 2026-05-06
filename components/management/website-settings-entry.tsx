@@ -7,7 +7,7 @@ interface WebsiteSettingsEntryProps {
 
 export function WebsiteSettingsEntry({ href, disabled = false }: WebsiteSettingsEntryProps) {
   if (disabled) {
-    return <span aria-disabled="true">Settings</span>;
+    return <span>Settings unavailable</span>;
   }
 
   return <Link href={href}>Settings</Link>;

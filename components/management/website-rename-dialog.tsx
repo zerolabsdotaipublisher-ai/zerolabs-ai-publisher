@@ -25,7 +25,7 @@ export function WebsiteRenameDialog({
   }
 
   return (
-    <div className="website-rename-dialog" role="dialog" aria-modal="true" aria-live="polite">
+    <div className="website-rename-dialog" role="dialog" aria-modal="true" aria-label="Rename website metadata">
       <p>Update website title and listing description.</p>
       <label>
         <span>Website title</span>

@@ -144,7 +144,7 @@ export function WebsiteManagementActions({
       </div>
 
       {publishConfirmOpen && publishAction ? (
-        <div className="website-publish-confirm-dialog" role="alertdialog" aria-live="polite">
+        <div className="website-publish-confirm-dialog" role="alertdialog" aria-label="Publish confirmation">
           <p>
             Confirm {publishAction.action === "publish" ? "publish" : "publish updates"} for <strong>{website.title}</strong>?
           </p>
