@@ -13,5 +13,10 @@ const REVIEW_STATUS_CLASS: Record<ReviewState, string> = {
 };
 
 export function ReviewStatusBadge({ state }: ReviewStatusBadgeProps) {
-  return <span className={`review-status-badge ${REVIEW_STATUS_CLASS[state]}`}>{state.replaceAll("_", " ")}</span>;
+  const label = state.replaceAll("_", " ");
+  return (
+    <span className={`review-status-badge ${REVIEW_STATUS_CLASS[state]}`} aria-label={`Review status: ${label}`}>
+      {label}
+    </span>
+  );
 }

@@ -64,8 +64,12 @@ export function ReviewShell({ initialPage, initialQuery }: ReviewShellProps) {
       setTotal(body.total);
       setPage(body.page);
       setHasMore(body.hasMore);
-    } catch {
-      setError("Unable to load review queue.");
+    } catch (fetchError) {
+      setError(
+        fetchError instanceof TypeError
+          ? "Network error while loading review queue. Check your connection and retry."
+          : "Unable to load review queue.",
+      );
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -124,7 +128,7 @@ export function ReviewShell({ initialPage, initialQuery }: ReviewShellProps) {
         </label>
       </section>
 
-      <p className="review-meta">Showing {items.length} of {total} review items.</p>
+      <p className="review-meta" role="status" aria-live="polite">Showing {items.length} of {total} review items.</p>
 
       {error ? (
         <div className="review-error">

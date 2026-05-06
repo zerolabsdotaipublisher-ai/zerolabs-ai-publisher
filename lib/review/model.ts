@@ -164,6 +164,10 @@ export async function applyOwnedInlineEdit(
     return { ok: true };
   }
 
+  if (!payload.socialTitle.trim()) {
+    return { ok: false, error: "Social title cannot be empty." };
+  }
+
   const socialPost = await getSocialPostById(detail.item.sourceId, userId);
   if (!socialPost) {
     return { ok: false, error: "Social post not found" };
@@ -171,7 +175,7 @@ export async function applyOwnedInlineEdit(
 
   const normalized = {
     ...socialPost,
-    title: payload.socialTitle.trim() || socialPost.title,
+    title: payload.socialTitle.trim(),
     updatedAt: new Date().toISOString(),
     version: socialPost.version + 1,
   };

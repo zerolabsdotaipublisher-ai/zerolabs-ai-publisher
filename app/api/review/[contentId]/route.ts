@@ -72,6 +72,12 @@ export async function PATCH(
 
   if (body.reviewNote !== undefined || body.state !== undefined) {
     const parsed = parseDecisionState(body.state);
+    if (body.state !== undefined && !parsed) {
+      return NextResponse.json(
+        { ok: false, error: "state must be pending_review, approved, rejected, or needs_changes" },
+        { status: 400 },
+      );
+    }
     const state = parsed || (existingDetail.reviewState === "published" ? "approved" : existingDetail.reviewState);
 
     const stateResult = await setOwnedReviewState({

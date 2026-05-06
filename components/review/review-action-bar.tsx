@@ -16,6 +16,14 @@ interface ReviewActionResponse {
   validationErrors?: string[];
 }
 
+async function parseActionResponse(response: Response): Promise<ReviewActionResponse> {
+  try {
+    return (await response.json()) as ReviewActionResponse;
+  } catch {
+    return { ok: false, error: "Unexpected API response format." };
+  }
+}
+
 export function ReviewActionBar({ initialDetail }: ReviewActionBarProps) {
   const [detail, setDetail] = useState(initialDetail);
   const [note, setNote] = useState(initialDetail.reviewNote ?? "");
@@ -44,7 +52,7 @@ export function ReviewActionBar({ initialDetail }: ReviewActionBarProps) {
         : undefined,
     });
 
-    const body = (await response.json()) as ReviewActionResponse;
+    const body = await parseActionResponse(response);
     if (!response.ok || !body.ok || !body.detail) {
       setError(body.error || "Unable to run review action.");
       setLoadingState(undefined);
@@ -78,7 +86,7 @@ export function ReviewActionBar({ initialDetail }: ReviewActionBarProps) {
       }),
     });
 
-    const body = (await response.json()) as ReviewActionResponse;
+    const body = await parseActionResponse(response);
     if (!response.ok || !body.ok || !body.detail) {
       const validationMessage = body.validationErrors?.length
         ? `${body.error || "Invalid inline edit"}: ${body.validationErrors.join(", ")}`
