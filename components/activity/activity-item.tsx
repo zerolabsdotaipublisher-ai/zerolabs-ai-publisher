@@ -25,7 +25,7 @@ export function ActivityItem({ item, actionPendingId, onApiAction }: ActivityIte
     <article className={`activity-item activity-item-${item.status}`} aria-label={`${item.title} publishing activity`}>
       <header className="activity-item-header">
         <h3>{item.title}</h3>
-        <span className={`activity-status activity-status-${item.status}`}>{item.status.replace("_", " ")}</span>
+        <span className={`activity-status activity-status-${item.status}`}>{item.status.replaceAll("_", " ")}</span>
       </header>
 
       <dl className="activity-meta-grid">
@@ -35,7 +35,7 @@ export function ActivityItem({ item, actionPendingId, onApiAction }: ActivityIte
         </div>
         <div>
           <dt>Content type</dt>
-          <dd>{item.contentType.replace("_", " ")}</dd>
+          <dd>{item.contentType.replaceAll("_", " ")}</dd>
         </div>
         <div>
           <dt>Platform</dt>

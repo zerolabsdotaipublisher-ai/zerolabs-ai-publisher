@@ -38,6 +38,13 @@ function toDateInput(value: string | undefined): string {
   return value ? value.slice(0, 10) : "";
 }
 
+function resolveSectionItems(
+  segmentItems: PublishingActivityOverview["items"],
+  allItems: PublishingActivityOverview["items"],
+): PublishingActivityOverview["items"] {
+  return segmentItems.length > 0 ? segmentItems : allItems;
+}
+
 export function ActivityOverviewShell({ initialOverview }: ActivityOverviewShellProps) {
   const [overview, setOverview] = useState(initialOverview);
   const [platform, setPlatform] = useState<PublishingActivityPlatform | "all">(initialOverview.query.platform);
@@ -157,7 +164,7 @@ export function ActivityOverviewShell({ initialOverview }: ActivityOverviewShell
                 <p>Latest completed and in-flight events.</p>
               </header>
               <div className="activity-list">
-                {(overview.recent.length > 0 ? overview.recent : overview.items).slice(0, 10).map((item) => (
+                {resolveSectionItems(overview.recent, overview.items).slice(0, 10).map((item) => (
                   <ActivityItem key={`recent_${item.id}`} item={item} actionPendingId={actionPendingId} onApiAction={handleApiAction} />
                 ))}
               </div>

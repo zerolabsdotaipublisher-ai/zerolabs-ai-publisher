@@ -15,6 +15,19 @@ function toIsoNow(): string {
   return new Date().toISOString();
 }
 
+function getGeneratedContentTitlePrefix(contentType: "website" | "blog" | "article"): string {
+  switch (contentType) {
+    case "website":
+      return "Website page";
+    case "blog":
+      return "Blog post";
+    case "article":
+      return "Article";
+    default:
+      return "Content";
+  }
+}
+
 function normalizeSocialHistoryStatus(status: string): PublishingActivityStatus {
   if (status === "published") return "published";
   if (status === "failed") return "failed";
@@ -99,7 +112,7 @@ function toGeneratedContentItems(snapshot: PublishingActivityStorageSnapshot): P
         return null;
       }
 
-      const titlePrefix = row.content_type === "website" ? "Website page" : row.content_type === "blog" ? "Blog post" : "Article";
+      const titlePrefix = getGeneratedContentTitlePrefix(row.content_type);
 
       return {
         id: `content_${row.id}_${row.updated_at}`,
