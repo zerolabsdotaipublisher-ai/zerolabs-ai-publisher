@@ -6,6 +6,7 @@ export const routes = {
   resetPassword: "/reset-password",
   authCallback: "/auth/callback",
   dashboard: "/dashboard",
+  activity: "/activity",
   contentLibrary: "/content",
   websites: "/websites",
   createWebsite: "/create",

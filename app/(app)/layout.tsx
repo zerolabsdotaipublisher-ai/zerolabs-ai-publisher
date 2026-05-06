@@ -14,6 +14,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       <header className="app-header">
         <nav className="app-nav">
           <Link href={routes.dashboard}>Dashboard</Link>
+          <Link href={routes.activity}>Activity</Link>
           <Link href={routes.contentLibrary}>Content library</Link>
           <Link href={routes.createWebsite}>Create website</Link>
           <Link href={routes.websites}>Websites</Link>
