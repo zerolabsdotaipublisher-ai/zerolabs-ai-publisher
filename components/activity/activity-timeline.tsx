@@ -22,7 +22,7 @@ export function ActivityTimeline({ groups }: ActivityTimelineProps) {
             {group.items.map((item) => (
               <li key={item.id}>
                 <strong>{item.title}</strong>
-                <span>{item.status.replace("_", " ")}</span>
+                <span>{item.status.replaceAll("_", " ")}</span>
                 <time dateTime={item.occurredAt}>{new Date(item.occurredAt).toLocaleTimeString()}</time>
               </li>
             ))}

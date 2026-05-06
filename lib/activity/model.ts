@@ -236,10 +236,10 @@ function toSocialHistoryItems(snapshot: PublishingActivityStorageSnapshot): Publ
 
   return snapshot.socialHistory.map((history) => {
     const status = normalizeSocialHistoryStatus(history.status);
-    const titleCandidate = history.contentSnapshot.metadata.title;
+    const metadataTitle = history.contentSnapshot.metadata.title;
     const title =
-      typeof titleCandidate === "string" && titleCandidate.trim()
-        ? titleCandidate
+      typeof metadataTitle === "string" && metadataTitle.trim()
+        ? metadataTitle
         : history.contentSnapshot.caption.slice(0, 80) || `${history.platform} publish`;
     const occurredAt =
       history.completedAt || history.startedAt || history.retryAt || history.scheduledAt || history.updatedAt || history.createdAt;
