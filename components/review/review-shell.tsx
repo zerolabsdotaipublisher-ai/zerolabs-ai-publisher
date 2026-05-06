@@ -14,6 +14,7 @@ interface ReviewApiResponse extends ReviewListPage {
   error?: string;
 }
 
+// 250ms keeps search responsive while preventing excessive API churn on rapid typing.
 const SEARCH_DEBOUNCE_MS = 250;
 
 export function ReviewShell({ initialPage, initialQuery }: ReviewShellProps) {

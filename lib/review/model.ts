@@ -20,6 +20,8 @@ import { getOwnedReviewRecord, listOwnedReviewRecords } from "./storage";
 // Upper bound for a single server-side review aggregation pass.
 // This intentionally stays higher than default list pagination to avoid
 // per-card fan-out calls while keeping the request bounded for MVP.
+// 5000 comfortably exceeds the current source-table caps (500/table across
+// website/blog/article/social) while remaining a safe in-memory slice size.
 const MAX_SOURCE_SCAN = 5000;
 
 function resolveReviewState(item: ContentLibraryItem, record: ReviewRecord | null): ReviewState {
