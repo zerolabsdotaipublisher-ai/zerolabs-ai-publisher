@@ -28,11 +28,11 @@ export function canMutateWebsite(structure: WebsiteStructure, userId: string): b
 }
 
 export function canDeleteWebsite(structure: WebsiteStructure, userId: string): boolean {
-  return structure.userId === userId && !structure.management?.deletedAt;
+  return canMutateWebsite(structure, userId);
 }
 
 export function canRenameWebsite(structure: WebsiteStructure, userId: string): boolean {
-  return structure.userId === userId && !structure.management?.deletedAt;
+  return canMutateWebsite(structure, userId);
 }
 
 export function deriveWebsiteControlPermissions(
