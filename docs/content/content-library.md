@@ -59,7 +59,7 @@ SEO metadata is included as linked supporting metadata on cards (not noisy stand
 
 - Filters: content type, lifecycle status, linked website
 - Search: title + metadata keywords/campaign/site labels
-- Sorting: updated desc (default), created desc, title asc
+- Sorting: updated_desc (default), created_desc, title_asc
 - Pagination: incremental loading via API `page/perPage` with `hasMore`
 
 ## Quick actions

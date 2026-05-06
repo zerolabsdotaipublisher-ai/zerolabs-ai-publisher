@@ -1696,7 +1696,7 @@ a {
 }
 
 .content-library-card-skeleton {
-  min-height: 9rem;
+  min-height: var(--content-library-skeleton-min-height, 9rem);
   background: #f3f4f6;
 }
 

@@ -7,6 +7,8 @@ interface ContentLibraryCardProps {
   onDelete: (item: ContentLibraryItem) => void;
 }
 
+const MAX_VISIBLE_KEYWORDS = 8;
+
 function formatDate(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
@@ -26,7 +28,7 @@ export function ContentLibraryCard({ item, deleting, onDelete }: ContentLibraryC
       <dl className="content-library-meta-grid">
         <div>
           <dt>Type</dt>
-          <dd>{item.type.replace("_", " ")}</dd>
+          <dd>{item.type.replaceAll("_", " ")}</dd>
         </div>
         <div>
           <dt>Created</dt>
@@ -51,7 +53,9 @@ export function ContentLibraryCard({ item, deleting, onDelete }: ContentLibraryC
       </dl>
 
       {item.keywords.length > 0 ? (
-        <p className="content-library-keywords">Keywords: {item.keywords.slice(0, 8).join(", ")}</p>
+        <p className="content-library-keywords">
+          Keywords: {item.keywords.slice(0, MAX_VISIBLE_KEYWORDS).join(", ")}
+        </p>
       ) : null}
 
       <div className="content-library-actions">

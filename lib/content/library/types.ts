@@ -126,6 +126,7 @@ export interface ContentLibraryStorageSnapshot {
   articles: ContentLibraryRawArticleRow[];
   socialPosts: ContentLibraryRawSocialRow[];
   seoSiteMetadataByStructureId: Map<string, string[]>;
+  // Content schedules are reused to surface status indicators (e.g. active/running -> scheduled, failed -> failed).
   schedulesByStructureId: Map<string, { status: ScheduleStatus }>;
-  websitesByStructureId: Map<string, { id: string; title: string }>;
+  websitesByStructureId: Map<string, { title: string }>;
 }

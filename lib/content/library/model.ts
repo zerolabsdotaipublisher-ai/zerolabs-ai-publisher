@@ -81,9 +81,9 @@ function mapWebsitePages(snapshot: ContentLibraryStorageSnapshot): ContentLibrar
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       pageSlug: row.page_slug,
-      linkedWebsite: linkedWebsite
+      linkedWebsite: linkedWebsite && row.structure_id
         ? {
-            structureId: linkedWebsite.id,
+            structureId: row.structure_id,
             title: linkedWebsite.title,
           }
         : undefined,
@@ -115,7 +115,7 @@ function mapBlogs(snapshot: ContentLibraryStorageSnapshot): ContentLibraryItem[]
       updatedAt: row.updated_at,
       linkedWebsite: linkedWebsite
         ? {
-            structureId: linkedWebsite.id,
+            structureId: row.structure_id,
             title: linkedWebsite.title,
           }
         : undefined,
@@ -148,7 +148,7 @@ function mapArticles(snapshot: ContentLibraryStorageSnapshot): ContentLibraryIte
       updatedAt: row.updated_at,
       linkedWebsite: linkedWebsite
         ? {
-            structureId: linkedWebsite.id,
+            structureId: row.structure_id,
             title: linkedWebsite.title,
           }
         : undefined,
@@ -169,7 +169,17 @@ function mapArticles(snapshot: ContentLibraryStorageSnapshot): ContentLibraryIte
 function mapSocialPosts(snapshot: ContentLibraryStorageSnapshot): ContentLibraryItem[] {
   return snapshot.socialPosts.map((row) => {
     const sourceInput = (row.source_input ?? {}) as { campaignGoal?: string };
-    const linkedWebsite = row.structure_id ? snapshot.websitesByStructureId.get(row.structure_id) : undefined;
+    // Social posts may be generated from custom prompts without website linkage, so structure_id can be null/empty.
+    const structureId = typeof row.structure_id === "string" && row.structure_id.trim()
+      ? row.structure_id
+      : undefined;
+    const linkedWebsite = structureId ? snapshot.websitesByStructureId.get(structureId) : undefined;
+    const linkedWebsiteMeta = linkedWebsite && structureId
+      ? {
+          structureId,
+          title: linkedWebsite.title,
+        }
+      : undefined;
 
     return {
       id: `social_post:${row.id}`,
@@ -179,19 +189,14 @@ function mapSocialPosts(snapshot: ContentLibraryStorageSnapshot): ContentLibrary
       status: toStatus(row.content_status),
       createdAt: row.generated_at,
       updatedAt: row.updated_at,
-      linkedWebsite: linkedWebsite
-        ? {
-            structureId: linkedWebsite.id,
-            title: linkedWebsite.title,
-          }
-        : undefined,
+      linkedWebsite: linkedWebsiteMeta,
       linkedCampaign: sourceInput.campaignGoal,
       keywords: dedupeKeywords(getSourceInputKeywords(row.source_input)),
       hasLinkedSeoMetadata: false,
       quickActions: {
-        viewHref: row.structure_id ? routes.generatedSite(row.structure_id) : undefined,
-        editHref: row.structure_id ? routes.editorSite(row.structure_id) : undefined,
-        publishScheduleHref: row.structure_id ? routes.generatedSite(row.structure_id) : undefined,
+        viewHref: structureId ? routes.generatedSite(structureId) : undefined,
+        editHref: structureId ? routes.editorSite(structureId) : undefined,
+        publishScheduleHref: structureId ? routes.generatedSite(structureId) : undefined,
         canDelete: false,
       },
     };
@@ -282,8 +287,8 @@ export async function listOwnedContentLibraryPage(
   const sorted = sortContentLibraryItems(searched, query.sort);
   const paged = paginateItems(sorted, query.page, query.perPage);
 
-  paged.availableWebsites = Array.from(snapshot.websitesByStructureId.values())
-    .map((website) => ({ structureId: website.id, title: website.title }))
+  paged.availableWebsites = Array.from(snapshot.websitesByStructureId.entries())
+    .map(([structureId, website]) => ({ structureId, title: website.title }))
     .sort((left, right) => left.title.localeCompare(right.title));
 
   return paged;

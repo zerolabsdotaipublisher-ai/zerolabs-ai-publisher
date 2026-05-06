@@ -12,6 +12,8 @@ import type {
   ContentLibraryStorageSnapshot,
 } from "./types";
 
+// Keep source scans bounded for MVP to avoid expensive full-table fan-out queries per request.
+// Pagination still applies after aggregation; larger inventories can be expanded with cursorized table reads in a follow-up.
 const MAX_SOURCE_ROWS = 500;
 
 async function listWebsitePageRows(userId: string): Promise<ContentLibraryRawWebsitePageRow[]> {
@@ -140,7 +142,7 @@ export async function fetchOwnedContentLibrarySnapshot(userId: string): Promise<
       listSeoKeywordsByStructure(userId),
     ]);
 
-  const websitesByStructureId = new Map(websites.map((website) => [website.id, { id: website.id, title: website.title }]));
+  const websitesByStructureId = new Map(websites.map((website) => [website.id, { title: website.title }]));
   const schedulesByStructureId = new Map(
     schedules.map((schedule) => [schedule.structureId, { status: schedule.status }]),
   );

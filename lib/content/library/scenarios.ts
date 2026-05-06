@@ -30,7 +30,7 @@ export const contentLibraryScenarios: ContentLibraryScenario[] = [
   {
     id: "sort-ordering",
     name: "Sort content listing",
-    expectedBehavior: "Sort supports updated-desc default, created-desc, and title alphabetical ordering.",
+    expectedBehavior: "Sort supports updated_desc default, created_desc, and title alphabetical ordering.",
   },
   {
     id: "status-indicators",
