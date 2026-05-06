@@ -10,7 +10,7 @@ import type {
   WebsiteStatusFilter,
   WebsiteTypeFilter,
 } from "@/lib/management/types";
-import { getPublishEndpoint } from "@/lib/management";
+import { getPublishEndpoint } from "@/lib/management/actions";
 import { WebsiteListControls } from "./website-list-controls";
 import { WebsiteListEmptyState } from "./website-list-empty-state";
 import { WebsiteListLoading } from "./website-list-loading";

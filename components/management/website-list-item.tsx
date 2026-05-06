@@ -1,5 +1,5 @@
 import type { PublishAction } from "@/lib/publish";
-import type { WebsiteManagementRecord } from "@/lib/management";
+import type { WebsiteManagementRecord } from "@/lib/management/types";
 import { PublishStatusSummary } from "@/components/publish/publish-status-summary";
 import { WebsiteDeleteDialog } from "./website-delete-dialog";
 import { WebsiteDeleteState } from "./website-delete-state";
@@ -142,6 +142,7 @@ export function WebsiteListItem({
       />
 
       <WebsiteRenameDialog
+        key={`${website.id}-${renameOpen ? "rename-open" : "rename-closed"}-${website.lastUpdatedAt}`}
         open={renameOpen}
         initialTitle={website.title}
         initialDescription={website.description}
@@ -151,6 +152,7 @@ export function WebsiteListItem({
       />
 
       <WebsiteDeleteDialog
+        key={`${website.id}-${deleteOpen ? "delete-open" : "delete-closed"}-${website.lastUpdatedAt}`}
         title={website.title}
         open={deleteOpen}
         loading={deleting}

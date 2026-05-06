@@ -1,5 +1,5 @@
 import type { PublishAction } from "@/lib/publish";
-import type { WebsiteManagementRecord } from "@/lib/management";
+import type { WebsiteManagementRecord } from "@/lib/management/types";
 import { WebsiteListItem } from "./website-list-item";
 
 interface WebsiteListProps {

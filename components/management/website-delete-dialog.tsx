@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 interface WebsiteDeleteDialogProps {
   title: string;
@@ -16,12 +16,6 @@ export function WebsiteDeleteDialog({
   onConfirm,
 }: WebsiteDeleteDialogProps) {
   const [confirmed, setConfirmed] = useState(false);
-
-  useEffect(() => {
-    if (!open) {
-      setConfirmed(false);
-    }
-  }, [open]);
 
   if (!open) {
     return null;

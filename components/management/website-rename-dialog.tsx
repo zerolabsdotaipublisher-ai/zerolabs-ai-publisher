@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 interface WebsiteRenameDialogProps {
   open: boolean;
@@ -19,14 +19,6 @@ export function WebsiteRenameDialog({
 }: WebsiteRenameDialogProps) {
   const [title, setTitle] = useState(initialTitle);
   const [description, setDescription] = useState(initialDescription || "");
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-    setTitle(initialTitle);
-    setDescription(initialDescription || "");
-  }, [initialDescription, initialTitle, open]);
 
   if (!open) {
     return null;

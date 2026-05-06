@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { PublishAction } from "@/lib/publish";
-import { resolveWebsiteManagementControls, type WebsiteManagementRecord } from "@/lib/management";
+import { resolveWebsiteManagementControls } from "@/lib/management/controls";
+import type { WebsiteManagementRecord } from "@/lib/management/types";
 import { WebsiteActionMenu } from "./website-action-menu";
 import { WebsiteSettingsEntry } from "./website-settings-entry";
 
