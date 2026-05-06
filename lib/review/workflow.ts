@@ -15,7 +15,6 @@ import {
   collectBlogQualityNotes,
   upsertBlogPost,
   createBlogMetadata,
-  type BlogGenerationInput,
 } from "@/lib/blog";
 import {
   getArticleByStructureId,
@@ -24,9 +23,8 @@ import {
   collectArticleQualityNotes,
   upsertArticle,
   createArticleMetadata,
-  type ArticleGenerationInput,
 } from "@/lib/article";
-import { getSocialPostById, regenerateSocialPost, upsertSocialPost, type SocialGenerationInput } from "@/lib/social";
+import { getSocialPostById, regenerateSocialPost, upsertSocialPost } from "@/lib/social";
 import { saveEditorStructureDraft } from "@/lib/editor/storage";
 import { getOwnedReviewDetail } from "./model";
 import { listOwnedStructureReviewRecords, upsertOwnedReviewRecord } from "./storage";
@@ -124,7 +122,7 @@ export async function regenerateOwnedReviewContent(params: {
 
     const regenerated = await regenerateBlogPost(existingBlog, params.userId, {
       scope: "full",
-      updatedInput: undefined as Partial<BlogGenerationInput> | undefined,
+      updatedInput: undefined,
     });
 
     const draftSave = await saveEditorStructureDraft(params.userId, regenerated.structure);
@@ -183,7 +181,7 @@ export async function regenerateOwnedReviewContent(params: {
 
     const regenerated = await regenerateArticle(existingArticle, params.userId, {
       scope: "full",
-      updatedInput: undefined as Partial<ArticleGenerationInput> | undefined,
+      updatedInput: undefined,
     });
 
     const draftSave = await saveEditorStructureDraft(params.userId, regenerated.structure);
@@ -238,7 +236,7 @@ export async function regenerateOwnedReviewContent(params: {
   }
 
   const regeneratedSocial = await regenerateSocialPost(existingPost, params.userId, {
-    updatedInput: undefined as Partial<SocialGenerationInput> | undefined,
+    updatedInput: undefined,
   });
   await upsertSocialPost(regeneratedSocial.socialPost, params.userId);
 
