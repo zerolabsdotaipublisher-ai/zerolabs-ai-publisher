@@ -34,6 +34,13 @@ export const DASHBOARD_QUICK_ACTIONS: DashboardQuickAction[] = [
     eventName: "dashboard_quick_action_content_library",
   },
   {
+    id: "publishing-activity",
+    label: "Publishing activity",
+    description: "Open the full publishing activity overview for recent, upcoming, and attention-required items.",
+    href: routes.activity,
+    eventName: "dashboard_quick_action_publishing_activity",
+  },
+  {
     id: "schedule-social",
     label: "Schedule social post",
     description: "Use social scheduling from your website workflows.",
