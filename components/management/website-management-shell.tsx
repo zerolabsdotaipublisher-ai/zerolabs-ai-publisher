@@ -250,7 +250,7 @@ export function WebsiteManagementShell({ initialListing, currentUserId }: Websit
 
       setFeedback(
         body.message
-          || (action === "publish" ? "Website publish started/completed." : "Website update publish started/completed."),
+          || (action === "publish" ? "Website publish initiated." : "Website publish-update initiated."),
       );
       await refreshListing();
     } catch {

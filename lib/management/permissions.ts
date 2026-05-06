@@ -56,6 +56,7 @@ export function deriveWebsiteControlPermissions(
     canActivate: canAccessCoreRoutes && archived,
     canPublish: canAccessCoreRoutes && !archived,
     canPublishUpdates: canAccessCoreRoutes && !archived,
+    // Story 8-4 keeps duplicate as a visible but disabled future-ready control.
     canDuplicate: false,
   };
 }

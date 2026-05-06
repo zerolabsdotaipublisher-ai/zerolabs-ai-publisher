@@ -37,6 +37,11 @@ export function resolveWebsiteManagementControls(
   const disabledByActivity = Boolean(runtime.deleting || runtime.renaming || runtime.publishing || runtime.statusUpdating);
   const publishAction = website.publishStatus.action.publishAction;
   const canShowPublish = publishAction === "publish" || website.publishStatus.hasUnpublishedChanges;
+  const blockedByActivity = disabledByActivity;
+  const blockedByTransition = website.publishStatus.isTransitional;
+  const blockedByPublishState = !website.publishStatus.action.canTriggerPublishAction;
+  const blockedByPermission = publishAction === "publish" ? !permissions.canPublish : !permissions.canPublishUpdates;
+  const publishDisabled = blockedByActivity || blockedByTransition || blockedByPublishState || blockedByPermission;
 
   return {
     permissions,
@@ -46,11 +51,7 @@ export function resolveWebsiteManagementControls(
           id: toPublishActionId(publishAction),
           action: publishAction,
           label: publishAction === "publish" ? "Publish" : "Publish updates",
-          disabled:
-            disabledByActivity
-            || website.publishStatus.isTransitional
-            || !website.publishStatus.action.canTriggerPublishAction
-            || (publishAction === "publish" ? !permissions.canPublish : !permissions.canPublishUpdates),
+          disabled: publishDisabled,
           reason:
             website.publishStatus.isTransitional
               ? "A publish action is already in progress."

@@ -20,6 +20,14 @@ interface WebsiteActionMenuProps {
 export function WebsiteActionMenu({ label = "Actions", items }: WebsiteActionMenuProps) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  function closeMenu(returnFocus = false) {
+    setOpen(false);
+    if (returnFocus) {
+      triggerRef.current?.focus();
+    }
+  }
 
   useEffect(() => {
     if (!open) {
@@ -28,13 +36,13 @@ export function WebsiteActionMenu({ label = "Actions", items }: WebsiteActionMen
 
     function handleOutside(event: MouseEvent) {
       if (!menuRef.current?.contains(event.target as Node)) {
-        setOpen(false);
+        closeMenu();
       }
     }
 
     function handleEscape(event: KeyboardEvent) {
       if (event.key === "Escape") {
-        setOpen(false);
+        closeMenu(true);
       }
     }
 
@@ -54,6 +62,7 @@ export function WebsiteActionMenu({ label = "Actions", items }: WebsiteActionMen
         className="wizard-button-secondary"
         aria-haspopup="menu"
         aria-expanded={open}
+        ref={triggerRef}
         onClick={() => setOpen((current) => !current)}
       >
         {label}
@@ -76,7 +85,7 @@ export function WebsiteActionMenu({ label = "Actions", items }: WebsiteActionMen
                         event.preventDefault();
                         return;
                       }
-                      setOpen(false);
+                      closeMenu(true);
                     }}
                   >
                     {item.label}
@@ -92,7 +101,7 @@ export function WebsiteActionMenu({ label = "Actions", items }: WebsiteActionMen
                         event.preventDefault();
                         return;
                       }
-                      setOpen(false);
+                      closeMenu(true);
                     }}
                   >
                     {item.label}
@@ -105,7 +114,7 @@ export function WebsiteActionMenu({ label = "Actions", items }: WebsiteActionMen
                   disabled={item.disabled}
                   onClick={() => {
                     item.onSelect?.();
-                    setOpen(false);
+                    closeMenu(true);
                   }}
                 >
                   {item.label}
