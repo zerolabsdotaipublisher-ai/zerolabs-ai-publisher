@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import {
+  canDeleteWebsite,
   softDeleteWebsite,
   toWebsiteManagementRecord,
   validateWebsiteOwnership,
@@ -35,6 +36,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const ownership = await validateWebsiteOwnership(body.structureId, user.id);
     if (!ownership.owned || !ownership.website) {
       return NextResponse.json({ ok: false, error: "Website not found" }, { status: 404 });
+    }
+
+    if (!canDeleteWebsite(ownership.website, user.id)) {
+      return NextResponse.json({ ok: false, error: "You do not have permission to delete this website" }, { status: 403 });
     }
 
     const now = new Date().toISOString();

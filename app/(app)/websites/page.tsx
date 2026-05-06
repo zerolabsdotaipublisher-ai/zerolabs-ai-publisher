@@ -12,5 +12,5 @@ export default async function WebsitesPage() {
     perPage: 12,
   });
 
-  return <WebsiteManagementShell initialListing={initialListing} />;
+  return <WebsiteManagementShell initialListing={initialListing} currentUserId={user.id} />;
 }
