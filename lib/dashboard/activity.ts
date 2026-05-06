@@ -9,7 +9,7 @@ function toWebsiteActivity(snapshot: DashboardStorageSnapshot): DashboardRecentA
     title: website.title,
     detail: `Website status: ${website.status}`,
     timestamp: website.lastUpdatedAt,
-    status: website.status === "update_failed" ? "error" : "info",
+    status: website.status === "failed" ? "error" : website.status === "live" ? "success" : "info",
     href: website.generatedSitePath,
   }));
 }

@@ -3,17 +3,16 @@
 import { useEffect, useMemo, useState } from "react";
 import type { WebsiteStructure } from "@/lib/ai/structure";
 import {
-  detectPublicationState,
   trackPublishEvent,
   type PublishAction,
   type PublishMutationResponse,
 } from "@/lib/publish";
-import { validatePublishEligibility } from "@/lib/publish/validation";
+import { buildPublishingStatusFromStructure, type PublishStatusApiResponse } from "@/lib/publish/status";
 import { LiveLinkCard } from "./live-link-card";
 import { PublishConfirmationDialog } from "./publish-confirmation-dialog";
 import { PublishErrorState } from "./publish-error-state";
 import { PublishLoadingState } from "./publish-loading-state";
-import { PublishStatusBadge } from "./publish-status-badge";
+import { PublishStatusSummary } from "./publish-status-summary";
 import { PublishSuccessState } from "./publish-success-state";
 
 interface PublishControlsProps {
@@ -22,26 +21,86 @@ interface PublishControlsProps {
   context: "editor" | "preview";
 }
 
+const PUBLISH_STATUS_POLL_INTERVAL_MS = 15_000;
+
 export function PublishControls({ structure, hasUnsavedChanges = false, context }: PublishControlsProps) {
   const [website, setWebsite] = useState<WebsiteStructure>(structure);
   const [loading, setLoading] = useState(false);
+  const [statusLoading, setStatusLoading] = useState(false);
+  const [statusError, setStatusError] = useState<string>();
+  const [statusSnapshot, setStatusSnapshot] = useState<ReturnType<typeof buildPublishingStatusFromStructure>>();
   const [errorMessage, setErrorMessage] = useState<string>();
   const [successMessage, setSuccessMessage] = useState<string>();
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
     setWebsite(structure);
+    setStatusSnapshot(undefined);
   }, [structure]);
 
-  const detection = useMemo(() => detectPublicationState(website), [website]);
-  const validation = useMemo(() => validatePublishEligibility(website), [website]);
+  const localStatus = useMemo(() => buildPublishingStatusFromStructure(website), [website]);
+  const status = statusSnapshot ?? localStatus;
+  const detection = status.detection;
+  const validation = status.validation;
 
-  const action: PublishAction = detection.neverPublished ? "publish" : "update";
-  const buttonLabel = detection.neverPublished ? "Publish website" : "Update live website";
+  const action: PublishAction = status.action.publishAction;
+  const buttonLabel = status.action.publishActionLabel;
 
   const blockedByUnsaved = context === "editor" && hasUnsavedChanges;
   const blockedByValidation = !validation.eligible;
-  const blockedBecauseNoUpdates = !detection.neverPublished && !detection.hasUnpublishedChanges;
+  const blockedBecauseNoUpdates = action === "update" && !status.hasUnpublishedChanges;
+  const blockedByStatus = !status.action.canTriggerPublishAction;
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadStatus(silent = true) {
+      if (!silent) {
+        setStatusLoading(true);
+      }
+
+      try {
+        const response = await fetch(`/api/publish/status?structureId=${encodeURIComponent(website.id)}`, {
+          method: "GET",
+          cache: "no-store",
+        });
+        const body = (await response.json()) as PublishStatusApiResponse;
+
+        if (!response.ok || !body.ok || !body.status) {
+          throw new Error(body.error || "Unable to refresh publishing status.");
+        }
+
+        if (!active) {
+          return;
+        }
+
+        setStatusSnapshot(body.status);
+        setStatusError(undefined);
+      } catch (statusLoadError) {
+        if (!active) {
+          return;
+        }
+
+        setStatusError(statusLoadError instanceof Error ? statusLoadError.message : "Unable to refresh publishing status.");
+      } finally {
+        if (!silent && active) {
+          setStatusLoading(false);
+        }
+      }
+    }
+
+    void loadStatus(false);
+    const intervalId = setInterval(() => {
+      void loadStatus(true);
+    }, PUBLISH_STATUS_POLL_INTERVAL_MS);
+
+    return () => {
+      active = false;
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [website.id]);
 
   async function sendPublishRequest(selectedAction: PublishAction) {
     setLoading(true);
@@ -116,6 +175,7 @@ export function PublishControls({ structure, hasUnsavedChanges = false, context 
             ? "Website published successfully."
             : "Live website updated successfully."),
       );
+      setStatusSnapshot(undefined);
     } catch {
       setErrorMessage("Publish action failed unexpectedly.");
     } finally {
@@ -143,6 +203,11 @@ export function PublishControls({ structure, hasUnsavedChanges = false, context 
       return;
     }
 
+    if (blockedByStatus && status.action.disableReason) {
+      setErrorMessage(status.action.disableReason);
+      return;
+    }
+
     setConfirmOpen(true);
   }
 
@@ -156,16 +221,17 @@ export function PublishControls({ structure, hasUnsavedChanges = false, context 
     void sendPublishRequest(action);
   }
 
-  const publishButtonDisabled = loading || blockedByUnsaved || blockedByValidation || blockedBecauseNoUpdates;
+  const publishButtonDisabled = loading || blockedByUnsaved || blockedByValidation || blockedBecauseNoUpdates || blockedByStatus;
 
   return (
     <section className="publish-controls" aria-label="Publish controls">
       <div className="publish-controls-header">
         <h2>Publication</h2>
-        <PublishStatusBadge state={detection.state} />
       </div>
+      <PublishStatusSummary status={status} loading={statusLoading} error={statusError} />
 
       {blockedByUnsaved ? <p className="publish-warning">You have unsaved edits. Save draft first.</p> : null}
+      {blockedByStatus && status.action.disableReason ? <p className="publish-warning">{status.action.disableReason}</p> : null}
       {blockedByValidation ? (
         <ul className="publish-validation-errors">
           {validation.errors.map((error) => (
@@ -185,15 +251,15 @@ export function PublishControls({ structure, hasUnsavedChanges = false, context 
       {errorMessage ? <PublishErrorState message={errorMessage} onRetry={detection.hasFailedUpdate ? handleRetry : undefined} /> : null}
 
       <LiveLinkCard
-        liveUrl={detection.liveUrl}
-        lastPublishedAt={detection.lastPublishedAt}
-        lastDraftUpdatedAt={detection.lastDraftUpdatedAt}
+        liveUrl={status.liveUrl}
+        lastPublishedAt={status.timestamps.lastPublishedAt}
+        lastDraftUpdatedAt={status.timestamps.lastDraftUpdatedAt}
       />
 
       <PublishConfirmationDialog
         open={confirmOpen}
         action={action}
-        hasUnpublishedChanges={detection.hasUnpublishedChanges}
+        hasUnpublishedChanges={status.hasUnpublishedChanges}
         hasUnsavedChanges={hasUnsavedChanges}
         onCancel={() => setConfirmOpen(false)}
         onConfirm={() => {

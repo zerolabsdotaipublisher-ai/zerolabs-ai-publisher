@@ -10,11 +10,11 @@ import { getServerUser } from "@/lib/supabase/server";
 const VALID_STATUS_FILTERS: WebsiteStatusFilter[] = [
   "all",
   "draft",
-  "published",
-  "update_pending",
+  "live",
+  "unpublished_changes",
   "publishing",
-  "update_failed",
-  "unpublished",
+  "updating",
+  "failed",
   "archived",
   "deleted",
 ];
@@ -22,10 +22,12 @@ const VALID_PUBLISH_STATE_FILTERS: WebsitePublishStateFilter[] = [
   "all",
   "draft",
   "publishing",
-  "published",
-  "update_pending",
-  "update_failed",
-  "unpublished",
+  "updating",
+  "live",
+  "unpublished_changes",
+  "failed",
+  "archived",
+  "deleted",
 ];
 const VALID_WEBSITE_TYPES: WebsiteTypeFilter[] = [
   "all",

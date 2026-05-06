@@ -30,6 +30,7 @@ interface WebsiteListApiResponse {
 
 const DEFAULT_PER_PAGE = 12;
 const SEARCH_DEBOUNCE_MS = 250;
+const WEBSITE_LIST_POLL_INTERVAL_MS = 30_000;
 
 export function WebsiteManagementShell({ initialListing }: WebsiteManagementShellProps) {
   const [websites, setWebsites] = useState(initialListing.websites);
@@ -60,16 +61,20 @@ export function WebsiteManagementShell({ initialListing }: WebsiteManagementShel
     return () => clearTimeout(timeout);
   }, [query]);
 
-  const loadWebsites = useCallback(async (options: { append: boolean; targetPage: number }) => {
+  const loadWebsites = useCallback(async (options: { append: boolean; targetPage: number; silent?: boolean }) => {
     const controller = new AbortController();
     const nextPage = options.targetPage;
 
-    if (options.append) {
+    if (options.silent) {
+      // keep existing UI steady during background refresh
+    } else if (options.append) {
       setLoadingMore(true);
     } else {
       setLoading(true);
     }
-    setError(undefined);
+    if (!options.silent) {
+      setError(undefined);
+    }
 
     const params = new URLSearchParams();
     if (debouncedQuery) params.set("query", debouncedQuery);
@@ -105,13 +110,22 @@ export function WebsiteManagementShell({ initialListing }: WebsiteManagementShel
         setError("Unable to load websites.");
       }
     } finally {
-      setLoading(false);
-      setLoadingMore(false);
+      if (!options.silent) {
+        setLoading(false);
+        setLoadingMore(false);
+      }
     }
   }, [debouncedQuery, includeDeleted, perPage, publishState, status, websiteType]);
 
   useEffect(() => {
     void loadWebsites({ append: false, targetPage: 1 });
+  }, [loadWebsites]);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      void loadWebsites({ append: false, targetPage: 1, silent: true });
+    }, WEBSITE_LIST_POLL_INTERVAL_MS);
+    return () => clearInterval(intervalId);
   }, [loadWebsites]);
 
   async function runMutation(path: string, payload: object): Promise<WebsiteMutationResponse> {

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { WebsiteManagementRecord } from "@/lib/management";
+import { PublishStatusSummary } from "@/components/publish/publish-status-summary";
 import { WebsiteDeleteDialog } from "./website-delete-dialog";
 import { WebsiteDeleteState } from "./website-delete-state";
 import { WebsiteRenamePanel } from "./website-rename-panel";
@@ -58,7 +59,8 @@ export function WebsiteListItem({
 }: WebsiteListItemProps) {
   const isDeleted = website.status === "deleted";
   const statusActionLabel = website.structureStatus === "archived" ? "Activate" : "Archive";
-  const publishLabel = formatLabel(website.publicationState);
+  const publishActionLabel = website.publishStatus.action.publishActionLabel;
+  const publishActionDisabled = !website.publishStatus.action.canTriggerPublishAction;
   const websiteTypeLabel = formatLabel(website.websiteType);
   const hasSocialSignals = Boolean(website.schedule);
 
@@ -88,7 +90,7 @@ export function WebsiteListItem({
         </div>
         <div>
           <dt>Publish state</dt>
-          <dd>{publishLabel}</dd>
+          <dd>{website.publishStatus.uiLabel}</dd>
         </div>
         <div>
           <dt>Updated</dt>
@@ -119,12 +121,17 @@ export function WebsiteListItem({
           <dd>{hasSocialSignals ? "Schedule-linked" : "No social signal"}</dd>
         </div>
       </dl>
+      <PublishStatusSummary status={website.publishStatus} compact />
 
       <div className="website-list-item-links">
         <Link href={website.generatedSitePath}>Manage</Link>
         <Link href={website.previewPath}>Preview</Link>
         <Link href={website.editorPath}>Edit</Link>
-        <Link href={`${website.previewPath}?panel=publish`}>Open publish controls</Link>
+        {publishActionDisabled ? (
+          <span aria-disabled="true">{publishActionLabel}</span>
+        ) : (
+          <Link href={`${website.previewPath}?panel=publish`}>{publishActionLabel}</Link>
+        )}
         <Link href={`${website.generatedSitePath}#content-schedule`}>Schedule</Link>
         {website.liveUrl ? (
           <a href={website.liveUrl} target="_blank" rel="noreferrer">

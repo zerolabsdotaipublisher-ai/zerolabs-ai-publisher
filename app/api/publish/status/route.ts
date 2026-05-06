@@ -1,7 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { detectPublicationState } from "@/lib/publish";
-import { validatePublishEligibility } from "@/lib/publish/validation";
-import { getOwnedPublishStructure } from "@/lib/publish/storage";
+import { getOwnedPublishingStatus } from "@/lib/publish/status/storage";
 import { getServerUser } from "@/lib/supabase/server";
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
@@ -15,14 +13,13 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ ok: false, error: "structureId is required" }, { status: 400 });
   }
 
-  const structure = await getOwnedPublishStructure(structureId, user.id);
-  if (!structure) {
+  const status = await getOwnedPublishingStatus(structureId, user.id);
+  if (!status) {
     return NextResponse.json({ ok: false, error: "Structure not found" }, { status: 404 });
   }
 
   return NextResponse.json({
     ok: true,
-    detection: detectPublicationState(structure),
-    validation: validatePublishEligibility(structure),
+    status,
   });
 }

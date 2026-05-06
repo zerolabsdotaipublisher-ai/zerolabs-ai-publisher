@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { routes } from "@/config/routes";
 import type { DashboardWebsiteSummary } from "@/lib/dashboard";
+import { PublishStatusBadge } from "@/components/publish/publish-status-badge";
 
 interface DashboardWebsiteSummaryProps {
   summary: DashboardWebsiteSummary;
@@ -40,8 +41,12 @@ export function DashboardWebsiteSummarySection({ summary }: DashboardWebsiteSumm
           {summary.recentlyUpdated.map((website) => (
             <li key={website.id}>
               <Link href={website.href}>{website.title}</Link>
-              <span>{website.status}</span>
+              <PublishStatusBadge state={website.publishStatus.uiState} />
               <time dateTime={website.updatedAt}>{new Date(website.updatedAt).toLocaleString()}</time>
+              <span>
+                Last published:{" "}
+                {website.publishedAt ? new Date(website.publishedAt).toLocaleString() : "Not published"}
+              </span>
             </li>
           ))}
         </ul>

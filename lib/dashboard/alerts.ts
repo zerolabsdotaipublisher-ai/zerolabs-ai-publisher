@@ -5,7 +5,7 @@ import type { DashboardAlert, DashboardStorageSnapshot } from "./types";
 export function buildDashboardAlerts(snapshot: DashboardStorageSnapshot): DashboardAlert[] {
   const alerts: DashboardAlert[] = [];
 
-  const failedWebsitePublishes = snapshot.websites.filter((website) => website.status === "update_failed").length;
+  const failedWebsitePublishes = snapshot.websites.filter((website) => website.status === "failed").length;
   if (failedWebsitePublishes > 0) {
     alerts.push({
       id: "failed-website-publishes",

@@ -1,4 +1,5 @@
 import type { WebsiteLifecycleStatus, WebsiteManagementRecord } from "@/lib/management";
+import type { PublishingStatusModel } from "@/lib/publish/status";
 import type { SocialAccountConnection } from "@/lib/social/accounts";
 import type { SocialPublishHistoryJob } from "@/lib/social/history";
 import type { SocialSchedule } from "@/lib/social/scheduling";
@@ -59,7 +60,9 @@ export interface DashboardWebsiteSummary {
     id: string;
     title: string;
     status: WebsiteLifecycleStatus;
+    publishStatus: PublishingStatusModel;
     updatedAt: string;
+    publishedAt?: string;
     href: string;
   }>;
 }

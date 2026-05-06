@@ -2,7 +2,7 @@ import type { DashboardMetricSummary, DashboardStorageSnapshot } from "./types";
 import { isAccountAttentionRequired } from "./schema";
 
 export function buildDashboardMetrics(snapshot: DashboardStorageSnapshot): DashboardMetricSummary {
-  const publishedWebsites = snapshot.websites.filter((website) => website.status === "published").length;
+  const publishedWebsites = snapshot.websites.filter((website) => website.status === "live").length;
   const scheduledContent = snapshot.websites.filter(
     (website) => website.schedule?.status === "active" || website.schedule?.status === "running",
   ).length;
@@ -14,7 +14,7 @@ export function buildDashboardMetrics(snapshot: DashboardStorageSnapshot): Dashb
     snapshot.socialSchedules.filter((schedule) => schedule.status === "failed").length;
 
   const failedPublishes =
-    snapshot.websites.filter((website) => website.status === "update_failed").length +
+    snapshot.websites.filter((website) => website.status === "failed").length +
     snapshot.socialHistory.filter((history) => history.status === "failed").length;
 
   const accountAttention = snapshot.socialAccounts.filter(isAccountAttentionRequired).length;

@@ -1,6 +1,6 @@
 import { routes } from "@/config/routes";
 import type { WebsiteStructure } from "@/lib/ai/structure";
-import { detectPublicationState } from "@/lib/publish";
+import { buildPublishingStatusFromStructure } from "@/lib/publish/status";
 import type { ContentScheduleSummary } from "@/lib/scheduling";
 import type { WebsiteLifecycleStatus, WebsiteManagementRecord } from "./types";
 
@@ -9,22 +9,14 @@ export function isSoftDeleted(structure: WebsiteStructure): boolean {
 }
 
 export function deriveWebsiteLifecycleStatus(structure: WebsiteStructure): WebsiteLifecycleStatus {
-  if (isSoftDeleted(structure) || structure.status === "deleted") {
-    return "deleted";
-  }
-
-  if (structure.status === "archived") {
-    return "archived";
-  }
-
-  return detectPublicationState(structure).state;
+  return buildPublishingStatusFromStructure(structure).uiState;
 }
 
 export function toWebsiteManagementRecord(
   structure: WebsiteStructure,
   schedule?: ContentScheduleSummary,
 ): WebsiteManagementRecord {
-  const publication = detectPublicationState(structure);
+  const publishStatus = buildPublishingStatusFromStructure(structure);
   const title = structure.management?.displayName?.trim() || structure.siteTitle;
   const description = structure.management?.description?.trim() || structure.tagline;
 
@@ -36,11 +28,12 @@ export function toWebsiteManagementRecord(
     status: deriveWebsiteLifecycleStatus(structure),
     structureStatus: structure.status,
     websiteType: structure.websiteType,
-    publicationState: publication.state,
+    publicationState: publishStatus.uiState,
+    publishStatus,
     generatedAt: structure.generatedAt,
     lastUpdatedAt: structure.updatedAt,
-    lastPublishedAt: publication.lastPublishedAt,
-    liveUrl: publication.liveUrl,
+    lastPublishedAt: publishStatus.timestamps.lastPublishedAt,
+    liveUrl: publishStatus.liveUrl,
     previewPath: routes.previewSite(structure.id),
     editorPath: routes.editorSite(structure.id),
     generatedSitePath: routes.generatedSite(structure.id),

@@ -30,15 +30,17 @@ export async function buildDashboardSummary(options: BuildDashboardSummaryOption
 
   const websiteSummary = {
     total: snapshot.websites.length,
-    published: snapshot.websites.filter((website) => website.status === "published").length,
+    published: snapshot.websites.filter((website) => website.status === "live").length,
     draft: snapshot.websites.filter((website) => website.status === "draft").length,
     archived: snapshot.websites.filter((website) => website.status === "archived").length,
-    attentionRequired: snapshot.websites.filter((website) => website.status === "update_failed").length,
+    attentionRequired: snapshot.websites.filter((website) => website.status === "failed").length,
     recentlyUpdated: websitesByRecentUpdate.slice(0, 6).map((website) => ({
       id: website.id,
       title: website.title,
       status: website.status,
+      publishStatus: website.publishStatus,
       updatedAt: website.lastUpdatedAt,
+      publishedAt: website.lastPublishedAt,
       href: website.generatedSitePath,
     })),
   };

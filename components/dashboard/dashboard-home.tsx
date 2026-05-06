@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getDefaultDashboardErrorMessage, isDashboardSummaryEmpty } from "@/lib/dashboard/client";
 import type { DashboardSummary } from "@/lib/dashboard/types";
 import { DashboardAlerts } from "./dashboard-alerts";
@@ -22,6 +22,8 @@ interface DashboardHomeProps {
   initialError?: string;
 }
 
+const DASHBOARD_SUMMARY_POLL_INTERVAL_MS = 30_000;
+
 async function trackDashboardEvent(eventName: string): Promise<void> {
   await fetch("/api/observability/events", {
     method: "POST",
@@ -35,8 +37,10 @@ export function DashboardHome({ initialSummary, initialError }: DashboardHomePro
   const [loading, setLoading] = useState(!initialSummary && !initialError);
   const [error, setError] = useState<string | undefined>(initialError);
 
-  async function loadSummary() {
-    setLoading(true);
+  const loadSummary = useCallback(async (options: { silent?: boolean } = {}) => {
+    if (!options.silent) {
+      setLoading(true);
+    }
     setError(undefined);
 
     try {
@@ -54,9 +58,19 @@ export function DashboardHome({ initialSummary, initialError }: DashboardHomePro
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : getDefaultDashboardErrorMessage());
     } finally {
-      setLoading(false);
+      if (!options.silent) {
+        setLoading(false);
+      }
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      void loadSummary({ silent: true });
+    }, DASHBOARD_SUMMARY_POLL_INTERVAL_MS);
+
+    return () => clearInterval(intervalId);
+  }, [loadSummary]);
 
   async function handleTrack(eventName: string) {
     try {

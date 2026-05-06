@@ -680,25 +680,69 @@ a {
   font-size: 0.8rem;
 }
 
-.publish-status-published {
+.publish-status-live {
   border-color: #166534;
   color: #166534;
 }
 
-.publish-status-update_pending,
-.publish-status-unpublished {
+.publish-status-unpublished_changes,
+.publish-status-draft,
+.publish-status-archived,
+.publish-status-deleted {
   border-color: #92400e;
   color: #92400e;
 }
 
-.publish-status-update_failed {
+.publish-status-failed {
   border-color: #b91c1c;
   color: #b91c1c;
 }
 
-.publish-status-publishing {
+.publish-status-publishing,
+.publish-status-updating {
   border-color: #1d4ed8;
   color: #1d4ed8;
+}
+
+.publish-status-summary {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 0.65rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.publish-status-summary-compact {
+  padding: 0.5rem;
+}
+
+.publish-status-summary-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.publish-status-summary-refresh {
+  color: #4b5563;
+  font-size: 0.8rem;
+}
+
+.publish-status-summary-note {
+  color: #92400e;
+  font-size: 0.85rem;
+}
+
+.publish-status-summary-error {
+  color: #991b1b;
+  font-size: 0.85rem;
+}
+
+.publish-status-summary-meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem;
+  font-size: 0.8rem;
 }
 
 .publish-controls-actions {
@@ -1243,24 +1287,26 @@ a {
   font-size: 0.8rem;
 }
 
-.website-status-published {
+.website-status-live {
   border-color: #166534;
   color: #166534;
 }
 
-.website-status-update_pending,
+.website-status-unpublished_changes,
 .website-status-draft,
-.website-status-unpublished {
+.website-status-archived,
+.website-status-deleted {
   border-color: #92400e;
   color: #92400e;
 }
 
-.website-status-update_failed {
+.website-status-failed {
   border-color: #b91c1c;
   color: #b91c1c;
 }
 
-.website-status-publishing {
+.website-status-publishing,
+.website-status-updating {
   border-color: #1d4ed8;
   color: #1d4ed8;
 }
