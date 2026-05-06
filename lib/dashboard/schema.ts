@@ -27,6 +27,13 @@ export const DASHBOARD_QUICK_ACTIONS: DashboardQuickAction[] = [
     eventName: "dashboard_quick_action_view_websites",
   },
   {
+    id: "content-library",
+    label: "Content library",
+    description: "Browse and manage generated websites, blogs, articles, and social content.",
+    href: routes.contentLibrary,
+    eventName: "dashboard_quick_action_content_library",
+  },
+  {
     id: "schedule-social",
     label: "Schedule social post",
     description: "Use social scheduling from your website workflows.",
