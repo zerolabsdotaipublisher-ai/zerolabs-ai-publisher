@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type { PublishMutationResponse } from "@/lib/publish";
 import type {
   WebsiteListPage,
   WebsiteManagementRecord,
@@ -9,6 +10,7 @@ import type {
   WebsiteStatusFilter,
   WebsiteTypeFilter,
 } from "@/lib/management/types";
+import { getPublishEndpoint } from "@/lib/management";
 import { WebsiteListControls } from "./website-list-controls";
 import { WebsiteListEmptyState } from "./website-list-empty-state";
 import { WebsiteListLoading } from "./website-list-loading";
@@ -16,6 +18,7 @@ import { WebsiteList } from "./website-list";
 
 interface WebsiteManagementShellProps {
   initialListing: WebsiteListPage;
+  currentUserId?: string;
 }
 
 interface WebsiteListApiResponse {
@@ -32,7 +35,7 @@ const DEFAULT_PER_PAGE = 12;
 const SEARCH_DEBOUNCE_MS = 250;
 const WEBSITE_LIST_POLL_INTERVAL_MS = 30_000;
 
-export function WebsiteManagementShell({ initialListing }: WebsiteManagementShellProps) {
+export function WebsiteManagementShell({ initialListing, currentUserId }: WebsiteManagementShellProps) {
   const [websites, setWebsites] = useState(initialListing.websites);
   const [total, setTotal] = useState(initialListing.total);
   const [page, setPage] = useState(initialListing.page);
@@ -53,8 +56,10 @@ export function WebsiteManagementShell({ initialListing }: WebsiteManagementShel
   const [renameId, setRenameId] = useState<string>();
   const [renameBusyId, setRenameBusyId] = useState<string>();
   const [statusBusyId, setStatusBusyId] = useState<string>();
+  const [publishBusyId, setPublishBusyId] = useState<string>();
   const [deleteDialogId, setDeleteDialogId] = useState<string>();
   const [deleteErrorById, setDeleteErrorById] = useState<Record<string, string | undefined>>({});
+  const [actionErrorById, setActionErrorById] = useState<Record<string, string | undefined>>({});
 
   useEffect(() => {
     const timeout = setTimeout(() => setDebouncedQuery(query.trim()), SEARCH_DEBOUNCE_MS);
@@ -141,10 +146,15 @@ export function WebsiteManagementShell({ initialListing }: WebsiteManagementShel
     await loadWebsites({ append: false, targetPage: 1 });
   }
 
+  function clearActionErrors(websiteId: string) {
+    setDeleteErrorById((current) => ({ ...current, [websiteId]: undefined }));
+    setActionErrorById((current) => ({ ...current, [websiteId]: undefined }));
+  }
+
   async function handleDelete(websiteId: string) {
     setDeletingId(websiteId);
     setFeedback(undefined);
-    setDeleteErrorById((current) => ({ ...current, [websiteId]: undefined }));
+    clearActionErrors(websiteId);
 
     try {
       const body = await runMutation("/api/websites/delete", { structureId: websiteId });
@@ -169,6 +179,7 @@ export function WebsiteManagementShell({ initialListing }: WebsiteManagementShel
     setRenameBusyId(websiteId);
     setFeedback(undefined);
     setError(undefined);
+    clearActionErrors(websiteId);
 
     try {
       const body = await runMutation("/api/websites/rename", {
@@ -178,7 +189,7 @@ export function WebsiteManagementShell({ initialListing }: WebsiteManagementShel
       });
 
       if (!body.ok || !body.website) {
-        setError(body.error || "Rename failed.");
+        setActionErrorById((current) => ({ ...current, [websiteId]: body.error || "Rename failed." }));
         return;
       }
 
@@ -186,7 +197,7 @@ export function WebsiteManagementShell({ initialListing }: WebsiteManagementShel
       setFeedback("Website metadata updated.");
       await refreshListing();
     } catch {
-      setError("Rename failed unexpectedly.");
+      setActionErrorById((current) => ({ ...current, [websiteId]: "Rename failed unexpectedly." }));
     } finally {
       setRenameBusyId(undefined);
     }
@@ -196,6 +207,7 @@ export function WebsiteManagementShell({ initialListing }: WebsiteManagementShel
     setStatusBusyId(websiteId);
     setFeedback(undefined);
     setError(undefined);
+    clearActionErrors(websiteId);
 
     try {
       const body = await runMutation("/api/websites/status", {
@@ -204,16 +216,47 @@ export function WebsiteManagementShell({ initialListing }: WebsiteManagementShel
       });
 
       if (!body.ok || !body.website) {
-        setError(body.error || "Status update failed.");
+        setActionErrorById((current) => ({ ...current, [websiteId]: body.error || "Status update failed." }));
         return;
       }
 
       setFeedback("Website status updated.");
       await refreshListing();
     } catch {
-      setError("Status update failed unexpectedly.");
+      setActionErrorById((current) => ({ ...current, [websiteId]: "Status update failed unexpectedly." }));
     } finally {
       setStatusBusyId(undefined);
+    }
+  }
+
+  async function handlePublish(websiteId: string, action: "publish" | "update") {
+    setPublishBusyId(websiteId);
+    setFeedback(undefined);
+    setError(undefined);
+    clearActionErrors(websiteId);
+
+    try {
+      const response = await fetch(getPublishEndpoint(action), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ structureId: websiteId }),
+      });
+      const body = (await response.json()) as PublishMutationResponse;
+
+      if (!response.ok || !body.ok) {
+        setActionErrorById((current) => ({ ...current, [websiteId]: body.error || "Publish action failed." }));
+        return;
+      }
+
+      setFeedback(
+        body.message
+          || (action === "publish" ? "Website publish started/completed." : "Website update publish started/completed."),
+      );
+      await refreshListing();
+    } catch {
+      setActionErrorById((current) => ({ ...current, [websiteId]: "Publish action failed unexpectedly." }));
+    } finally {
+      setPublishBusyId(undefined);
     }
   }
 
@@ -287,32 +330,37 @@ export function WebsiteManagementShell({ initialListing }: WebsiteManagementShel
         <>
           <WebsiteList
             websites={websites}
+            currentUserId={currentUserId}
             selectedIds={selectedIds}
             deletingId={deletingId}
             renameId={renameId}
             deleteDialogId={deleteDialogId}
             renameBusyId={renameBusyId}
             statusBusyId={statusBusyId}
+            publishBusyId={publishBusyId}
             deleteErrorById={deleteErrorById}
+            actionErrorById={actionErrorById}
             onSelectionChange={handleSelectionChange}
             onRenameOpen={(id) => {
               setRenameId(id);
               setError(undefined);
               setFeedback(undefined);
+              clearActionErrors(id);
             }}
             onRenameCancel={() => setRenameId(undefined)}
             onRenameSave={handleRename}
             onDeleteOpen={(id) => {
               setDeleteDialogId(id);
               setFeedback(undefined);
+              clearActionErrors(id);
             }}
             onDeleteCancel={() => setDeleteDialogId(undefined)}
             onDeleteConfirm={handleDelete}
-            onArchive={(id) => {
-              void handleStatus(id, "archive");
+            onPublish={(id, action) => {
+              void handlePublish(id, action);
             }}
-            onActivate={(id) => {
-              void handleStatus(id, "activate");
+            onStatus={(id, nextStatus) => {
+              void handleStatus(id, nextStatus);
             }}
           />
 
