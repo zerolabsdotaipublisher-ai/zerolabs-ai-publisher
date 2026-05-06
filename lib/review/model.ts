@@ -17,6 +17,9 @@ import type {
 import { REVIEW_MVP_BOUNDARIES, reviewScenarios } from "./scenarios";
 import { getOwnedReviewRecord, listOwnedReviewRecords } from "./storage";
 
+// Upper bound for a single server-side review aggregation pass.
+// This intentionally stays higher than default list pagination to avoid
+// per-card fan-out calls while keeping the request bounded for MVP.
 const MAX_SOURCE_SCAN = 5000;
 
 function resolveReviewState(item: ContentLibraryItem, record: ReviewRecord | null): ReviewState {
