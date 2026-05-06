@@ -8,6 +8,8 @@ export const routes = {
   dashboard: "/dashboard",
   activity: "/activity",
   contentLibrary: "/content",
+  review: "/review",
+  reviewItem: (contentId: string) => `/review/${encodeURIComponent(contentId)}`,
   websites: "/websites",
   createWebsite: "/create",
   generateWebsite: "/generate",

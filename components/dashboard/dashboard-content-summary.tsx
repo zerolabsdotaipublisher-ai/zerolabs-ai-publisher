@@ -15,6 +15,9 @@ export function DashboardContentSummarySection({ summary }: DashboardContentSumm
         <Link className="dashboard-inline-link" href={routes.contentLibrary}>
           Open content library
         </Link>
+        <Link className="dashboard-inline-link" href={routes.review}>
+          Open review queue
+        </Link>
       </header>
       <dl className="dashboard-definition-grid">
         <div>
