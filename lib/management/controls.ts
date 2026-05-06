@@ -36,12 +36,6 @@ export function resolveWebsiteManagementControls(
   const permissions = deriveWebsiteControlPermissions(website, options);
   const disabledByActivity = Boolean(runtime.deleting || runtime.renaming || runtime.publishing || runtime.statusUpdating);
   const publishAction = website.publishStatus.action.publishAction;
-  const publishLabel = publishAction === "publish"
-    ? "Publish"
-    : website.publishStatus.hasUnpublishedChanges
-      ? "Publish updates"
-      : "Update live website";
-
   const canShowPublish = publishAction === "publish" || website.publishStatus.hasUnpublishedChanges;
 
   return {
@@ -51,7 +45,7 @@ export function resolveWebsiteManagementControls(
       ? {
           id: toPublishActionId(publishAction),
           action: publishAction,
-          label: publishLabel,
+          label: publishAction === "publish" ? "Publish" : "Publish updates",
           disabled:
             disabledByActivity
             || website.publishStatus.isTransitional
