@@ -176,7 +176,7 @@ export async function applyOwnedInlineEdit(
   const normalized = {
     ...socialPost,
     title: payload.socialTitle.trim(),
-    updatedAt: new Date().toISOString(),
+    updatedAt: socialPost.updatedAt,
     version: socialPost.version + 1,
   };
 
