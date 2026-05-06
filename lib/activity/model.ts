@@ -110,7 +110,6 @@ function toGeneratedContentItems(snapshot: PublishingActivityStorageSnapshot): P
         status: published ? "published" : "scheduled",
         eventType: published ? "content_published" : "content_scheduled",
         occurredAt: row.updated_at,
-        scheduledFor: scheduled ? row.updated_at : undefined,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
         structureId: row.structure_id,
@@ -167,10 +166,13 @@ function toSocialScheduleItems(snapshot: PublishingActivityStorageSnapshot): Pub
 
   return snapshot.socialSchedules
     .filter((schedule) => ["scheduled", "queued", "publishing", "failed", "retry_pending", "canceled"].includes(schedule.status))
-    .map((schedule) => {
+    .map((schedule): PublishingActivityItem | null => {
       const post = postMap.get(schedule.socialPostId);
       const title = post?.title || schedule.title;
-      const platform = schedule.targets.find((target) => target.enabled)?.platform ?? "instagram";
+      const platform = schedule.targets.find((target) => target.enabled)?.platform ?? schedule.targets[0]?.platform;
+      if (!platform) {
+        return null;
+      }
 
       const status: PublishingActivityStatus =
         schedule.status === "failed"
@@ -220,7 +222,8 @@ function toSocialScheduleItems(snapshot: PublishingActivityStorageSnapshot): Pub
           },
         ],
       } satisfies PublishingActivityItem;
-    });
+    })
+    .filter((item): item is PublishingActivityItem => Boolean(item));
 }
 
 function toSocialHistoryItems(snapshot: PublishingActivityStorageSnapshot): PublishingActivityItem[] {

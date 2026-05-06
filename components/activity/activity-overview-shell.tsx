@@ -25,6 +25,15 @@ interface ActivityApiResponse {
   error?: string;
 }
 
+function formatGeneratedAt(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleString();
+}
+
 function toDateInput(value: string | undefined): string {
   return value ? value.slice(0, 10) : "";
 }
@@ -124,7 +133,7 @@ export function ActivityOverviewShell({ initialOverview }: ActivityOverviewShell
         onToChange={setTo}
       />
 
-      <p className="activity-meta">Showing {overview.items.length} items from {overview.generatedAt.replace("T", " ").slice(0, 16)} UTC.</p>
+      <p className="activity-meta">Showing {overview.items.length} items from {formatGeneratedAt(overview.generatedAt)}.</p>
 
       {error ? (
         <div className="activity-error">
