@@ -67,6 +67,7 @@ interface UpsertOwnedReviewRecordInput {
 export async function upsertOwnedReviewRecord(input: UpsertOwnedReviewRecordInput): Promise<ReviewRecord> {
   const supabase = getSupabaseServiceClient();
   const now = new Date().toISOString();
+  const decisionNote = input.decisionNote === undefined ? null : input.decisionNote.trim() || null;
 
   const row: Omit<ReviewRecordRow, "created_at" | "updated_at"> & { created_at?: string; updated_at?: string } = {
     user_id: input.userId,
@@ -75,7 +76,7 @@ export async function upsertOwnedReviewRecord(input: UpsertOwnedReviewRecordInpu
     source_id: input.sourceId,
     structure_id: input.structureId ?? null,
     state: input.state,
-    decision_note: input.decisionNote === undefined ? null : (input.decisionNote.trim() || null),
+    decision_note: decisionNote,
     feedback_json: input.feedback ?? {},
     approved_at: input.state === "approved" ? now : null,
     rejected_at: input.state === "rejected" || input.state === "needs_changes" ? now : null,
