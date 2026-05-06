@@ -132,7 +132,7 @@ export async function regenerateOwnedReviewContent(params: {
       return {
         ok: false,
         error: draftSave.error || "Unable to persist regenerated blog structure",
-        validationErrors: draftSave.validationErrors,
+        validationErrors: draftSave.validationErrors.map((entry) => entry.message),
       };
     }
 
@@ -191,7 +191,7 @@ export async function regenerateOwnedReviewContent(params: {
       return {
         ok: false,
         error: draftSave.error || "Unable to persist regenerated article structure",
-        validationErrors: draftSave.validationErrors,
+        validationErrors: draftSave.validationErrors.map((entry) => entry.message),
       };
     }
 

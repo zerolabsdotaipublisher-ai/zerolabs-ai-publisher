@@ -4,6 +4,7 @@ import { routes } from "@/config/routes";
 import { listOwnedContentLibraryPage } from "@/lib/content/library";
 import type { ContentLibraryItem } from "@/lib/content/library";
 import { getSocialPostById, buildSocialPreviewResponse, upsertSocialPost, validateGeneratedSocialPost } from "@/lib/social";
+import type { SocialPreviewResponse } from "@/lib/social";
 import type {
   ReviewDetail,
   ReviewInlineEditPayload,
@@ -101,7 +102,10 @@ export async function getOwnedReviewDetail(userId: string, contentId: string): P
   const reviewState = resolveReviewState(item, record);
   const linkedStructureId = item.linkedWebsite?.structureId ?? item.quickActions.deleteStructureId;
   const canInlineEditContent = item.type === "social_post";
-  const preview = {
+  const preview: {
+    websitePreviewHref?: string;
+    socialPreview?: SocialPreviewResponse;
+  } = {
     websitePreviewHref: linkedStructureId
       ? `${routes.previewSite(linkedStructureId)}${item.pageSlug ? `?page=${encodeURIComponent(item.pageSlug)}` : ""}`
       : undefined,
