@@ -238,7 +238,7 @@ function applyFieldLevel(currentDraft: EditableContentDraft, regeneratedDraft: E
     return { ...next, body: next.sections.map((section) => section.body).join("\n\n") };
   }
   if (field === "cta") {
-    return { ...next, summary: candidate.summary || next.summary };
+    return { ...next, summary: regeneratedDraft.summary || next.summary };
   }
   return next;
 }
