@@ -35,6 +35,7 @@ export function ContentEditorShell({ initialDetail }: ContentEditorShellProps) {
   const [changeTick, setChangeTick] = useState(0);
   const autosaveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const draftRef = useRef(draft);
+  const mountedRef = useRef(true);
 
   const contentId = draft.contentId;
   const canAutoSave = draft.capabilities.autosave;
@@ -107,6 +108,13 @@ export function ContentEditorShell({ initialDetail }: ContentEditorShellProps) {
   }, [draft]);
 
   useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
     if (!canAutoSave || !dirty) {
       return;
     }
@@ -116,7 +124,9 @@ export function ContentEditorShell({ initialDetail }: ContentEditorShellProps) {
     }
 
     autosaveTimeout.current = setTimeout(() => {
-      void runSave("autosave");
+      if (mountedRef.current) {
+        void runSave("autosave");
+      }
     }, AUTOSAVE_DEBOUNCE_MS);
 
     return () => {

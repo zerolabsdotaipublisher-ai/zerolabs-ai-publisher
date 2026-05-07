@@ -274,9 +274,13 @@ function mapSocialDraft(detail: NonNullable<Awaited<ReturnType<typeof getOwnedRe
 
 function resolvePostEditReviewState(previousState: ReviewState): "pending_review" | "needs_changes" {
   // Keep explicit blocker states blocked until reviewer clears them.
-  // Any approved/published/pending state re-enters pending_review after edits.
+  // All other states (pending_review/approved/published) re-enter pending_review after edits.
   if (previousState === "needs_changes" || previousState === "rejected") {
     return "needs_changes";
+  }
+
+  if (previousState === "pending_review" || previousState === "approved" || previousState === "published") {
+    return "pending_review";
   }
 
   return "pending_review";
