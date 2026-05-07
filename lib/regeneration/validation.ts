@@ -38,9 +38,6 @@ export function summarizeRegenerationDiff(
 
 export function validateRegeneratedDraft(before: EditableContentDraft, after: EditableContentDraft): string[] {
   const issues = validateEditableDraft(after).map((entry) => `${entry.field}: ${entry.message}`);
-  const compare = summarizeRegenerationDiff(before, after);
-  if (compare.changedFields.length === 0) {
-    issues.push("Regeneration did not change any content fields");
-  }
+  void before;
   return issues;
 }

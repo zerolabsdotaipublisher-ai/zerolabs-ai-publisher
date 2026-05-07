@@ -31,6 +31,13 @@ interface RegenerationApplyResponse {
   validationErrors?: string[];
 }
 
+function toApplyErrorMessage(response: RegenerationApplyResponse): string {
+  if (response.validationErrors?.length) {
+    return `${response.error || "Apply failed"}: ${response.validationErrors.join(", ")}`;
+  }
+  return response.error || "Apply failed";
+}
+
 const DEFAULT_REQUEST: RegenerationRequest = {
   level: "full",
   mode: "rewrite",
@@ -115,7 +122,7 @@ export function RegenerationControls({ contentId, compact = false, initialSectio
       });
       const body = (await response.json()) as RegenerationApplyResponse;
       if (!response.ok || !body.ok) {
-        setError(body.validationErrors?.length ? `${body.error || "Apply failed"}: ${body.validationErrors.join(", ")}` : body.error || "Apply failed");
+        setError(toApplyErrorMessage(body));
         return;
       }
       setMessage("Regenerated draft applied and saved for review.");

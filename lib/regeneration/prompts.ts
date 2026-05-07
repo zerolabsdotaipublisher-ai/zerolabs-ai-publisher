@@ -12,6 +12,8 @@ const MODE_CONSTRAINTS: Record<RegenerationRequest["mode"], string> = {
   simplify: "Simplify language for faster scanning and broader readability.",
   adjust_tone: "Adjust the tone while preserving intent and factual meaning.",
 };
+const MAX_EXISTING_CONSTRAINTS = 4;
+const MAX_TOTAL_CONSTRAINTS = 5;
 
 function trimInstruction(value: string | undefined): string | undefined {
   return value?.trim() ? value.trim() : undefined;
@@ -36,12 +38,12 @@ export function buildRegenerationConstraint(request: RegenerationRequest): strin
 }
 
 export function applyModeToWebsiteInput(input: WebsiteGenerationInput, request: RegenerationRequest): Partial<WebsiteGenerationInput> {
-  const constraints = Array.isArray(input.constraints) ? input.constraints.slice(0, 4) : [];
+  const constraints = Array.isArray(input.constraints) ? input.constraints.slice(0, MAX_EXISTING_CONSTRAINTS) : [];
   constraints.push(buildRegenerationConstraint(request));
 
   return {
     tone: request.mode === "adjust_tone" && request.tone ? request.tone : input.tone,
-    constraints: constraints.slice(-5),
+    constraints: constraints.slice(-MAX_TOTAL_CONSTRAINTS),
   };
 }
 

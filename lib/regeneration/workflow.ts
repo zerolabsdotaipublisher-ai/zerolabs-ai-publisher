@@ -260,14 +260,20 @@ async function buildRegeneratedDraft(input: {
   const { context, request } = input;
 
   if (context.source.kind === "website") {
-    const pageSlug = context.currentDraft.metadataSeo.slug || "/";
+    const pageSlug = context.currentDraft.metadataSeo.slug?.trim() || context.reviewDetail.item.pageSlug;
+    if (!pageSlug) {
+      throw new Error("Target page slug is required for website regeneration");
+    }
     const regenerated = await regenerateWebsiteContent(
       context.source.structure,
       context.userId,
       applyModeToWebsiteInput(context.source.structure.sourceInput, request),
       { pages: [pageSlug] },
     );
-    const regeneratedPage = regenerated.mappedStructure.pages.find((page) => page.slug === pageSlug) ?? regenerated.mappedStructure.pages[0];
+    const regeneratedPage = regenerated.mappedStructure.pages.find((page) => page.slug === pageSlug);
+    if (!regeneratedPage) {
+      throw new Error(`Regenerated page '${pageSlug}' not found`);
+    }
     return {
       regeneratedDraft: mapWebsitePageToDraft(
         context.currentDraft,
