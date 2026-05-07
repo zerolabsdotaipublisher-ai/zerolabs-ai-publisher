@@ -1,4 +1,6 @@
 import { routes } from "@/config/routes";
+import { mapPersistedDecisionToApprovalState } from "@/lib/approval/schema";
+import { listOwnedReviewRecords } from "@/lib/review/storage";
 import { filterContentLibraryItems } from "./filters";
 import { searchContentLibraryItems } from "./search";
 import { CONTENT_LIBRARY_MVP_BOUNDARIES, contentLibraryScenarios } from "./scenarios";
@@ -76,6 +78,7 @@ function mapWebsitePages(snapshot: ContentLibraryStorageSnapshot): ContentLibrar
       id: `website_page:${row.id}`,
       sourceId: row.id,
       type: "website_page",
+      approvalState: "draft",
       title: formatPageTitle(pageMessaging?.pageHeadline || linkedWebsite?.title, row.page_slug),
       status: toStatus(row.content_status),
       createdAt: row.created_at,
@@ -109,6 +112,7 @@ function mapBlogs(snapshot: ContentLibraryStorageSnapshot): ContentLibraryItem[]
       id: `blog_post:${row.id}`,
       sourceId: row.id,
       type: "blog_post",
+      approvalState: "draft",
       title: row.title,
       status: toStatus(row.content_status),
       createdAt: row.generated_at,
@@ -142,6 +146,7 @@ function mapArticles(snapshot: ContentLibraryStorageSnapshot): ContentLibraryIte
       id: `article:${row.id}`,
       sourceId: row.id,
       type: "article",
+      approvalState: "draft",
       title: row.title,
       status: toStatus(row.content_status),
       createdAt: row.generated_at,
@@ -185,6 +190,7 @@ function mapSocialPosts(snapshot: ContentLibraryStorageSnapshot): ContentLibrary
       id: `social_post:${row.id}`,
       sourceId: row.id,
       type: "social_post",
+      approvalState: "draft",
       title: row.title || row.topic,
       status: toStatus(row.content_status),
       createdAt: row.generated_at,
@@ -236,6 +242,27 @@ function withScheduleAwareStatus(
   });
 }
 
+async function withApprovalState(items: ContentLibraryItem[], userId: string): Promise<ContentLibraryItem[]> {
+  const records = await listOwnedReviewRecords(userId, items.map((item) => item.id));
+  const recordByContentId = new Map(records.map((record) => [record.contentId, record.state]));
+
+  return items.map((item) => {
+    if (item.status === "published") {
+      return { ...item, approvalState: "published" };
+    }
+
+    const decision = recordByContentId.get(item.id);
+    if (!decision) {
+      return { ...item, approvalState: "draft" };
+    }
+
+    return {
+      ...item,
+      approvalState: mapPersistedDecisionToApprovalState(decision),
+    };
+  });
+}
+
 function sortContentLibraryItems(items: ContentLibraryItem[], sort: ContentLibrarySort): ContentLibraryItem[] {
   const cloned = items.slice();
 
@@ -281,8 +308,9 @@ export async function listOwnedContentLibraryPage(
     ],
     snapshot,
   );
+  const approvalAwareItems = await withApprovalState(allItems, userId);
 
-  const filtered = filterContentLibraryItems(allItems, query);
+  const filtered = filterContentLibraryItems(approvalAwareItems, query);
   const searched = searchContentLibraryItems(filtered, query.search);
   const sorted = sortContentLibraryItems(searched, query.sort);
   const paged = paginateItems(sorted, query.page, query.perPage);

@@ -18,6 +18,9 @@ export function DashboardContentSummarySection({ summary }: DashboardContentSumm
         <Link className="dashboard-inline-link" href={routes.review}>
           Open review queue
         </Link>
+        <Link className="dashboard-inline-link" href={routes.approval}>
+          Open approval queue
+        </Link>
       </header>
       <dl className="dashboard-definition-grid">
         <div>
@@ -43,6 +46,10 @@ export function DashboardContentSummarySection({ summary }: DashboardContentSumm
         <div>
           <dt>Scheduled content</dt>
           <dd>{summary.scheduledContent}</dd>
+        </div>
+        <div>
+          <dt>Pending approval</dt>
+          <dd>{summary.pendingApproval}</dd>
         </div>
       </dl>
     </section>

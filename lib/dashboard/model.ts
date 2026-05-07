@@ -1,4 +1,5 @@
 import { routes } from "@/config/routes";
+import { listOwnedReviewRecords } from "@/lib/review/storage";
 import { buildDashboardRecentActivity } from "./activity";
 import { buildDashboardAlerts } from "./alerts";
 import { DASHBOARD_MVP_BOUNDARIES, DASHBOARD_QUICK_ACTIONS, isAccountAttentionRequired } from "./schema";
@@ -23,7 +24,10 @@ export function getDashboardUserDisplayName(userMetadata: unknown): string | und
 }
 
 export async function buildDashboardSummary(options: BuildDashboardSummaryOptions): Promise<DashboardSummary> {
-  const snapshot = await fetchDashboardStorageSnapshot(options.userId);
+  const [snapshot, reviewRecords] = await Promise.all([
+    fetchDashboardStorageSnapshot(options.userId),
+    listOwnedReviewRecords(options.userId),
+  ]);
   const websitesByRecentUpdate = [...snapshot.websites].sort(
     (left, right) => new Date(right.lastUpdatedAt).getTime() - new Date(left.lastUpdatedAt).getTime(),
   );
@@ -56,6 +60,7 @@ export async function buildDashboardSummary(options: BuildDashboardSummaryOption
       snapshot.websites.filter(
         (website) => website.schedule?.status === "active" || website.schedule?.status === "running",
       ).length,
+    pendingApproval: reviewRecords.filter((record) => record.state === "pending_review").length,
   };
 
   const socialSummary = {
