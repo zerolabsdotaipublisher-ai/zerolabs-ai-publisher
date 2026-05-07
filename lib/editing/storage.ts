@@ -71,7 +71,10 @@ function buildWebsiteSectionBody(section: WebsiteSection): string {
   return stringifyUnknown(content);
 }
 
-function mapWebsiteDetailDraft(detail: NonNullable<Awaited<ReturnType<typeof getOwnedReviewDetail>>>, structure: WebsiteStructure): EditableContentDraft {
+function mapWebsiteDetailToDraft(
+  detail: NonNullable<Awaited<ReturnType<typeof getOwnedReviewDetail>>>,
+  structure: WebsiteStructure,
+): EditableContentDraft {
   const pageSlug = detail.item.pageSlug || "/";
   const page = structure.pages.find((candidate) => candidate.slug === pageSlug) ?? structure.pages[0];
 
@@ -277,10 +280,6 @@ function resolvePostEditReviewState(previousState: ReviewState): "pending_review
   // All other states (pending_review/approved/published) re-enter pending_review after edits.
   if (previousState === "needs_changes" || previousState === "rejected") {
     return "needs_changes";
-  }
-
-  if (previousState === "pending_review" || previousState === "approved" || previousState === "published") {
-    return "pending_review";
   }
 
   return "pending_review";
@@ -645,7 +644,7 @@ export async function loadOwnedEditingDetail(userId: string, contentId: string):
       return null;
     }
 
-    draft = mapWebsiteDetailDraft(detail, structure);
+    draft = mapWebsiteDetailToDraft(detail, structure);
   } else if (detail.item.type === "blog_post") {
     if (!detail.linkedStructureId) {
       return null;

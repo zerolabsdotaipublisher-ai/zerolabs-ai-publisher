@@ -23,6 +23,10 @@ interface SaveResponse {
 
 const AUTOSAVE_DEBOUNCE_MS = 2000;
 
+function formatContentTypeLabel(value: string): string {
+  return value.replaceAll("_", " ");
+}
+
 export function ContentEditorShell({ initialDetail }: ContentEditorShellProps) {
   const [detail, setDetail] = useState(initialDetail);
   const [draft, setDraft] = useState<EditableContentDraft>(initialDetail.draft);
@@ -215,7 +219,7 @@ export function ContentEditorShell({ initialDetail }: ContentEditorShellProps) {
 
           <section className="content-editor-version-panel" aria-label="Version and workflow status">
             <h3>Version and review state</h3>
-            <p>Type: {draft.type.replaceAll("_", " ")}</p>
+            <p>Type: {formatContentTypeLabel(draft.type)}</p>
             <p>Review state: {draft.reviewState}</p>
             <p>Version: {draft.version.version}</p>
             <p>
