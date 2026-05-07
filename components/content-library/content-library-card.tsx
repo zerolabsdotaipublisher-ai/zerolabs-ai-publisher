@@ -63,6 +63,7 @@ export function ContentLibraryCard({ item, deleting, onDelete }: ContentLibraryC
 
       <div className="content-library-actions">
         <Link href={routes.reviewItem(item.id)}>Review</Link>
+        <Link href={routes.revisionItem(item.id)}>Revisions</Link>
         {item.quickActions.viewHref ? <Link href={item.quickActions.viewHref}>View / preview</Link> : null}
         {item.quickActions.editHref ? <Link href={item.quickActions.editHref}>Edit</Link> : null}
         {item.quickActions.publishScheduleHref ? <Link href={item.quickActions.publishScheduleHref}>Publish / schedule</Link> : null}

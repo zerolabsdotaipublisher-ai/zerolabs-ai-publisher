@@ -14,6 +14,8 @@ export const routes = {
   approvalItem: (contentId: string) => `/approval/${encodeURIComponent(contentId)}`,
   edit: "/edit",
   editContent: (contentId: string) => `/edit/${encodeURIComponent(contentId)}`,
+  revisions: "/revisions",
+  revisionItem: (contentId: string) => `/revisions/${encodeURIComponent(contentId)}`,
   websites: "/websites",
   createWebsite: "/create",
   generateWebsite: "/generate",

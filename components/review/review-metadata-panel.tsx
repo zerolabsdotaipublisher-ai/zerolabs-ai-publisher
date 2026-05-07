@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { routes } from "@/config/routes";
 import type { ReviewDetail } from "@/lib/review/types";
 
 interface ReviewMetadataPanelProps {
@@ -56,6 +58,9 @@ export function ReviewMetadataPanel({ detail }: ReviewMetadataPanelProps) {
         <h3>Version comparison</h3>
         <p>{detail.versionComparison.note}</p>
         {detail.versionComparison.href ? <a href={detail.versionComparison.href}>Open existing version history</a> : null}
+        <p>
+          <Link href={routes.revisionItem(detail.contentId)}>Open content revision history</Link>
+        </p>
       </section>
 
       <section className="review-future-ready">

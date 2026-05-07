@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { routes } from "@/config/routes";
 import type { ReviewDetail, ReviewState } from "@/lib/review/types";
 import { ReviewStatusBadge } from "./review-status-badge";
 
@@ -126,6 +127,7 @@ export function ReviewActionBar({ initialDetail }: ReviewActionBarProps) {
         <button type="button" onClick={() => void runAction("regenerate")} disabled={Boolean(loadingState)}>
           {loadingState === "regenerate" ? "Regenerating..." : "Regenerate"}
         </button>
+        <Link href={routes.revisionItem(detail.contentId)}>Revision history</Link>
         {detail.editHref ? <Link href={detail.editHref}>Open existing editor</Link> : null}
       </div>
 

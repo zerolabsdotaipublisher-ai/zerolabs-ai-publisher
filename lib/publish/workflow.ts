@@ -26,6 +26,7 @@ import type { PublishAction, PublishMutationResponse } from "./types";
 import type { WebsiteStructure } from "@/lib/ai/structure";
 import { createWebsiteVersionLabel } from "@/lib/versions/model";
 import { createWebsiteVersion } from "@/lib/versions/storage";
+import { recordPublishRevisionsForStructure } from "@/lib/revisions/workflow";
 
 interface RunPublishWorkflowParams {
   structure: WebsiteStructure;
@@ -212,6 +213,28 @@ export async function runPublishWorkflow({
         error: {
           name: "PublishVersionSnapshotError",
           message: versionError instanceof Error ? versionError.message : "Unknown error",
+        },
+      });
+    }
+
+    try {
+      await recordPublishRevisionsForStructure({
+        userId,
+        structureId: structure.id,
+        action,
+        requestId,
+      });
+    } catch (revisionError) {
+      logger.error("Published website without creating content revision snapshots", {
+        category: "error",
+        service: "revisions",
+        action,
+        userId,
+        structureId: structure.id,
+        requestId,
+        error: {
+          name: "PublishContentRevisionSnapshotError",
+          message: revisionError instanceof Error ? revisionError.message : "Unknown error",
         },
       });
     }
