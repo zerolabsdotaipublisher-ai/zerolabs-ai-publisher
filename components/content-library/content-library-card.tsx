@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ApprovalStatusBadge } from "@/components/approval/approval-status-badge";
+import { RegenerationControls } from "@/components/regeneration/regeneration-controls";
 import { routes } from "@/config/routes";
 import type { ContentLibraryItem } from "@/lib/content/library/types";
 
@@ -67,6 +68,7 @@ export function ContentLibraryCard({ item, deleting, onDelete }: ContentLibraryC
         {item.quickActions.viewHref ? <Link href={item.quickActions.viewHref}>View / preview</Link> : null}
         {item.quickActions.editHref ? <Link href={item.quickActions.editHref}>Edit</Link> : null}
         {item.quickActions.publishScheduleHref ? <Link href={item.quickActions.publishScheduleHref}>Publish / schedule</Link> : null}
+        <RegenerationControls contentId={item.id} compact />
         {item.quickActions.canDelete && item.quickActions.deleteStructureId ? (
           <button type="button" onClick={() => onDelete(item)} disabled={deleting}>
             {deleting ? "Deleting..." : "Delete"}
