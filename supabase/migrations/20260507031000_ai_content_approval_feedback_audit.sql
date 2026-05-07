@@ -12,7 +12,7 @@ create table if not exists public.ai_content_approval_comments (
 );
 
 create index if not exists idx_ai_content_approval_comments_user_content_created
-  on public.ai_content_approval_comments(user_id, content_id, created_at asc);
+  on public.ai_content_approval_comments(user_id, content_id, created_at desc);
 
 alter table public.ai_content_approval_comments enable row level security;
 

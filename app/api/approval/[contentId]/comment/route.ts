@@ -23,7 +23,10 @@ export async function POST(
   try {
     body = (await request.json()) as CommentBody;
   } catch {
-    return NextResponse.json({ ok: false, error: "Invalid JSON body" }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: "Invalid request body. Expected JSON with required field: body (string)." },
+      { status: 400 },
+    );
   }
 
   if (!body.body?.trim()) {

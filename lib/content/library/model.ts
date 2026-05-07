@@ -243,7 +243,7 @@ function withScheduleAwareStatus(
 }
 
 async function withApprovalState(items: ContentLibraryItem[], userId: string): Promise<ContentLibraryItem[]> {
-  const records = await listOwnedReviewRecords(userId);
+  const records = await listOwnedReviewRecords(userId, items.map((item) => item.id));
   const recordByContentId = new Map(records.map((record) => [record.contentId, record.state]));
 
   return items.map((item) => {

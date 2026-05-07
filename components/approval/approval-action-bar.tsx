@@ -23,6 +23,13 @@ async function parseActionResponse(response: Response): Promise<ApprovalActionRe
   }
 }
 
+const ACTION_SUCCESS_MESSAGE: Record<"submit" | "approve" | "reject" | "request-changes", string> = {
+  submit: "Submitted for approval.",
+  approve: "Approved and publish-ready.",
+  reject: "Rejected.",
+  "request-changes": "Changes requested.",
+};
+
 export function ApprovalActionBar({ initialDetail }: ApprovalActionBarProps) {
   const [detail, setDetail] = useState(initialDetail);
   const [note, setNote] = useState("");
@@ -50,15 +57,7 @@ export function ApprovalActionBar({ initialDetail }: ApprovalActionBarProps) {
     }
 
     setDetail(body.detail);
-    setMessage(
-      action === "submit"
-        ? "Submitted for approval."
-        : action === "approve"
-          ? "Approved and publish-ready."
-          : action === "request-changes"
-            ? "Changes requested."
-            : "Rejected.",
-    );
+    setMessage(ACTION_SUCCESS_MESSAGE[action]);
     setLoadingAction(undefined);
   }
 

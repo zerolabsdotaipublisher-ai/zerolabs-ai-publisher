@@ -22,13 +22,19 @@ function fromRow(row: ReviewRecordRow): ReviewRecord {
   };
 }
 
-export async function listOwnedReviewRecords(userId: string): Promise<ReviewRecord[]> {
+export async function listOwnedReviewRecords(userId: string, contentIds?: string[]): Promise<ReviewRecord[]> {
   const supabase = getSupabaseServiceClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from("ai_content_reviews")
     .select("*")
     .eq("user_id", userId)
     .order("updated_at", { ascending: false });
+
+  if (contentIds && contentIds.length > 0) {
+    query = query.in("content_id", contentIds);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     throw error;

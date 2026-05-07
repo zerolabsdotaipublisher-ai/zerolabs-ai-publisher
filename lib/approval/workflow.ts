@@ -13,6 +13,16 @@ import type { ApprovalActionResult, ApprovalPublishingGate, ApprovalRole, Approv
 // 5000 matches existing review/content aggregation limits and avoids per-item fan-out.
 const MAX_SOURCE_SCAN = 5000;
 
+function resolveRoleForAction(role: ApprovalRole | undefined, action: "approve" | "reject" | "request_changes"): ApprovalRole {
+  const normalized = normalizeApprovalRole(role);
+
+  if (normalized === "creator") {
+    return action === "approve" ? "approver" : "reviewer";
+  }
+
+  return normalized;
+}
+
 async function setApprovalState(input: {
   userId: string;
   contentId: string;
@@ -107,7 +117,7 @@ export async function approveOwnedContent(input: {
   role?: ApprovalRole;
   note?: string;
 }): Promise<ApprovalActionResult> {
-  const role = normalizeApprovalRole(input.role === "creator" ? "approver" : input.role);
+  const role = resolveRoleForAction(input.role, "approve");
   const detail = await getOwnedApprovalDetail(input.userId, input.contentId);
   if (!detail) {
     return { ok: false, error: "Content not found" };
@@ -135,7 +145,7 @@ export async function rejectOwnedContent(input: {
   role?: ApprovalRole;
   note?: string;
 }): Promise<ApprovalActionResult> {
-  const role = normalizeApprovalRole(input.role === "creator" ? "reviewer" : input.role);
+  const role = resolveRoleForAction(input.role, "reject");
   const detail = await getOwnedApprovalDetail(input.userId, input.contentId);
   if (!detail) {
     return { ok: false, error: "Content not found" };
@@ -163,7 +173,7 @@ export async function requestOwnedContentChanges(input: {
   role?: ApprovalRole;
   note?: string;
 }): Promise<ApprovalActionResult> {
-  const role = normalizeApprovalRole(input.role === "creator" ? "reviewer" : input.role);
+  const role = resolveRoleForAction(input.role, "request_changes");
   const detail = await getOwnedApprovalDetail(input.userId, input.contentId);
   if (!detail) {
     return { ok: false, error: "Content not found" };
@@ -230,7 +240,7 @@ export async function getStructureApprovalPublishingGate(userId: string, structu
     type: "all",
     status: "all",
     sort: "updated_desc",
-    websiteId: "all",
+    websiteId: structureId,
     search: undefined,
   });
 
