@@ -162,10 +162,10 @@ export function RegenerationControls({ contentId, compact = false, initialSectio
             </button>
           </div>
 
-          {hasPreview && preview && preview.regeneratedDraft && currentDraft && compare ? (
+          {hasPreview && preview && compare ? (
             <>
-              <RegenerationResultPreview draft={preview.regeneratedDraft} />
-              <RegenerationComparePanel before={currentDraft} after={preview.regeneratedDraft} compare={compare} />
+              <RegenerationResultPreview draft={preview.regeneratedDraft!} />
+              <RegenerationComparePanel before={currentDraft!} after={preview.regeneratedDraft!} compare={compare} />
               {preview.validationErrors.length > 0 ? <p className="regeneration-warning">Validation notes: {preview.validationErrors.join(", ")}</p> : null}
             </>
           ) : null}

@@ -6,6 +6,7 @@ import { regenerateArticle } from "@/lib/article";
 import { regenerateBlogPost } from "@/lib/blog";
 import { saveOwnedEditableContent } from "@/lib/editing/storage";
 import type { EditableContentDraft } from "@/lib/editing/types";
+import { logger } from "@/lib/observability";
 import { canRegenerateOwnedContent } from "@/lib/regeneration/permissions";
 import { toRevisionWorkflowIdMap } from "@/lib/revisions/model";
 import { recordContentRevisionAction } from "@/lib/revisions/workflow";
@@ -200,6 +201,12 @@ function mapSocialToDraft(currentDraft: EditableContentDraft, regenerated: Await
 function replaceSection(currentDraft: EditableContentDraft, regeneratedDraft: EditableContentDraft, sectionId: string): EditableContentDraft {
   const regeneratedSection = regeneratedDraft.sections.find((section) => section.id === sectionId);
   if (!regeneratedSection) {
+    logger.warn("regeneration section target missing in regenerated draft", {
+      category: "request",
+      service: "regeneration",
+      contentId: currentDraft.contentId,
+      sectionId,
+    });
     return currentDraft;
   }
 
@@ -258,6 +265,10 @@ async function buildRegeneratedDraft(input: {
   context: Awaited<ReturnType<typeof getOwnedRegenerationContext>> extends infer T ? NonNullable<T> : never;
 }): Promise<{ regeneratedDraft: EditableContentDraft; usedFallback: boolean; validationErrors: string[] }> {
   const { context, request } = input;
+  const sectionPlatform = request.target.sectionId;
+  const socialPlatform = sectionPlatform && ["facebook", "instagram", "x", "linkedin"].includes(sectionPlatform)
+    ? sectionPlatform as "facebook" | "instagram" | "x" | "linkedin"
+    : undefined;
 
   if (context.source.kind === "website") {
     const pageSlug = context.currentDraft.metadataSeo.slug?.trim() || context.reviewDetail.item.pageSlug;
@@ -313,7 +324,7 @@ async function buildRegeneratedDraft(input: {
   }
 
   const socialRegenerated = await regenerateSocialPost(context.source.social, context.userId, {
-    platform: request.level === "section" ? (request.target.sectionId as "facebook" | "instagram" | "x" | "linkedin" | undefined) : undefined,
+    platform: request.level === "section" ? socialPlatform : undefined,
     reason: buildRegenerationConstraint(request),
     updatedInput: applyModeToSocialInput(
       {
@@ -358,7 +369,7 @@ export async function runRegenerationPreviewWorkflow(input: {
   try {
     const generated = await buildRegeneratedDraft({ context, request: input.request });
     const scopedDraft = applyRegenerationScope(context.currentDraft, generated.regeneratedDraft, input.request);
-    const validationErrors = [...generated.validationErrors, ...validateRegeneratedDraft(context.currentDraft, scopedDraft)];
+    const validationErrors = [...generated.validationErrors, ...validateRegeneratedDraft(scopedDraft)];
     const compare = summarizeRegenerationDiff(context.currentDraft, scopedDraft);
 
     await emitRegenerationMetric({
@@ -427,7 +438,7 @@ export async function runRegenerationApplyWorkflow(input: {
     };
   }
 
-  const validationErrors = validateRegeneratedDraft(context.currentDraft, input.regeneratedDraft);
+  const validationErrors = validateRegeneratedDraft(input.regeneratedDraft);
   if (validationErrors.length > 0) {
     return {
       ok: false,

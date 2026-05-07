@@ -36,8 +36,7 @@ export function summarizeRegenerationDiff(
   };
 }
 
-export function validateRegeneratedDraft(before: EditableContentDraft, after: EditableContentDraft): string[] {
+export function validateRegeneratedDraft(after: EditableContentDraft): string[] {
   const issues = validateEditableDraft(after).map((entry) => `${entry.field}: ${entry.message}`);
-  void before;
   return issues;
 }
