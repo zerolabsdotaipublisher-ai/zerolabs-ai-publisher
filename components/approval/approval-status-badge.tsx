@@ -1,4 +1,4 @@
-import type { ApprovalState } from "@/lib/approval";
+import type { ApprovalState } from "@/lib/approval/types";
 
 interface ApprovalStatusBadgeProps {
   state: ApprovalState;

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { routes } from "@/config/routes";
-import type { ApprovalListItem } from "@/lib/approval";
+import type { ApprovalListItem } from "@/lib/approval/types";
 import { ApprovalStatusBadge } from "./approval-status-badge";
 
 interface ApprovalListProps {

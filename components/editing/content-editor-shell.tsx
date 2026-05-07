@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ApprovalStatusBadge } from "@/components/approval/approval-status-badge";
-import { mapReviewStateToApprovalState } from "@/lib/approval";
+import { mapReviewStateToApprovalState } from "@/lib/approval/schema";
 import type { EditableContentDraft, EditingDetail, EditingValidationIssue } from "@/lib/editing/types";
 import { ContentEditingToolbar } from "./content-editing-toolbar";
 import { EditorPreviewPanel } from "./editor-preview-panel";

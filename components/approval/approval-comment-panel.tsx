@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { ApprovalDetail } from "@/lib/approval";
+import type { ApprovalDetail } from "@/lib/approval/types";
 import { ApprovalFeedbackThread } from "./approval-feedback-thread";
 
 interface ApprovalCommentPanelProps {

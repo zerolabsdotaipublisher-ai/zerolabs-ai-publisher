@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import type { ApprovalDetail } from "@/lib/approval";
+import type { ApprovalDetail } from "@/lib/approval/types";
 import { ApprovalStatusBadge } from "./approval-status-badge";
 
 interface ApprovalActionBarProps {

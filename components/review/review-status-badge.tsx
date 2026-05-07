@@ -1,5 +1,5 @@
 import { ApprovalStatusBadge } from "@/components/approval/approval-status-badge";
-import { mapReviewStateToApprovalState } from "@/lib/approval";
+import { mapReviewStateToApprovalState } from "@/lib/approval/schema";
 import type { ReviewState } from "@/lib/review/types";
 
 interface ReviewStatusBadgeProps {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { ApprovalListPage, ApprovalQuery } from "@/lib/approval";
+import type { ApprovalListPage, ApprovalQuery } from "@/lib/approval/types";
 import { ApprovalList } from "./approval-list";
 
 interface ApprovalShellProps {

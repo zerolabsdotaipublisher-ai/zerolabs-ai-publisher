@@ -1,4 +1,4 @@
-import type { ApprovalComment } from "@/lib/approval";
+import type { ApprovalComment } from "@/lib/approval/types";
 
 interface ApprovalFeedbackThreadProps {
   comments: ApprovalComment[];

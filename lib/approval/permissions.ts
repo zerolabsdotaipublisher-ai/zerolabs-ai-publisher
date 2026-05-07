@@ -26,7 +26,11 @@ export function canSubmitForApproval(state: ApprovalState): ApprovalPermissionRe
   return { allowed: false, reason: "Only draft, rejected, or needs-changes content can be submitted." };
 }
 
-export function canDecideApproval(state: ApprovalState, _role: ApprovalRole): ApprovalPermissionResult {
+export function canDecideApproval(state: ApprovalState, role: ApprovalRole): ApprovalPermissionResult {
+  if (role !== "approver" && role !== "reviewer" && role !== "creator") {
+    return { allowed: false, reason: "Invalid approval role." };
+  }
+
   if (state === "published") {
     return { allowed: false, reason: "Published content cannot be re-decided from approval." };
   }
