@@ -34,6 +34,13 @@ export const DASHBOARD_QUICK_ACTIONS: DashboardQuickAction[] = [
     eventName: "dashboard_quick_action_content_library",
   },
   {
+    id: "review-queue",
+    label: "Review queue",
+    description: "Approve, reject, edit, and regenerate AI content before publishing.",
+    href: routes.review,
+    eventName: "dashboard_quick_action_review_queue",
+  },
+  {
     id: "publishing-activity",
     label: "Publishing activity",
     description: "Open the full publishing activity overview for recent, upcoming, and attention-required items.",

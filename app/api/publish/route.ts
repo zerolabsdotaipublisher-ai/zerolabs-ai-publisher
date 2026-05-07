@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { getServerUser } from "@/lib/supabase/server";
 import { getOwnedPublishStructure } from "@/lib/publish/storage";
 import { runPublishWorkflow } from "@/lib/publish/workflow";
+import { getStructureReviewPublishingGate } from "@/lib/review";
 
 interface PublishBody {
   structureId?: string;
@@ -27,6 +28,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const structure = await getOwnedPublishStructure(body.structureId, user.id);
   if (!structure) {
     return NextResponse.json({ ok: false, error: "Structure not found" }, { status: 404 });
+  }
+
+  const reviewGate = await getStructureReviewPublishingGate(user.id, body.structureId);
+  if (reviewGate.blocked) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: reviewGate.reason || "Publishing is blocked by review state.",
+        reviewGate,
+      },
+      { status: 409 },
+    );
   }
 
   const result = await runPublishWorkflow({

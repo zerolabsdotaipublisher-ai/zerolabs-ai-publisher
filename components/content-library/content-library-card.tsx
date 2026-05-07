@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { routes } from "@/config/routes";
 import type { ContentLibraryItem } from "@/lib/content/library/types";
 
 interface ContentLibraryCardProps {
@@ -59,6 +60,7 @@ export function ContentLibraryCard({ item, deleting, onDelete }: ContentLibraryC
       ) : null}
 
       <div className="content-library-actions">
+        <Link href={routes.reviewItem(item.id)}>Review</Link>
         {item.quickActions.viewHref ? <Link href={item.quickActions.viewHref}>View / preview</Link> : null}
         {item.quickActions.editHref ? <Link href={item.quickActions.editHref}>Edit</Link> : null}
         {item.quickActions.publishScheduleHref ? <Link href={item.quickActions.publishScheduleHref}>Publish / schedule</Link> : null}
