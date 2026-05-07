@@ -8,7 +8,11 @@ import {
   type PublishMutationResponse,
 } from "@/lib/publish";
 import { buildPublishingStatusFromStructure, type PublishStatusApiResponse } from "@/lib/publish/status";
+import type { ManualOverrideScenario } from "@/lib/publish/override/types";
 import { LiveLinkCard } from "./live-link-card";
+import { ManualOverrideButton } from "./manual-override-button";
+import { ManualOverrideDialog } from "./manual-override-dialog";
+import { ManualOverrideStatus } from "./manual-override-status";
 import { PublishConfirmationDialog } from "./publish-confirmation-dialog";
 import { PublishErrorState } from "./publish-error-state";
 import { PublishLoadingState } from "./publish-loading-state";
@@ -32,6 +36,10 @@ export function PublishControls({ structure, hasUnsavedChanges = false, context 
   const [errorMessage, setErrorMessage] = useState<string>();
   const [successMessage, setSuccessMessage] = useState<string>();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [manualOverrideOpen, setManualOverrideOpen] = useState(false);
+  const [manualOverrideLoading, setManualOverrideLoading] = useState(false);
+  const [manualOverrideDialogVersion, setManualOverrideDialogVersion] = useState(0);
+  const [overrideStatus, setOverrideStatus] = useState<PublishStatusApiResponse["overrideStatus"]>();
 
   useEffect(() => {
     setWebsite(structure);
@@ -75,6 +83,7 @@ export function PublishControls({ structure, hasUnsavedChanges = false, context 
         }
 
         setStatusSnapshot(body.status);
+        setOverrideStatus(body.overrideStatus);
         setStatusError(undefined);
       } catch (statusLoadError) {
         if (!active) {
@@ -184,6 +193,70 @@ export function PublishControls({ structure, hasUnsavedChanges = false, context 
     }
   }
 
+  async function sendManualOverrideRequest(payload: {
+    reason: string;
+    scenario: ManualOverrideScenario;
+    bypassApproval: boolean;
+  }) {
+    setManualOverrideLoading(true);
+    setLoading(true);
+    setErrorMessage(undefined);
+    setSuccessMessage(undefined);
+
+    try {
+      const response = await fetch("/api/publish/override", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          structureId: website.id,
+          targetContentType:
+            website.websiteType === "blog"
+              ? "blog_post"
+              : website.websiteType === "article"
+                ? "article"
+                : "website",
+          reason: payload.reason,
+          scenario: payload.scenario,
+          bypassApproval: payload.bypassApproval,
+        }),
+      });
+
+      const body = (await response.json()) as {
+        ok: boolean;
+        error?: string;
+        message?: string;
+        publish?: PublishMutationResponse;
+      };
+
+      if (!response.ok || !body.ok) {
+        setErrorMessage(body.error || "Manual override failed.");
+        return;
+      }
+
+      if (body.publish?.structure) {
+        setWebsite(body.publish.structure);
+      }
+
+      setSuccessMessage(body.message || "Manual publishing override completed successfully.");
+      void trackPublishEvent({
+        event: "manual_override_used",
+        structureId: website.id,
+        action,
+        state: detection.state,
+        message: body.message,
+      });
+      setStatusSnapshot(undefined);
+      setManualOverrideOpen(false);
+    } catch {
+      setErrorMessage("Manual override failed unexpectedly.");
+    } finally {
+      setLoading(false);
+      setManualOverrideLoading(false);
+    }
+  }
+
   function handleOpenConfirmation() {
     setErrorMessage(undefined);
     setSuccessMessage(undefined);
@@ -222,6 +295,7 @@ export function PublishControls({ structure, hasUnsavedChanges = false, context 
   }
 
   const publishButtonDisabled = loading || blockedByUnsaved || blockedByValidation || blockedBecauseNoUpdates || blockedByStatus;
+  const manualOverrideDisabled = loading || manualOverrideLoading || !overrideStatus?.canUseOverride;
 
   return (
     <section className="publish-controls" aria-label="Publish controls">
@@ -244,6 +318,14 @@ export function PublishControls({ structure, hasUnsavedChanges = false, context 
         <button type="button" onClick={handleOpenConfirmation} disabled={publishButtonDisabled}>
           {loading ? "Processing…" : buttonLabel}
         </button>
+        <ManualOverrideButton
+          disabled={manualOverrideDisabled}
+          loading={manualOverrideLoading}
+          onClick={() => {
+            setManualOverrideDialogVersion((current) => current + 1);
+            setManualOverrideOpen(true);
+          }}
+        />
       </div>
 
       {loading ? <PublishLoadingState action={action} /> : null}
@@ -255,6 +337,7 @@ export function PublishControls({ structure, hasUnsavedChanges = false, context 
         lastPublishedAt={status.timestamps.lastPublishedAt}
         lastDraftUpdatedAt={status.timestamps.lastDraftUpdatedAt}
       />
+      <ManualOverrideStatus status={status} />
 
       <PublishConfirmationDialog
         open={confirmOpen}
@@ -264,6 +347,16 @@ export function PublishControls({ structure, hasUnsavedChanges = false, context 
         onCancel={() => setConfirmOpen(false)}
         onConfirm={() => {
           void sendPublishRequest(action);
+        }}
+      />
+      <ManualOverrideDialog
+        key={manualOverrideDialogVersion}
+        open={manualOverrideOpen}
+        loading={manualOverrideLoading}
+        canBypassApproval={Boolean(overrideStatus?.canBypassApproval)}
+        onCancel={() => setManualOverrideOpen(false)}
+        onConfirm={(payload) => {
+          void sendManualOverrideRequest(payload);
         }}
       />
     </section>

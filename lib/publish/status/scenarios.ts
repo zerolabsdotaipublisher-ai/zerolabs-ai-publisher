@@ -45,4 +45,9 @@ export const publishStatusScenarios: PublishStatusScenario[] = [
     name: "Deleted website",
     expectedBehavior: "Soft-deleted/deleted websites map to Deleted and block publish actions.",
   },
+  {
+    id: "manual-override-indicator",
+    name: "Manual override status indicator",
+    expectedBehavior: "When override metadata exists, status surfaces show the latest manual override reason and timestamp.",
+  },
 ];

@@ -6,6 +6,7 @@ import { getWebsiteSeoMetadata } from "@/lib/ai/seo";
 import { Renderer } from "@/components/generated-site/renderer";
 import { PublishStatusSummary } from "@/components/publish/publish-status-summary";
 import { PublishStatusBadge } from "@/components/publish/publish-status-badge";
+import { ManualOverrideStatus } from "@/components/publish/manual-override-status";
 import { ContentSchedulePanel } from "@/components/scheduling/content-schedule-panel";
 import { VersionHistoryPanel } from "@/components/versions/version-history-panel";
 import { buildPublishingStatusFromStructure } from "@/lib/publish/status";
@@ -146,6 +147,7 @@ export default async function GeneratedSitePage({ params, searchParams }: PagePr
           <span className="generated-site-version">v{structure.version}</span>
         </p>
         <PublishStatusSummary status={publication} compact />
+        <ManualOverrideStatus status={publication} />
       </div>
       <ContentSchedulePanel
         structureId={structure.id}

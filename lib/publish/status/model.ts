@@ -63,6 +63,8 @@ export function buildPublishingStatusModel({
     isTransitional: uiState === "publishing" || uiState === "updating",
     failureMessage: detection.lastError,
     liveUrl: detection.liveUrl,
+    manualOverride: (structure.publication?.updates as { manualOverride?: PublishingStatusModel["manualOverride"] } | undefined)
+      ?.manualOverride,
     action: {
       publishAction,
       publishActionLabel,

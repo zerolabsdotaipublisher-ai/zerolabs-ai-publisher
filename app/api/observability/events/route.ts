@@ -15,6 +15,7 @@ const allowedEvents = new Set([
   "publish_retry_clicked",
   "update_completed",
   "update_noop",
+  "manual_override_used",
   "dashboard_refresh_clicked",
   "dashboard_quick_action_create_website",
   "dashboard_quick_action_generate_content",
