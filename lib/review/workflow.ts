@@ -26,6 +26,8 @@ import {
 } from "@/lib/article";
 import { getSocialPostById, regenerateSocialPost, upsertSocialPost } from "@/lib/social";
 import { saveEditorStructureDraft } from "@/lib/editor/storage";
+import { toRevisionWorkflowIdMap } from "@/lib/revisions/model";
+import { recordContentRevisionAction } from "@/lib/revisions/workflow";
 import { getOwnedReviewDetail } from "./model";
 import { listOwnedStructureReviewRecords, upsertOwnedReviewRecord } from "./storage";
 import type { ReviewDecisionState, ReviewPublishingGate, ReviewRegenerateResponse } from "./types";
@@ -100,6 +102,16 @@ export async function regenerateOwnedReviewContent(params: {
       version: updatedStructure.version,
       updatedAt: updatedStructure.updatedAt,
     });
+    await recordContentRevisionAction({
+      userId: params.userId,
+      contentId: params.contentId,
+      actionType: "ai_regenerate",
+      relatedWorkflowIds: toRevisionWorkflowIdMap(),
+      metadata: {
+        contentType: detail.item.type,
+        structureId,
+      },
+    });
 
     return {
       ok: true,
@@ -159,6 +171,16 @@ export async function regenerateOwnedReviewContent(params: {
       },
       params.userId,
     );
+    await recordContentRevisionAction({
+      userId: params.userId,
+      contentId: params.contentId,
+      actionType: "ai_regenerate",
+      relatedWorkflowIds: toRevisionWorkflowIdMap(),
+      metadata: {
+        contentType: detail.item.type,
+        structureId,
+      },
+    });
 
     return {
       ok: true,
@@ -221,6 +243,16 @@ export async function regenerateOwnedReviewContent(params: {
       },
       params.userId,
     );
+    await recordContentRevisionAction({
+      userId: params.userId,
+      contentId: params.contentId,
+      actionType: "ai_regenerate",
+      relatedWorkflowIds: toRevisionWorkflowIdMap(),
+      metadata: {
+        contentType: detail.item.type,
+        structureId,
+      },
+    });
 
     return {
       ok: true,
@@ -239,6 +271,16 @@ export async function regenerateOwnedReviewContent(params: {
     updatedInput: undefined,
   });
   await upsertSocialPost(regeneratedSocial.socialPost, params.userId);
+  await recordContentRevisionAction({
+    userId: params.userId,
+    contentId: params.contentId,
+    actionType: "ai_regenerate",
+    relatedWorkflowIds: toRevisionWorkflowIdMap(),
+    metadata: {
+      contentType: detail.item.type,
+      sourceId: detail.item.sourceId,
+    },
+  });
 
   return {
     ok: true,

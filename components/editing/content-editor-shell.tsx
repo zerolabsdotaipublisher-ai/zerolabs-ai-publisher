@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { ApprovalStatusBadge } from "@/components/approval/approval-status-badge";
+import { routes } from "@/config/routes";
 import { mapReviewStateToApprovalState } from "@/lib/approval/schema";
 import type { EditableContentDraft, EditingDetail, EditingValidationIssue } from "@/lib/editing/types";
 import { ContentEditingToolbar } from "./content-editing-toolbar";
@@ -230,6 +232,9 @@ export function ContentEditorShell({ initialDetail }: ContentEditorShellProps) {
                 : "Future-ready hook"}
             </p>
             <p>Undo/redo: future-ready</p>
+            <p>
+              <Link href={routes.revisionItem(draft.contentId)}>Open revision history</Link>
+            </p>
           </section>
 
           <section className="content-editor-scenarios-panel" aria-label="Editing scenarios and boundaries">

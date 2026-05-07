@@ -10,6 +10,8 @@ import {
 } from "@/lib/blog";
 import { saveEditorStructureDraft } from "@/lib/editor/storage";
 import { logger } from "@/lib/observability";
+import { toRevisionWorkflowIdMap } from "@/lib/revisions/model";
+import { recordContentRevisionAction } from "@/lib/revisions/workflow";
 import { getServerUser } from "@/lib/supabase/server";
 
 interface RegenerateBlogBody {
@@ -83,6 +85,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       },
       user.id,
     );
+    await recordContentRevisionAction({
+      userId: user.id,
+      contentId: `blog_post:${storedBlog.id}`,
+      actionType: "ai_regenerate",
+      relatedWorkflowIds: toRevisionWorkflowIdMap(),
+      metadata: {
+        structureId: body.structureId,
+      },
+    });
 
     return NextResponse.json({
       blog: storedBlog,

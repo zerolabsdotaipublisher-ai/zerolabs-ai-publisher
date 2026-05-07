@@ -1,6 +1,8 @@
 import "server-only";
 
 import { listOwnedContentLibraryPage } from "@/lib/content/library";
+import { toRevisionWorkflowIdMap } from "@/lib/revisions/model";
+import { recordContentRevisionAction } from "@/lib/revisions/workflow";
 import { logOwnedApprovalAction } from "./audit";
 import { getOwnedApprovalDetail } from "./model";
 import { emitApprovalNotificationEvent } from "./notifications";
@@ -12,6 +14,19 @@ import type { ApprovalActionResult, ApprovalPublishingGate, ApprovalRole, Approv
 // Keep structure-linked approval scans bounded for publish gates.
 // 5000 matches existing review/content aggregation limits and avoids per-item fan-out.
 const MAX_SOURCE_SCAN = 5000;
+
+function resolveRevisionActionForApproval(action: string) {
+  if (action === "submitted_for_approval") {
+    return "approval_submit" as const;
+  }
+  if (action === "approved") {
+    return "approval_approve" as const;
+  }
+  if (action === "rejected") {
+    return "approval_reject" as const;
+  }
+  return "approval_request_changes" as const;
+}
 
 function resolveRoleForAction(role: ApprovalRole | undefined, action: "approve" | "reject" | "request_changes"): ApprovalRole {
   const normalized = normalizeApprovalRole(role);
@@ -78,6 +93,19 @@ async function setApprovalState(input: {
       note: input.note,
     });
   }
+
+  await recordContentRevisionAction({
+    userId: input.userId,
+    contentId: detail.contentId,
+    actionType: resolveRevisionActionForApproval(input.action),
+    relatedWorkflowIds: toRevisionWorkflowIdMap({ approvalId: detail.contentId }),
+    metadata: {
+      approvalAction: input.action,
+      previousState: detail.approvalState,
+      nextState: input.nextState,
+      role: input.role,
+    },
+  });
 
   const refreshed = await getOwnedApprovalDetail(input.userId, detail.contentId);
   return { ok: true, detail: refreshed ?? undefined };

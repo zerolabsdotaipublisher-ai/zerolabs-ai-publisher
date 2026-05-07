@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { routes } from "@/config/routes";
 import type { ApprovalDetail } from "@/lib/approval/types";
 import { ApprovalStatusBadge } from "./approval-status-badge";
 
@@ -94,6 +95,7 @@ export function ApprovalActionBar({ initialDetail }: ApprovalActionBarProps) {
           {loadingAction === "reject" ? "Rejecting..." : "Reject"}
         </button>
         <Link href={detail.reviewHref}>Open review detail</Link>
+        <Link href={routes.revisionItem(detail.contentId)}>Revision history</Link>
         {detail.editHref ? <Link href={detail.editHref}>Open editor</Link> : null}
         {detail.previewHref ? <Link href={detail.previewHref}>Preview</Link> : null}
       </div>
