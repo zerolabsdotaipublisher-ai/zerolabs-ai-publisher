@@ -13,7 +13,7 @@ export function ManualOverrideStatus({ status }: ManualOverrideStatusProps) {
   return (
     <section className="publish-status-summary publish-status-summary-compact" aria-label="Manual override status">
       <div className="publish-status-summary-header">
-        <span className="publish-status-badge publish-status-failed">Manual override used</span>
+        <span className="publish-status-badge publish-status-updating">Manual override used</span>
       </div>
       <p className="publish-status-summary-note">{override.overrideReason}</p>
       <dl className="publish-status-summary-meta">
