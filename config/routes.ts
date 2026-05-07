@@ -10,6 +10,8 @@ export const routes = {
   contentLibrary: "/content",
   review: "/review",
   reviewItem: (contentId: string) => `/review/${encodeURIComponent(contentId)}`,
+  edit: "/edit",
+  editContent: (contentId: string) => `/edit/${encodeURIComponent(contentId)}`,
   websites: "/websites",
   createWebsite: "/create",
   generateWebsite: "/generate",
