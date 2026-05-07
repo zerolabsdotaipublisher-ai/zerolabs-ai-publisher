@@ -55,6 +55,20 @@ function defaultSectionId(index: number): string {
   return `section_${index + 1}`;
 }
 
+function resolveWebsiteSectionHeading(section: WebsiteSection): string {
+  const headline = section.content.headline;
+  if (typeof headline === "string" && headline.trim()) {
+    return headline;
+  }
+
+  const title = section.content.title;
+  if (typeof title === "string" && title.trim()) {
+    return title;
+  }
+
+  return section.type;
+}
+
 function buildWebsiteSectionBody(section: WebsiteSection): string {
   const content = section.content;
 
@@ -80,11 +94,7 @@ function mapWebsiteDetailToDraft(
 
   const sections = page.sections.map((section, index) => ({
     id: section.id,
-    heading: typeof section.content.headline === "string"
-      ? section.content.headline
-      : typeof section.content.title === "string"
-        ? section.content.title
-        : section.type,
+    heading: resolveWebsiteSectionHeading(section),
     body: buildWebsiteSectionBody(section),
     mediaUrl: typeof section.content.imageUrl === "string" ? section.content.imageUrl : undefined,
     order: section.order ?? index,
@@ -285,18 +295,25 @@ function resolvePostEditReviewState(previousState: ReviewState): "pending_review
   return "pending_review";
 }
 
+function resolvePostEditReviewUpdate(previousState: ReviewState, existingNote?: string) {
+  const state = resolvePostEditReviewState(previousState);
+  const decisionNote = previousState === "approved" || previousState === "published"
+    ? "Content edited after approval; re-review required."
+    : existingNote;
+
+  return { state, decisionNote };
+}
+
 async function persistReviewAfterEdit(userId: string, detail: NonNullable<Awaited<ReturnType<typeof getOwnedReviewDetail>>>) {
-  const nextState = resolvePostEditReviewState(detail.reviewState);
+  const update = resolvePostEditReviewUpdate(detail.reviewState, detail.reviewNote);
   await upsertOwnedReviewRecord({
     userId,
     contentId: detail.contentId,
     contentType: detail.item.type,
     sourceId: detail.item.sourceId,
     structureId: detail.linkedStructureId,
-    state: nextState,
-    decisionNote: detail.reviewState === "approved" || detail.reviewState === "published"
-      ? "Content edited after approval; re-review required."
-      : detail.reviewNote,
+    state: update.state,
+    decisionNote: update.decisionNote,
   });
 }
 
