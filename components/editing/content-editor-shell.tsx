@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ApprovalStatusBadge } from "@/components/approval/approval-status-badge";
+import { RegenerationControls } from "@/components/regeneration/regeneration-controls";
 import { routes } from "@/config/routes";
 import { mapReviewStateToApprovalState } from "@/lib/approval/schema";
 import type { EditableContentDraft, EditingDetail, EditingValidationIssue } from "@/lib/editing/types";
@@ -220,6 +221,11 @@ export function ContentEditorShell({ initialDetail }: ContentEditorShellProps) {
 
         <div className="content-editor-side-column">
           <EditorPreviewPanel previewHref={draft.previewHref} title={draft.title} />
+
+          <RegenerationControls
+            contentId={draft.contentId}
+            initialSections={draft.sections.map((section) => ({ id: section.id, heading: section.heading }))}
+          />
 
             <section className="content-editor-version-panel" aria-label="Version and workflow status">
               <h3>Version and review state</h3>

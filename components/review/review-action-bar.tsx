@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { routes } from "@/config/routes";
 import type { ReviewDetail, ReviewState } from "@/lib/review/types";
+import { RegenerationControls } from "@/components/regeneration/regeneration-controls";
 import { ReviewStatusBadge } from "./review-status-badge";
 
 interface ReviewActionBarProps {
@@ -29,11 +30,11 @@ export function ReviewActionBar({ initialDetail }: ReviewActionBarProps) {
   const [detail, setDetail] = useState(initialDetail);
   const [note, setNote] = useState(initialDetail.reviewNote ?? "");
   const [socialTitle, setSocialTitle] = useState(initialDetail.item.title);
-  const [loadingState, setLoadingState] = useState<"approve" | "reject" | "needs_changes" | "regenerate" | "save" | undefined>();
+  const [loadingState, setLoadingState] = useState<"approve" | "reject" | "needs_changes" | "save" | undefined>();
   const [error, setError] = useState<string>();
   const [message, setMessage] = useState<string>();
 
-  async function runAction(action: "approve" | "reject" | "needs_changes" | "regenerate"): Promise<void> {
+  async function runAction(action: "approve" | "reject" | "needs_changes"): Promise<void> {
     setLoadingState(action);
     setError(undefined);
     setMessage(undefined);
@@ -41,9 +42,7 @@ export function ReviewActionBar({ initialDetail }: ReviewActionBarProps) {
     const endpoint =
       action === "approve"
         ? "approve"
-        : action === "regenerate"
-          ? "regenerate"
-          : "reject";
+        : "reject";
 
     const response = await fetch(`/api/review/${encodeURIComponent(detail.contentId)}/${endpoint}`, {
       method: "POST",
@@ -62,10 +61,8 @@ export function ReviewActionBar({ initialDetail }: ReviewActionBarProps) {
 
     setDetail(body.detail);
     setMessage(
-      action === "approve"
-        ? "Approved and marked publish-ready."
-        : action === "regenerate"
-          ? "Regeneration completed."
+        action === "approve"
+          ? "Approved and marked publish-ready."
           : action === "needs_changes"
             ? "Marked as needs changes."
             : "Rejected and blocked from publish readiness.",
@@ -124,12 +121,11 @@ export function ReviewActionBar({ initialDetail }: ReviewActionBarProps) {
         <button type="button" onClick={() => void runAction("reject")} disabled={Boolean(loadingState)}>
           {loadingState === "reject" ? "Rejecting..." : "Reject"}
         </button>
-        <button type="button" onClick={() => void runAction("regenerate")} disabled={Boolean(loadingState)}>
-          {loadingState === "regenerate" ? "Regenerating..." : "Regenerate"}
-        </button>
         <Link href={routes.revisionItem(detail.contentId)}>Revision history</Link>
         {detail.editHref ? <Link href={detail.editHref}>Open existing editor</Link> : null}
       </div>
+
+      <RegenerationControls contentId={detail.contentId} />
 
       <div className="review-inline-edit">
         <label>
