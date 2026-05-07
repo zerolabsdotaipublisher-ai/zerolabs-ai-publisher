@@ -1,5 +1,5 @@
 import { routes } from "@/config/routes";
-import { listOwnedContentLibraryPage } from "@/lib/content/library";
+import { listOwnedReviewRecords } from "@/lib/review/storage";
 import { buildDashboardRecentActivity } from "./activity";
 import { buildDashboardAlerts } from "./alerts";
 import { DASHBOARD_MVP_BOUNDARIES, DASHBOARD_QUICK_ACTIONS, isAccountAttentionRequired } from "./schema";
@@ -24,17 +24,9 @@ export function getDashboardUserDisplayName(userMetadata: unknown): string | und
 }
 
 export async function buildDashboardSummary(options: BuildDashboardSummaryOptions): Promise<DashboardSummary> {
-  const [snapshot, approvalSnapshot] = await Promise.all([
+  const [snapshot, reviewRecords] = await Promise.all([
     fetchDashboardStorageSnapshot(options.userId),
-    listOwnedContentLibraryPage(options.userId, {
-      page: 1,
-      perPage: 5000,
-      type: "all",
-      status: "all",
-      websiteId: "all",
-      sort: "updated_desc",
-      search: undefined,
-    }),
+    listOwnedReviewRecords(options.userId),
   ]);
   const websitesByRecentUpdate = [...snapshot.websites].sort(
     (left, right) => new Date(right.lastUpdatedAt).getTime() - new Date(left.lastUpdatedAt).getTime(),
@@ -68,7 +60,7 @@ export async function buildDashboardSummary(options: BuildDashboardSummaryOption
       snapshot.websites.filter(
         (website) => website.schedule?.status === "active" || website.schedule?.status === "running",
       ).length,
-    pendingApproval: approvalSnapshot.items.filter((item) => item.approvalState === "pending_approval").length,
+    pendingApproval: reviewRecords.filter((record) => record.state === "pending_review").length,
   };
 
   const socialSummary = {

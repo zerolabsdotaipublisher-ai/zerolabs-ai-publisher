@@ -11,7 +11,7 @@ create table if not exists public.ai_content_approval_comments (
     check (author_role in ('creator', 'reviewer', 'approver'))
 );
 
-create index if not exists idx_ai_content_approval_comments_owner_content_created
+create index if not exists idx_ai_content_approval_comments_user_content_created
   on public.ai_content_approval_comments(user_id, content_id, created_at asc);
 
 alter table public.ai_content_approval_comments enable row level security;
@@ -47,7 +47,7 @@ create table if not exists public.ai_content_approval_audit (
     check (actor_role in ('creator', 'reviewer', 'approver'))
 );
 
-create index if not exists idx_ai_content_approval_audit_owner_content_created
+create index if not exists idx_ai_content_approval_audit_user_content_created
   on public.ai_content_approval_audit(user_id, content_id, created_at desc);
 
 alter table public.ai_content_approval_audit enable row level security;

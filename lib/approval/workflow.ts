@@ -9,6 +9,8 @@ import { mapApprovalStateToPersistedDecision, normalizeApprovalRole } from "./sc
 import { createOwnedApprovalComment, setOwnedApprovalDecision } from "./storage";
 import type { ApprovalActionResult, ApprovalPublishingGate, ApprovalRole, ApprovalState } from "./types";
 
+// Keep structure-linked approval scans bounded for publish gates.
+// 5000 matches existing review/content aggregation limits and avoids per-item fan-out.
 const MAX_SOURCE_SCAN = 5000;
 
 async function setApprovalState(input: {
