@@ -9,15 +9,20 @@ function toStringArray(value: unknown): string[] {
   return value.filter((entry): entry is string => typeof entry === "string").map((entry) => entry.trim().toLowerCase());
 }
 
+function readMetadataRole(metadata: Record<string, unknown>, field: "role" | "approvalRole"): string | undefined {
+  const raw = metadata[field];
+  return typeof raw === "string" ? raw.toLowerCase() : undefined;
+}
+
 function hasRole(user: User, candidates: string[]): boolean {
   const appMetadata = user.app_metadata ?? {};
   const userMetadata = user.user_metadata ?? {};
 
   const directRoles = [
-    typeof appMetadata.role === "string" ? appMetadata.role.toLowerCase() : undefined,
-    typeof userMetadata.role === "string" ? userMetadata.role.toLowerCase() : undefined,
-    typeof appMetadata.approvalRole === "string" ? appMetadata.approvalRole.toLowerCase() : undefined,
-    typeof userMetadata.approvalRole === "string" ? userMetadata.approvalRole.toLowerCase() : undefined,
+    readMetadataRole(appMetadata, "role"),
+    readMetadataRole(userMetadata, "role"),
+    readMetadataRole(appMetadata, "approvalRole"),
+    readMetadataRole(userMetadata, "approvalRole"),
   ].filter((value): value is string => Boolean(value));
 
   const roleArrays = [

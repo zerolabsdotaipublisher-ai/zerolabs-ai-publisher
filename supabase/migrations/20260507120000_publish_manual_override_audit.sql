@@ -1,5 +1,4 @@
 -- Manual publish override audit trail for ZLAP-STORY 9-6
-
 create table if not exists public.publish_manual_override_audit (
   id text primary key,
   user_id uuid not null references auth.users(id) on delete cascade,

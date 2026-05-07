@@ -65,7 +65,7 @@ export function ManualOverrideDialog({
         />
       </label>
 
-      <label className="content-schedule-weekday">
+      <label className="publish-override-option">
         <input
           type="checkbox"
           checked={bypassApproval}
