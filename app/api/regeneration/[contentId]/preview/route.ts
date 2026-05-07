@@ -45,4 +45,3 @@ export async function POST(
 
   return NextResponse.json(result);
 }
-

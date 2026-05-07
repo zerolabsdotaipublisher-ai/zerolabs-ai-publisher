@@ -20,4 +20,3 @@ export const regenerationScenarios = [
     label: "Content library action regenerates draft and re-enters review state",
   },
 ];
-

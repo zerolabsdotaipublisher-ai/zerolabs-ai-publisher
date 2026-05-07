@@ -52,7 +52,7 @@ function buildWebsiteSectionBody(section: WebsiteSection): string {
   return stringifyUnknown(section.content);
 }
 
-function mapWebsitePageToDraft(base: EditableContentDraft, page: WebsitePage, version: number, updatedAt: string): EditableContentDraft {
+function mapWebsitePageToDraft(currentDraft: EditableContentDraft, page: WebsitePage, version: number, updatedAt: string): EditableContentDraft {
   const sections = page.sections.map((section, index) => ({
     id: section.id,
     heading: resolveWebsiteSectionHeading(section),
@@ -64,16 +64,16 @@ function mapWebsitePageToDraft(base: EditableContentDraft, page: WebsitePage, ve
   }));
 
   return {
-    ...base,
-    title: page.title || base.title,
-    summary: page.seo.description || base.summary,
+    ...currentDraft,
+    title: page.title || currentDraft.title,
+    summary: page.seo.description || currentDraft.summary,
     body: sections.map((section) => section.body).filter(Boolean).join("\n\n"),
     sections,
     media: {
       references: sections.map((section) => section.mediaUrl).filter((entry): entry is string => Boolean(entry)),
     },
     metadataSeo: {
-      ...base.metadataSeo,
+      ...currentDraft.metadataSeo,
       slug: page.slug,
       tags: page.seo.keywords,
       metaTitle: page.seo.title,
@@ -82,7 +82,7 @@ function mapWebsitePageToDraft(base: EditableContentDraft, page: WebsitePage, ve
       canonicalUrl: page.seo.canonicalUrl,
     },
     version: {
-      ...base.version,
+      ...currentDraft.version,
       version,
       updatedAt,
     },
@@ -90,7 +90,7 @@ function mapWebsitePageToDraft(base: EditableContentDraft, page: WebsitePage, ve
   };
 }
 
-function mapBlogToDraft(base: EditableContentDraft, regenerated: Awaited<ReturnType<typeof regenerateBlogPost>>["blog"]): EditableContentDraft {
+function mapBlogToDraft(currentDraft: EditableContentDraft, regenerated: Awaited<ReturnType<typeof regenerateBlogPost>>["blog"]): EditableContentDraft {
   const sections = regenerated.sections.map((section, index) => ({
     id: section.id,
     heading: section.heading,
@@ -101,7 +101,7 @@ function mapBlogToDraft(base: EditableContentDraft, regenerated: Awaited<ReturnT
   }));
 
   return {
-    ...base,
+    ...currentDraft,
     title: regenerated.title,
     summary: regenerated.excerpt,
     body: [regenerated.introduction, ...regenerated.sections.flatMap((section) => section.paragraphs), regenerated.conclusion]
@@ -109,7 +109,7 @@ function mapBlogToDraft(base: EditableContentDraft, regenerated: Awaited<ReturnT
       .join("\n\n"),
     sections,
     metadataSeo: {
-      ...base.metadataSeo,
+      ...currentDraft.metadataSeo,
       slug: regenerated.slug,
       tags: regenerated.seo.tags,
       metaTitle: regenerated.seo.metaTitle,
@@ -118,7 +118,7 @@ function mapBlogToDraft(base: EditableContentDraft, regenerated: Awaited<ReturnT
       canonicalUrl: regenerated.seo.canonicalPath,
     },
     version: {
-      ...base.version,
+      ...currentDraft.version,
       version: regenerated.version,
       updatedAt: regenerated.updatedAt,
     },
@@ -126,7 +126,7 @@ function mapBlogToDraft(base: EditableContentDraft, regenerated: Awaited<ReturnT
   };
 }
 
-function mapArticleToDraft(base: EditableContentDraft, regenerated: Awaited<ReturnType<typeof regenerateArticle>>["article"]): EditableContentDraft {
+function mapArticleToDraft(currentDraft: EditableContentDraft, regenerated: Awaited<ReturnType<typeof regenerateArticle>>["article"]): EditableContentDraft {
   const sections = regenerated.sections.map((section, index) => ({
     id: section.id,
     heading: section.heading,
@@ -137,7 +137,7 @@ function mapArticleToDraft(base: EditableContentDraft, regenerated: Awaited<Retu
   }));
 
   return {
-    ...base,
+    ...currentDraft,
     title: regenerated.title,
     summary: regenerated.excerpt,
     body: [regenerated.introduction, ...regenerated.sections.flatMap((section) => section.paragraphs), regenerated.conclusion]
@@ -145,7 +145,7 @@ function mapArticleToDraft(base: EditableContentDraft, regenerated: Awaited<Retu
       .join("\n\n"),
     sections,
     metadataSeo: {
-      ...base.metadataSeo,
+      ...currentDraft.metadataSeo,
       slug: regenerated.slug,
       tags: regenerated.seo.tags,
       metaTitle: regenerated.seo.metaTitle,
@@ -154,7 +154,7 @@ function mapArticleToDraft(base: EditableContentDraft, regenerated: Awaited<Retu
       canonicalUrl: regenerated.seo.canonicalPath,
     },
     version: {
-      ...base.version,
+      ...currentDraft.version,
       version: regenerated.version,
       updatedAt: regenerated.updatedAt,
     },
@@ -162,7 +162,7 @@ function mapArticleToDraft(base: EditableContentDraft, regenerated: Awaited<Retu
   };
 }
 
-function mapSocialToDraft(base: EditableContentDraft, regenerated: Awaited<ReturnType<typeof regenerateSocialPost>>["socialPost"]): EditableContentDraft {
+function mapSocialToDraft(currentDraft: EditableContentDraft, regenerated: Awaited<ReturnType<typeof regenerateSocialPost>>["socialPost"]): EditableContentDraft {
   const sections = regenerated.variants.map((variant, index) => ({
     id: variant.platform,
     heading: variant.platform.toUpperCase(),
@@ -174,7 +174,7 @@ function mapSocialToDraft(base: EditableContentDraft, regenerated: Awaited<Retur
   }));
 
   return {
-    ...base,
+    ...currentDraft,
     title: regenerated.title,
     summary: regenerated.topic,
     body: sections.map((section) => section.body).join("\n\n"),
@@ -183,13 +183,13 @@ function mapSocialToDraft(base: EditableContentDraft, regenerated: Awaited<Retur
       references: Array.from(new Set(regenerated.variants.flatMap((variant) => variant.mediaReferences))).filter(Boolean),
     },
     metadataSeo: {
-      ...base.metadataSeo,
+      ...currentDraft.metadataSeo,
       metaTitle: regenerated.title,
       metaDescription: regenerated.topic,
       keywords: regenerated.sharedKeywords,
     },
     version: {
-      ...base.version,
+      ...currentDraft.version,
       version: regenerated.version,
       updatedAt: regenerated.updatedAt,
     },
@@ -197,16 +197,16 @@ function mapSocialToDraft(base: EditableContentDraft, regenerated: Awaited<Retur
   };
 }
 
-function replaceSection(base: EditableContentDraft, candidate: EditableContentDraft, sectionId: string): EditableContentDraft {
-  const regeneratedSection = candidate.sections.find((section) => section.id === sectionId);
+function replaceSection(currentDraft: EditableContentDraft, regeneratedDraft: EditableContentDraft, sectionId: string): EditableContentDraft {
+  const regeneratedSection = regeneratedDraft.sections.find((section) => section.id === sectionId);
   if (!regeneratedSection) {
-    return base;
+    return currentDraft;
   }
 
-  const nextSections = base.sections.map((section) => (section.id === sectionId ? regeneratedSection : section));
+  const nextSections = currentDraft.sections.map((section) => (section.id === sectionId ? regeneratedSection : section));
   const body = nextSections.map((section) => section.body).filter(Boolean).join("\n\n");
   return {
-    ...base,
+    ...currentDraft,
     sections: nextSections,
     body,
     media: {
@@ -215,25 +215,25 @@ function replaceSection(base: EditableContentDraft, candidate: EditableContentDr
   };
 }
 
-function applyFieldLevel(base: EditableContentDraft, candidate: EditableContentDraft, request: RegenerationRequest): EditableContentDraft {
+function applyFieldLevel(currentDraft: EditableContentDraft, regeneratedDraft: EditableContentDraft, request: RegenerationRequest): EditableContentDraft {
   const field = request.target.fieldKey;
   if (field === "headline" || field === "title") {
-    return { ...base, title: candidate.title };
+    return { ...currentDraft, title: regeneratedDraft.title };
   }
   if (field === "summary") {
-    return { ...base, summary: candidate.summary };
+    return { ...currentDraft, summary: regeneratedDraft.summary };
   }
 
-  const sectionId = request.target.sectionId ?? base.sections[0]?.id;
+  const sectionId = request.target.sectionId ?? currentDraft.sections[0]?.id;
   if (!sectionId) {
-    return base;
+    return currentDraft;
   }
 
-  const sourceSection = candidate.sections.find((section) => section.id === sectionId) ?? candidate.sections[0];
+  const sourceSection = regeneratedDraft.sections.find((section) => section.id === sectionId);
   if (!sourceSection) {
-    return base;
+    return currentDraft;
   }
-  const next = replaceSection(base, { ...base, sections: [sourceSection] }, sectionId);
+  const next = replaceSection(currentDraft, { ...currentDraft, sections: [sourceSection] }, sectionId);
   if (field === "caption") {
     return { ...next, body: next.sections.map((section) => section.body).join("\n\n") };
   }
@@ -243,14 +243,14 @@ function applyFieldLevel(base: EditableContentDraft, candidate: EditableContentD
   return next;
 }
 
-function applyRegenerationScope(base: EditableContentDraft, candidate: EditableContentDraft, request: RegenerationRequest): EditableContentDraft {
+function applyRegenerationScope(currentDraft: EditableContentDraft, regeneratedDraft: EditableContentDraft, request: RegenerationRequest): EditableContentDraft {
   if (request.level === "full") {
-    return candidate;
+    return regeneratedDraft;
   }
   if (request.level === "section" && request.target.sectionId) {
-    return replaceSection(base, candidate, request.target.sectionId);
+    return replaceSection(currentDraft, regeneratedDraft, request.target.sectionId);
   }
-  return applyFieldLevel(base, candidate, request);
+  return applyFieldLevel(currentDraft, regeneratedDraft, request);
 }
 
 async function buildRegeneratedDraft(input: {

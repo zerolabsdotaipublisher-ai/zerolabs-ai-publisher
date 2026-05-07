@@ -30,4 +30,3 @@ export function RegenerationComparePanel({ before, after, compare }: Regeneratio
     </section>
   );
 }
-

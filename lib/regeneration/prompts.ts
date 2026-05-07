@@ -73,4 +73,3 @@ export function applyModeToSocialInput(input: SocialGenerationInput, request: Re
     callToActionHint: request.instructions || input.callToActionHint,
   };
 }
-

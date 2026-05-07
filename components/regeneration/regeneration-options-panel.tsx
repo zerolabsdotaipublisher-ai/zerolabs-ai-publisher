@@ -102,4 +102,3 @@ export function RegenerationOptionsPanel({ request, sections, disabled, onChange
     </section>
   );
 }
-

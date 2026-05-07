@@ -44,4 +44,3 @@ export function validateRegeneratedDraft(before: EditableContentDraft, after: Ed
   }
   return issues;
 }
-

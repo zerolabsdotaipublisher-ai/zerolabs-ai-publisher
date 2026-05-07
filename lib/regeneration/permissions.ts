@@ -16,4 +16,3 @@ export function canRegenerateOwnedContent(detail: ReviewDetail | null): Regenera
 
   return { allowed: true };
 }
-

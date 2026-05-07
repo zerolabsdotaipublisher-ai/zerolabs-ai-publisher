@@ -112,4 +112,3 @@ Server-side events are emitted for:
     - `lib/regeneration/metrics.ts`, `lib/regeneration/workflow.ts`
 20. Document Regeneration Feature  
     - `docs/regeneration/ai-content-regeneration.md`, `docs/regeneration/ai-content-regeneration-tests.md`
-
