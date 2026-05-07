@@ -51,6 +51,10 @@ function parseLines(value: string): string[] {
     .filter(Boolean);
 }
 
+function defaultSectionId(index: number): string {
+  return `section_${index + 1}`;
+}
+
 function buildWebsiteSectionBody(section: WebsiteSection): string {
   const content = section.content;
 
@@ -416,7 +420,7 @@ async function saveBlogDraft(userId: string, draft: EditableContentDraft): Promi
 
     const paragraphs = parseLines(section.body);
     return {
-      id: section.id || `section_${index + 1}`,
+      id: section.id || defaultSectionId(index),
       heading: section.heading.trim(),
       summary: paragraphs[0] || section.heading.trim(),
       paragraphs,
@@ -495,7 +499,7 @@ async function saveArticleDraft(userId: string, draft: EditableContentDraft): Pr
   const sections = draft.sections.map((section, index) => {
     const paragraphs = parseLines(section.body);
     return {
-      id: section.id || `section_${index + 1}`,
+      id: section.id || defaultSectionId(index),
       heading: section.heading.trim(),
       summary: paragraphs[0] || section.heading.trim(),
       paragraphs,

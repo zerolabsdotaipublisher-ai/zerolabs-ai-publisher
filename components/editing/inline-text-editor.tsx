@@ -35,7 +35,7 @@ function applyFormat(value: string, mode: "bold" | "italic" | "heading" | "list"
       .join("\n");
   }
 
-  return `[${value}](https://your-link.example)`;
+  return `[${value}](URL)`;
 }
 
 export function InlineTextEditor({ label, value, disabled, onChange }: InlineTextEditorProps) {
