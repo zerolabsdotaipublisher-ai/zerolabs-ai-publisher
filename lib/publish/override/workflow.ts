@@ -31,7 +31,7 @@ import type {
 } from "./types";
 
 function createRequestId(): string {
-  return `moverride_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+  return `moverride_${crypto.randomUUID()}`;
 }
 
 function isApprovalAccepted(state: string | undefined): boolean {
@@ -126,7 +126,7 @@ async function executeSocialOverride(params: {
   }
 
   const payload = prepareInstagramPublishPayload(variant);
-  const scheduledFor = new Date().toISOString();
+  const executedAt = new Date().toISOString();
   const job = await createInstagramPublishJob({
     userId: params.userId,
     socialPostId: socialPost.id,
@@ -134,7 +134,7 @@ async function executeSocialOverride(params: {
     mediaUrl: payload.mediaUrl,
     instagramAccountId: connection.instagramAccountId,
     facebookPageId: connection.facebookPageId,
-    scheduledFor,
+    scheduledFor: executedAt,
     metadata: {
       source: "api/publish/override",
       manualOverride: true,
