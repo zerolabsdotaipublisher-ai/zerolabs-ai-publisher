@@ -29,7 +29,8 @@ import type {
   RevisionCompareResult,
 } from "./types";
 
-const MAX_STRUCTURE_SCAN = 5000;
+const STRUCTURE_REVISION_BATCH_SIZE = 200;
+const MAX_STRUCTURE_BATCHES = 25;
 
 function hasMeaningfulSnapshotChange(previous: ContentRevisionRecord, next: ContentRevisionRecord["snapshot"]): boolean {
   const left = previous.snapshot.draft;
@@ -105,6 +106,7 @@ export async function recordContentRevisionAction(input: {
     }
   }
 
+  // Restore always records an explicit rollback event for auditability even if the snapshot matches current state.
   if (latest && !hasMeaningfulSnapshotChange(latest, snapshot) && input.actionType !== "restore") {
     return null;
   }
@@ -320,22 +322,33 @@ export async function recordPublishRevisionsForStructure(input: {
   action: "publish" | "update";
   requestId?: string;
 }): Promise<void> {
-  const page = await listOwnedContentLibraryPage(input.userId, {
-    page: 1,
-    perPage: MAX_STRUCTURE_SCAN,
-    search: undefined,
-    sort: "updated_desc",
-    type: "all",
-    status: "all",
-    websiteId: input.structureId,
-  });
+  const linkedContentIds = new Set<string>();
 
-  const linked = page.items.filter((item) => item.linkedWebsite?.structureId === input.structureId);
+  for (let pageNumber = 1; pageNumber <= MAX_STRUCTURE_BATCHES; pageNumber += 1) {
+    const page = await listOwnedContentLibraryPage(input.userId, {
+      page: pageNumber,
+      perPage: STRUCTURE_REVISION_BATCH_SIZE,
+      search: undefined,
+      sort: "updated_desc",
+      type: "all",
+      status: "all",
+      websiteId: input.structureId,
+    });
+
+    page.items
+      .filter((item) => item.linkedWebsite?.structureId === input.structureId)
+      .forEach((item) => linkedContentIds.add(item.id));
+
+    if (!page.hasMore) {
+      break;
+    }
+  }
+
   await Promise.all(
-    linked.map((item) =>
+    Array.from(linkedContentIds).map((contentId) =>
       recordContentRevisionAction({
         userId: input.userId,
-        contentId: item.id,
+        contentId,
         actionType: input.action === "publish" ? "publish" : "publish_update",
         relatedWorkflowIds: toRevisionWorkflowIdMap({ publishRequestId: input.requestId }),
         metadata: {
