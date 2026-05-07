@@ -2297,3 +2297,128 @@ a {
     text-align: center;
   }
 }
+
+.content-editor-shell {
+  width: 100%;
+  max-width: 72rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.content-editor-header p,
+.content-editor-validation-summary {
+  color: #6b7280;
+}
+
+.content-editing-toolbar {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.content-editing-toolbar-state {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.content-editing-toolbar-error {
+  color: #b91c1c;
+}
+
+.content-editing-toolbar-message {
+  color: #166534;
+}
+
+.content-editor-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.content-editor-main-column,
+.content-editor-side-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.content-inline-text-editor,
+.content-section-block-editor,
+.content-media-edit-panel,
+.content-metadata-seo-editor,
+.content-editor-preview-panel,
+.content-editor-version-panel,
+.content-editor-scenarios-panel {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.content-inline-text-editor textarea,
+.content-section-block-editor textarea,
+.content-metadata-seo-editor textarea,
+.content-media-edit-panel textarea,
+.content-section-block-editor input,
+.content-metadata-seo-editor input,
+.content-inline-text-editor input {
+  width: 100%;
+  padding: 0.6rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: inherit;
+}
+
+.content-inline-text-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.content-editor-rich-text-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.content-section-block-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 0.65rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.content-section-block-card label,
+.content-metadata-seo-editor label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.content-editor-preview-frame {
+  width: 100%;
+  min-height: 22rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+}
+
+@media (max-width: 960px) {
+  .content-editor-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

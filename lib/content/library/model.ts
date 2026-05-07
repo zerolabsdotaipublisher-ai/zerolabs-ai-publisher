@@ -91,7 +91,7 @@ function mapWebsitePages(snapshot: ContentLibraryStorageSnapshot): ContentLibrar
       hasLinkedSeoMetadata: seoKeywords.length > 0,
       quickActions: {
         viewHref: `${routes.previewSite(row.structure_id)}?page=${encodeURIComponent(row.page_slug)}`,
-        editHref: routes.editorSite(row.structure_id),
+        editHref: routes.editContent(`website_page:${row.id}`),
         publishScheduleHref: routes.generatedSite(row.structure_id),
         canDelete: true,
         deleteStructureId: row.structure_id,
@@ -124,7 +124,7 @@ function mapBlogs(snapshot: ContentLibraryStorageSnapshot): ContentLibraryItem[]
       hasLinkedSeoMetadata: seoKeywords.length > 0,
       quickActions: {
         viewHref: `${routes.previewSite(row.structure_id)}?page=${encodeURIComponent(`/${row.slug}`)}`,
-        editHref: routes.editorSite(row.structure_id),
+        editHref: routes.editContent(`blog_post:${row.id}`),
         publishScheduleHref: routes.generatedSite(row.structure_id),
         canDelete: true,
         deleteStructureId: row.structure_id,
@@ -157,7 +157,7 @@ function mapArticles(snapshot: ContentLibraryStorageSnapshot): ContentLibraryIte
       hasLinkedSeoMetadata: seoKeywords.length > 0,
       quickActions: {
         viewHref: `${routes.previewSite(row.structure_id)}?page=${encodeURIComponent(`/${row.slug}`)}`,
-        editHref: routes.editorSite(row.structure_id),
+        editHref: routes.editContent(`article:${row.id}`),
         publishScheduleHref: routes.generatedSite(row.structure_id),
         canDelete: true,
         deleteStructureId: row.structure_id,
@@ -195,7 +195,7 @@ function mapSocialPosts(snapshot: ContentLibraryStorageSnapshot): ContentLibrary
       hasLinkedSeoMetadata: false,
       quickActions: {
         viewHref: structureId ? routes.generatedSite(structureId) : undefined,
-        editHref: structureId ? routes.editorSite(structureId) : undefined,
+        editHref: routes.editContent(`social_post:${row.id}`),
         publishScheduleHref: structureId ? routes.generatedSite(structureId) : undefined,
         canDelete: false,
       },
