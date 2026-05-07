@@ -14,6 +14,10 @@ export function validateEditableDraft(draft: EditableContentDraft): EditingValid
     });
   }
 
+  if ((draft.type === "blog_post" || draft.type === "article" || draft.type === "social_post") && !draft.body.trim()) {
+    issues.push({ field: "body", message: "Body is required for this content type." });
+  }
+
   if (["website_page", "blog_post", "article"].includes(draft.type) && draft.sections.length === 0) {
     issues.push({ field: "sections", message: "At least one section is required." });
   }

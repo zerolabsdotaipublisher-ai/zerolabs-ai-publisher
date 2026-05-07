@@ -32,7 +32,9 @@ export function ContentEditorShell({ initialDetail }: ContentEditorShellProps) {
   const [error, setError] = useState<string>();
   const [validationIssues, setValidationIssues] = useState<EditingValidationIssue[]>([]);
   const [dirty, setDirty] = useState(false);
+  const [changeTick, setChangeTick] = useState(0);
   const autosaveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const draftRef = useRef(draft);
 
   const contentId = draft.contentId;
   const canAutoSave = draft.capabilities.autosave;
@@ -47,7 +49,9 @@ export function ContentEditorShell({ initialDetail }: ContentEditorShellProps) {
 
   function applyDraft(next: EditableContentDraft) {
     setDraft(next);
+    draftRef.current = next;
     setDirty(true);
+    setChangeTick((value) => value + 1);
     setMessage(undefined);
     setError(undefined);
   }
@@ -69,7 +73,7 @@ export function ContentEditorShell({ initialDetail }: ContentEditorShellProps) {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ draft }),
+          body: JSON.stringify({ draft: draftRef.current }),
         },
       );
 
@@ -86,6 +90,7 @@ export function ContentEditorShell({ initialDetail }: ContentEditorShellProps) {
 
       setDetail(body.detail);
       setDraft(body.detail.draft);
+      draftRef.current = body.detail.draft;
       setDirty(false);
       setValidationIssues([]);
       setMessage(mode === "save" ? "Draft saved and routed back into review workflow." : "Autosaved.");
@@ -95,7 +100,11 @@ export function ContentEditorShell({ initialDetail }: ContentEditorShellProps) {
       setSaving(false);
       setAutoSaving(false);
     }
-  }, [contentId, draft]);
+  }, [contentId]);
+
+  useEffect(() => {
+    draftRef.current = draft;
+  }, [draft]);
 
   useEffect(() => {
     if (!canAutoSave || !dirty) {
@@ -115,7 +124,7 @@ export function ContentEditorShell({ initialDetail }: ContentEditorShellProps) {
         clearTimeout(autosaveTimeout.current);
       }
     };
-  }, [canAutoSave, dirty, draft, runSave]);
+  }, [canAutoSave, dirty, changeTick, runSave]);
 
   useEffect(() => {
     const handler = (event: BeforeUnloadEvent) => {

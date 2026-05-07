@@ -269,6 +269,8 @@ function mapSocialDraft(detail: NonNullable<Awaited<ReturnType<typeof getOwnedRe
 }
 
 function resolvePostEditReviewState(previousState: ReviewState): "pending_review" | "needs_changes" {
+  // Keep explicit blocker states blocked until reviewer clears them.
+  // Any approved/published/pending state re-enters pending_review after edits.
   if (previousState === "needs_changes" || previousState === "rejected") {
     return "needs_changes";
   }
@@ -427,8 +429,8 @@ async function saveBlogDraft(userId: string, draft: EditableContentDraft): Promi
     ...existing,
     title: draft.title.trim(),
     excerpt: draft.summary.trim() || existing.excerpt,
-    introduction: parseLines(draft.body)[0] || existing.introduction,
-    conclusion: parseLines(draft.body).slice(-1)[0] || existing.conclusion,
+    introduction: existing.introduction,
+    conclusion: existing.conclusion,
     sections,
     sourceInput: {
       ...existing.sourceInput,
@@ -507,8 +509,8 @@ async function saveArticleDraft(userId: string, draft: EditableContentDraft): Pr
     ...existing,
     title: draft.title.trim(),
     excerpt: draft.summary.trim() || existing.excerpt,
-    introduction: parseLines(draft.body)[0] || existing.introduction,
-    conclusion: parseLines(draft.body).slice(-1)[0] || existing.conclusion,
+    introduction: existing.introduction,
+    conclusion: existing.conclusion,
     sections,
     sourceInput: {
       ...existing.sourceInput,
