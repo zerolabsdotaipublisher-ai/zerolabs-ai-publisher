@@ -74,6 +74,7 @@ export interface DashboardContentSummary {
   articleGenerated: number;
   publishedContent: number;
   scheduledContent: number;
+  pendingApproval: number;
 }
 
 export interface DashboardSocialSummary {

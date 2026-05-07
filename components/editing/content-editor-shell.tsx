@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ApprovalStatusBadge } from "@/components/approval/approval-status-badge";
+import { mapReviewStateToApprovalState } from "@/lib/approval";
 import type { EditableContentDraft, EditingDetail, EditingValidationIssue } from "@/lib/editing/types";
 import { ContentEditingToolbar } from "./content-editing-toolbar";
 import { EditorPreviewPanel } from "./editor-preview-panel";
@@ -217,11 +219,11 @@ export function ContentEditorShell({ initialDetail }: ContentEditorShellProps) {
         <div className="content-editor-side-column">
           <EditorPreviewPanel previewHref={draft.previewHref} title={draft.title} />
 
-          <section className="content-editor-version-panel" aria-label="Version and workflow status">
-            <h3>Version and review state</h3>
-            <p>Type: {formatContentTypeLabel(draft.type)}</p>
-            <p>Review state: {draft.reviewState}</p>
-            <p>Version: {draft.version.version}</p>
+            <section className="content-editor-version-panel" aria-label="Version and workflow status">
+              <h3>Version and review state</h3>
+              <p>Type: {formatContentTypeLabel(draft.type)}</p>
+              <p>Approval status: <ApprovalStatusBadge state={mapReviewStateToApprovalState(draft.reviewState)} /></p>
+              <p>Version: {draft.version.version}</p>
             <p>
               Version snapshot support: {draft.version.snapshotSupport === "full"
                 ? "Full snapshot"

@@ -1,6 +1,7 @@
 import type { ScheduleStatus } from "@/lib/scheduling";
 
 export type ContentLibraryType = "website_page" | "blog_post" | "article" | "social_post";
+export type ContentApprovalState = "draft" | "pending_approval" | "approved" | "rejected" | "needs_changes" | "published";
 
 export type ContentLibraryStatus =
   | "draft"
@@ -32,6 +33,7 @@ export interface ContentLibraryItem {
   id: string;
   sourceId: string;
   type: ContentLibraryType;
+  approvalState: ContentApprovalState;
   title: string;
   status: ContentLibraryStatus;
   createdAt: string;

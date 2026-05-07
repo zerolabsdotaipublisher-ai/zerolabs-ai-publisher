@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ApprovalStatusBadge } from "@/components/approval/approval-status-badge";
 import { routes } from "@/config/routes";
 import type { ContentLibraryItem } from "@/lib/content/library/types";
 
@@ -24,6 +25,7 @@ export function ContentLibraryCard({ item, deleting, onDelete }: ContentLibraryC
       <header className="content-library-card-header">
         <h3>{item.title}</h3>
         <span className={`content-library-status content-library-status-${item.status}`}>{item.status}</span>
+        <ApprovalStatusBadge state={item.approvalState} />
       </header>
 
       <dl className="content-library-meta-grid">
