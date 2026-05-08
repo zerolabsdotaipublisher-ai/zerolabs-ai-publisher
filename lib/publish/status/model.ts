@@ -18,6 +18,17 @@ function resolvePublishActionLabel(params: {
   return "Update live website";
 }
 
+function resolveManualOverrideState(structure: BuildPublishingStatusModelParams["structure"]): PublishingStatusModel["manualOverride"] {
+  const updates = structure.publication?.updates as Record<string, unknown> | undefined;
+  const raw = updates?.manualOverride;
+  if (!raw || typeof raw !== "object") {
+    return undefined;
+  }
+
+  const entry = raw as PublishingStatusModel["manualOverride"];
+  return entry;
+}
+
 export function buildPublishingStatusModel({
   structure,
   detection,
@@ -63,6 +74,7 @@ export function buildPublishingStatusModel({
     isTransitional: uiState === "publishing" || uiState === "updating",
     failureMessage: detection.lastError,
     liveUrl: detection.liveUrl,
+    manualOverride: resolveManualOverrideState(structure),
     action: {
       publishAction,
       publishActionLabel,

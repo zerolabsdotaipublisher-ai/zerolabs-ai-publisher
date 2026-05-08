@@ -1,4 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { resolveManualOverridePermission } from "@/lib/publish/override/permissions";
+import { getOwnedPublishStructure } from "@/lib/publish/storage";
 import { getOwnedPublishingStatus } from "@/lib/publish/status/storage";
 import { getServerUser } from "@/lib/supabase/server";
 
@@ -18,8 +20,17 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ ok: false, error: "Structure not found" }, { status: 404 });
   }
 
+  const structure = await getOwnedPublishStructure(structureId, user.id);
+  const permission = resolveManualOverridePermission(user, structure?.userId);
+
   return NextResponse.json({
     ok: true,
     status,
+    overrideStatus: {
+      canUseOverride: permission.allowed,
+      canBypassApproval: permission.canBypassApproval,
+      reason: permission.reason,
+      lastOverride: status.manualOverride,
+    },
   });
 }
