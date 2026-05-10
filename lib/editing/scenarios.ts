@@ -7,7 +7,7 @@ export interface EditingScenario {
 export const EDITING_MVP_BOUNDARIES = [
   "Editing logic stays inside AI Publisher and reuses existing storage, review, versioning, preview, regeneration, and publishing systems.",
   "Editing MVP supports owner-scoped single-user editing, not collaborative CMS workflows.",
-  "Media editing is URL/reference replacement only; full media library management is out of scope.",
+  "Media editing supports owner-scoped upload/library selection and reference reuse; enterprise DAM governance remains out of scope.",
   "Undo/redo is future-ready metadata in MVP and not a full timeline editor.",
   "Published/live content is not updated by edit saves alone; publish/update workflow is still required.",
 ] as const;
