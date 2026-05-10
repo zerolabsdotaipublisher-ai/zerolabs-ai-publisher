@@ -47,10 +47,10 @@ function optionalBoolean(value: string | undefined, fallback = false): boolean {
   return value === "true";
 }
 
-function optionalCsv(value: string | undefined): string[] | undefined {
+function parseCsvList(value: string | undefined): string[] | undefined {
   if (!value) return undefined;
   const entries = value
-    .split(',')
+    .split(",")
     .map((entry) => entry.trim())
     .filter(Boolean);
   return entries.length > 0 ? entries : undefined;
@@ -172,9 +172,11 @@ export const env = {
   media: {
     maxUploadBytes: optionalPositiveInteger(process.env.MEDIA_MAX_UPLOAD_BYTES, 25 * 1024 * 1024),
     maxVideoBytes: optionalPositiveInteger(process.env.MEDIA_MAX_VIDEO_BYTES, 100 * 1024 * 1024),
+    maxImageDimension: optionalPositiveInteger(process.env.MEDIA_MAX_IMAGE_DIMENSION, 8192),
     signedUrlTtlSeconds: optionalPositiveInteger(process.env.MEDIA_SIGNED_URL_TTL_SECONDS, 900),
     quotaBytesPerTenant: optionalPositiveInteger(process.env.MEDIA_QUOTA_BYTES_PER_TENANT, 1024 * 1024 * 1024),
-    allowedMimeTypes: optionalCsv(process.env.MEDIA_ALLOWED_MIME_TYPES),
+    provider: process.env.MEDIA_PROVIDER ?? "wasabi",
+    allowedMimeTypes: parseCsvList(process.env.MEDIA_ALLOWED_MIME_TYPES),
   },
 
   meta: {

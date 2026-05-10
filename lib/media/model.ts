@@ -1,4 +1,4 @@
-import { env } from "@/config";
+import { config } from "@/config";
 import type {
   MediaApiRecord,
   MediaAsset,
@@ -25,12 +25,27 @@ export function inferMediaType(mimeType: string): MediaType {
   return "file";
 }
 
+function randomSuffix(): string {
+  const cryptoApi = globalThis.crypto;
+  if (!cryptoApi) {
+    throw new Error("Secure random generation is unavailable in this runtime.");
+  }
+
+  if (typeof cryptoApi.randomUUID === "function") {
+    return cryptoApi.randomUUID().replaceAll("-", "");
+  }
+
+  const bytes = new Uint8Array(16);
+  cryptoApi.getRandomValues(bytes);
+  return Array.from(bytes, (value) => value.toString(16).padStart(2, "0")).join("");
+}
+
 export function createMediaId(): string {
-  return `media_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+  return `media_${Date.now().toString(36)}_${randomSuffix().slice(0, 12)}`;
 }
 
 export function createMediaUsageLinkId(mediaId: string): string {
-  return `mul_${mediaId.slice(0, 12)}_${Math.random().toString(36).slice(2, 8)}`;
+  return `mul_${mediaId.slice(0, 12)}_${randomSuffix().slice(0, 8)}`;
 }
 
 export function createMediaQuotaId(userId: string, tenantId: string): string {
@@ -194,5 +209,5 @@ export function resolveTenantId(userId: string, requestedTenantId?: string): str
 }
 
 export function resolveMediaProvider(): MediaProvider {
-  return env.wasabi.endpoint ? "wasabi" : "s3-compatible";
+  return config.services.media.provider === "s3-compatible" ? "s3-compatible" : "wasabi";
 }

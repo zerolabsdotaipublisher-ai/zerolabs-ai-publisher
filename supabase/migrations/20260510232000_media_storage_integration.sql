@@ -59,7 +59,7 @@ create table if not exists public.media_usage_links (
 );
 
 create unique index if not exists uq_media_usage_links_ref
-  on public.media_usage_links(media_id, coalesce(content_id, ''), coalesce(content_type, ''), usage_context);
+  on public.media_usage_links(media_id, content_id, content_type, usage_context);
 
 create index if not exists idx_media_usage_links_owner
   on public.media_usage_links(user_id, tenant_id, created_at desc);

@@ -21,6 +21,22 @@ import type { MediaListQuery, MediaSignedAccess, MediaUploadInput } from "./type
 
 
 const signedUrlCache = new Map<string, { url: string; expiresAtMs: number }>();
+const SIGNED_URL_CACHE_BUFFER_MS = 15_000;
+const MAX_SIGNED_URL_CACHE_ENTRIES = 500;
+
+function pruneSignedUrlCache(nowMs: number): void {
+  for (const [key, value] of signedUrlCache.entries()) {
+    if (value.expiresAtMs <= nowMs + SIGNED_URL_CACHE_BUFFER_MS) {
+      signedUrlCache.delete(key);
+    }
+  }
+
+  while (signedUrlCache.size > MAX_SIGNED_URL_CACHE_ENTRIES) {
+    const oldestKey = signedUrlCache.keys().next().value as string | undefined;
+    if (!oldestKey) break;
+    signedUrlCache.delete(oldestKey);
+  }
+}
 
 function resolveBucket(): string {
   const bucket = config.services.wasabi.bucket;
@@ -225,9 +241,11 @@ export async function createOwnedMediaSignedUrl(input: {
     }
 
     const expiresInSeconds = input.expiresInSeconds ?? config.services.media.signedUrlTtlSeconds;
-    const cacheKey = `${media.id}:${expiresInSeconds}`;
+    const nowMs = Date.now();
+    pruneSignedUrlCache(nowMs);
+    const cacheKey = `${input.userId}:${media.id}:${expiresInSeconds}`;
     const cached = signedUrlCache.get(cacheKey);
-    if (cached && cached.expiresAtMs > Date.now() + 15_000) {
+    if (cached && cached.expiresAtMs > nowMs + SIGNED_URL_CACHE_BUFFER_MS) {
       logMediaEvent("signed_url", {
         userId: input.userId,
         mediaId: input.mediaId,
@@ -247,7 +265,7 @@ export async function createOwnedMediaSignedUrl(input: {
       expiresInSeconds,
     });
 
-    const expiresAtMs = Date.now() + expiresInSeconds * 1000;
+    const expiresAtMs = nowMs + expiresInSeconds * 1000;
     signedUrlCache.set(cacheKey, { url, expiresAtMs });
     const expiresAt = new Date(expiresAtMs).toISOString();
 

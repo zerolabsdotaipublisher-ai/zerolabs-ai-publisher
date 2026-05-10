@@ -103,7 +103,7 @@ export interface MediaQuotaUsageRow {
 
 export interface MediaUploadInput {
   userId: string;
-  tenantId: string;
+  tenantId?: string;
   fileName: string;
   mimeType: string;
   fileSizeBytes: number;

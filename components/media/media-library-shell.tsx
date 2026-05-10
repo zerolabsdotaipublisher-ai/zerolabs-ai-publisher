@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { MediaApiRecord, MediaType } from "@/lib/media/types";
 import { MediaLibraryGrid } from "./media-library-grid";
 
@@ -51,34 +51,30 @@ export function MediaLibraryShell({ linkedContentId, linkedContentType, onSelect
     return params.toString();
   }, [linkedContentId, linkedContentType, page, search, typeFilter]);
 
-  useEffect(() => {
-    let active = true;
+  const loadMedia = useCallback(async () => {
     setLoading(true);
     setError(undefined);
 
-    fetch(`/api/media/list?${queryString}`)
-      .then((response) => response.json() as Promise<MediaListResponse>)
-      .then((body) => {
-        if (!active) return;
-        if (!body.ok || !body.items) {
-          setError(body.error || "Unable to load media.");
-          return;
-        }
+    try {
+      const response = await fetch(`/api/media/list?${queryString}`);
+      const body = (await response.json()) as MediaListResponse;
+      if (!body.ok || !body.items) {
+        setError(body.error || "Unable to load media.");
+        return;
+      }
 
-        setItems(body.items);
-        setHasMore(Boolean(body.hasMore));
-      })
-      .catch(() => {
-        if (active) setError("Unable to load media.");
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
+      setItems(body.items);
+      setHasMore(Boolean(body.hasMore));
+    } catch {
+      setError("Unable to load media.");
+    } finally {
+      setLoading(false);
+    }
   }, [queryString]);
+
+  useEffect(() => {
+    void loadMedia();
+  }, [loadMedia]);
 
   return (
     <section className="media-library-shell" aria-label="Media library">

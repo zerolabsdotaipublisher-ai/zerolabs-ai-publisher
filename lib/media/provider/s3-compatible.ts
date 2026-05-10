@@ -20,9 +20,17 @@ function assertS3CompatibleConfig() {
   };
 }
 
+let cachedClient: S3Client | null = null;
+let cachedSignature = "";
+
 function createS3Client(): S3Client {
   const cfg = assertS3CompatibleConfig();
-  return new S3Client({
+  const signature = `${cfg.endpoint}|${cfg.region}|${cfg.accessKeyId}`;
+  if (cachedClient && cachedSignature === signature) {
+    return cachedClient;
+  }
+
+  cachedClient = new S3Client({
     region: cfg.region,
     endpoint: cfg.endpoint,
     forcePathStyle: true,
@@ -31,6 +39,8 @@ function createS3Client(): S3Client {
       secretAccessKey: cfg.secretAccessKey,
     },
   });
+  cachedSignature = signature;
+  return cachedClient;
 }
 
 export function createS3CompatibleProvider(): MediaStorageProviderAdapter {

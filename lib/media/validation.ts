@@ -2,6 +2,8 @@ import { config } from "@/config";
 import { inferMediaType } from "./model";
 import type { MediaDimensions, MediaType, MediaUploadInput } from "./types";
 
+const MAX_FILENAME_LENGTH = 200;
+
 const DEFAULT_ALLOWED_MIME_TYPES = [
   "image/jpeg",
   "image/png",
@@ -15,8 +17,6 @@ const DEFAULT_ALLOWED_MIME_TYPES = [
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ];
 
-const IMAGE_MAX_DIMENSION = 8192;
-const VIDEO_MAX_BYTES_DEFAULT = 100 * 1024 * 1024;
 
 export interface MediaValidationResult {
   ok: boolean;
@@ -41,7 +41,7 @@ function normalizeAllowedMimeTypes(): string[] {
 function normalizeFileName(fileName: string): string {
   const trimmed = fileName.trim();
   if (!trimmed) return "upload.bin";
-  return trimmed.slice(0, 200);
+  return trimmed.slice(0, MAX_FILENAME_LENGTH);
 }
 
 export function validateMediaUploadInput(input: MediaUploadInput): MediaValidationResult {
@@ -68,16 +68,16 @@ export function validateMediaUploadInput(input: MediaUploadInput): MediaValidati
     errors.push(`File exceeds max size of ${config.services.media.maxUploadBytes} bytes.`);
   }
 
-  if (mediaType === "video" && input.fileSizeBytes > (config.services.media.maxVideoBytes ?? VIDEO_MAX_BYTES_DEFAULT)) {
-    errors.push(`Video exceeds max size of ${config.services.media.maxVideoBytes ?? VIDEO_MAX_BYTES_DEFAULT} bytes.`);
+  if (mediaType === "video" && input.fileSizeBytes > config.services.media.maxVideoBytes) {
+    errors.push(`Video exceeds max size of ${config.services.media.maxVideoBytes} bytes.`);
   }
 
   if (mediaType === "image") {
-    if (input.width && input.width > IMAGE_MAX_DIMENSION) {
-      errors.push(`Image width exceeds ${IMAGE_MAX_DIMENSION}px.`);
+    if (input.width && input.width > config.services.media.maxImageDimension) {
+      errors.push(`Image width exceeds ${config.services.media.maxImageDimension}px.`);
     }
-    if (input.height && input.height > IMAGE_MAX_DIMENSION) {
-      errors.push(`Image height exceeds ${IMAGE_MAX_DIMENSION}px.`);
+    if (input.height && input.height > config.services.media.maxImageDimension) {
+      errors.push(`Image height exceeds ${config.services.media.maxImageDimension}px.`);
     }
   }
 

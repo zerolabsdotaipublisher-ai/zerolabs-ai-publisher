@@ -20,6 +20,17 @@ export function MediaUploadDropzone({ disabled, accept, onFilesSelected }: Media
       onClick={() => {
         if (!disabled) fileInputRef.current?.click();
       }}
+      onDragOver={(event) => {
+        if (disabled) return;
+        event.preventDefault();
+      }}
+      onDrop={(event) => {
+        if (disabled) return;
+        event.preventDefault();
+        if (event.dataTransfer.files?.length) {
+          onFilesSelected(event.dataTransfer.files);
+        }
+      }}
       onKeyDown={(event) => {
         if (disabled) return;
         if (event.key === "Enter" || event.key === " ") {
@@ -28,7 +39,7 @@ export function MediaUploadDropzone({ disabled, accept, onFilesSelected }: Media
         }
       }}
     >
-      <p>Drag & drop support is future-ready. Click to choose files now.</p>
+      <p>Drag files here or click to choose files.</p>
       <input
         ref={fileInputRef}
         type="file"

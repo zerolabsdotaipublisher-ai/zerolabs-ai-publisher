@@ -103,10 +103,14 @@ export interface MediaConfig {
   maxUploadBytes: number;
   /** Maximum allowed video upload size in bytes. */
   maxVideoBytes: number;
+  /** Maximum allowed image dimension (width/height) in pixels. */
+  maxImageDimension: number;
   /** Signed URL expiry in seconds for secure media access. */
   signedUrlTtlSeconds: number;
   /** Aggregate quota cap in bytes per tenant/user owner scope. */
   quotaBytesPerTenant: number;
+  /** Storage provider selector for media adapter routing. */
+  provider: string;
   /** Optional MIME type allow-list override. */
   allowedMimeTypes: string[] | undefined;
 }
@@ -238,8 +242,10 @@ export const servicesConfig: ServiceConfig = {
   media: {
     maxUploadBytes: env.media.maxUploadBytes,
     maxVideoBytes: env.media.maxVideoBytes,
+    maxImageDimension: env.media.maxImageDimension,
     signedUrlTtlSeconds: env.media.signedUrlTtlSeconds,
     quotaBytesPerTenant: env.media.quotaBytesPerTenant,
+    provider: env.media.provider,
     allowedMimeTypes: env.media.allowedMimeTypes,
   },
 
