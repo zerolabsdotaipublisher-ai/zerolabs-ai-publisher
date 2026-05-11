@@ -1,12 +1,22 @@
-import { getEditableSectionTextFields } from "@/lib/editor";
+import { useState } from "react";
 import type { WebsiteSection } from "@/lib/ai/structure";
+import { WebsiteMediaSelectorDialog } from "@/components/website-media-library/website-media-selector-dialog";
+import { getEditableSectionTextFields } from "@/lib/editor";
 
 interface EditorTextPanelProps {
+  websiteId: string;
+  pageId?: string;
   section?: WebsiteSection;
   onChange: (path: string, value: string) => void;
 }
 
-export function EditorTextPanel({ section, onChange }: EditorTextPanelProps) {
+function supportsMediaLibrary(path: string): boolean {
+  return path.endsWith("image.src") || path.includes(".image.src");
+}
+
+export function EditorTextPanel({ websiteId, pageId, section, onChange }: EditorTextPanelProps) {
+  const [mediaFieldPath, setMediaFieldPath] = useState<string>();
+
   if (!section) {
     return (
       <section className="editor-panel">
@@ -31,9 +41,29 @@ export function EditorTextPanel({ section, onChange }: EditorTextPanelProps) {
               onChange={(event) => onChange(field.path, event.target.value)}
               rows={3}
             />
+            {supportsMediaLibrary(field.path) ? (
+              <button type="button" className="wizard-button-secondary" onClick={() => setMediaFieldPath(field.path)}>
+                Select from website media library
+              </button>
+            ) : null}
           </label>
         ))}
       </div>
+      <WebsiteMediaSelectorDialog
+        open={Boolean(mediaFieldPath)}
+        websiteId={websiteId}
+        linkedContentId={`website:${websiteId}`}
+        linkedContentType="website"
+        pageId={pageId}
+        sectionId={section?.id}
+        onClose={() => setMediaFieldPath(undefined)}
+        onSelect={(payload) => {
+          if (mediaFieldPath) {
+            onChange(mediaFieldPath, payload.previewUrl || payload.item.previewEndpoint);
+          }
+          setMediaFieldPath(undefined);
+        }}
+      />
     </section>
   );
 }

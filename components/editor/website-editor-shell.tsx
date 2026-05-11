@@ -405,7 +405,12 @@ export function WebsiteEditorShell({ initialStructure, previewPath, generatedSit
         />
 
         <aside className="editor-panels" aria-label="Editor controls">
-          <EditorTextPanel section={selection.section} onChange={handleSectionTextChange} />
+          <EditorTextPanel
+            websiteId={state.draft.id}
+            pageId={selection.page?.id}
+            section={selection.section}
+            onChange={handleSectionTextChange}
+          />
           <EditorPageSettingsPanel
             page={selection.page}
             onTitleChange={handlePageTitleChange}

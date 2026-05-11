@@ -17,6 +17,7 @@ export const routes = {
   revisions: "/revisions",
   revisionItem: (contentId: string) => `/revisions/${encodeURIComponent(contentId)}`,
   websites: "/websites",
+  websiteMediaLibrary: (id: string) => `/websites/${encodeURIComponent(id)}/media`,
   createWebsite: "/create",
   generateWebsite: "/generate",
   preview: "/preview",

@@ -61,6 +61,7 @@ export function WebsiteManagementActions({
         {controls.permissions.canManage ? <Link href={website.generatedSitePath}>Manage</Link> : <span aria-disabled="true">Manage</span>}
         {controls.permissions.canPreview ? <Link href={website.previewPath}>Preview</Link> : <span aria-disabled="true">Preview</span>}
         {controls.permissions.canEdit ? <Link href={website.editorPath}>Edit</Link> : <span aria-disabled="true">Edit</span>}
+        {controls.permissions.canEdit ? <Link href={`/websites/${encodeURIComponent(website.id)}/media`}>Media library</Link> : <span aria-disabled="true">Media library</span>}
         {website.liveUrl ? (
           <a href={website.liveUrl} target="_blank" rel="noreferrer">
             Live site
@@ -102,6 +103,12 @@ export function WebsiteManagementActions({
               id: "edit",
               label: "Open editor",
               href: website.editorPath,
+              disabled: !controls.permissions.canEdit,
+            },
+            {
+              id: "media-library",
+              label: "Open media library",
+              href: `/websites/${encodeURIComponent(website.id)}/media`,
               disabled: !controls.permissions.canEdit,
             },
             {
