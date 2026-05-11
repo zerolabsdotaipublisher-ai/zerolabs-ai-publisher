@@ -232,6 +232,13 @@ function HeroSectionView({ content }: { content: HeroContent }) {
       {content.supportingCopy ? <p className="gs-about-body">{content.supportingCopy}</p> : null}
       {content.variant === "with-image" && content.image ? (
         <div className="gs-service-item">
+          {content.image.src ? (
+            <img
+              className="gs-component gs-component-image"
+              src={content.image.src}
+              alt={content.image.alt || content.headline || "Website asset"}
+            />
+          ) : null}
           <strong className="gs-service-name">{content.image.alt}</strong>
           {content.image.promptHint ? (
             <p className="gs-service-description">{content.image.promptHint}</p>

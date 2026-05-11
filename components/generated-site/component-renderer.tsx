@@ -30,6 +30,22 @@ export function ComponentRenderer({ component }: ComponentRendererProps) {
           {String(component.props.label ?? "")}
         </button>
       );
+    case "image": {
+      const src = typeof component.props.src === "string"
+        ? component.props.src
+        : undefined;
+      if (!src) {
+        return null;
+      }
+      const alt = typeof component.props.alt === "string" ? component.props.alt : "";
+      return (
+        <img
+          className="gs-component gs-component-image"
+          src={src}
+          alt={alt}
+        />
+      );
+    }
     case "list": {
       const items = Array.isArray(component.props.items)
         ? (component.props.items as unknown[]).map(String)
