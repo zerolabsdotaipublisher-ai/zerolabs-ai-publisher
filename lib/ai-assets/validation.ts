@@ -29,6 +29,7 @@ export function validateRegisterAiAssetInput(input: RegisterAiAssetInput): AiAss
   const fileName = input.fileName?.trim();
   const mimeType = input.mimeType?.trim().toLowerCase();
   const promptText = input.promptText?.trim();
+  const promptHash = promptText ? hashPrompt(promptText) : undefined;
 
   if (!input.userId.trim()) {
     errors.push("userId is required.");
@@ -84,7 +85,7 @@ export function validateRegisterAiAssetInput(input: RegisterAiAssetInput): AiAss
       mimeType,
       fileSizeBytes: input.fileSizeBytes,
       promptText,
-      promptHash: hashPrompt(promptText),
+      promptHash,
       status: input.status,
       generationSettings: input.generationSettings ?? {},
       generationTarget: input.generationTarget ?? {},

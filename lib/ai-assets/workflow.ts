@@ -84,6 +84,10 @@ function createAiAsset(input: {
   };
 }
 
+function hasNonEmptyValue(value: string | undefined): boolean {
+  return Boolean(value && value.trim());
+}
+
 export async function registerGeneratedAiAsset(input: RegisterAiAssetInput): Promise<{ asset: ReturnType<typeof toAiAssetApiRecord>; signed: AiAssetSignedAccess; }> {
   const startedAt = Date.now();
   const validation = validateRegisterAiAssetInput(input);
@@ -156,7 +160,7 @@ export async function registerGeneratedAiAsset(input: RegisterAiAssetInput): Pro
       originalAssetId: input.originalAssetId,
       parentAssetId: input.parentAssetId,
       contextMetadata: input.contextMetadata,
-      isVariant: Boolean(input.originalAssetId),
+      isVariant: hasNonEmptyValue(input.originalAssetId),
       version: 1,
     }));
 

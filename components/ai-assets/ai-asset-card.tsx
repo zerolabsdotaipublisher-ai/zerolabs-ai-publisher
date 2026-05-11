@@ -46,7 +46,11 @@ export function AiAssetCard({ asset, selected, onSelect }: AiAssetCardProps) {
       <button type="button" onClick={() => onSelect?.(asset)}>
         {previewUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={previewUrl} alt={asset.assetPurpose} className="media-card-preview" />
+          <img
+            src={previewUrl}
+            alt={`AI generated ${asset.assetType} for ${asset.assetPurpose}`}
+            className="media-card-preview"
+          />
         ) : (
           <div className="media-card-preview">No preview</div>
         )}

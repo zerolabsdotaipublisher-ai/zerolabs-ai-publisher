@@ -25,5 +25,10 @@ export function logAiAssetFailure(operation: AiAssetOperation, error: unknown, m
 }
 
 export function recordAiAssetDuration(operation: AiAssetOperation, ms: number): void {
-  metrics.recordDuration(`aiAsset${operation[0].toUpperCase()}${operation.slice(1)}Ms`, ms);
+  const normalizedOperation = operation
+    .split("_")
+    .map((segment, index) => (index === 0 ? segment : `${segment[0]?.toUpperCase() ?? ""}${segment.slice(1)}`))
+    .join("");
+  const operationLabel = `${normalizedOperation[0]?.toUpperCase() ?? ""}${normalizedOperation.slice(1)}`;
+  metrics.recordDuration(`aiAsset${operationLabel}Ms`, ms);
 }

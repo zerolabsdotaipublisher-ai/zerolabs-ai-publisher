@@ -5,5 +5,5 @@ export function resolveOriginalAssetId(asset: AiAsset): string {
 }
 
 export function createVariantVersion(parent: AiAsset): number {
-  return Math.max(1, parent.version + 1);
+  return parent.version + 1;
 }
