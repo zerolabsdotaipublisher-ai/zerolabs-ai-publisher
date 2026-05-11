@@ -135,6 +135,9 @@ export interface WebsiteMediaLibraryApiRecord {
   status: WebsiteMediaLibraryStatus;
   createdAt: string;
   updatedAt: string;
+  assetId: string;
+  assetRenderEndpoint: string;
+  assetUrlEndpoint: string;
   previewEndpoint: string;
   deleteEndpoint: string;
   tagsEndpoint: string;

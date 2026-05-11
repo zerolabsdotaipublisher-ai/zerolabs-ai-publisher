@@ -3,6 +3,7 @@ import { WebsitePreviewShell } from "@/components/preview/website-preview-shell"
 import { createPreviewModel } from "@/lib/preview/model";
 import { PREVIEW_QUERY_KEYS } from "@/lib/preview/state";
 import { resolveSharedPreviewAccess } from "@/lib/preview/security";
+import { withWebsiteAssetQueryContext } from "@/lib/website-asset-retrieval";
 
 interface PageProps {
   params: Promise<{ token: string }>;
@@ -19,7 +20,7 @@ export default async function SharedWebsitePreviewPage({ params, searchParams }:
   }
 
   const model = createPreviewModel({
-    structure: access.structure,
+    structure: withWebsiteAssetQueryContext(access.structure, { previewToken: token }),
     pageSlug: query?.[PREVIEW_QUERY_KEYS.page],
     deviceMode: query?.[PREVIEW_QUERY_KEYS.device],
     refreshKey: query?.[PREVIEW_QUERY_KEYS.refresh],
