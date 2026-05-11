@@ -1,12 +1,23 @@
+import { useState } from "react";
+import { WebsiteMediaSelectorDialog } from "@/components/website-media-library/website-media-selector-dialog";
 import { getEditableSectionTextFields } from "@/lib/editor";
 import type { WebsiteSection } from "@/lib/ai/structure";
 
 interface EditorTextPanelProps {
+  websiteId: string;
+  pageId?: string;
   section?: WebsiteSection;
   onChange: (path: string, value: string) => void;
 }
 
-export function EditorTextPanel({ section, onChange }: EditorTextPanelProps) {
+function supportsMediaLibrary(path: string): boolean {
+  return /(^|\\.)image\\.src$/i.test(path);
+}
+
+export function EditorTextPanel({ websiteId, pageId, section, onChange }: EditorTextPanelProps) {
+  const [mediaFieldPath, setMediaFieldPath] = useState<string>();
+  const [mediaInsertError, setMediaInsertError] = useState<string>();
+
   if (!section) {
     return (
       <section className="editor-panel">
@@ -31,9 +42,39 @@ export function EditorTextPanel({ section, onChange }: EditorTextPanelProps) {
               onChange={(event) => onChange(field.path, event.target.value)}
               rows={3}
             />
+            {supportsMediaLibrary(field.path) ? (
+              <button type="button" className="wizard-button-secondary" onClick={() => setMediaFieldPath(field.path)}>
+                Select from website media library
+              </button>
+            ) : null}
           </label>
         ))}
       </div>
+      {mediaInsertError ? <p className="website-management-error">{mediaInsertError}</p> : null}
+      <WebsiteMediaSelectorDialog
+        open={Boolean(mediaFieldPath)}
+        websiteId={websiteId}
+        linkedContentId={`website:${websiteId}`}
+        linkedContentType="website"
+        pageId={pageId}
+        sectionId={section?.id}
+        onClose={() => {
+          setMediaFieldPath(undefined);
+          setMediaInsertError(undefined);
+        }}
+        onSelect={(payload) => {
+          if (!mediaFieldPath) {
+            return;
+          }
+          if (!payload.previewUrl) {
+            setMediaInsertError("The selected media preview URL was not available. Please try selecting the item again.");
+            return;
+          }
+          onChange(mediaFieldPath, payload.previewUrl);
+          setMediaInsertError(undefined);
+          setMediaFieldPath(undefined);
+        }}
+      />
     </section>
   );
 }
