@@ -6,14 +6,53 @@ import { deleteOwnedAiAsset } from "@/lib/ai-assets/workflow";
 import { buildFileUploadAssociations } from "@/lib/file-upload/associations";
 import { deleteOwnedFileUpload, uploadOwnedFile } from "@/lib/file-upload/workflow";
 import type { FileUploadResult } from "@/lib/file-upload/types";
-import { createOwnedMediaSignedUrl, deleteOwnedMedia } from "@/lib/media/workflow";
+import { createMediaSignedUrlFromOwnerResource, deleteOwnedMedia } from "@/lib/media/workflow";
 import { getOwnedMediaAsset } from "@/lib/media/storage";
 import { resolveTenantId, toMediaApiRecord } from "@/lib/media/model";
+import {
+  assertStorageResourcePermission,
+  assertStorageUploadPermission,
+  buildStoragePermissionMatrix,
+  createResourceUserStorageActor,
+  createScopedUserStorageActor,
+  type StorageAccessActorContext,
+  type StorageAccessResourceRecord,
+} from "@/lib/storage-access";
 import { buildWebsiteMediaAssociationSummary, buildWebsiteMediaUsageSummary, createWebsiteMediaUsageRecord, usageInputToMetadata } from "./usage";
 import { getWebsiteMediaLibraryStatus, toWebsiteMediaLibraryApiRecord } from "./model";
-import { createOrUpdateWebsiteMediaLibraryItem, getOwnedWebsiteMediaLibraryItem, listOwnedAiAssetLibraryCandidates, listOwnedWebsiteMediaLibraryItems, listWebsiteMediaLibraryUsage, restoreWebsiteMediaLibraryItem, saveWebsiteMediaLibraryUsage, softDeleteWebsiteMediaLibraryItem, updateWebsiteMediaLibraryItem } from "./storage";
+import {
+  createOrUpdateWebsiteMediaLibraryItem,
+  getOwnedWebsiteMediaLibraryItem,
+  listOwnedAiAssetLibraryCandidates,
+  listOwnedWebsiteMediaLibraryItems,
+  listWebsiteMediaLibraryUsage,
+  restoreWebsiteMediaLibraryItem,
+  saveWebsiteMediaLibraryUsage,
+  softDeleteWebsiteMediaLibraryItem,
+  updateWebsiteMediaLibraryItem,
+} from "./storage";
 import { validateWebsiteMediaLibraryUploadInput, validateWebsiteMediaTagUpdateInput, validateWebsiteMediaUsageInput } from "./validation";
-import type { WebsiteMediaLibraryListQuery, WebsiteMediaLibrarySignedPreview, WebsiteMediaLibraryTagUpdateInput, WebsiteMediaLibraryUploadInput, WebsiteMediaLibraryUsageInput } from "./types";
+import type { WebsiteMediaLibraryItem, WebsiteMediaLibraryListQuery, WebsiteMediaLibrarySignedPreview, WebsiteMediaLibraryTagUpdateInput, WebsiteMediaLibraryUploadInput, WebsiteMediaLibraryUsageInput } from "./types";
+
+function toWebsiteMediaResource(item: WebsiteMediaLibraryItem): StorageAccessResourceRecord {
+  return {
+    resourceType: "website_media",
+    resourceId: item.id,
+    ownerUserId: item.userId,
+    tenantId: item.tenantId,
+    mediaId: item.mediaId,
+    websiteId: item.websiteId,
+    status: getWebsiteMediaLibraryStatus(item),
+    visibility: "private",
+    deletedAt: item.deletedAt,
+    metadata: {
+      ...item.metadata,
+      usageSummary: item.usageSummary,
+      associationSummary: item.associationSummary,
+    },
+    environmentStage: typeof item.metadata.environmentStage === "string" ? item.metadata.environmentStage : undefined,
+  };
+}
 
 async function assertOwnedWebsite(userId: string, websiteId: string | undefined): Promise<void> {
   if (!websiteId) return;
@@ -46,6 +85,7 @@ async function syncAiAssetsIntoLibrary(userId: string, tenantId: string): Promis
         tags: candidate.tags,
         metadata: {
           source: "ai-asset",
+          environmentStage: createScopedUserStorageActor(userId, tenantId).environmentStage,
           ...candidate.metadata,
         },
       });
@@ -81,6 +121,15 @@ export async function uploadWebsiteMediaLibraryItem(input: WebsiteMediaLibraryUp
 
   await assertOwnedWebsite(input.userId, validation.normalized.websiteId);
   const tenantId = resolveTenantId(input.userId, input.tenantId);
+  const actor = createScopedUserStorageActor(input.userId, tenantId);
+  await assertStorageUploadPermission(actor, {
+    resourceType: "website_media",
+    tenantId,
+    websiteId: validation.normalized.websiteId,
+    linkedContentId: validation.normalized.linkedContentId,
+    linkedContentType: validation.normalized.linkedContentType,
+  });
+
   const uploaded = await uploadOwnedFile({
     userId: input.userId,
     tenantId,
@@ -107,6 +156,7 @@ export async function uploadWebsiteMediaLibraryItem(input: WebsiteMediaLibraryUp
       websiteId: validation.normalized.websiteId,
       pageId: validation.normalized.pageId,
       sectionId: validation.normalized.sectionId,
+      environmentStage: actor.environmentStage,
     },
   });
 
@@ -145,6 +195,7 @@ export async function uploadWebsiteMediaLibraryItem(input: WebsiteMediaLibraryUp
       source: "upload",
       signedUrlTtlSeconds: config.services.media.signedUrlTtlSeconds,
       uploadId: uploaded.upload.id,
+      environmentStage: actor.environmentStage,
     },
   });
 
@@ -162,11 +213,11 @@ export async function uploadWebsiteMediaLibraryItem(input: WebsiteMediaLibraryUp
   }));
 
   const refreshed = await refreshUsageSummary(created.id, input.userId);
-  const preview = await createWebsiteMediaLibraryPreview({ userId: input.userId, itemId: refreshed.item.id });
+  const preview = await createWebsiteMediaLibraryPreview({ itemId: refreshed.item.id, actor });
 
   return {
     upload: uploaded.upload,
-    item: toWebsiteMediaLibraryApiRecord(refreshed.item),
+    item: toWebsiteMediaLibraryApiRecord(refreshed.item, buildStoragePermissionMatrix(actor, toWebsiteMediaResource(refreshed.item))),
     preview,
     media: toMediaApiRecord(media),
   };
@@ -174,30 +225,49 @@ export async function uploadWebsiteMediaLibraryItem(input: WebsiteMediaLibraryUp
 
 export async function listWebsiteMediaLibrary(input: { userId: string; tenantId?: string; query: WebsiteMediaLibraryListQuery; }) {
   const tenantId = resolveTenantId(input.userId, input.tenantId);
+  const actor = createScopedUserStorageActor(input.userId, tenantId);
   await syncAiAssetsIntoLibrary(input.userId, tenantId);
   const page = await listOwnedWebsiteMediaLibraryItems(input.userId, tenantId, input.query);
   return {
     page,
-    items: page.items.map(toWebsiteMediaLibraryApiRecord),
+    items: page.items.map((item) => toWebsiteMediaLibraryApiRecord(item, buildStoragePermissionMatrix(actor, toWebsiteMediaResource(item)))),
   };
 }
 
 export async function getWebsiteMediaLibraryItemDetail(input: { userId: string; itemId: string; }) {
-  const item = await getOwnedWebsiteMediaLibraryItem(input.userId, input.itemId, true);
+  const actor = createResourceUserStorageActor(input.userId);
+  const resource = await assertStorageResourcePermission({
+    actor,
+    operation: "read",
+    resourceType: "website_media",
+    resourceId: input.itemId,
+  });
+  const item = await getOwnedWebsiteMediaLibraryItem(resource.ownerUserId, input.itemId, true);
   if (!item) return null;
-  return toWebsiteMediaLibraryApiRecord(item);
+  return toWebsiteMediaLibraryApiRecord(item, buildStoragePermissionMatrix(actor, toWebsiteMediaResource(item)));
 }
 
-export async function createWebsiteMediaLibraryPreview(input: { userId: string; itemId: string; expiresInSeconds?: number; }): Promise<WebsiteMediaLibrarySignedPreview> {
-  const item = await getOwnedWebsiteMediaLibraryItem(input.userId, input.itemId, true);
+export async function createWebsiteMediaLibraryPreview(input: { actor: StorageAccessActorContext; itemId: string; expiresInSeconds?: number; }): Promise<WebsiteMediaLibrarySignedPreview> {
+  const resource = await assertStorageResourcePermission({
+    actor: input.actor,
+    operation: "preview",
+    resourceType: "website_media",
+    resourceId: input.itemId,
+  });
+  const item = await getOwnedWebsiteMediaLibraryItem(resource.ownerUserId, input.itemId, true);
   if (!item) {
     throw new Error("Website media library item not found.");
   }
+  const media = await getOwnedMediaAsset(resource.ownerUserId, item.mediaId, true);
+  if (!media) {
+    throw new Error("Website media library media was not found.");
+  }
 
-  const signed = await createOwnedMediaSignedUrl({
-    userId: input.userId,
-    mediaId: item.mediaId,
+  const signed = await createMediaSignedUrlFromOwnerResource({
+    actor: input.actor,
+    media,
     expiresInSeconds: input.expiresInSeconds ?? config.services.media.signedUrlTtlSeconds,
+    cacheKeyPrefix: `${input.actor.actorType}:${item.id}`,
   });
 
   return {
@@ -215,7 +285,14 @@ export async function updateWebsiteMediaLibraryTags(input: WebsiteMediaLibraryTa
   }
 
   await assertOwnedWebsite(input.userId, validation.normalized.websiteId);
-  const item = await getOwnedWebsiteMediaLibraryItem(input.userId, input.itemId, true);
+  const actor = createResourceUserStorageActor(input.userId);
+  const resource = await assertStorageResourcePermission({
+    actor,
+    operation: "update",
+    resourceType: "website_media",
+    resourceId: input.itemId,
+  });
+  const item = await getOwnedWebsiteMediaLibraryItem(resource.ownerUserId, input.itemId, true);
   if (!item) {
     throw new Error("Website media library item not found.");
   }
@@ -229,7 +306,7 @@ export async function updateWebsiteMediaLibraryTags(input: WebsiteMediaLibraryTa
     tags: validation.normalized.tags ?? item.tags,
   });
 
-  return toWebsiteMediaLibraryApiRecord(updated);
+  return toWebsiteMediaLibraryApiRecord(updated, buildStoragePermissionMatrix(actor, toWebsiteMediaResource(updated)));
 }
 
 export async function trackWebsiteMediaUsage(input: WebsiteMediaLibraryUsageInput) {
@@ -239,7 +316,14 @@ export async function trackWebsiteMediaUsage(input: WebsiteMediaLibraryUsageInpu
   }
 
   await assertOwnedWebsite(input.userId, validation.normalized.websiteId);
-  const item = await getOwnedWebsiteMediaLibraryItem(input.userId, input.itemId, true);
+  const actor = createResourceUserStorageActor(input.userId);
+  const resource = await assertStorageResourcePermission({
+    actor,
+    operation: "update",
+    resourceType: "website_media",
+    resourceId: input.itemId,
+  });
+  const item = await getOwnedWebsiteMediaLibraryItem(resource.ownerUserId, input.itemId, true);
   if (!item) {
     throw new Error("Website media library item not found.");
   }
@@ -260,32 +344,46 @@ export async function trackWebsiteMediaUsage(input: WebsiteMediaLibraryUsageInpu
 
   const refreshed = await refreshUsageSummary(item.id, input.userId);
   return {
-    item: toWebsiteMediaLibraryApiRecord(refreshed.item),
+    item: toWebsiteMediaLibraryApiRecord(refreshed.item, buildStoragePermissionMatrix(actor, toWebsiteMediaResource(refreshed.item))),
     usage: refreshed.usage,
   };
 }
 
 export async function listWebsiteMediaUsage(input: { userId: string; itemId: string; }) {
-  const item = await getOwnedWebsiteMediaLibraryItem(input.userId, input.itemId, true);
+  const actor = createResourceUserStorageActor(input.userId);
+  const resource = await assertStorageResourcePermission({
+    actor,
+    operation: "read",
+    resourceType: "website_media",
+    resourceId: input.itemId,
+  });
+  const item = await getOwnedWebsiteMediaLibraryItem(resource.ownerUserId, input.itemId, true);
   if (!item) {
     throw new Error("Website media library item not found.");
   }
 
-  const usage = await listWebsiteMediaLibraryUsage(item.id, input.userId);
+  const usage = await listWebsiteMediaLibraryUsage(item.id, resource.ownerUserId);
   return {
-    item: toWebsiteMediaLibraryApiRecord(item),
+    item: toWebsiteMediaLibraryApiRecord(item, buildStoragePermissionMatrix(actor, toWebsiteMediaResource(item))),
     usage,
     summary: buildWebsiteMediaUsageSummary(usage),
   };
 }
 
 export async function deleteWebsiteMediaLibraryItem(input: { userId: string; itemId: string; }): Promise<{ deleted: boolean; mode: "archived" | "deleted"; item?: ReturnType<typeof toWebsiteMediaLibraryApiRecord>; }> {
-  const item = await getOwnedWebsiteMediaLibraryItem(input.userId, input.itemId, true);
+  const actor = createResourceUserStorageActor(input.userId);
+  const resource = await assertStorageResourcePermission({
+    actor,
+    operation: "delete",
+    resourceType: "website_media",
+    resourceId: input.itemId,
+  });
+  const item = await getOwnedWebsiteMediaLibraryItem(resource.ownerUserId, input.itemId, true);
   if (!item) {
     return { deleted: false, mode: "deleted" };
   }
 
-  const usage = await listWebsiteMediaLibraryUsage(item.id, input.userId);
+  const usage = await listWebsiteMediaLibraryUsage(item.id, resource.ownerUserId);
   const isInUse = usage.some((entry) => entry.usageKind !== "library");
 
   if (isInUse) {
@@ -293,18 +391,18 @@ export async function deleteWebsiteMediaLibraryItem(input: { userId: string; ite
     return {
       deleted: true,
       mode: "archived",
-      item: toWebsiteMediaLibraryApiRecord(archived),
+      item: toWebsiteMediaLibraryApiRecord(archived, buildStoragePermissionMatrix(actor, toWebsiteMediaResource(archived))),
     };
   }
 
   if (item.aiAssetId) {
-    await deleteOwnedAiAsset({ userId: input.userId, assetId: item.aiAssetId });
+    await deleteOwnedAiAsset({ userId: resource.ownerUserId, assetId: item.aiAssetId });
   } else {
     const uploadId = typeof item.metadata.uploadId === "string" ? item.metadata.uploadId : undefined;
     if (uploadId) {
-      await deleteOwnedFileUpload({ userId: input.userId, uploadId });
+      await deleteOwnedFileUpload({ userId: resource.ownerUserId, uploadId });
     } else {
-      await deleteOwnedMedia({ userId: input.userId, mediaId: item.mediaId });
+      await deleteOwnedMedia({ userId: resource.ownerUserId, mediaId: item.mediaId });
     }
   }
 
@@ -312,18 +410,25 @@ export async function deleteWebsiteMediaLibraryItem(input: { userId: string; ite
   return {
     deleted: true,
     mode: "deleted",
-    item: toWebsiteMediaLibraryApiRecord(deleted),
+    item: toWebsiteMediaLibraryApiRecord(deleted, buildStoragePermissionMatrix(actor, toWebsiteMediaResource(deleted))),
   };
 }
 
 export async function restoreWebsiteMediaLibraryArchivedItem(input: { userId: string; itemId: string; }) {
-  const item = await getOwnedWebsiteMediaLibraryItem(input.userId, input.itemId, true);
+  const actor = createResourceUserStorageActor(input.userId);
+  const resource = await assertStorageResourcePermission({
+    actor,
+    operation: "update",
+    resourceType: "website_media",
+    resourceId: input.itemId,
+  });
+  const item = await getOwnedWebsiteMediaLibraryItem(resource.ownerUserId, input.itemId, true);
   if (!item) {
     throw new Error("Website media library item not found.");
   }
   if (getWebsiteMediaLibraryStatus(item) === "active") {
-    return toWebsiteMediaLibraryApiRecord(item);
+    return toWebsiteMediaLibraryApiRecord(item, buildStoragePermissionMatrix(actor, toWebsiteMediaResource(item)));
   }
   const restored = await restoreWebsiteMediaLibraryItem(item);
-  return toWebsiteMediaLibraryApiRecord(restored);
+  return toWebsiteMediaLibraryApiRecord(restored, buildStoragePermissionMatrix(actor, toWebsiteMediaResource(restored)));
 }

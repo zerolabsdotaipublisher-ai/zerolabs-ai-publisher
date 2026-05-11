@@ -17,8 +17,14 @@ interface SignedUrlResponse {
 
 export function AiAssetCard({ asset, selected, onSelect }: AiAssetCardProps) {
   const [previewUrl, setPreviewUrl] = useState<string>();
+  const canPreview = asset.permissions?.preview !== false && asset.permissions?.signedUrl !== false;
+  const canSelect = asset.permissions?.read !== false;
 
   useEffect(() => {
+    if (!canPreview) {
+      return;
+    }
+
     let cancelled = false;
 
     async function loadPreview() {
@@ -39,11 +45,11 @@ export function AiAssetCard({ asset, selected, onSelect }: AiAssetCardProps) {
     return () => {
       cancelled = true;
     };
-  }, [asset.signedUrlEndpoint]);
+  }, [asset.signedUrlEndpoint, canPreview]);
 
   return (
     <article className={`media-card ai-asset-card ${selected ? "is-selected" : ""}`}>
-      <button type="button" onClick={() => onSelect?.(asset)}>
+      <button type="button" onClick={() => onSelect?.(asset)} disabled={!canSelect}>
         {previewUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -52,7 +58,7 @@ export function AiAssetCard({ asset, selected, onSelect }: AiAssetCardProps) {
             className="media-card-preview"
           />
         ) : (
-          <div className="media-card-preview">No preview</div>
+          <div className="media-card-preview">{canPreview ? "No preview" : "Preview unavailable"}</div>
         )}
       </button>
       <div className="media-card-meta">

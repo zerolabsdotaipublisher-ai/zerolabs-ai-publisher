@@ -7,6 +7,6 @@ export function canManageOwnedFileUploads(user: User): FileUploadPermissionResul
   return canManageOwnedMedia(user);
 }
 
-export function canAccessOwnedFileUploadRecord(userId: string, ownerId: string): FileUploadPermissionResult {
-  return canAccessMediaRecord(userId, ownerId);
+export function canAccessOwnedFileUploadRecord(userId: string, ownerId: string, tenantId?: string, recordTenantId?: string): FileUploadPermissionResult {
+  return canAccessMediaRecord(userId, ownerId, tenantId, recordTenantId);
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { deleteOwnedMedia } from "@/lib/media/workflow";
+import { toStorageErrorResponse } from "@/lib/storage-access/errors";
 import { getServerUser } from "@/lib/supabase/server";
 
 interface RouteContext {
@@ -22,7 +23,7 @@ export async function DELETE(_request: Request, context: RouteContext): Promise<
     }
 
     return NextResponse.json({ ok: true, deleted: true });
-  } catch {
-    return NextResponse.json({ ok: false, error: "Unable to delete media" }, { status: 500 });
+  } catch (error) {
+    return toStorageErrorResponse(error, "Unable to delete media.");
   }
 }

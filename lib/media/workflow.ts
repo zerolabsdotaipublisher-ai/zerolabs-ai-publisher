@@ -1,9 +1,18 @@
 import "server-only";
 
 import { config } from "@/config";
+import {
+  assertStorageResourcePermission,
+  assertStorageUploadPermission,
+  buildStoragePermissionMatrix,
+  createResourceUserStorageActor,
+  createScopedUserStorageActor,
+  resolveSignedUrlTtl,
+  type StorageAccessActorContext,
+  type StorageAccessResourceRecord,
+} from "@/lib/storage-access";
 import { getMediaStorageProvider } from "./provider";
-import { buildMediaObjectKey, createMediaId, resolveMediaProvider, resolveTenantId, toMediaApiRecord } from "./model";
-import { canAccessMediaRecord } from "./permissions";
+import { buildMediaNamespacePrefix, buildMediaObjectKey, createMediaId, resolveMediaProvider, resolveTenantId, toMediaApiRecord } from "./model";
 import { checkMediaQuotaAllowance } from "./quotas";
 import {
   createMediaAsset,
@@ -17,8 +26,7 @@ import {
 } from "./storage";
 import { validateMediaUploadInput } from "./validation";
 import { logMediaEvent, logMediaFailure, recordMediaDuration, recordMediaQuota } from "./monitoring";
-import type { MediaListQuery, MediaSignedAccess, MediaUploadInput } from "./types";
-
+import type { MediaAsset, MediaListQuery, MediaSignedAccess, MediaUploadInput } from "./types";
 
 const signedUrlCache = new Map<string, { url: string; expiresAtMs: number }>();
 const SIGNED_URL_CACHE_BUFFER_MS = 15_000;
@@ -46,6 +54,65 @@ function resolveBucket(): string {
   return bucket;
 }
 
+function toMediaResource(media: MediaAsset): StorageAccessResourceRecord {
+  return {
+    resourceType: "media",
+    resourceId: media.id,
+    ownerUserId: media.userId,
+    tenantId: media.tenantId,
+    mediaId: media.id,
+    linkedContentId: media.linkedContentId,
+    linkedContentType: media.linkedContentType,
+    status: media.status,
+    visibility: "private",
+    deletedAt: media.deletedAt,
+    metadata: media.metadata,
+    objectKey: media.objectKey,
+    namespacePrefix: buildMediaNamespacePrefix(media.tenantId),
+    environmentStage: typeof media.metadata.environmentStage === "string" ? media.metadata.environmentStage : undefined,
+  };
+}
+
+async function createMediaSignedUrlFromRecord(input: {
+  actor: StorageAccessActorContext;
+  media: MediaAsset;
+  expiresInSeconds?: number;
+  cacheKeyPrefix: string;
+}): Promise<MediaSignedAccess> {
+  const provider = getMediaStorageProvider();
+  const resource = toMediaResource(input.media);
+  const resolvedExpiresInSeconds = resolveSignedUrlTtl({
+    actor: input.actor,
+    resource,
+    requestedExpiresInSeconds: input.expiresInSeconds,
+  });
+  const nowMs = Date.now();
+  pruneSignedUrlCache(nowMs);
+  const cacheKey = `${input.cacheKeyPrefix}:${input.media.id}:${resolvedExpiresInSeconds}`;
+  const cached = signedUrlCache.get(cacheKey);
+  if (cached && cached.expiresAtMs > nowMs + SIGNED_URL_CACHE_BUFFER_MS) {
+    return {
+      mediaId: input.media.id,
+      url: cached.url,
+      expiresAt: new Date(cached.expiresAtMs).toISOString(),
+    };
+  }
+
+  const url = await provider.createSignedReadUrl({
+    bucket: input.media.bucket,
+    objectKey: input.media.objectKey,
+    expiresInSeconds: resolvedExpiresInSeconds,
+  });
+
+  const expiresAtMs = nowMs + resolvedExpiresInSeconds * 1000;
+  signedUrlCache.set(cacheKey, { url, expiresAtMs });
+  return {
+    mediaId: input.media.id,
+    url,
+    expiresAt: new Date(expiresAtMs).toISOString(),
+  };
+}
+
 export async function uploadOwnedMedia(input: MediaUploadInput): Promise<{
   media: ReturnType<typeof toMediaApiRecord>;
   signed: MediaSignedAccess;
@@ -54,12 +121,15 @@ export async function uploadOwnedMedia(input: MediaUploadInput): Promise<{
   const provider = getMediaStorageProvider();
   const bucket = resolveBucket();
   const tenantId = resolveTenantId(input.userId, input.tenantId);
+  const actor = createScopedUserStorageActor(input.userId, tenantId);
 
   try {
-    const permission = canAccessMediaRecord(input.userId, input.userId);
-    if (!permission.allowed) {
-      throw new Error(permission.reason || "Unauthorized media upload.");
-    }
+    await assertStorageUploadPermission(actor, {
+      resourceType: "media",
+      tenantId,
+      linkedContentId: input.linkedContentId,
+      linkedContentType: input.linkedContentType,
+    });
 
     const validation = validateMediaUploadInput(input);
     if (!validation.ok) {
@@ -88,6 +158,7 @@ export async function uploadOwnedMedia(input: MediaUploadInput): Promise<{
         mediaId,
         tenantId,
         userId: input.userId,
+        ...(actor.environmentStage ? { environmentStage: actor.environmentStage } : {}),
       },
     });
 
@@ -106,7 +177,10 @@ export async function uploadOwnedMedia(input: MediaUploadInput): Promise<{
         height: input.height,
         linkedContentId: input.linkedContentId,
         linkedContentType: input.linkedContentType,
-        metadata: input.metadata,
+        metadata: {
+          ...input.metadata,
+          environmentStage: actor.environmentStage,
+        },
         id: mediaId,
       }),
     );
@@ -138,6 +212,8 @@ export async function uploadOwnedMedia(input: MediaUploadInput): Promise<{
       expiresInSeconds: config.services.media.signedUrlTtlSeconds,
     });
 
+    const permissions = buildStoragePermissionMatrix(actor, toMediaResource(created));
+
     logMediaEvent("upload", {
       userId: input.userId,
       tenantId,
@@ -147,7 +223,7 @@ export async function uploadOwnedMedia(input: MediaUploadInput): Promise<{
     });
 
     return {
-      media: toMediaApiRecord(created),
+      media: toMediaApiRecord(created, permissions),
       signed,
     };
   } catch (error) {
@@ -173,10 +249,11 @@ export async function listOwnedMedia(input: {
 }> {
   const startedAt = Date.now();
   const tenantId = resolveTenantId(input.userId, input.tenantId);
+  const actor = createScopedUserStorageActor(input.userId, tenantId);
 
   try {
     const page = await listOwnedMediaAssets(input.userId, tenantId, input.query);
-    const items = page.items.map(toMediaApiRecord);
+    const items = page.items.map((item) => toMediaApiRecord(item, buildStoragePermissionMatrix(actor, toMediaResource(item))));
 
     logMediaEvent("list", {
       userId: input.userId,
@@ -203,8 +280,15 @@ export async function listOwnedMedia(input: {
 
 export async function getOwnedMediaDetail(input: { userId: string; mediaId: string }) {
   const startedAt = Date.now();
+  const actor = createResourceUserStorageActor(input.userId);
   try {
-    const media = await getOwnedMediaAsset(input.userId, input.mediaId);
+    const resource = await assertStorageResourcePermission({
+      actor,
+      operation: "read",
+      resourceType: "media",
+      resourceId: input.mediaId,
+    });
+    const media = await getOwnedMediaAsset(resource.ownerUserId, input.mediaId, true);
     if (!media) {
       return null;
     }
@@ -214,7 +298,7 @@ export async function getOwnedMediaDetail(input: { userId: string; mediaId: stri
       mediaId: input.mediaId,
     });
 
-    return toMediaApiRecord(media);
+    return toMediaApiRecord(media, buildStoragePermissionMatrix(actor, toMediaResource(media)));
   } catch (error) {
     logMediaFailure("get", error, {
       userId: input.userId,
@@ -232,54 +316,34 @@ export async function createOwnedMediaSignedUrl(input: {
   expiresInSeconds?: number;
 }): Promise<MediaSignedAccess> {
   const startedAt = Date.now();
-  const provider = getMediaStorageProvider();
+  const actor = createResourceUserStorageActor(input.userId);
 
   try {
-    const media = await getOwnedMediaAsset(input.userId, input.mediaId);
+    const resource = await assertStorageResourcePermission({
+      actor,
+      operation: "signed_url",
+      resourceType: "media",
+      resourceId: input.mediaId,
+    });
+    const media = await getOwnedMediaAsset(resource.ownerUserId, input.mediaId, true);
     if (!media) {
       throw new Error("Media not found.");
     }
 
-    const expiresInSeconds = input.expiresInSeconds ?? config.services.media.signedUrlTtlSeconds;
-    const nowMs = Date.now();
-    pruneSignedUrlCache(nowMs);
-    const cacheKey = `${input.userId}:${media.id}:${expiresInSeconds}`;
-    const cached = signedUrlCache.get(cacheKey);
-    if (cached && cached.expiresAtMs > nowMs + SIGNED_URL_CACHE_BUFFER_MS) {
-      logMediaEvent("signed_url", {
-        userId: input.userId,
-        mediaId: input.mediaId,
-        expiresInSeconds,
-        cacheHit: true,
-      });
-      return {
-        mediaId: media.id,
-        url: cached.url,
-        expiresAt: new Date(cached.expiresAtMs).toISOString(),
-      };
-    }
-
-    const url = await provider.createSignedReadUrl({
-      bucket: media.bucket,
-      objectKey: media.objectKey,
-      expiresInSeconds,
+    const signed = await createMediaSignedUrlFromRecord({
+      actor,
+      media,
+      expiresInSeconds: input.expiresInSeconds,
+      cacheKeyPrefix: input.userId,
     });
-
-    const expiresAtMs = nowMs + expiresInSeconds * 1000;
-    signedUrlCache.set(cacheKey, { url, expiresAtMs });
-    const expiresAt = new Date(expiresAtMs).toISOString();
 
     logMediaEvent("signed_url", {
       userId: input.userId,
       mediaId: input.mediaId,
-      expiresInSeconds,
+      expiresInSeconds: input.expiresInSeconds,
     });
 
-    return {
-      mediaId: media.id,
-      url,
-      expiresAt,
-    };
+    return signed;
   } catch (error) {
     logMediaFailure("signed_url", error, {
       userId: input.userId,
@@ -291,15 +355,31 @@ export async function createOwnedMediaSignedUrl(input: {
   }
 }
 
+export async function createMediaSignedUrlFromOwnerResource(input: {
+  actor: StorageAccessActorContext;
+  media: MediaAsset;
+  cacheKeyPrefix: string;
+  expiresInSeconds?: number;
+}): Promise<MediaSignedAccess> {
+  return createMediaSignedUrlFromRecord(input);
+}
+
 export async function deleteOwnedMedia(input: {
   userId: string;
   mediaId: string;
 }): Promise<{ deleted: boolean }> {
   const startedAt = Date.now();
   const provider = getMediaStorageProvider();
+  const actor = createResourceUserStorageActor(input.userId);
 
   try {
-    const media = await getOwnedMediaAsset(input.userId, input.mediaId, true);
+    const resource = await assertStorageResourcePermission({
+      actor,
+      operation: "delete",
+      resourceType: "media",
+      resourceId: input.mediaId,
+    });
+    const media = await getOwnedMediaAsset(resource.ownerUserId, input.mediaId, true);
     if (!media || media.status === "deleted") {
       return { deleted: false };
     }

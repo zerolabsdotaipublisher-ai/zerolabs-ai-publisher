@@ -1,3 +1,5 @@
+import type { StorageClientPermissionMatrix } from "@/lib/storage-access/types";
+
 export type AiAssetType = "image" | "thumbnail" | "optimized" | "social" | "cropped" | "resized" | "other";
 
 export type AiAssetPurpose = "hero" | "content" | "social" | "thumbnail" | "ad" | "variant" | "other";
@@ -134,6 +136,7 @@ export interface AiAssetApiRecord {
   createdAt: string;
   updatedAt: string;
   signedUrlEndpoint: string;
+  permissions?: StorageClientPermissionMatrix;
 }
 
 export interface AiAssetSignedAccess {

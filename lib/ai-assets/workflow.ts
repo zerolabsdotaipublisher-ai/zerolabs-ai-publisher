@@ -4,6 +4,14 @@ import { config } from "@/config";
 import { createOwnedMediaSignedUrl, deleteOwnedMedia, uploadOwnedMedia } from "@/lib/media/workflow";
 import { getOwnedMediaAsset } from "@/lib/media/storage";
 import { resolveTenantId } from "@/lib/media/model";
+import {
+  assertStorageResourcePermission,
+  assertStorageUploadPermission,
+  buildStoragePermissionMatrix,
+  createResourceUserStorageActor,
+  createScopedUserStorageActor,
+  type StorageAccessResourceRecord,
+} from "@/lib/storage-access";
 import { appendLifecycle, createAiAssetId, toAiAssetApiRecord } from "./model";
 import { canTransitionAiAssetStatus } from "./lifecycle";
 import { createVariantVersion, resolveOriginalAssetId } from "./variants";
@@ -88,13 +96,39 @@ function hasNonEmptyValue(value: string | undefined): boolean {
   return Boolean(value && value.trim());
 }
 
+function toAiAssetResource(asset: AiAsset): StorageAccessResourceRecord {
+  return {
+    resourceType: "ai_asset",
+    resourceId: asset.id,
+    ownerUserId: asset.userId,
+    tenantId: asset.tenantId,
+    mediaId: asset.mediaId,
+    linkedContentId: asset.linkedContentId,
+    linkedContentType: asset.linkedContentType,
+    status: asset.status,
+    visibility: asset.status === "published" ? "protected" : "private",
+    deletedAt: asset.deletedAt,
+    metadata: asset.contextMetadata,
+    environmentStage: typeof asset.contextMetadata.environmentStage === "string" ? asset.contextMetadata.environmentStage : undefined,
+  };
+}
+
 export async function registerGeneratedAiAsset(input: RegisterAiAssetInput): Promise<{ asset: ReturnType<typeof toAiAssetApiRecord>; signed: AiAssetSignedAccess; }> {
   const startedAt = Date.now();
   const validation = validateRegisterAiAssetInput(input);
   const tenantId = resolveTenantId(input.userId, validation.normalized.tenantId);
+  const actor = createScopedUserStorageActor(input.userId, tenantId);
   let uploadedMediaId: string | undefined;
 
   try {
+    await assertStorageUploadPermission(actor, {
+      resourceType: "ai_asset",
+      tenantId,
+      linkedContentId: validation.normalized.linkedContentId,
+      linkedContentType: validation.normalized.linkedContentType,
+      metadata: validation.normalized.generationTarget as Record<string, unknown> | undefined,
+    });
+
     if (!validation.ok) {
       throw new Error(validation.errors.join(" "));
     }
@@ -129,6 +163,7 @@ export async function registerGeneratedAiAsset(input: RegisterAiAssetInput): Pro
           sourceWorkflow: input.sourceWorkflow,
           generationProvider: input.generationProvider,
           generationModel: input.generationModel,
+          environmentStage: actor.environmentStage,
         },
       });
       mediaId = uploaded.media.id;
@@ -159,7 +194,10 @@ export async function registerGeneratedAiAsset(input: RegisterAiAssetInput): Pro
       linkedContentType: validation.normalized.linkedContentType,
       originalAssetId: input.originalAssetId,
       parentAssetId: input.parentAssetId,
-      contextMetadata: input.contextMetadata,
+      contextMetadata: {
+        ...input.contextMetadata,
+        environmentStage: actor.environmentStage,
+      },
       isVariant: hasNonEmptyValue(input.originalAssetId),
       version: 1,
     }));
@@ -175,7 +213,7 @@ export async function registerGeneratedAiAsset(input: RegisterAiAssetInput): Pro
     });
 
     return {
-      asset: toAiAssetApiRecord(created),
+      asset: toAiAssetApiRecord(created, buildStoragePermissionMatrix(actor, toAiAssetResource(created))),
       signed,
     };
   } catch (error) {
@@ -197,10 +235,11 @@ export async function registerGeneratedAiAsset(input: RegisterAiAssetInput): Pro
 export async function listOwnedAiAssetLibrary(input: { userId: string; tenantId?: string; query: AiAssetListQuery; }): Promise<{ page: Awaited<ReturnType<typeof listOwnedAiAssets>>; items: ReturnType<typeof toAiAssetApiRecord>[]; }> {
   const startedAt = Date.now();
   const tenantId = resolveTenantId(input.userId, input.tenantId);
+  const actor = createScopedUserStorageActor(input.userId, tenantId);
 
   try {
     const page = await listOwnedAiAssets(input.userId, tenantId, input.query);
-    const items = page.items.map(toAiAssetApiRecord);
+    const items = page.items.map((asset) => toAiAssetApiRecord(asset, buildStoragePermissionMatrix(actor, toAiAssetResource(asset))));
 
     logAiAssetEvent("list", {
       userId: input.userId,
@@ -226,8 +265,15 @@ export async function listOwnedAiAssetLibrary(input: { userId: string; tenantId?
 
 export async function getOwnedAiAssetDetail(input: { userId: string; assetId: string; }) {
   const startedAt = Date.now();
+  const actor = createResourceUserStorageActor(input.userId);
   try {
-    const asset = await getOwnedAiAsset(input.userId, input.assetId);
+    const resource = await assertStorageResourcePermission({
+      actor,
+      operation: "read",
+      resourceType: "ai_asset",
+      resourceId: input.assetId,
+    });
+    const asset = await getOwnedAiAsset(resource.ownerUserId, input.assetId, true);
     if (!asset) return null;
 
     logAiAssetEvent("get", {
@@ -235,7 +281,7 @@ export async function getOwnedAiAssetDetail(input: { userId: string; assetId: st
       assetId: input.assetId,
     });
 
-    return toAiAssetApiRecord(asset);
+    return toAiAssetApiRecord(asset, buildStoragePermissionMatrix(actor, toAiAssetResource(asset)));
   } catch (error) {
     logAiAssetFailure("get", error, {
       userId: input.userId,
@@ -253,14 +299,21 @@ export async function createOwnedAiAssetSignedUrl(input: {
   expiresInSeconds?: number;
 }): Promise<AiAssetSignedAccess> {
   const startedAt = Date.now();
+  const actor = createResourceUserStorageActor(input.userId);
   try {
-    const asset = await getOwnedAiAsset(input.userId, input.assetId);
+    const resource = await assertStorageResourcePermission({
+      actor,
+      operation: "signed_url",
+      resourceType: "ai_asset",
+      resourceId: input.assetId,
+    });
+    const asset = await getOwnedAiAsset(resource.ownerUserId, input.assetId, true);
     if (!asset) {
       throw new Error("AI asset not found.");
     }
 
     const signed = await createOwnedMediaSignedUrl({
-      userId: input.userId,
+      userId: resource.ownerUserId,
       mediaId: asset.mediaId,
       expiresInSeconds: input.expiresInSeconds ?? config.services.media.signedUrlTtlSeconds,
     });
@@ -289,13 +342,20 @@ export async function createOwnedAiAssetSignedUrl(input: {
 
 export async function deleteOwnedAiAsset(input: { userId: string; assetId: string; }): Promise<{ deleted: boolean }> {
   const startedAt = Date.now();
+  const actor = createResourceUserStorageActor(input.userId);
   try {
-    const asset = await getOwnedAiAsset(input.userId, input.assetId, true);
+    const resource = await assertStorageResourcePermission({
+      actor,
+      operation: "delete",
+      resourceType: "ai_asset",
+      resourceId: input.assetId,
+    });
+    const asset = await getOwnedAiAsset(resource.ownerUserId, input.assetId, true);
     if (!asset || asset.status === "deleted") {
       return { deleted: false };
     }
 
-    await deleteOwnedMedia({ userId: input.userId, mediaId: asset.mediaId });
+    await deleteOwnedMedia({ userId: resource.ownerUserId, mediaId: asset.mediaId });
 
     const now = new Date().toISOString();
     await updateAiAssetRecord({
@@ -325,8 +385,15 @@ export async function deleteOwnedAiAsset(input: { userId: string; assetId: strin
 
 export async function replaceOwnedAiAsset(input: ReplaceAiAssetInput): Promise<{ asset: ReturnType<typeof toAiAssetApiRecord>; signed: AiAssetSignedAccess; }> {
   const startedAt = Date.now();
+  const actor = createResourceUserStorageActor(input.userId);
   try {
-    const existing = await getOwnedAiAsset(input.userId, input.assetId);
+    const resource = await assertStorageResourcePermission({
+      actor,
+      operation: "replace",
+      resourceType: "ai_asset",
+      resourceId: input.assetId,
+    });
+    const existing = await getOwnedAiAsset(resource.ownerUserId, input.assetId, true);
     if (!existing) {
       throw new Error("AI asset not found.");
     }
@@ -382,7 +449,7 @@ export async function replaceOwnedAiAsset(input: ReplaceAiAssetInput): Promise<{
     }
 
     return {
-      asset: toAiAssetApiRecord(refreshed),
+      asset: toAiAssetApiRecord(refreshed, buildStoragePermissionMatrix(actor, toAiAssetResource(refreshed))),
       signed: replacement.signed,
     };
   } catch (error) {
@@ -398,19 +465,26 @@ export async function replaceOwnedAiAsset(input: ReplaceAiAssetInput): Promise<{
 
 export async function listOwnedAiVariants(input: { userId: string; assetId: string; }): Promise<ReturnType<typeof toAiAssetApiRecord>[]> {
   const startedAt = Date.now();
+  const actor = createResourceUserStorageActor(input.userId);
   try {
-    const parent = await getOwnedAiAsset(input.userId, input.assetId);
+    const resource = await assertStorageResourcePermission({
+      actor,
+      operation: "read",
+      resourceType: "ai_asset",
+      resourceId: input.assetId,
+    });
+    const parent = await getOwnedAiAsset(resource.ownerUserId, input.assetId, true);
     if (!parent) {
       throw new Error("AI asset not found.");
     }
 
-    const variants = await listOwnedAiAssetVariants(input.userId, parent.tenantId, resolveOriginalAssetId(parent));
+    const variants = await listOwnedAiAssetVariants(resource.ownerUserId, parent.tenantId, resolveOriginalAssetId(parent));
     logAiAssetEvent("variant", {
       userId: input.userId,
       assetId: input.assetId,
       count: variants.length,
     });
-    return variants.map(toAiAssetApiRecord);
+    return variants.map((variant) => toAiAssetApiRecord(variant, buildStoragePermissionMatrix(actor, toAiAssetResource(variant))));
   } catch (error) {
     logAiAssetFailure("variant", error, {
       userId: input.userId,
@@ -423,7 +497,14 @@ export async function listOwnedAiVariants(input: { userId: string; assetId: stri
 }
 
 export async function createOwnedAiVariant(input: ReplaceAiAssetInput): Promise<{ asset: ReturnType<typeof toAiAssetApiRecord>; signed: AiAssetSignedAccess; }> {
-  const parent = await getOwnedAiAsset(input.userId, input.assetId);
+  const actor = createResourceUserStorageActor(input.userId);
+  const resource = await assertStorageResourcePermission({
+    actor,
+    operation: "replace",
+    resourceType: "ai_asset",
+    resourceId: input.assetId,
+  });
+  const parent = await getOwnedAiAsset(resource.ownerUserId, input.assetId, true);
   if (!parent) {
     throw new Error("Parent asset not found.");
   }
@@ -452,7 +533,7 @@ export async function createOwnedAiVariant(input: ReplaceAiAssetInput): Promise<
   });
 
   return {
-    asset: toAiAssetApiRecord(updated),
+    asset: toAiAssetApiRecord(updated, buildStoragePermissionMatrix(actor, toAiAssetResource(updated))),
     signed: variant.signed,
   };
 }

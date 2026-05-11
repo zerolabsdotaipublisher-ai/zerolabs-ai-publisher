@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createOwnedAiAssetSignedUrl, parseAiAssetSignedUrlQuery } from "@/lib/ai-assets";
+import { toStorageErrorResponse } from "@/lib/storage-access/errors";
 import { getServerUser } from "@/lib/supabase/server";
 
 interface RouteContext {
@@ -25,9 +26,6 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
 
     return NextResponse.json({ ok: true, signed });
   } catch (error) {
-    return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : "Unable to generate signed URL" },
-      { status: 404 },
-    );
+    return toStorageErrorResponse(error, "Unable to generate signed URL.");
   }
 }

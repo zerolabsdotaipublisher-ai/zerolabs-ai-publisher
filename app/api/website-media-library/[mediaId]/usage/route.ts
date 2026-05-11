@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerUser } from "@/lib/supabase/server";
 import { parseWebsiteMediaUsageBody } from "@/lib/website-media-library/schema";
 import { listWebsiteMediaUsage, trackWebsiteMediaUsage } from "@/lib/website-media-library/workflow";
+import { toStorageErrorResponse } from "@/lib/storage-access/errors";
 
 interface RouteContext {
   params: Promise<{ mediaId: string }>;
@@ -19,10 +20,7 @@ export async function GET(_request: Request, context: RouteContext): Promise<Nex
     const result = await listWebsiteMediaUsage({ userId: user.id, itemId: decodeURIComponent(mediaId).trim() });
     return NextResponse.json({ ok: true, ...result });
   } catch (error) {
-    return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : "Unable to load website media usage." },
-      { status: 400 },
-    );
+    return toStorageErrorResponse(error, "Unable to load website media usage.");
   }
 }
 
@@ -52,9 +50,6 @@ export async function POST(request: Request, context: RouteContext): Promise<Nex
     });
     return NextResponse.json({ ok: true, ...result });
   } catch (error) {
-    return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : "Unable to track website media usage." },
-      { status: 400 },
-    );
+    return toStorageErrorResponse(error, "Unable to track website media usage.");
   }
 }

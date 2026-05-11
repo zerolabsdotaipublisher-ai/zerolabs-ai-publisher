@@ -1,4 +1,5 @@
 import type { WebsiteMediaLibraryApiRecord, WebsiteMediaLibraryItem, WebsiteMediaLibraryItemRow, WebsiteMediaLibraryStatus, WebsiteMediaLibraryUsageRecord, WebsiteMediaLibraryUsageRow } from "./types";
+import type { StorageClientPermissionMatrix } from "@/lib/storage-access/types";
 import { normalizeWebsiteMediaTags } from "./tags";
 
 const EMPTY_REFERENCE_SENTINEL = "__none__";
@@ -148,7 +149,7 @@ export function toWebsiteMediaLibraryUsageRow(record: WebsiteMediaLibraryUsageRe
   };
 }
 
-export function toWebsiteMediaLibraryApiRecord(item: WebsiteMediaLibraryItem): WebsiteMediaLibraryApiRecord {
+export function toWebsiteMediaLibraryApiRecord(item: WebsiteMediaLibraryItem, permissions?: StorageClientPermissionMatrix): WebsiteMediaLibraryApiRecord {
   const encoded = encodeURIComponent(item.id);
   return {
     id: item.id,
@@ -172,5 +173,6 @@ export function toWebsiteMediaLibraryApiRecord(item: WebsiteMediaLibraryItem): W
     deleteEndpoint: `/api/website-media-library/${encoded}/delete`,
     tagsEndpoint: `/api/website-media-library/${encoded}/tags`,
     usageEndpoint: `/api/website-media-library/${encoded}/usage`,
+    permissions,
   };
 }

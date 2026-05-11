@@ -1,4 +1,5 @@
 import type { User } from "@supabase/supabase-js";
+import { getStorageRoles } from "@/lib/storage-access/rbac";
 
 export interface MediaPermissionResult {
   allowed: boolean;
@@ -6,33 +7,8 @@ export interface MediaPermissionResult {
   reason?: string;
 }
 
-function toStringArray(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  return value.filter((entry): entry is string => typeof entry === "string").map((entry) => entry.trim().toLowerCase());
-}
-
-function getRoles(user: User): string[] {
-  const appMetadata = user.app_metadata ?? {};
-  const userMetadata = user.user_metadata ?? {};
-
-  const roleLike = [
-    typeof appMetadata.role === "string" ? appMetadata.role : undefined,
-    typeof userMetadata.role === "string" ? userMetadata.role : undefined,
-  ].filter((entry): entry is string => Boolean(entry));
-
-  return Array.from(
-    new Set([
-      ...roleLike.map((entry) => entry.toLowerCase()),
-      ...toStringArray(appMetadata.roles),
-      ...toStringArray(userMetadata.roles),
-      ...toStringArray(appMetadata.permissions),
-      ...toStringArray(userMetadata.permissions),
-    ]),
-  );
-}
-
 export function canManageOwnedMedia(user: User): MediaPermissionResult {
-  const roles = getRoles(user);
+  const roles = getStorageRoles(user);
   if (roles.includes("suspended") || roles.includes("blocked")) {
     return {
       allowed: false,
@@ -47,12 +23,20 @@ export function canManageOwnedMedia(user: User): MediaPermissionResult {
   };
 }
 
-export function canAccessMediaRecord(userId: string, recordOwnerId: string): MediaPermissionResult {
+export function canAccessMediaRecord(userId: string, recordOwnerId: string, tenantId?: string, recordTenantId?: string): MediaPermissionResult {
   if (userId !== recordOwnerId) {
     return {
       allowed: false,
       roles: [],
       reason: "Media record is not owned by the authenticated user.",
+    };
+  }
+
+  if (tenantId && recordTenantId && tenantId !== recordTenantId) {
+    return {
+      allowed: false,
+      roles: ["owner"],
+      reason: "Media record is outside the authenticated tenant scope.",
     };
   }
 

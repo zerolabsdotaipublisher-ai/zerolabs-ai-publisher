@@ -1,9 +1,17 @@
 import "server-only";
 
 import { toMediaApiRecord } from "@/lib/media/model";
-import { createOwnedMediaSignedUrl, deleteOwnedMedia, uploadOwnedMedia } from "@/lib/media/workflow";
+import { deleteOwnedMedia, uploadOwnedMedia, createOwnedMediaSignedUrl } from "@/lib/media/workflow";
 import { getOwnedMediaAsset } from "@/lib/media/storage";
 import { resolveTenantId } from "@/lib/media/model";
+import {
+  assertStorageResourcePermission,
+  assertStorageUploadPermission,
+  buildStoragePermissionMatrix,
+  createResourceUserStorageActor,
+  createScopedUserStorageActor,
+  type StorageAccessResourceRecord,
+} from "@/lib/storage-access";
 import { buildFileUploadAssociationSummary } from "./associations";
 import { createFileUploadLifecycleEvent, transitionFileUpload } from "./lifecycle";
 import {
@@ -14,7 +22,6 @@ import {
   toFileUploadAssociationApiRecord,
 } from "./model";
 import { logFileUploadEvent, logFileUploadFailure, recordFileUploadDuration } from "./monitoring";
-import { canAccessOwnedFileUploadRecord } from "./permissions";
 import {
   createFileUploadRecord,
   getOwnedFileUploadRecord,
@@ -31,6 +38,23 @@ import type {
   FileUploadRecord,
   FileUploadResult,
 } from "./types";
+
+function toFileUploadResource(record: FileUploadRecord): StorageAccessResourceRecord {
+  return {
+    resourceType: "file_upload",
+    resourceId: record.id,
+    ownerUserId: record.userId,
+    tenantId: record.tenantId,
+    mediaId: record.mediaId,
+    linkedContentId: record.linkedContentId,
+    linkedContentType: record.linkedContentType,
+    status: record.status,
+    visibility: "private",
+    deletedAt: record.deletedAt,
+    metadata: record.metadata,
+    environmentStage: typeof record.metadata.environmentStage === "string" ? record.metadata.environmentStage : undefined,
+  };
+}
 
 async function persistAssociations(record: FileUploadRecord, userId: string) {
   const associations = await listOwnedFileUploadAssociations(record.id, userId);
@@ -69,7 +93,10 @@ async function ensureUploadRecord(input: FileUploadInput, tenantId: string): Pro
       fileSizeBytes: input.fileSizeBytes,
       linkedContentId: validation.normalized.linkedContentId,
       linkedContentType: validation.normalized.linkedContentType,
-      metadata: validation.normalized.metadata,
+      metadata: {
+        ...validation.normalized.metadata,
+        environmentStage: createScopedUserStorageActor(input.userId, tenantId).environmentStage,
+      },
       lifecycle: initialLifecycle,
     }),
   );
@@ -78,16 +105,20 @@ async function ensureUploadRecord(input: FileUploadInput, tenantId: string): Pro
 export async function uploadOwnedFile(input: FileUploadInput): Promise<FileUploadResult> {
   const startedAt = Date.now();
   const tenantId = resolveTenantId(input.userId, input.tenantId);
-  const permission = canAccessOwnedFileUploadRecord(input.userId, input.userId);
-  if (!permission.allowed) {
-    throw new Error(permission.reason || "Unauthorized file upload.");
-  }
-
+  const actor = createScopedUserStorageActor(input.userId, tenantId);
   const validation = validateFileUploadInput(input);
   let record = await ensureUploadRecord(input, tenantId);
   let uploadedMediaId: string | undefined;
 
   try {
+    await assertStorageUploadPermission(actor, {
+      resourceType: "file_upload",
+      tenantId,
+      linkedContentId: validation.normalized.linkedContentId,
+      linkedContentType: validation.normalized.linkedContentType,
+      metadata: validation.normalized.metadata,
+    });
+
     record = await updateFileUploadRecord(transitionFileUpload(record, "validating", { note: "Server-side validation started." }));
 
     if (!validation.ok) {
@@ -110,6 +141,7 @@ export async function uploadOwnedFile(input: FileUploadInput): Promise<FileUploa
       metadata: {
         source: validation.normalized.source,
         ...validation.normalized.metadata,
+        environmentStage: actor.environmentStage,
       },
     });
     uploadedMediaId = uploaded.media.id;
@@ -149,6 +181,8 @@ export async function uploadOwnedFile(input: FileUploadInput): Promise<FileUploa
       ),
     );
 
+    const permissions = buildStoragePermissionMatrix(actor, toFileUploadResource(record));
+
     logFileUploadEvent("upload", {
       userId: input.userId,
       tenantId,
@@ -160,7 +194,7 @@ export async function uploadOwnedFile(input: FileUploadInput): Promise<FileUploa
     });
 
     return {
-      upload: toFileUploadApiRecord(record),
+      upload: toFileUploadApiRecord(record, permissions),
       associations: savedAssociations.map(toFileUploadAssociationApiRecord),
       media: uploaded.media,
       signed: uploaded.signed,
@@ -251,12 +285,19 @@ export async function getOwnedFileUploadDetail(input: {
   uploadId: string;
 }): Promise<FileUploadDetailResult | null> {
   const startedAt = Date.now();
+  const actor = createResourceUserStorageActor(input.userId);
   try {
-    const record = await getOwnedFileUploadRecord(input.userId, input.uploadId, true);
+    const resource = await assertStorageResourcePermission({
+      actor,
+      operation: "read",
+      resourceType: "file_upload",
+      resourceId: input.uploadId,
+    });
+    const record = await getOwnedFileUploadRecord(resource.ownerUserId, input.uploadId, true);
     if (!record) return null;
 
-    const associations = await persistAssociations(record, input.userId);
-    const media = record.mediaId ? await getOwnedMediaAsset(input.userId, record.mediaId, true) : null;
+    const associations = await persistAssociations(record, resource.ownerUserId);
+    const media = record.mediaId ? await getOwnedMediaAsset(resource.ownerUserId, record.mediaId, true) : null;
 
     logFileUploadEvent("get", {
       userId: input.userId,
@@ -265,7 +306,7 @@ export async function getOwnedFileUploadDetail(input: {
     });
 
     return {
-      upload: toFileUploadApiRecord(record),
+      upload: toFileUploadApiRecord(record, buildStoragePermissionMatrix(actor, toFileUploadResource(record))),
       associations,
       media: media ? toMediaApiRecord(media) : undefined,
       metadata: record.metadata,
@@ -287,14 +328,21 @@ export async function createOwnedFileUploadSignedUrl(input: {
   expiresInSeconds?: number;
 }) {
   const startedAt = Date.now();
+  const actor = createResourceUserStorageActor(input.userId);
   try {
-    const record = await getOwnedFileUploadRecord(input.userId, input.uploadId, true);
+    const resource = await assertStorageResourcePermission({
+      actor,
+      operation: "signed_url",
+      resourceType: "file_upload",
+      resourceId: input.uploadId,
+    });
+    const record = await getOwnedFileUploadRecord(resource.ownerUserId, input.uploadId, true);
     if (!record?.mediaId || record.deletedAt) {
       throw new Error("Uploaded file not found.");
     }
 
     const signed = await createOwnedMediaSignedUrl({
-      userId: input.userId,
+      userId: resource.ownerUserId,
       mediaId: record.mediaId,
       expiresInSeconds: input.expiresInSeconds,
     });
@@ -322,14 +370,21 @@ export async function deleteOwnedFileUpload(input: {
   uploadId: string;
 }): Promise<{ deleted: boolean; upload?: FileUploadResult["upload"] }> {
   const startedAt = Date.now();
+  const actor = createResourceUserStorageActor(input.userId);
   try {
-    const record = await getOwnedFileUploadRecord(input.userId, input.uploadId, true);
+    const resource = await assertStorageResourcePermission({
+      actor,
+      operation: "delete",
+      resourceType: "file_upload",
+      resourceId: input.uploadId,
+    });
+    const record = await getOwnedFileUploadRecord(resource.ownerUserId, input.uploadId, true);
     if (!record || record.deletedAt) {
       return { deleted: false };
     }
 
     if (record.mediaId) {
-      await deleteOwnedMedia({ userId: input.userId, mediaId: record.mediaId });
+      await deleteOwnedMedia({ userId: resource.ownerUserId, mediaId: record.mediaId });
     }
 
     const status = record.mediaId ? record.status : "canceled";
@@ -347,7 +402,7 @@ export async function deleteOwnedFileUpload(input: {
       mediaId: record.mediaId,
     });
 
-    return { deleted: true, upload: toFileUploadApiRecord(updated) };
+    return { deleted: true, upload: toFileUploadApiRecord(updated, buildStoragePermissionMatrix(actor, toFileUploadResource(updated))) };
   } catch (error) {
     logFileUploadFailure("delete", error, {
       userId: input.userId,

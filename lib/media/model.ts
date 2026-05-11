@@ -10,6 +10,7 @@ import type {
   MediaUsageLink,
   MediaUsageLinkRow,
 } from "./types";
+import type { StorageClientPermissionMatrix } from "@/lib/storage-access/types";
 
 function toRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
@@ -186,7 +187,7 @@ export function clampMediaPerPage(value: number | undefined): number {
   return Math.min(100, Math.max(1, value));
 }
 
-export function toMediaApiRecord(asset: MediaAsset): MediaApiRecord {
+export function toMediaApiRecord(asset: MediaAsset, permissions?: StorageClientPermissionMatrix): MediaApiRecord {
   return {
     id: asset.id,
     mediaType: asset.mediaType,
@@ -200,6 +201,7 @@ export function toMediaApiRecord(asset: MediaAsset): MediaApiRecord {
     createdAt: asset.createdAt,
     updatedAt: asset.updatedAt,
     signedUrlEndpoint: `/api/media/${encodeURIComponent(asset.id)}/signed-url`,
+    permissions,
   };
 }
 

@@ -3,6 +3,7 @@ import { buildFileUploadAssociations } from "@/lib/file-upload/associations";
 import { uploadOwnedFile } from "@/lib/file-upload/workflow";
 import { parseUsageContext } from "@/lib/media/schema";
 import { canManageOwnedMedia } from "@/lib/media/permissions";
+import { toStorageErrorResponse } from "@/lib/storage-access/errors";
 import { getServerUser } from "@/lib/supabase/server";
 
 export async function POST(request: Request): Promise<NextResponse> {
@@ -68,12 +69,6 @@ export async function POST(request: Request): Promise<NextResponse> {
       progressSupported: true,
     });
   } catch (error) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: error instanceof Error ? error.message : "Unable to upload media",
-      },
-      { status: 400 },
-    );
+    return toStorageErrorResponse(error, "Unable to upload media.");
   }
 }

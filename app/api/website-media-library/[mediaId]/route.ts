@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerUser } from "@/lib/supabase/server";
 import { getWebsiteMediaLibraryItemDetail } from "@/lib/website-media-library/workflow";
+import { toStorageErrorResponse } from "@/lib/storage-access/errors";
 
 interface RouteContext {
   params: Promise<{ mediaId: string }>;
@@ -21,9 +22,6 @@ export async function GET(_request: Request, context: RouteContext): Promise<Nex
     }
     return NextResponse.json({ ok: true, item });
   } catch (error) {
-    return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : "Unable to load website media item." },
-      { status: 400 },
-    );
+    return toStorageErrorResponse(error, "Unable to load website media item.");
   }
 }

@@ -1,3 +1,5 @@
+import type { StorageClientPermissionMatrix } from "@/lib/storage-access/types";
+
 export type MediaType = "image" | "video" | "document" | "thumbnail" | "asset" | "generated_image" | "file";
 
 export type MediaProvider = "wasabi" | "s3-compatible";
@@ -154,6 +156,7 @@ export interface MediaApiRecord {
   createdAt: string;
   updatedAt: string;
   signedUrlEndpoint: string;
+  permissions?: StorageClientPermissionMatrix;
 }
 
 export interface MediaSignedUrlQuery {

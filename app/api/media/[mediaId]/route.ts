@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOwnedMediaDetail, createOwnedMediaSignedUrl } from "@/lib/media/workflow";
 import { parseMediaSignedUrlQuery } from "@/lib/media/schema";
+import { toStorageErrorResponse } from "@/lib/storage-access/errors";
 import { getServerUser } from "@/lib/supabase/server";
 
 interface RouteContext {
@@ -29,12 +30,8 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
       expiresInSeconds: signedQuery.expiresInSeconds,
     });
 
-    return NextResponse.json({
-      ok: true,
-      media: detail,
-      signed,
-    });
-  } catch {
-    return NextResponse.json({ ok: false, error: "Unable to retrieve media" }, { status: 500 });
+    return NextResponse.json({ ok: true, media: detail, signed });
+  } catch (error) {
+    return toStorageErrorResponse(error, "Unable to retrieve media.");
   }
 }

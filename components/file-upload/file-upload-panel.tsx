@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { FileUploadApiRecord, FileUploadAssociationInput, FileUploadSource } from "@/lib/file-upload/types";
+import type { StorageResourceType } from "@/lib/storage-access/types";
 import type { MediaUsageLink } from "@/lib/media/types";
 import { FileUploadDropzone } from "./file-upload-dropzone";
 import { FileUploadInput } from "./file-upload-input";
@@ -56,6 +57,8 @@ interface FileUploadPanelProps {
   metadata?: Record<string, unknown>;
   maxFileSizeBytes?: number;
   allowDelete?: boolean;
+  permissionResourceType?: StorageResourceType;
+  permissionWebsiteId?: string;
   buildFormData?: (formData: FormData, file: File, item: { uploadId?: string }) => void;
   onUploaded?: (payload: FileUploadPanelResponse) => void;
 }
@@ -98,12 +101,62 @@ export function FileUploadPanel({
   metadata,
   maxFileSizeBytes = DEFAULT_MAX_FILE_SIZE_BYTES,
   allowDelete = false,
+  permissionResourceType = "file_upload",
+  permissionWebsiteId,
   buildFormData,
   onUploaded,
 }: FileUploadPanelProps) {
   const [items, setItems] = useState<UploadQueueItem[]>([]);
   const [message, setMessage] = useState<string>();
   const [error, setError] = useState<string>();
+  const [uploadAllowed, setUploadAllowed] = useState(true);
+  const [permissionLoading, setPermissionLoading] = useState(true);
+
+  const effectiveDisabled = disabled || permissionLoading || !uploadAllowed;
+  const websiteId = permissionWebsiteId ?? (typeof metadata?.websiteId === "string" ? metadata.websiteId : undefined);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function checkPermission() {
+      setPermissionLoading(true);
+      try {
+        const response = await fetch("/api/storage-access/check", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            resourceType: permissionResourceType,
+            operation: "upload",
+            tenantId,
+            websiteId,
+            linkedContentId,
+            linkedContentType,
+          }),
+        });
+        const body = await response.json() as { ok: boolean; allowed?: boolean; error?: string };
+        if (!cancelled) {
+          setUploadAllowed(Boolean(response.ok && body.ok && body.allowed));
+          if (!response.ok || !body.ok || !body.allowed) {
+            setError(body.error || "You do not have permission to upload files in this context.");
+          }
+        }
+      } catch {
+        if (!cancelled) {
+          setUploadAllowed(false);
+          setError("Unable to verify upload permissions right now.");
+        }
+      } finally {
+        if (!cancelled) {
+          setPermissionLoading(false);
+        }
+      }
+    }
+
+    void checkPermission();
+    return () => {
+      cancelled = true;
+    };
+  }, [linkedContentId, linkedContentType, permissionResourceType, tenantId, websiteId]);
 
   const listItems = useMemo<FileUploadListItem[]>(() => items.map((item) => ({
     id: item.id,
@@ -113,9 +166,14 @@ export function FileUploadPanel({
     progress: item.progress,
     error: item.error,
     deleted: item.deleted,
-    canRetry: item.status === "failed",
-    canDelete: allowDelete && item.status === "uploaded" && Boolean(item.uploadId) && !item.deleted,
-  })), [allowDelete, items]);
+    canRetry: item.status === "failed" && uploadAllowed,
+    canDelete:
+      allowDelete &&
+      item.status === "uploaded" &&
+      Boolean(item.uploadId) &&
+      !item.deleted &&
+      item.response?.upload?.permissions?.delete !== false,
+  })), [allowDelete, items, uploadAllowed]);
 
   function updateItem(id: string, updater: (item: UploadQueueItem) => UploadQueueItem): void {
     setItems((current) => current.map((item) => (item.id === id ? updater(item) : item)));
@@ -139,6 +197,11 @@ export function FileUploadPanel({
   }
 
   function uploadItem(item: UploadQueueItem, retryUploadId?: string): void {
+    if (!uploadAllowed) {
+      setError("You do not have permission to upload files in this context.");
+      return;
+    }
+
     setError(undefined);
     setMessage(undefined);
     updateItem(item.id, (current) => ({ ...current, status: "validating", progress: 0, error: undefined }));
@@ -212,12 +275,19 @@ export function FileUploadPanel({
   }
 
   function handleFilesSelected(fileList: FileList): void {
+    if (!uploadAllowed) {
+      setError("You do not have permission to upload files in this context.");
+      return;
+    }
+
     const nextItems = Array.from(fileList).map((file) => createValidationItem(file, validateFile(file)));
     setItems((current) => [...nextItems, ...current]);
 
-    nextItems
-      .filter((item) => item.status !== "failed")
-      .forEach((item) => uploadItem(item));
+    nextItems.forEach((item) => {
+      if (item.status !== "failed") {
+        uploadItem(item);
+      }
+    });
   }
 
   async function handleDelete(itemId: string): Promise<void> {
@@ -245,9 +315,9 @@ export function FileUploadPanel({
           <h3>{title}</h3>
           <p>{description}</p>
         </div>
-        <FileUploadInput disabled={disabled} multiple={multiple} accept={accept} onFilesSelected={handleFilesSelected} />
+        <FileUploadInput disabled={effectiveDisabled} multiple={multiple} accept={accept} onFilesSelected={handleFilesSelected} />
       </div>
-      <FileUploadDropzone disabled={disabled} multiple={multiple} accept={accept} onFilesSelected={handleFilesSelected} />
+      <FileUploadDropzone disabled={effectiveDisabled} multiple={multiple} accept={accept} onFilesSelected={handleFilesSelected} />
       <FileUploadList
         items={listItems}
         onRetry={(itemId) => {
