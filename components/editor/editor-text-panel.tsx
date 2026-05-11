@@ -67,6 +67,7 @@ export function EditorTextPanel({ websiteId, pageId, section, onChange }: Editor
             return;
           }
           const assetUrl = payload.item.assetRenderEndpoint || payload.previewUrl;
+          // Keep the preview fallback while older responses are still in circulation.
           if (!assetUrl) {
             setMediaInsertError("The selected website asset URL was not available. Please try selecting the item again.");
             return;

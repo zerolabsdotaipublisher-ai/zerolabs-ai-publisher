@@ -1,7 +1,6 @@
 import type { WebsiteAssetDelivery, WebsiteAssetRecord } from "./types";
 
 const RECORD_TTL_MS = 30_000;
-const CACHE_BUFFER_MS = 15_000;
 const MAX_CACHE_ENTRIES = 500;
 
 const recordCache = new Map<string, { record: WebsiteAssetRecord; expiresAtMs: number }>();
@@ -10,7 +9,7 @@ const deliveryCache = new Map<string, { delivery: WebsiteAssetDelivery; expiresA
 function prune<T>(cache: Map<string, { expiresAtMs: number } & T>, nowMs: number): void {
   const expiredKeys: string[] = [];
   for (const [key, value] of cache.entries()) {
-    if (value.expiresAtMs <= nowMs + CACHE_BUFFER_MS) {
+    if (value.expiresAtMs <= nowMs) {
       expiredKeys.push(key);
     }
   }
@@ -28,7 +27,7 @@ export function getCachedWebsiteAssetRecord(assetId: string): WebsiteAssetRecord
   const nowMs = Date.now();
   prune(recordCache, nowMs);
   const cached = recordCache.get(assetId);
-  if (!cached || cached.expiresAtMs <= nowMs + CACHE_BUFFER_MS) {
+  if (!cached || cached.expiresAtMs <= nowMs) {
     recordCache.delete(assetId);
     return undefined;
   }
@@ -45,7 +44,7 @@ export function getCachedWebsiteAssetDelivery(cacheKey: string): WebsiteAssetDel
   const nowMs = Date.now();
   prune(deliveryCache, nowMs);
   const cached = deliveryCache.get(cacheKey);
-  if (!cached || cached.expiresAtMs <= nowMs + CACHE_BUFFER_MS) {
+  if (!cached || cached.expiresAtMs <= nowMs) {
     deliveryCache.delete(cacheKey);
     return undefined;
   }

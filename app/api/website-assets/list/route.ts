@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resolveTenantId } from "@/lib/media/model";
+import { toStorageErrorResponse } from "@/lib/storage-access/errors";
 import { getServerUser } from "@/lib/supabase/server";
 import { parseWebsiteAssetResolveQuery, listWebsiteAssets, WEBSITE_ASSET_RETRIEVAL_MVP_BOUNDARIES, websiteAssetRetrievalScenarios } from "@/lib/website-asset-retrieval";
 
@@ -24,9 +25,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       mvpBoundaries: [...WEBSITE_ASSET_RETRIEVAL_MVP_BOUNDARIES],
     });
   } catch (error) {
-    return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : "Unable to list website assets." },
-      { status: 400 },
-    );
+    return toStorageErrorResponse(error, "Unable to list website assets.");
   }
 }
