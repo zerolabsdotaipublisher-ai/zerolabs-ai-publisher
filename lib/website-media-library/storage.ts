@@ -232,10 +232,11 @@ export async function listOwnedAiAssetLibraryCandidates(userId: string, tenantId
     const asset = fromAiAssetRow(row);
     const media = await getOwnedMediaAsset(userId, asset.mediaId);
     if (!media) continue;
+    const generationTarget = asset.generationTarget as Record<string, unknown>;
     candidates.push({
       aiAssetId: asset.id,
       mediaId: asset.mediaId,
-      websiteId: typeof asset.generationTarget.websiteId === "string" ? asset.generationTarget.websiteId : undefined,
+      websiteId: typeof generationTarget.websiteId === "string" ? generationTarget.websiteId : undefined,
       displayName: media.originalFilename,
       description: asset.promptText,
       altText: typeof asset.contextMetadata.altText === "string" ? asset.contextMetadata.altText : undefined,
