@@ -3,7 +3,10 @@ import "server-only";
 import { config } from "@/config";
 import { getWebsiteStructure } from "@/lib/ai/structure";
 import { deleteOwnedAiAsset } from "@/lib/ai-assets/workflow";
-import { createOwnedMediaSignedUrl, deleteOwnedMedia, uploadOwnedMedia } from "@/lib/media/workflow";
+import { buildFileUploadAssociations } from "@/lib/file-upload/associations";
+import { deleteOwnedFileUpload, uploadOwnedFile } from "@/lib/file-upload/workflow";
+import type { FileUploadResult } from "@/lib/file-upload/types";
+import { createOwnedMediaSignedUrl, deleteOwnedMedia } from "@/lib/media/workflow";
 import { getOwnedMediaAsset } from "@/lib/media/storage";
 import { resolveTenantId, toMediaApiRecord } from "@/lib/media/model";
 import { buildWebsiteMediaAssociationSummary, buildWebsiteMediaUsageSummary, createWebsiteMediaUsageRecord, usageInputToMetadata } from "./usage";
@@ -65,7 +68,12 @@ async function refreshUsageSummary(itemId: string, userId: string) {
   return { item: updated, usage };
 }
 
-export async function uploadWebsiteMediaLibraryItem(input: WebsiteMediaLibraryUploadInput): Promise<{ item: ReturnType<typeof toWebsiteMediaLibraryApiRecord>; preview: WebsiteMediaLibrarySignedPreview; media: ReturnType<typeof toMediaApiRecord>; }> {
+export async function uploadWebsiteMediaLibraryItem(input: WebsiteMediaLibraryUploadInput): Promise<{
+  upload: FileUploadResult["upload"];
+  item: ReturnType<typeof toWebsiteMediaLibraryApiRecord>;
+  preview: WebsiteMediaLibrarySignedPreview;
+  media: ReturnType<typeof toMediaApiRecord>;
+}> {
   const validation = validateWebsiteMediaLibraryUploadInput(input);
   if (!validation.ok) {
     throw new Error(validation.errors.join(" "));
@@ -73,9 +81,10 @@ export async function uploadWebsiteMediaLibraryItem(input: WebsiteMediaLibraryUp
 
   await assertOwnedWebsite(input.userId, validation.normalized.websiteId);
   const tenantId = resolveTenantId(input.userId, input.tenantId);
-  const uploaded = await uploadOwnedMedia({
+  const uploaded = await uploadOwnedFile({
     userId: input.userId,
     tenantId,
+    source: "website_editing",
     fileName: validation.normalized.fileName,
     mimeType: validation.normalized.mimeType,
     fileSizeBytes: input.fileSizeBytes,
@@ -84,7 +93,26 @@ export async function uploadWebsiteMediaLibraryItem(input: WebsiteMediaLibraryUp
     linkedContentId: validation.normalized.linkedContentId,
     linkedContentType: validation.normalized.linkedContentType,
     usageContext: "library",
+    associations: buildFileUploadAssociations({
+      source: "website_editing",
+      linkedContentId: validation.normalized.linkedContentId,
+      linkedContentType: validation.normalized.linkedContentType,
+      websiteId: validation.normalized.websiteId,
+      pageId: validation.normalized.pageId,
+      sectionId: validation.normalized.sectionId,
+      metadata: { surface: "website-media-library" },
+    }),
+    metadata: {
+      surface: "website-media-library",
+      websiteId: validation.normalized.websiteId,
+      pageId: validation.normalized.pageId,
+      sectionId: validation.normalized.sectionId,
+    },
   });
+
+  if (!uploaded.media) {
+    throw new Error("Uploaded media could not be loaded.");
+  }
 
   const media = await getOwnedMediaAsset(input.userId, uploaded.media.id);
   if (!media) {
@@ -116,6 +144,7 @@ export async function uploadWebsiteMediaLibraryItem(input: WebsiteMediaLibraryUp
     metadata: {
       source: "upload",
       signedUrlTtlSeconds: config.services.media.signedUrlTtlSeconds,
+      uploadId: uploaded.upload.id,
     },
   });
 
@@ -136,9 +165,10 @@ export async function uploadWebsiteMediaLibraryItem(input: WebsiteMediaLibraryUp
   const preview = await createWebsiteMediaLibraryPreview({ userId: input.userId, itemId: refreshed.item.id });
 
   return {
+    upload: uploaded.upload,
     item: toWebsiteMediaLibraryApiRecord(refreshed.item),
     preview,
-    media: uploaded.media,
+    media: toMediaApiRecord(media),
   };
 }
 
@@ -270,7 +300,12 @@ export async function deleteWebsiteMediaLibraryItem(input: { userId: string; ite
   if (item.aiAssetId) {
     await deleteOwnedAiAsset({ userId: input.userId, assetId: item.aiAssetId });
   } else {
-    await deleteOwnedMedia({ userId: input.userId, mediaId: item.mediaId });
+    const uploadId = typeof item.metadata.uploadId === "string" ? item.metadata.uploadId : undefined;
+    if (uploadId) {
+      await deleteOwnedFileUpload({ userId: input.userId, uploadId });
+    } else {
+      await deleteOwnedMedia({ userId: input.userId, mediaId: item.mediaId });
+    }
   }
 
   const deleted = await softDeleteWebsiteMediaLibraryItem(item, "delete");
