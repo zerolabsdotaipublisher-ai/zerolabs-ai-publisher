@@ -8,11 +8,14 @@ const recordCache = new Map<string, { record: WebsiteAssetRecord; expiresAtMs: n
 const deliveryCache = new Map<string, { delivery: WebsiteAssetDelivery; expiresAtMs: number }>();
 
 function prune<T>(cache: Map<string, { expiresAtMs: number } & T>, nowMs: number): void {
+  const expiredKeys: string[] = [];
   for (const [key, value] of cache.entries()) {
     if (value.expiresAtMs <= nowMs + CACHE_BUFFER_MS) {
-      cache.delete(key);
+      expiredKeys.push(key);
     }
   }
+
+  expiredKeys.forEach((key) => cache.delete(key));
 
   while (cache.size > MAX_CACHE_ENTRIES) {
     const oldestKey = cache.keys().next().value as string | undefined;
@@ -25,7 +28,7 @@ export function getCachedWebsiteAssetRecord(assetId: string): WebsiteAssetRecord
   const nowMs = Date.now();
   prune(recordCache, nowMs);
   const cached = recordCache.get(assetId);
-  if (!cached || cached.expiresAtMs <= nowMs) {
+  if (!cached || cached.expiresAtMs <= nowMs + CACHE_BUFFER_MS) {
     recordCache.delete(assetId);
     return undefined;
   }

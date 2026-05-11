@@ -40,6 +40,22 @@ export function appendWebsiteAssetQueryContext(value: string, context: WebsiteAs
     : `${url.pathname}${url.search}`;
 }
 
+function containsWebsiteAssetPath(value: unknown): boolean {
+  if (typeof value === "string") {
+    return isWebsiteAssetPath(value);
+  }
+
+  if (Array.isArray(value)) {
+    return value.some((entry) => containsWebsiteAssetPath(entry));
+  }
+
+  if (value && typeof value === "object") {
+    return Object.values(value as Record<string, unknown>).some((entry) => containsWebsiteAssetPath(entry));
+  }
+
+  return false;
+}
+
 function rewriteValue(value: unknown, context: WebsiteAssetUrlContext): unknown {
   if (typeof value === "string") {
     return appendWebsiteAssetQueryContext(value, context);
@@ -60,7 +76,7 @@ function rewriteValue(value: unknown, context: WebsiteAssetUrlContext): unknown 
 }
 
 export function withWebsiteAssetQueryContext(structure: WebsiteStructure, context: WebsiteAssetUrlContext): WebsiteStructure {
-  if (!context.previewToken) {
+  if (!context.previewToken || !containsWebsiteAssetPath(structure)) {
     return structure;
   }
 

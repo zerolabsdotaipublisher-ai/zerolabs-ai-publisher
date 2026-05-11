@@ -236,7 +236,7 @@ function HeroSectionView({ content }: { content: HeroContent }) {
             <img
               className="gs-component gs-component-image"
               src={content.image.src}
-              alt={content.image.alt || content.headline || "Website asset"}
+              alt={content.image.alt || content.headline || content.subheadline || "Hero image"}
             />
           ) : null}
           <strong className="gs-service-name">{content.image.alt}</strong>

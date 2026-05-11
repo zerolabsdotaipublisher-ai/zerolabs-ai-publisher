@@ -3,7 +3,7 @@ import "server-only";
 import { createMediaSignedUrlFromOwnerResource } from "@/lib/media/workflow";
 import { StorageAccessError } from "@/lib/storage-access/errors";
 import { getCachedWebsiteAssetDelivery, setCachedWebsiteAssetDelivery } from "./cache";
-import { buildWebsiteAssetFallbackDelivery } from "./fallbacks";
+import { buildWebsiteAssetFallbackDelivery, WEBSITE_ASSET_FALLBACK_URL } from "./fallbacks";
 import { createWebsiteAssetApiRecord } from "./model";
 import { logWebsiteAssetEvent, logWebsiteAssetFailure, recordWebsiteAssetDuration } from "./monitoring";
 import { authorizeWebsiteAssetAccess } from "./permissions";
@@ -107,7 +107,7 @@ export async function getWebsiteAssetDelivery(input: {
         cacheControl: resolveCacheControl(accessLevel),
         accessLevel,
         isFallback: false,
-        fallbackUrl: buildWebsiteAssetFallbackDelivery({ assetId: asset.id, accessLevel, renderUrl }).fallbackUrl,
+        fallbackUrl: WEBSITE_ASSET_FALLBACK_URL,
       };
     }
 
@@ -126,7 +126,7 @@ export async function getWebsiteAssetDelivery(input: {
       cacheControl: resolveCacheControl(accessLevel),
       accessLevel,
       isFallback: false,
-      fallbackUrl: buildWebsiteAssetFallbackDelivery({ assetId: asset.id, accessLevel, renderUrl }).fallbackUrl,
+      fallbackUrl: WEBSITE_ASSET_FALLBACK_URL,
     };
     setCachedWebsiteAssetDelivery(cacheKey, delivery);
     return delivery;
