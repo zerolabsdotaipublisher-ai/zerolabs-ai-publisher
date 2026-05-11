@@ -1,8 +1,18 @@
 import type { WebsiteMediaLibraryApiRecord, WebsiteMediaLibraryItem, WebsiteMediaLibraryItemRow, WebsiteMediaLibraryStatus, WebsiteMediaLibraryUsageRecord, WebsiteMediaLibraryUsageRow } from "./types";
 import { normalizeWebsiteMediaTags } from "./tags";
 
+const EMPTY_REFERENCE_SENTINEL = "__none__";
+
 function toRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+}
+
+function fromReferenceValue(value: string): string | undefined {
+  return value && value !== EMPTY_REFERENCE_SENTINEL ? value : undefined;
+}
+
+function toReferenceValue(value: string | undefined): string {
+  return value && value.trim() ? value : EMPTY_REFERENCE_SENTINEL;
 }
 
 function randomSuffix(): string {
@@ -107,11 +117,11 @@ export function fromWebsiteMediaLibraryUsageRow(row: WebsiteMediaLibraryUsageRow
     mediaId: row.media_id,
     userId: row.user_id,
     tenantId: row.tenant_id,
-    websiteId: row.website_id || undefined,
-    contentId: row.content_id || undefined,
-    contentType: row.content_type || undefined,
-    pageId: row.page_id || undefined,
-    sectionId: row.section_id || undefined,
+    websiteId: fromReferenceValue(row.website_id),
+    contentId: fromReferenceValue(row.content_id),
+    contentType: fromReferenceValue(row.content_type),
+    pageId: fromReferenceValue(row.page_id),
+    sectionId: fromReferenceValue(row.section_id),
     usageKind: row.usage_kind,
     metadata: toRecord(row.metadata_json),
     createdAt: row.created_at,
@@ -126,11 +136,11 @@ export function toWebsiteMediaLibraryUsageRow(record: WebsiteMediaLibraryUsageRe
     media_id: record.mediaId,
     user_id: record.userId,
     tenant_id: record.tenantId,
-    website_id: record.websiteId ?? "",
-    content_id: record.contentId ?? "",
-    content_type: record.contentType ?? "",
-    page_id: record.pageId ?? "",
-    section_id: record.sectionId ?? "",
+    website_id: toReferenceValue(record.websiteId),
+    content_id: toReferenceValue(record.contentId),
+    content_type: toReferenceValue(record.contentType),
+    page_id: toReferenceValue(record.pageId),
+    section_id: toReferenceValue(record.sectionId),
     usage_kind: record.usageKind,
     metadata_json: record.metadata,
     created_at: record.createdAt,

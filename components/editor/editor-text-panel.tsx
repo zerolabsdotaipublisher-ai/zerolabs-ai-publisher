@@ -16,6 +16,7 @@ function supportsMediaLibrary(path: string): boolean {
 
 export function EditorTextPanel({ websiteId, pageId, section, onChange }: EditorTextPanelProps) {
   const [mediaFieldPath, setMediaFieldPath] = useState<string>();
+  const [mediaInsertError, setMediaInsertError] = useState<string>();
 
   if (!section) {
     return (
@@ -49,6 +50,7 @@ export function EditorTextPanel({ websiteId, pageId, section, onChange }: Editor
           </label>
         ))}
       </div>
+      {mediaInsertError ? <p className="website-management-error">{mediaInsertError}</p> : null}
       <WebsiteMediaSelectorDialog
         open={Boolean(mediaFieldPath)}
         websiteId={websiteId}
@@ -56,11 +58,20 @@ export function EditorTextPanel({ websiteId, pageId, section, onChange }: Editor
         linkedContentType="website"
         pageId={pageId}
         sectionId={section?.id}
-        onClose={() => setMediaFieldPath(undefined)}
+        onClose={() => {
+          setMediaFieldPath(undefined);
+          setMediaInsertError(undefined);
+        }}
         onSelect={(payload) => {
-          if (mediaFieldPath) {
-            onChange(mediaFieldPath, payload.previewUrl || payload.item.previewEndpoint);
+          if (!mediaFieldPath) {
+            return;
           }
+          if (!payload.previewUrl) {
+            setMediaInsertError("The selected media preview URL was not available. Please try selecting the item again.");
+            return;
+          }
+          onChange(mediaFieldPath, payload.previewUrl);
+          setMediaInsertError(undefined);
           setMediaFieldPath(undefined);
         }}
       />

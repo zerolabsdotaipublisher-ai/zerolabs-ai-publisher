@@ -258,7 +258,7 @@ export async function deleteWebsiteMediaLibraryItem(input: { userId: string; ite
   }
 
   const usage = await listWebsiteMediaLibraryUsage(item.id, input.userId);
-  const isInUse = usage.some((entry) => entry.usageKind !== "library") || item.usageCount > 1;
+  const isInUse = usage.some((entry) => entry.usageKind !== "library");
 
   if (isInUse) {
     const archived = await softDeleteWebsiteMediaLibraryItem(item, "archive");
