@@ -63,7 +63,7 @@ export function WebsiteMediaUploadPanel({
       setTags("");
       onUploaded?.({ item: body.item, previewUrl: body.preview?.url });
     } catch {
-      setError("Upload failed.");
+      setError("Upload failed due to a network error. Check connectivity and file size, then try again.");
     } finally {
       setUploading(false);
     }

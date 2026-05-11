@@ -4,7 +4,7 @@ import { normalizeWebsiteMediaTags } from "./tags";
 
 const TEXT_LIMIT = 240;
 const LONG_TEXT_LIMIT = 1200;
-const CONTENT_ID_PATTERN = /^[a-z0-9_:-]+$/i;
+const CONTENT_REFERENCE_PATTERN = /^[a-z0-9_:-]+$/i;
 
 function trimOptional(value: string | undefined, limit: number): string | undefined {
   const trimmed = value?.trim();
@@ -15,7 +15,7 @@ function trimOptional(value: string | undefined, limit: number): string | undefi
 function validateContentReference(value: string | undefined, field: string, errors: string[]): string | undefined {
   const trimmed = value?.trim();
   if (!trimmed) return undefined;
-  if (!CONTENT_ID_PATTERN.test(trimmed)) {
+  if (!CONTENT_REFERENCE_PATTERN.test(trimmed)) {
     errors.push(`${field} contains unsupported characters.`);
     return undefined;
   }

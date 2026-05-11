@@ -42,6 +42,7 @@ export function WebsiteMediaItemCard({ item, selected, compact = false, onPrevie
       } catch {
         if (!cancelled) {
           setPreviewUrl(undefined);
+          setError("Preview unavailable until the signed preview request succeeds.");
         }
       }
     }
@@ -68,7 +69,7 @@ export function WebsiteMediaItemCard({ item, selected, compact = false, onPrevie
       setTags(body.item.tags.join(", "));
       onUpdated?.(body.item);
     } catch {
-      setError("Unable to save tags.");
+      setError("Unable to save tags because the request did not complete. Retry the update.");
     } finally {
       setSaving(false);
     }

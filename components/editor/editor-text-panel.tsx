@@ -1,6 +1,6 @@
 import { useState } from "react";
-import type { WebsiteSection } from "@/lib/ai/structure";
 import { WebsiteMediaSelectorDialog } from "@/components/website-media-library/website-media-selector-dialog";
+import type { WebsiteSection } from "@/lib/ai/structure";
 import { getEditableSectionTextFields } from "@/lib/editor";
 
 interface EditorTextPanelProps {

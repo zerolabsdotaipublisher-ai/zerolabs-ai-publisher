@@ -98,7 +98,7 @@ export function WebsiteMediaLibraryShell({
       setItems(body.items);
       setHasMore(Boolean(body.hasMore));
     } catch {
-      setError("Unable to load website media library.");
+      setError("Unable to load website media library because the request did not complete. Check connectivity and try again.");
     } finally {
       setLoading(false);
     }
@@ -121,7 +121,7 @@ export function WebsiteMediaLibraryShell({
       setFeedback(body.mode === "archived" ? `${item.displayName} was archived because it is already used in website content.` : `${item.displayName} was deleted.`);
       await loadItems();
     } catch {
-      setError("Unable to delete website media item.");
+      setError("Unable to delete website media item because the request did not complete. Retry the action.");
     }
   }
 
@@ -161,7 +161,7 @@ export function WebsiteMediaLibraryShell({
         setError(body.error || "Unable to track website media usage.");
       }
     } catch {
-      setError("Unable to track website media usage.");
+      setError("Unable to track website media usage because the request did not complete. The item was selected, but usage may need to be refreshed.");
     }
 
     onSelect?.({ item, previewUrl: preview });
