@@ -66,13 +66,13 @@ export function EditorTextPanel({ websiteId, pageId, section, onChange }: Editor
           if (!mediaFieldPath) {
             return;
           }
-          const assetUrl = payload.item.assetRenderEndpoint || payload.previewUrl;
+          const selectedUrl = payload.item.assetRenderEndpoint || payload.previewUrl;
           // Keep the preview fallback while older responses are still in circulation.
-          if (!assetUrl) {
+          if (!selectedUrl) {
             setMediaInsertError("The selected website asset URL was not available. Please try selecting the item again.");
             return;
           }
-          onChange(mediaFieldPath, assetUrl);
+          onChange(mediaFieldPath, selectedUrl);
           setMediaInsertError(undefined);
           setMediaFieldPath(undefined);
         }}

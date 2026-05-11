@@ -24,6 +24,14 @@ export function logWebsiteAssetFailure(operation: WebsiteAssetOperation, error: 
   });
 }
 
+const WEBSITE_ASSET_DURATION_METRICS: Record<WebsiteAssetOperation, string> = {
+  list: "websiteAssetListMs",
+  resolve: "websiteAssetResolveMs",
+  url: "websiteAssetUrlMs",
+  render: "websiteAssetRenderMs",
+  fallback: "websiteAssetFallbackMs",
+};
+
 export function recordWebsiteAssetDuration(operation: WebsiteAssetOperation, ms: number): void {
-  metrics.recordDuration(`websiteAsset${operation[0].toUpperCase()}${operation.slice(1)}Ms`, ms);
+  metrics.recordDuration(WEBSITE_ASSET_DURATION_METRICS[operation], ms);
 }

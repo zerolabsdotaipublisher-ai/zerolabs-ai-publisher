@@ -48,6 +48,9 @@ function createDeliveryCacheKey(input: {
 }
 
 function buildRenderUrl(assetId: string, previewToken?: string): string {
+  if (!assetId.trim()) {
+    throw new StorageAccessError("Website asset id is required.", 400, "website_asset_id_required");
+  }
   return appendWebsiteAssetQueryContext(buildWebsiteAssetRenderPath(assetId), { previewToken });
 }
 
