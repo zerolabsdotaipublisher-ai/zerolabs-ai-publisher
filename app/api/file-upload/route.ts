@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { getServerUser } from "@/lib/supabase/server";
-import { canManageWebsiteMediaLibrary } from "@/lib/website-media-library/permissions";
-import { parseWebsiteMediaUploadBody } from "@/lib/website-media-library/schema";
-import { uploadWebsiteMediaLibraryItem } from "@/lib/website-media-library/workflow";
+import { canManageOwnedFileUploads } from "@/lib/file-upload/permissions";
+import { parseFileUploadBody } from "@/lib/file-upload/schema";
+import { uploadOwnedFile } from "@/lib/file-upload/workflow";
 
 export async function POST(request: Request): Promise<NextResponse> {
   const user = await getServerUser();
@@ -10,7 +10,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
-  const permission = canManageWebsiteMediaLibrary(user);
+  const permission = canManageOwnedFileUploads(user);
   if (!permission.allowed) {
     return NextResponse.json({ ok: false, error: permission.reason || "Forbidden" }, { status: 403 });
   }
@@ -28,26 +28,27 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 
   try {
-    const body = parseWebsiteMediaUploadBody(formData);
-    const uploaded = await uploadWebsiteMediaLibraryItem({
+    const body = parseFileUploadBody(formData);
+    const uploaded = await uploadOwnedFile({
       userId: user.id,
+      source: body.source ?? "media_library",
       fileName: file.name,
       mimeType: file.type || "application/octet-stream",
       fileSizeBytes: file.size,
       bytes: new Uint8Array(await file.arrayBuffer()),
-      ...body,
+      tenantId: body.tenantId,
+      retryUploadId: body.retryUploadId,
+      linkedContentId: body.linkedContentId,
+      linkedContentType: body.linkedContentType,
+      usageContext: body.usageContext,
+      associations: body.associations,
+      metadata: body.metadata,
     });
 
-    return NextResponse.json({
-      ok: true,
-      upload: uploaded.upload,
-      item: uploaded.item,
-      preview: uploaded.preview,
-      media: uploaded.media,
-    });
+    return NextResponse.json({ ok: true, ...uploaded, progressSupported: true });
   } catch (error) {
     return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : "Unable to upload website media." },
+      { ok: false, error: error instanceof Error ? error.message : "Unable to upload file." },
       { status: 400 },
     );
   }

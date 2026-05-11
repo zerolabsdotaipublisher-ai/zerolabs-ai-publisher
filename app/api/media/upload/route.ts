@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
+import { buildFileUploadAssociations } from "@/lib/file-upload/associations";
+import { uploadOwnedFile } from "@/lib/file-upload/workflow";
 import { parseUsageContext } from "@/lib/media/schema";
-import { uploadOwnedMedia } from "@/lib/media/workflow";
 import { canManageOwnedMedia } from "@/lib/media/permissions";
 import { getServerUser } from "@/lib/supabase/server";
 
@@ -39,21 +40,29 @@ export async function POST(request: Request): Promise<NextResponse> {
     : undefined;
 
   try {
-    const bytes = new Uint8Array(await file.arrayBuffer());
-    const uploaded = await uploadOwnedMedia({
+    const uploaded = await uploadOwnedFile({
       userId: user.id,
+      source: "media_library",
       tenantId,
       fileName: file.name,
       mimeType: file.type || "application/octet-stream",
       fileSizeBytes: file.size,
-      bytes,
+      bytes: new Uint8Array(await file.arrayBuffer()),
       linkedContentId,
       linkedContentType,
       usageContext,
+      associations: buildFileUploadAssociations({
+        source: "media_library",
+        linkedContentId,
+        linkedContentType,
+        metadata: { surface: "media-upload-route" },
+      }),
+      metadata: { surface: "media-upload-route" },
     });
 
     return NextResponse.json({
       ok: true,
+      upload: uploaded.upload,
       media: uploaded.media,
       signed: uploaded.signed,
       progressSupported: true,

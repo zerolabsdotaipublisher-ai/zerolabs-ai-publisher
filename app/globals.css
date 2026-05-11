@@ -2514,6 +2514,64 @@ a {
   cursor: pointer;
 }
 
+.file-upload-panel-header,
+.file-upload-list-item-header,
+.file-upload-list-item-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.file-upload-helper-text {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.file-upload-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.file-upload-list-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.file-upload-status-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.75rem;
+  text-transform: capitalize;
+  background: #e5e7eb;
+}
+
+.file-upload-status-badge.is-uploaded {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.file-upload-status-badge.is-failed,
+.file-upload-status-badge.is-canceled,
+.file-upload-status-badge.is-deleted {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.file-upload-status-badge.is-uploading,
+.file-upload-status-badge.is-validating,
+.file-upload-status-badge.is-selected {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
 .media-upload-progress-track {
   width: 100%;
   height: 0.45rem;
@@ -2643,7 +2701,10 @@ a {
 @media (max-width: 960px) {
   .website-media-shell-actions,
   .website-media-item-actions,
-  .media-selector-dialog-header {
+  .media-selector-dialog-header,
+  .file-upload-panel-header,
+  .file-upload-list-item-header,
+  .file-upload-list-item-actions {
     align-items: stretch;
     flex-direction: column;
   }

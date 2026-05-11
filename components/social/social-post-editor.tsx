@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { MediaEditPanel } from "@/components/editing/media-edit-panel";
 import type { GeneratedSocialPost, SocialPlatform, SocialPostVariant } from "@/lib/social";
 
 interface SocialPostEditorProps {
@@ -102,6 +103,18 @@ export function SocialPostEditor({ socialPost, onChange }: SocialPostEditorProps
           }
         />
       </label>
+
+      <MediaEditPanel
+        references={selectedVariant.mediaReferences}
+        linkedContentId={`social_post:${socialPost.id}`}
+        linkedContentType="social_post"
+        onChange={(references) =>
+          updateVariant((variant) => ({
+            ...variant,
+            mediaReferences: references,
+          }))
+        }
+      />
     </section>
   );
 }
