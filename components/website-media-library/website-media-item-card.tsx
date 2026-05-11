@@ -36,7 +36,6 @@ export function WebsiteMediaItemCard({ item, selected, compact = false, onPrevie
 
   useEffect(() => {
     if (!canPreview) {
-      setPreviewUrl(undefined);
       return;
     }
 

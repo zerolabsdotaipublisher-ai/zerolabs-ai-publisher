@@ -5,6 +5,7 @@ import {
   assertStorageResourcePermission,
   assertStorageUploadPermission,
   buildStoragePermissionMatrix,
+  createResourceUserStorageActor,
   createScopedUserStorageActor,
   resolveSignedUrlTtl,
   type StorageAccessActorContext,
@@ -80,14 +81,14 @@ async function createMediaSignedUrlFromRecord(input: {
 }): Promise<MediaSignedAccess> {
   const provider = getMediaStorageProvider();
   const resource = toMediaResource(input.media);
-  const expiresInSeconds = resolveSignedUrlTtl({
+  const resolvedExpiresInSeconds = resolveSignedUrlTtl({
     actor: input.actor,
     resource,
     requestedExpiresInSeconds: input.expiresInSeconds,
   });
   const nowMs = Date.now();
   pruneSignedUrlCache(nowMs);
-  const cacheKey = `${input.cacheKeyPrefix}:${input.media.id}:${expiresInSeconds}`;
+  const cacheKey = `${input.cacheKeyPrefix}:${input.media.id}:${resolvedExpiresInSeconds}`;
   const cached = signedUrlCache.get(cacheKey);
   if (cached && cached.expiresAtMs > nowMs + SIGNED_URL_CACHE_BUFFER_MS) {
     return {
@@ -100,10 +101,10 @@ async function createMediaSignedUrlFromRecord(input: {
   const url = await provider.createSignedReadUrl({
     bucket: input.media.bucket,
     objectKey: input.media.objectKey,
-    expiresInSeconds,
+    expiresInSeconds: resolvedExpiresInSeconds,
   });
 
-  const expiresAtMs = nowMs + expiresInSeconds * 1000;
+  const expiresAtMs = nowMs + resolvedExpiresInSeconds * 1000;
   signedUrlCache.set(cacheKey, { url, expiresAtMs });
   return {
     mediaId: input.media.id,
@@ -157,7 +158,7 @@ export async function uploadOwnedMedia(input: MediaUploadInput): Promise<{
         mediaId,
         tenantId,
         userId: input.userId,
-        environmentStage: actor.environmentStage,
+        ...(actor.environmentStage ? { environmentStage: actor.environmentStage } : {}),
       },
     });
 
@@ -279,7 +280,7 @@ export async function listOwnedMedia(input: {
 
 export async function getOwnedMediaDetail(input: { userId: string; mediaId: string }) {
   const startedAt = Date.now();
-  const actor = createScopedUserStorageActor(input.userId, input.userId);
+  const actor = createResourceUserStorageActor(input.userId);
   try {
     const resource = await assertStorageResourcePermission({
       actor,
@@ -315,7 +316,7 @@ export async function createOwnedMediaSignedUrl(input: {
   expiresInSeconds?: number;
 }): Promise<MediaSignedAccess> {
   const startedAt = Date.now();
-  const actor = createScopedUserStorageActor(input.userId, input.userId);
+  const actor = createResourceUserStorageActor(input.userId);
 
   try {
     const resource = await assertStorageResourcePermission({
@@ -369,7 +370,7 @@ export async function deleteOwnedMedia(input: {
 }): Promise<{ deleted: boolean }> {
   const startedAt = Date.now();
   const provider = getMediaStorageProvider();
-  const actor = createScopedUserStorageActor(input.userId, input.userId);
+  const actor = createResourceUserStorageActor(input.userId);
 
   try {
     const resource = await assertStorageResourcePermission({

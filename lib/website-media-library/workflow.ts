@@ -13,6 +13,7 @@ import {
   assertStorageResourcePermission,
   assertStorageUploadPermission,
   buildStoragePermissionMatrix,
+  createResourceUserStorageActor,
   createScopedUserStorageActor,
   type StorageAccessActorContext,
   type StorageAccessResourceRecord,
@@ -212,7 +213,7 @@ export async function uploadWebsiteMediaLibraryItem(input: WebsiteMediaLibraryUp
   }));
 
   const refreshed = await refreshUsageSummary(created.id, input.userId);
-  const preview = await createWebsiteMediaLibraryPreview({ userId: input.userId, itemId: refreshed.item.id, actor });
+  const preview = await createWebsiteMediaLibraryPreview({ itemId: refreshed.item.id, actor });
 
   return {
     upload: uploaded.upload,
@@ -234,7 +235,7 @@ export async function listWebsiteMediaLibrary(input: { userId: string; tenantId?
 }
 
 export async function getWebsiteMediaLibraryItemDetail(input: { userId: string; itemId: string; }) {
-  const actor = createScopedUserStorageActor(input.userId, input.userId);
+  const actor = createResourceUserStorageActor(input.userId);
   const resource = await assertStorageResourcePermission({
     actor,
     operation: "read",
@@ -246,14 +247,9 @@ export async function getWebsiteMediaLibraryItemDetail(input: { userId: string; 
   return toWebsiteMediaLibraryApiRecord(item, buildStoragePermissionMatrix(actor, toWebsiteMediaResource(item)));
 }
 
-export async function createWebsiteMediaLibraryPreview(input: { userId?: string; actor?: StorageAccessActorContext; itemId: string; expiresInSeconds?: number; }): Promise<WebsiteMediaLibrarySignedPreview> {
-  const actor = input.actor ?? (input.userId ? createScopedUserStorageActor(input.userId, input.userId) : undefined);
-  if (!actor) {
-    throw new Error("Storage actor is required for website media preview.");
-  }
-
+export async function createWebsiteMediaLibraryPreview(input: { actor: StorageAccessActorContext; itemId: string; expiresInSeconds?: number; }): Promise<WebsiteMediaLibrarySignedPreview> {
   const resource = await assertStorageResourcePermission({
-    actor,
+    actor: input.actor,
     operation: "preview",
     resourceType: "website_media",
     resourceId: input.itemId,
@@ -268,10 +264,10 @@ export async function createWebsiteMediaLibraryPreview(input: { userId?: string;
   }
 
   const signed = await createMediaSignedUrlFromOwnerResource({
-    actor,
+    actor: input.actor,
     media,
     expiresInSeconds: input.expiresInSeconds ?? config.services.media.signedUrlTtlSeconds,
-    cacheKeyPrefix: `${actor.actorType}:${item.id}`,
+    cacheKeyPrefix: `${input.actor.actorType}:${item.id}`,
   });
 
   return {
@@ -289,7 +285,7 @@ export async function updateWebsiteMediaLibraryTags(input: WebsiteMediaLibraryTa
   }
 
   await assertOwnedWebsite(input.userId, validation.normalized.websiteId);
-  const actor = createScopedUserStorageActor(input.userId, input.userId);
+  const actor = createResourceUserStorageActor(input.userId);
   const resource = await assertStorageResourcePermission({
     actor,
     operation: "update",
@@ -320,7 +316,7 @@ export async function trackWebsiteMediaUsage(input: WebsiteMediaLibraryUsageInpu
   }
 
   await assertOwnedWebsite(input.userId, validation.normalized.websiteId);
-  const actor = createScopedUserStorageActor(input.userId, input.userId);
+  const actor = createResourceUserStorageActor(input.userId);
   const resource = await assertStorageResourcePermission({
     actor,
     operation: "update",
@@ -354,7 +350,7 @@ export async function trackWebsiteMediaUsage(input: WebsiteMediaLibraryUsageInpu
 }
 
 export async function listWebsiteMediaUsage(input: { userId: string; itemId: string; }) {
-  const actor = createScopedUserStorageActor(input.userId, input.userId);
+  const actor = createResourceUserStorageActor(input.userId);
   const resource = await assertStorageResourcePermission({
     actor,
     operation: "read",
@@ -375,7 +371,7 @@ export async function listWebsiteMediaUsage(input: { userId: string; itemId: str
 }
 
 export async function deleteWebsiteMediaLibraryItem(input: { userId: string; itemId: string; }): Promise<{ deleted: boolean; mode: "archived" | "deleted"; item?: ReturnType<typeof toWebsiteMediaLibraryApiRecord>; }> {
-  const actor = createScopedUserStorageActor(input.userId, input.userId);
+  const actor = createResourceUserStorageActor(input.userId);
   const resource = await assertStorageResourcePermission({
     actor,
     operation: "delete",
@@ -419,7 +415,7 @@ export async function deleteWebsiteMediaLibraryItem(input: { userId: string; ite
 }
 
 export async function restoreWebsiteMediaLibraryArchivedItem(input: { userId: string; itemId: string; }) {
-  const actor = createScopedUserStorageActor(input.userId, input.userId);
+  const actor = createResourceUserStorageActor(input.userId);
   const resource = await assertStorageResourcePermission({
     actor,
     operation: "update",

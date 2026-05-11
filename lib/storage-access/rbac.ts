@@ -53,6 +53,16 @@ export function createScopedUserStorageActor(userId: string, tenantId?: string, 
   };
 }
 
+
+export function createResourceUserStorageActor(userId: string, roles: string[] = []): StorageAccessActorContext {
+  return {
+    actorType: "user",
+    userId,
+    roles,
+    environmentStage: env.runtime.stage,
+  };
+}
+
 export function createAnonymousStorageActor(): StorageAccessActorContext {
   return {
     actorType: "anonymous",

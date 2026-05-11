@@ -283,7 +283,11 @@ export function FileUploadPanel({
     const nextItems = Array.from(fileList).map((file) => createValidationItem(file, validateFile(file)));
     setItems((current) => [...nextItems, ...current]);
 
-    nextItems.filter((item) => item.status !== "failed").forEach((item) => uploadItem(item));
+    nextItems.forEach((item) => {
+      if (item.status !== "failed") {
+        uploadItem(item);
+      }
+    });
   }
 
   async function handleDelete(itemId: string): Promise<void> {

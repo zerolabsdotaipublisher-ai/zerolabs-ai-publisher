@@ -22,7 +22,6 @@ export function AiAssetCard({ asset, selected, onSelect }: AiAssetCardProps) {
 
   useEffect(() => {
     if (!canPreview) {
-      setPreviewUrl(undefined);
       return;
     }
 

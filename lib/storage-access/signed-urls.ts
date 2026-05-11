@@ -3,6 +3,7 @@ import "server-only";
 import { config } from "@/config";
 import type { StorageAccessActorContext, StorageAccessResourceRecord } from "./types";
 
+// Public/anonymous website asset access uses a shorter 5 minute max TTL to limit link reuse risk.
 const PUBLIC_SIGNED_URL_MAX_SECONDS = 300;
 
 export function resolveSignedUrlTtl(input: {

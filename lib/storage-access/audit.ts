@@ -5,10 +5,13 @@ import { logger } from "@/lib/observability";
 import { createStorageAccessAuditId } from "./model";
 import type { StorageAccessAuditRecord } from "./types";
 
+// Persist only high-signal storage actions; lower-signal reads/previews still emit structured logs.
+const AUDIT_PERSISTED_OPERATIONS = ["upload", "download", "signed_url", "replace", "delete", "manage"] as const;
+
 function shouldPersist(record: StorageAccessAuditRecord): boolean {
   if (!record.allowed) return true;
   if (record.actor.actorType === "service" || record.actor.actorType === "system") return true;
-  return ["upload", "download", "signed_url", "replace", "delete", "manage"].includes(record.operation);
+  return (AUDIT_PERSISTED_OPERATIONS as readonly string[]).includes(record.operation);
 }
 
 export async function auditStorageAccess(record: StorageAccessAuditRecord): Promise<void> {

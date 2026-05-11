@@ -8,6 +8,7 @@ import {
   assertStorageResourcePermission,
   assertStorageUploadPermission,
   buildStoragePermissionMatrix,
+  createResourceUserStorageActor,
   createScopedUserStorageActor,
   type StorageAccessResourceRecord,
 } from "@/lib/storage-access";
@@ -125,7 +126,7 @@ export async function registerGeneratedAiAsset(input: RegisterAiAssetInput): Pro
       tenantId,
       linkedContentId: validation.normalized.linkedContentId,
       linkedContentType: validation.normalized.linkedContentType,
-      metadata: validation.normalized.generationTarget,
+      metadata: validation.normalized.generationTarget as Record<string, unknown> | undefined,
     });
 
     if (!validation.ok) {
@@ -264,7 +265,7 @@ export async function listOwnedAiAssetLibrary(input: { userId: string; tenantId?
 
 export async function getOwnedAiAssetDetail(input: { userId: string; assetId: string; }) {
   const startedAt = Date.now();
-  const actor = createScopedUserStorageActor(input.userId, input.userId);
+  const actor = createResourceUserStorageActor(input.userId);
   try {
     const resource = await assertStorageResourcePermission({
       actor,
@@ -298,7 +299,7 @@ export async function createOwnedAiAssetSignedUrl(input: {
   expiresInSeconds?: number;
 }): Promise<AiAssetSignedAccess> {
   const startedAt = Date.now();
-  const actor = createScopedUserStorageActor(input.userId, input.userId);
+  const actor = createResourceUserStorageActor(input.userId);
   try {
     const resource = await assertStorageResourcePermission({
       actor,
@@ -341,7 +342,7 @@ export async function createOwnedAiAssetSignedUrl(input: {
 
 export async function deleteOwnedAiAsset(input: { userId: string; assetId: string; }): Promise<{ deleted: boolean }> {
   const startedAt = Date.now();
-  const actor = createScopedUserStorageActor(input.userId, input.userId);
+  const actor = createResourceUserStorageActor(input.userId);
   try {
     const resource = await assertStorageResourcePermission({
       actor,
@@ -384,7 +385,7 @@ export async function deleteOwnedAiAsset(input: { userId: string; assetId: strin
 
 export async function replaceOwnedAiAsset(input: ReplaceAiAssetInput): Promise<{ asset: ReturnType<typeof toAiAssetApiRecord>; signed: AiAssetSignedAccess; }> {
   const startedAt = Date.now();
-  const actor = createScopedUserStorageActor(input.userId, input.userId);
+  const actor = createResourceUserStorageActor(input.userId);
   try {
     const resource = await assertStorageResourcePermission({
       actor,
@@ -464,7 +465,7 @@ export async function replaceOwnedAiAsset(input: ReplaceAiAssetInput): Promise<{
 
 export async function listOwnedAiVariants(input: { userId: string; assetId: string; }): Promise<ReturnType<typeof toAiAssetApiRecord>[]> {
   const startedAt = Date.now();
-  const actor = createScopedUserStorageActor(input.userId, input.userId);
+  const actor = createResourceUserStorageActor(input.userId);
   try {
     const resource = await assertStorageResourcePermission({
       actor,
@@ -496,7 +497,7 @@ export async function listOwnedAiVariants(input: { userId: string; assetId: stri
 }
 
 export async function createOwnedAiVariant(input: ReplaceAiAssetInput): Promise<{ asset: ReturnType<typeof toAiAssetApiRecord>; signed: AiAssetSignedAccess; }> {
-  const actor = createScopedUserStorageActor(input.userId, input.userId);
+  const actor = createResourceUserStorageActor(input.userId);
   const resource = await assertStorageResourcePermission({
     actor,
     operation: "replace",

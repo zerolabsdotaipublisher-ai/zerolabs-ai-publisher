@@ -8,6 +8,7 @@ import {
   assertStorageResourcePermission,
   assertStorageUploadPermission,
   buildStoragePermissionMatrix,
+  createResourceUserStorageActor,
   createScopedUserStorageActor,
   type StorageAccessResourceRecord,
 } from "@/lib/storage-access";
@@ -284,7 +285,7 @@ export async function getOwnedFileUploadDetail(input: {
   uploadId: string;
 }): Promise<FileUploadDetailResult | null> {
   const startedAt = Date.now();
-  const actor = createScopedUserStorageActor(input.userId, input.userId);
+  const actor = createResourceUserStorageActor(input.userId);
   try {
     const resource = await assertStorageResourcePermission({
       actor,
@@ -327,7 +328,7 @@ export async function createOwnedFileUploadSignedUrl(input: {
   expiresInSeconds?: number;
 }) {
   const startedAt = Date.now();
-  const actor = createScopedUserStorageActor(input.userId, input.userId);
+  const actor = createResourceUserStorageActor(input.userId);
   try {
     const resource = await assertStorageResourcePermission({
       actor,
@@ -369,7 +370,7 @@ export async function deleteOwnedFileUpload(input: {
   uploadId: string;
 }): Promise<{ deleted: boolean; upload?: FileUploadResult["upload"] }> {
   const startedAt = Date.now();
-  const actor = createScopedUserStorageActor(input.userId, input.userId);
+  const actor = createResourceUserStorageActor(input.userId);
   try {
     const resource = await assertStorageResourcePermission({
       actor,

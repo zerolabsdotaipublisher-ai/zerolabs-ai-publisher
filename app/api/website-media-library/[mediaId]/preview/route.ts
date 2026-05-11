@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createAnonymousStorageActor, createScopedUserStorageActor } from "@/lib/storage-access";
+import { createAnonymousStorageActor, createResourceUserStorageActor } from "@/lib/storage-access";
 import { toStorageErrorResponse } from "@/lib/storage-access/errors";
 import { getServerUser } from "@/lib/supabase/server";
 import { createWebsiteMediaLibraryPreview } from "@/lib/website-media-library/workflow";
@@ -18,8 +18,7 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
 
   try {
     const preview = await createWebsiteMediaLibraryPreview({
-      userId: user?.id,
-      actor: user ? createScopedUserStorageActor(user.id, user.id) : createAnonymousStorageActor(),
+      actor: user ? createResourceUserStorageActor(user.id) : createAnonymousStorageActor(),
       itemId: decodeURIComponent(mediaId).trim(),
       expiresInSeconds: normalizedExpiresInSeconds,
     });

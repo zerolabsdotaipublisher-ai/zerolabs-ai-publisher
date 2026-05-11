@@ -174,7 +174,7 @@ export function buildStoragePermissionMatrix(
   actor: StorageAccessActorContext,
   resource: StorageAccessResourceRecord,
 ): StorageClientPermissionMatrix {
-  return [
+  const operations: StorageAccessOperation[] = [
     "upload",
     "read",
     "preview",
@@ -184,7 +184,9 @@ export function buildStoragePermissionMatrix(
     "replace",
     "delete",
     "manage",
-  ].reduce<StorageClientPermissionMatrix>((matrix, operation) => {
+  ];
+
+  return operations.reduce<StorageClientPermissionMatrix>((matrix, operation) => {
     const decision = evaluateStorageAccess({
       actor,
       operation,
