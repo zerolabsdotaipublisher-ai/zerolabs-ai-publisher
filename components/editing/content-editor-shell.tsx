@@ -208,6 +208,8 @@ export function ContentEditorShell({ initialDetail }: ContentEditorShellProps) {
 
           <MediaEditPanel
             references={draft.media.references}
+            linkedContentId={draft.contentId}
+            linkedContentType={draft.type}
             disabled={saving || autoSaving}
             onChange={(references) => applyDraft({ ...draft, media: { references } })}
           />
