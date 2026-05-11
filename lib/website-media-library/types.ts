@@ -1,3 +1,5 @@
+import type { StorageClientPermissionMatrix } from "@/lib/storage-access/types";
+
 export type WebsiteMediaLibraryStatus = "active" | "archived" | "deleted";
 
 export type WebsiteMediaLibraryUsageKind =
@@ -137,6 +139,7 @@ export interface WebsiteMediaLibraryApiRecord {
   deleteEndpoint: string;
   tagsEndpoint: string;
   usageEndpoint: string;
+  permissions?: StorageClientPermissionMatrix;
 }
 
 export interface WebsiteMediaLibrarySignedPreview {

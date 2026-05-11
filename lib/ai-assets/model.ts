@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { AiAsset, AiAssetApiRecord, AiAssetRow, AiAssetStatus, AiAssetType } from "./types";
+import type { StorageClientPermissionMatrix } from "@/lib/storage-access/types";
 
 function randomSuffix(): string {
   const cryptoApi = globalThis.crypto;
@@ -137,7 +138,7 @@ export function toAiAssetRow(asset: AiAsset): AiAssetRow {
   };
 }
 
-export function toAiAssetApiRecord(asset: AiAsset): AiAssetApiRecord {
+export function toAiAssetApiRecord(asset: AiAsset, permissions?: StorageClientPermissionMatrix): AiAssetApiRecord {
   return {
     id: asset.id,
     mediaId: asset.mediaId,
@@ -162,6 +163,7 @@ export function toAiAssetApiRecord(asset: AiAsset): AiAssetApiRecord {
     createdAt: asset.createdAt,
     updatedAt: asset.updatedAt,
     signedUrlEndpoint: `/api/ai-assets/${encodeURIComponent(asset.id)}/signed-url`,
+    permissions,
   };
 }
 

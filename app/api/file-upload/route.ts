@@ -3,6 +3,7 @@ import { getServerUser } from "@/lib/supabase/server";
 import { canManageOwnedFileUploads } from "@/lib/file-upload/permissions";
 import { parseFileUploadBody } from "@/lib/file-upload/schema";
 import { uploadOwnedFile } from "@/lib/file-upload/workflow";
+import { toStorageErrorResponse } from "@/lib/storage-access/errors";
 
 export async function POST(request: Request): Promise<NextResponse> {
   const user = await getServerUser();
@@ -47,9 +48,6 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     return NextResponse.json({ ok: true, ...uploaded, progressSupported: true });
   } catch (error) {
-    return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : "Unable to upload file." },
-      { status: 400 },
-    );
+    return toStorageErrorResponse(error, "Unable to upload file.");
   }
 }

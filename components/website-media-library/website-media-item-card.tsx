@@ -29,8 +29,17 @@ export function WebsiteMediaItemCard({ item, selected, compact = false, onPrevie
   const [tags, setTags] = useState(item.tags.join(", "));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string>();
+  const canRead = item.permissions?.read !== false;
+  const canPreview = item.permissions?.preview !== false && item.permissions?.signedUrl !== false;
+  const canUpdate = item.permissions?.update !== false;
+  const canDelete = item.permissions?.delete !== false;
 
   useEffect(() => {
+    if (!canPreview) {
+      setPreviewUrl(undefined);
+      return;
+    }
+
     let cancelled = false;
     async function loadPreview() {
       try {
@@ -50,9 +59,10 @@ export function WebsiteMediaItemCard({ item, selected, compact = false, onPrevie
     return () => {
       cancelled = true;
     };
-  }, [item.previewEndpoint]);
+  }, [item.previewEndpoint, canPreview]);
 
   async function saveTags() {
+    if (!canUpdate) return;
     setSaving(true);
     setError(undefined);
     try {
@@ -77,12 +87,12 @@ export function WebsiteMediaItemCard({ item, selected, compact = false, onPrevie
 
   return (
     <article className={`media-card website-media-item-card ${selected ? "is-selected" : ""}`}>
-      <button type="button" className="website-media-preview-trigger" onClick={() => onPreview(item, previewUrl)}>
+      <button type="button" className="website-media-preview-trigger" onClick={() => onPreview(item, previewUrl)} disabled={!canPreview}>
         {previewUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={previewUrl} alt={item.altText || item.displayName} className="media-card-preview" />
         ) : (
-          <div className="media-card-preview">No preview</div>
+          <div className="media-card-preview">{canPreview ? "No preview" : "Preview unavailable"}</div>
         )}
       </button>
       <div className="media-card-meta">
@@ -96,18 +106,18 @@ export function WebsiteMediaItemCard({ item, selected, compact = false, onPrevie
       {!compact ? (
         <label className="website-media-tags-editor">
           <span>Tags</span>
-          <input value={tags} onChange={(event) => setTags(event.target.value)} placeholder="Comma-separated tags" />
+          <input value={tags} onChange={(event) => setTags(event.target.value)} placeholder="Comma-separated tags" disabled={!canUpdate} />
         </label>
       ) : null}
       <div className="website-media-item-actions">
-        {onSelect ? <button type="button" onClick={() => onSelect(item, previewUrl)}>{selected ? "Selected" : "Select"}</button> : null}
-        <button type="button" className="wizard-button-secondary" onClick={() => onPreview(item, previewUrl)}>Preview</button>
+        {onSelect ? <button type="button" onClick={() => onSelect(item, previewUrl)} disabled={!canRead}>{selected ? "Selected" : canRead ? "Select" : "Unavailable"}</button> : null}
+        <button type="button" className="wizard-button-secondary" onClick={() => onPreview(item, previewUrl)} disabled={!canPreview}>Preview</button>
         {!compact ? (
-          <button type="button" className="wizard-button-secondary" onClick={() => void saveTags()} disabled={saving}>
+          <button type="button" className="wizard-button-secondary" onClick={() => void saveTags()} disabled={saving || !canUpdate}>
             {saving ? "Saving…" : "Save tags"}
           </button>
         ) : null}
-        {onDelete ? <button type="button" onClick={() => onDelete(item)}>Delete</button> : null}
+        {onDelete && canDelete ? <button type="button" onClick={() => onDelete(item)}>Delete</button> : null}
       </div>
       {error ? <p className="website-management-error">{error}</p> : null}
     </article>

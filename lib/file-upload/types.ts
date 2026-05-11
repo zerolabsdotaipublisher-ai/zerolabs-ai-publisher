@@ -1,4 +1,5 @@
 import type { MediaApiRecord, MediaSignedAccess, MediaType, MediaUsageLink } from "@/lib/media/types";
+import type { StorageClientPermissionMatrix } from "@/lib/storage-access/types";
 
 export const FILE_UPLOAD_SOURCES = [
   "media_library",
@@ -171,6 +172,7 @@ export interface FileUploadApiRecord {
   detailEndpoint: string;
   deleteEndpoint: string;
   signedUrlEndpoint: string;
+  permissions?: StorageClientPermissionMatrix;
 }
 
 export interface FileUploadAssociationApiRecord {

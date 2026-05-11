@@ -3,6 +3,7 @@ import { getServerUser } from "@/lib/supabase/server";
 import { canManageWebsiteMediaLibrary } from "@/lib/website-media-library/permissions";
 import { parseWebsiteMediaUploadBody } from "@/lib/website-media-library/schema";
 import { uploadWebsiteMediaLibraryItem } from "@/lib/website-media-library/workflow";
+import { toStorageErrorResponse } from "@/lib/storage-access/errors";
 
 export async function POST(request: Request): Promise<NextResponse> {
   const user = await getServerUser();
@@ -46,9 +47,6 @@ export async function POST(request: Request): Promise<NextResponse> {
       media: uploaded.media,
     });
   } catch (error) {
-    return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : "Unable to upload website media." },
-      { status: 400 },
-    );
+    return toStorageErrorResponse(error, "Unable to upload website media.");
   }
 }

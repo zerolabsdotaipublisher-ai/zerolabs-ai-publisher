@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { canManageOwnedAiAssets, replaceOwnedAiAsset } from "@/lib/ai-assets";
+import { toStorageErrorResponse } from "@/lib/storage-access/errors";
 import { getServerUser } from "@/lib/supabase/server";
 
 interface RouteContext {
@@ -54,9 +55,6 @@ export async function POST(request: Request, context: RouteContext): Promise<Nex
 
     return NextResponse.json({ ok: true, asset: replaced.asset, signed: replaced.signed });
   } catch (error) {
-    return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : "Unable to replace AI asset" },
-      { status: 422 },
-    );
+    return toStorageErrorResponse(error, "Unable to replace AI asset.");
   }
 }

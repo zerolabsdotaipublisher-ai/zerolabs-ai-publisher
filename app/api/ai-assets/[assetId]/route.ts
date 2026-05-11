@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createOwnedAiAssetSignedUrl, getOwnedAiAssetDetail, parseAiAssetSignedUrlQuery } from "@/lib/ai-assets";
+import { toStorageErrorResponse } from "@/lib/storage-access/errors";
 import { getServerUser } from "@/lib/supabase/server";
 
 interface RouteContext {
@@ -30,9 +31,6 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
 
     return NextResponse.json({ ok: true, asset, signed });
   } catch (error) {
-    return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : "Unable to retrieve AI asset" },
-      { status: 500 },
-    );
+    return toStorageErrorResponse(error, "Unable to retrieve AI asset.");
   }
 }

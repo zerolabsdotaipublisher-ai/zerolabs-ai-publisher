@@ -28,6 +28,7 @@ export function MediaUploadPanel({ linkedContentId, linkedContentType, onUploade
       linkedContentId={linkedContentId}
       linkedContentType={linkedContentType}
       usageContext="editing"
+      permissionResourceType="file_upload"
       associations={buildFileUploadAssociations({
         source: "media_library",
         linkedContentId,

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { deleteOwnedAiAsset } from "@/lib/ai-assets";
+import { toStorageErrorResponse } from "@/lib/storage-access/errors";
 import { getServerUser } from "@/lib/supabase/server";
 
 interface RouteContext {
@@ -23,9 +24,6 @@ export async function DELETE(_request: Request, context: RouteContext): Promise<
 
     return NextResponse.json({ ok: true, deleted: true });
   } catch (error) {
-    return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : "Unable to delete AI asset" },
-      { status: 500 },
-    );
+    return toStorageErrorResponse(error, "Unable to delete AI asset.");
   }
 }

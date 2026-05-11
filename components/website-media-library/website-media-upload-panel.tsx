@@ -68,6 +68,8 @@ export function WebsiteMediaUploadPanel({
         linkedContentType={linkedContentType}
         usageContext="library"
         associations={associations}
+        permissionResourceType="website_media"
+        permissionWebsiteId={websiteId}
         metadata={{
           surface: "website-media-upload-panel",
           websiteId,

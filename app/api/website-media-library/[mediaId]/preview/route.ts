@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createAnonymousStorageActor, createScopedUserStorageActor } from "@/lib/storage-access";
+import { toStorageErrorResponse } from "@/lib/storage-access/errors";
 import { getServerUser } from "@/lib/supabase/server";
 import { createWebsiteMediaLibraryPreview } from "@/lib/website-media-library/workflow";
 
@@ -8,10 +10,6 @@ interface RouteContext {
 
 export async function GET(request: NextRequest, context: RouteContext): Promise<NextResponse> {
   const user = await getServerUser();
-  if (!user) {
-    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
-  }
-
   const { mediaId } = await context.params;
   const expiresInSecondsParam = request.nextUrl.searchParams.get("expiresInSeconds");
   const expiresInSeconds = expiresInSecondsParam ? Number.parseInt(expiresInSecondsParam, 10) : undefined;
@@ -20,15 +18,13 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
 
   try {
     const preview = await createWebsiteMediaLibraryPreview({
-      userId: user.id,
+      userId: user?.id,
+      actor: user ? createScopedUserStorageActor(user.id, user.id) : createAnonymousStorageActor(),
       itemId: decodeURIComponent(mediaId).trim(),
       expiresInSeconds: normalizedExpiresInSeconds,
     });
     return NextResponse.json({ ok: true, preview });
   } catch (error) {
-    return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : "Unable to create preview." },
-      { status: 400 },
-    );
+    return toStorageErrorResponse(error, "Unable to create preview.");
   }
 }

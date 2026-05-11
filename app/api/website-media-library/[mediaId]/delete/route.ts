@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerUser } from "@/lib/supabase/server";
 import { deleteWebsiteMediaLibraryItem } from "@/lib/website-media-library/workflow";
+import { toStorageErrorResponse } from "@/lib/storage-access/errors";
 
 interface RouteContext {
   params: Promise<{ mediaId: string }>;
@@ -22,9 +23,6 @@ export async function DELETE(_request: Request, context: RouteContext): Promise<
 
     return NextResponse.json({ ok: true, mode: result.mode, item: result.item });
   } catch (error) {
-    return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : "Unable to delete website media item." },
-      { status: 400 },
-    );
+    return toStorageErrorResponse(error, "Unable to delete website media item.");
   }
 }

@@ -8,6 +8,7 @@ import type {
   FileUploadRecordRow,
   FileUploadSource,
 } from "./types";
+import type { StorageClientPermissionMatrix } from "@/lib/storage-access/types";
 
 function toRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
@@ -221,7 +222,7 @@ export function createFileUploadAssociationRecord(input: {
   };
 }
 
-export function toFileUploadApiRecord(record: FileUploadRecord): FileUploadApiRecord {
+export function toFileUploadApiRecord(record: FileUploadRecord, permissions?: StorageClientPermissionMatrix): FileUploadApiRecord {
   const encoded = encodeURIComponent(record.id);
   return {
     id: record.id,
@@ -248,6 +249,7 @@ export function toFileUploadApiRecord(record: FileUploadRecord): FileUploadApiRe
     detailEndpoint: `/api/file-upload/${encoded}`,
     deleteEndpoint: `/api/file-upload/${encoded}/delete`,
     signedUrlEndpoint: `/api/file-upload/${encoded}/signed-url`,
+    permissions,
   };
 }
 

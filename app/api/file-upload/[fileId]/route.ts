@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerUser } from "@/lib/supabase/server";
 import { getOwnedFileUploadDetail } from "@/lib/file-upload/workflow";
+import { toStorageErrorResponse } from "@/lib/storage-access/errors";
 
 interface RouteContext {
   params: Promise<{ fileId: string }>;
@@ -21,9 +22,6 @@ export async function GET(_request: Request, context: RouteContext): Promise<Nex
 
     return NextResponse.json({ ok: true, ...detail });
   } catch (error) {
-    return NextResponse.json(
-      { ok: false, error: error instanceof Error ? error.message : "Unable to load uploaded file." },
-      { status: 400 },
-    );
+    return toStorageErrorResponse(error, "Unable to load uploaded file.");
   }
 }
