@@ -56,9 +56,8 @@ export function setCachedWebsiteAssetDelivery(cacheKey: string, delivery: Websit
     return;
   }
 
-  const parsedExpiresAt = new Date(delivery.expiresAt);
-  const expiresAtMs = parsedExpiresAt.getTime();
-  if (Number.isNaN(parsedExpiresAt.valueOf()) || !Number.isFinite(expiresAtMs)) {
+  const expiresAtMs = new Date(delivery.expiresAt).getTime();
+  if (!Number.isFinite(expiresAtMs)) {
     return;
   }
 

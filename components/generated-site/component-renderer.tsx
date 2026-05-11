@@ -31,17 +31,14 @@ export function ComponentRenderer({ component }: ComponentRendererProps) {
         </button>
       );
     case "image": {
-      const src = typeof component.props.src === "string"
-        ? component.props.src
-        : undefined;
-      if (!src) {
+      if (typeof component.props.src !== "string" || !component.props.src) {
         return null;
       }
       const alt = typeof component.props.alt === "string" ? component.props.alt : "";
       return (
         <img
           className="gs-component gs-component-image"
-          src={src}
+          src={component.props.src}
           alt={alt}
         />
       );

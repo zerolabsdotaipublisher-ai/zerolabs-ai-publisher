@@ -48,7 +48,7 @@ function createDeliveryCacheKey(input: {
 }
 
 function buildRenderUrl(assetId: string, previewToken?: string): string {
-  if (!assetId.trim()) {
+  if (!assetId) {
     throw new StorageAccessError("Website asset id is required.", 400, "website_asset_id_required");
   }
   return appendWebsiteAssetQueryContext(buildWebsiteAssetRenderPath(assetId), { previewToken });
@@ -149,7 +149,9 @@ export async function resolveWebsiteAsset(input: WebsiteAssetResolveQuery & { us
   const startedAt = Date.now();
   try {
     if (input.assetId || input.libraryItemId) {
-      const record = await getWebsiteAssetRecordById(input.assetId ?? input.libraryItemId ?? "");
+      const targetAssetId = input.assetId ?? input.libraryItemId;
+      if (!targetAssetId) return null;
+      const record = await getWebsiteAssetRecordById(targetAssetId);
       if (!record) return null;
       const delivery = await getWebsiteAssetDelivery({
         assetId: record.id,
