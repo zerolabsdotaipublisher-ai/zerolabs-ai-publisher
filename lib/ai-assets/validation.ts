@@ -2,7 +2,7 @@ import { config } from "@/config";
 import { hashPrompt } from "./model";
 import { isAiAssetStatus } from "./lifecycle";
 import { validateAiAssetAssociation } from "./associations";
-import type { RegisterAiAssetInput } from "./types";
+import type { AiAssetGenerationTarget, RegisterAiAssetInput } from "./types";
 
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
@@ -18,7 +18,7 @@ export interface AiAssetValidationResult {
     promptHash?: string;
     status: RegisterAiAssetInput["status"];
     generationSettings: Record<string, unknown>;
-    generationTarget: Record<string, unknown>;
+    generationTarget: AiAssetGenerationTarget;
     linkedContentId?: string;
     linkedContentType?: string;
   };

@@ -10,7 +10,14 @@ import { createVariantVersion, resolveOriginalAssetId } from "./variants";
 import { logAiAssetEvent, logAiAssetFailure, recordAiAssetDuration } from "./monitoring";
 import { createAiAssetRecord, getOwnedAiAsset, listOwnedAiAssetVariants, listOwnedAiAssets, updateAiAssetRecord } from "./storage";
 import { validateRegisterAiAssetInput } from "./validation";
-import type { AiAsset, AiAssetListQuery, AiAssetSignedAccess, RegisterAiAssetInput, ReplaceAiAssetInput } from "./types";
+import type {
+  AiAsset,
+  AiAssetGenerationTarget,
+  AiAssetListQuery,
+  AiAssetSignedAccess,
+  RegisterAiAssetInput,
+  ReplaceAiAssetInput,
+} from "./types";
 
 function createAiAsset(input: {
   id?: string;
@@ -30,7 +37,7 @@ function createAiAsset(input: {
   promptText?: string;
   promptHash?: string;
   generationSettings?: Record<string, unknown>;
-  generationTarget?: Record<string, unknown>;
+  generationTarget?: AiAssetGenerationTarget;
   originalAssetId?: string;
   parentAssetId?: string;
   linkedContentId?: string;
