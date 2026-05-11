@@ -6,7 +6,6 @@ import { deleteOwnedAiAsset } from "@/lib/ai-assets/workflow";
 import { createOwnedMediaSignedUrl, deleteOwnedMedia, uploadOwnedMedia } from "@/lib/media/workflow";
 import { getOwnedMediaAsset } from "@/lib/media/storage";
 import { resolveTenantId, toMediaApiRecord } from "@/lib/media/model";
-import { canAccessWebsiteMediaLibraryRecord } from "./permissions";
 import { buildWebsiteMediaAssociationSummary, buildWebsiteMediaUsageSummary, createWebsiteMediaUsageRecord, usageInputToMetadata } from "./usage";
 import { getWebsiteMediaLibraryStatus, toWebsiteMediaLibraryApiRecord } from "./model";
 import { createOrUpdateWebsiteMediaLibraryItem, getOwnedWebsiteMediaLibraryItem, listOwnedAiAssetLibraryCandidates, listOwnedWebsiteMediaLibraryItems, listWebsiteMediaLibraryUsage, restoreWebsiteMediaLibraryItem, saveWebsiteMediaLibraryUsage, softDeleteWebsiteMediaLibraryItem, updateWebsiteMediaLibraryItem } from "./storage";
@@ -190,11 +189,6 @@ export async function updateWebsiteMediaLibraryTags(input: WebsiteMediaLibraryTa
   const item = await getOwnedWebsiteMediaLibraryItem(input.userId, input.itemId, true);
   if (!item) {
     throw new Error("Website media library item not found.");
-  }
-
-  const permission = canAccessWebsiteMediaLibraryRecord(input.userId, item.userId, item.tenantId, item.tenantId);
-  if (!permission.allowed) {
-    throw new Error(permission.reason || "Unauthorized.");
   }
 
   const updated = await updateWebsiteMediaLibraryItem({

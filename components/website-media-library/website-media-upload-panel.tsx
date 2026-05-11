@@ -62,8 +62,9 @@ export function WebsiteMediaUploadPanel({
       setAltText("");
       setTags("");
       onUploaded?.({ item: body.item, previewUrl: body.preview?.url });
-    } catch {
-      setError("Upload failed due to a network error. Check connectivity and file size, then try again.");
+    } catch (error) {
+      console.error("Website media upload failed", error);
+      setError("Upload failed. Check connectivity, file size, and supported file types, then try again.");
     } finally {
       setUploading(false);
     }

@@ -15,12 +15,14 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
   const { mediaId } = await context.params;
   const expiresInSecondsParam = request.nextUrl.searchParams.get("expiresInSeconds");
   const expiresInSeconds = expiresInSecondsParam ? Number.parseInt(expiresInSecondsParam, 10) : undefined;
+  const normalizedExpiresInSeconds =
+    expiresInSeconds !== undefined && Number.isFinite(expiresInSeconds) ? expiresInSeconds : undefined;
 
   try {
     const preview = await createWebsiteMediaLibraryPreview({
       userId: user.id,
       itemId: decodeURIComponent(mediaId).trim(),
-      expiresInSeconds: Number.isFinite(expiresInSeconds) ? expiresInSeconds : undefined,
+      expiresInSeconds: normalizedExpiresInSeconds,
     });
     return NextResponse.json({ ok: true, preview });
   } catch (error) {

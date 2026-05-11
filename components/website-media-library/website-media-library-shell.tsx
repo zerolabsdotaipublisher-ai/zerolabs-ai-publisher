@@ -98,7 +98,7 @@ export function WebsiteMediaLibraryShell({
       setItems(body.items);
       setHasMore(Boolean(body.hasMore));
     } catch {
-      setError("Unable to load website media library because the request did not complete. Check connectivity and try again.");
+      setError("Failed to load media library. Please check your connection and try again.");
     } finally {
       setLoading(false);
     }
