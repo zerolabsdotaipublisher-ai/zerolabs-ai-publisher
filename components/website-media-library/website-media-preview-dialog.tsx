@@ -11,7 +11,7 @@ interface WebsiteMediaPreviewDialogProps {
 
 export function WebsiteMediaPreviewDialog({ open, title, mediaType, previewUrl, altText, onClose }: WebsiteMediaPreviewDialogProps) {
   if (!open) return null;
-  const isImage = mediaType === "image" || mediaType === "generated_image" || mediaType.startsWith("image");
+  const isImage = mediaType.startsWith("image") || mediaType === "generated_image";
 
   return (
     <section className="media-selector-dialog website-media-preview-dialog" role="dialog" aria-modal="true" aria-label="Website media preview">
