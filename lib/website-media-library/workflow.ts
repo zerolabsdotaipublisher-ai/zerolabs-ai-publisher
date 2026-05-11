@@ -61,7 +61,6 @@ async function refreshUsageSummary(itemId: string, userId: string) {
     ...item,
     usageCount: usage.length,
     usageSummary: buildWebsiteMediaUsageSummary(usage),
-    updatedAt: new Date().toISOString(),
   });
   return { item: updated, usage };
 }
@@ -198,7 +197,6 @@ export async function updateWebsiteMediaLibraryTags(input: WebsiteMediaLibraryTa
     description: validation.normalized.description ?? item.description,
     altText: validation.normalized.altText ?? item.altText,
     tags: validation.normalized.tags ?? item.tags,
-    updatedAt: new Date().toISOString(),
   });
 
   return toWebsiteMediaLibraryApiRecord(updated);

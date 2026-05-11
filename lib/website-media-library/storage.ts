@@ -1,7 +1,8 @@
 import "server-only";
 
 import { getSupabaseServiceClient } from "@/lib/supabase/server";
-import { getOwnedMediaAsset } from "@/lib/media/storage";
+import { fromMediaRow } from "@/lib/media/model";
+import type { MediaAssetRow } from "@/lib/media/types";
 import { fromAiAssetRow } from "@/lib/ai-assets/model";
 import type { AiAssetRow } from "@/lib/ai-assets/types";
 import { createWebsiteMediaLibraryItemId, fromWebsiteMediaLibraryItemRow, fromWebsiteMediaLibraryUsageRow, toWebsiteMediaLibraryItemRow, toWebsiteMediaLibraryUsageRow } from "./model";
@@ -226,11 +227,27 @@ export async function listOwnedAiAssetLibraryCandidates(userId: string, tenantId
   if (error) throw error;
 
   const rows = (data ?? []) as AiAssetRow[];
+  const mediaIds = Array.from(new Set(rows.map((row) => row.media_id)));
+  const { data: mediaRows, error: mediaError } = await supabase
+    .from("media_assets")
+    .select("*")
+    .eq("user_id", userId)
+    .in("id", mediaIds)
+    .is("deleted_at", null);
+
+  if (mediaError) throw mediaError;
+
+  const mediaMap = new Map(
+    ((mediaRows ?? []) as MediaAssetRow[]).map((row) => {
+      const media = fromMediaRow(row);
+      return [media.id, media];
+    }),
+  );
   const candidates = [] as Array<{ aiAssetId: string; mediaId: string; websiteId?: string; displayName: string; description?: string; altText?: string; tags: string[]; metadata: Record<string, unknown>; }>;
 
   for (const row of rows) {
     const asset = fromAiAssetRow(row);
-    const media = await getOwnedMediaAsset(userId, asset.mediaId);
+    const media = mediaMap.get(asset.mediaId);
     if (!media) continue;
     const generationTarget = asset.generationTarget as Record<string, unknown>;
     candidates.push({

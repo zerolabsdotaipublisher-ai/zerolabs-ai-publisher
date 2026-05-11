@@ -97,7 +97,8 @@ export function WebsiteMediaLibraryShell({
       }
       setItems(body.items);
       setHasMore(Boolean(body.hasMore));
-    } catch {
+    } catch (caughtError) {
+      console.error("Failed to load website media library", caughtError);
       setError("Failed to load media library. Please check your connection and try again.");
     } finally {
       setLoading(false);
@@ -137,7 +138,8 @@ export function WebsiteMediaLibraryShell({
         if (previewResponse.ok && previewBody.ok) {
           preview = previewBody.preview?.url;
         }
-      } catch {
+      } catch (caughtError) {
+        console.error("Failed to resolve website media preview before selection", caughtError);
         preview = undefined;
       }
     }

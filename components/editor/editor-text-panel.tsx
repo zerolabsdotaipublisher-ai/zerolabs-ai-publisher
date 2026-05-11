@@ -11,7 +11,7 @@ interface EditorTextPanelProps {
 }
 
 function supportsMediaLibrary(path: string): boolean {
-  return path.endsWith("image.src") || path.includes(".image.src");
+  return /(^|\\.)image\\.src$/i.test(path);
 }
 
 export function EditorTextPanel({ websiteId, pageId, section, onChange }: EditorTextPanelProps) {
