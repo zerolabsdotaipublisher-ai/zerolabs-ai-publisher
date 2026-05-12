@@ -25,6 +25,8 @@ type PricingTier = {
   features: string[];
 };
 
+const sectionShellClass = "mx-auto w-full max-w-7xl px-6 lg:px-8 xl:px-0";
+
 const aboutCards: ContentCard[] = [
   {
     eyebrow: "What it is",
@@ -115,7 +117,7 @@ const searchCards: ContentCard[] = [
   ...workflowSteps,
   ...pricingTiers.map((tier) => ({
     eyebrow: tier.name,
-    title: `${tier.name} business model`,
+    title: `${tier.name} tier`,
     description: `${tier.positioning}. ${tier.summary}`,
   })),
   ...insightMetrics.map((metric) => ({
@@ -134,7 +136,6 @@ export function LandingPage() {
 
   const normalizedQuery = query.trim().toLowerCase();
   const isFiltered = normalizedQuery.length > 0;
-  const sectionShellClass = "mx-auto w-full max-w-7xl px-6 lg:px-8 xl:px-0";
 
   const filteredAboutCards = useMemo(
     () =>
@@ -174,7 +175,7 @@ export function LandingPage() {
     () =>
       normalizedQuery
         ? searchCards.filter((card) => textIncludesQuery(`${card.eyebrow} ${card.title} ${card.description}`, normalizedQuery))
-        : searchCards.slice(0, 6),
+        : searchCards.slice(0, 3),
     [normalizedQuery]
   );
 
@@ -193,7 +194,7 @@ export function LandingPage() {
                 Investor-ready AI infrastructure surface
               </div>
               <div className="space-y-6">
-                <h1 className="max-w-2xl text-4xl font-semibold leading-[1.06] tracking-tight text-white sm:text-5xl lg:text-6xl">
+                <h1 className="max-w-2xl text-4xl font-semibold leading-[1.12] tracking-tight text-white sm:text-5xl lg:text-6xl">
                   AI publishing infrastructure for high-velocity digital operations.
                 </h1>
                 <p className="max-w-2xl text-base leading-8 text-slate-300 sm:text-lg lg:text-xl">
@@ -220,7 +221,7 @@ export function LandingPage() {
               <div className="grid gap-4 sm:grid-cols-3">
                 {heroValueCards.map((card) => (
                   <article key={card.title} className="h-full rounded-2xl border border-emerald-400/20 bg-slate-900/75 p-5">
-                    <p className="text-xs font-semibold tracking-[0.16em] text-emerald-200 uppercase">{card.eyebrow}</p>
+                    <p className="text-sm font-semibold tracking-[0.14em] text-emerald-200 uppercase">{card.eyebrow}</p>
                     <h2 className="mt-3 text-base font-semibold text-white">{card.title}</h2>
                     <p className="mt-2 text-sm leading-6 text-slate-300">{card.description}</p>
                   </article>
@@ -362,7 +363,9 @@ export function LandingPage() {
                     <h3 className="mt-3 text-xl font-semibold text-white">{step.title}</h3>
                     <p className="mt-3 text-sm leading-7 text-slate-300">{step.description}</p>
                     {index < filteredWorkflowSteps.length - 1 ? (
-                      <span className="absolute top-9 -right-3 hidden text-lg text-emerald-300 xl:block">→</span>
+                      <p className="mt-4 text-xs font-semibold tracking-[0.16em] text-emerald-300 uppercase">
+                        Next →
+                      </p>
                     ) : null}
                   </article>
                 ))
