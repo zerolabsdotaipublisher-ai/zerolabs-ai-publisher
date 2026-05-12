@@ -240,7 +240,7 @@ export function LandingPage() {
                 ].join(" ")}>
                   Sustainable & humanistic AI publishing
                 </p>
-                <h1 className={`${headingClass} max-w-[760px] text-5xl font-black leading-[0.92] tracking-[-0.04em] sm:text-6xl lg:text-7xl xl:text-[5.5rem]`}>
+                <h1 className={`${headingClass} max-w-[760px] text-5xl font-black leading-[1] tracking-[-0.04em] sm:text-6xl lg:text-7xl xl:text-[5.5rem]`}>
                   <span className="block">Turn prompts into</span>
                   <span className="block">published AI websites</span>
                 </h1>
