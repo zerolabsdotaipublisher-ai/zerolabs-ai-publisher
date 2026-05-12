@@ -9,15 +9,10 @@ export type SessionUpdateResult = {
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const supabaseSessionCookieName = (() => {
-  if (!supabaseUrl) return undefined;
-
-  try {
-    return `sb-${new URL(supabaseUrl).hostname.split(".")[0]}-auth-token`;
-  } catch {
-    return undefined;
-  }
-})();
+const supabaseSessionCookieName =
+  supabaseUrl && URL.canParse(supabaseUrl)
+    ? `sb-${new URL(supabaseUrl).hostname.split(".")[0]}-auth-token`
+    : undefined;
 
 function hasSupabaseSessionCookie(request: NextRequest): boolean {
   if (!supabaseSessionCookieName) {
