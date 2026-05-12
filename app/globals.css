@@ -3,10 +3,15 @@
 @source "../components/**/*.{js,ts,jsx,tsx,mdx}";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f8f9fa;
+  --foreground: #2c3e50;
   --font-body: "Inter", "Plus Jakarta Sans", "Aptos", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   --font-heading: "Fraunces", "Lora", "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  --marketing-bg: #f8f9fa;
+  --marketing-surface: #eaf2ef;
+  --marketing-green: #1f6f5f;
+  --marketing-ocean: #124170;
+  --marketing-text: #2c3e50;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -36,6 +41,7 @@ body {
   font-family: var(--font-body), Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 * {
