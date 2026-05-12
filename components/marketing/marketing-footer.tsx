@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { routes } from "@/config/routes";
+import { MarketingTheme } from "./theme-toggle";
 
 const footerLinks = [
   { label: "Product", href: `${routes.home}#product` },
@@ -10,46 +11,58 @@ const footerLinks = [
   { label: "Blog", href: "/blog" },
 ] as const;
 
-const wrapperClass = "mx-auto w-full max-w-[1600px]";
-const wrapperStyle = {
-  paddingInline: "clamp(16px, 2vw, 40px)",
-  paddingBottom: "clamp(32px, 3vw, 40px)",
-};
-const footerStyle = {
-  padding: "clamp(32px, 4vw, 40px) clamp(24px, 3vw, 40px)",
-};
-const pillStyle = {
-  padding: "8px 16px",
-};
-const buttonStyle = {
-  paddingInline: "24px",
+const shellClass = "mx-auto w-full max-w-[1440px] px-5 sm:px-6 lg:px-10 xl:px-12";
+const shellStyle = {
+  marginInline: "auto",
+  maxWidth: "1440px",
+  paddingInline: "clamp(20px, 3vw, 48px)",
 };
 
 interface MarketingFooterProps {
   contained?: boolean;
+  theme?: MarketingTheme;
 }
 
-export function MarketingFooter({ contained = false }: MarketingFooterProps) {
+export function MarketingFooter({ contained = false, theme = "light" }: MarketingFooterProps) {
+  const isDark = theme === "dark";
+  const logoSrc = isDark ? "/images/Zero Labs Logo transparent.svg" : "/images/Zero Labs Logo colored.svg";
+
   const content = (
-    <footer className="rounded-[2rem] border border-white/12 bg-[#081b31]/85 text-slate-300 shadow-[0_20px_70px_rgba(2,6,23,0.45)] backdrop-blur-xl" style={footerStyle}>
-      <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+    <footer
+      className={[
+        "rounded-[32px] border px-6 py-8 shadow-[0_24px_70px_rgba(18,65,112,0.10)] backdrop-blur-xl transition-colors duration-300 sm:px-8 lg:px-10",
+        isDark
+          ? "border-white/10 bg-[rgba(6,19,31,0.82)] text-[#F8F9FA]"
+          : "border-[#1F6F5F]/14 bg-[rgba(234,242,239,0.82)] text-[#2C3E50]",
+      ].join(" ")}
+    >
+      <div className="flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-2xl space-y-4">
-          <div className="flex items-center gap-3 text-sm font-semibold tracking-[0.28em] text-white uppercase">
-            <Image src="/images/Chip Icon Logo.svg" alt="ZeroLabsAI" width={44} height={44} className="shrink-0" />
-            <span>ZeroLabsAI</span>
+          <div className="flex items-center gap-3">
+            <Image src={logoSrc} alt="" width={180} height={40} className="h-10 w-auto" />
+            <span className="text-sm font-semibold tracking-[0.14em] text-current sm:text-base">Zero Labs AI Publisher</span>
           </div>
-          <p className="max-w-xl text-2xl leading-tight font-semibold text-white sm:text-3xl">
-            Premium AI publishing infrastructure built for prompt-led website generation and automated release workflows.
+          <p className="max-w-xl text-2xl font-semibold leading-tight sm:text-3xl">
+            Zero Labs AI Publisher is built by Zero Labs for AI-powered publishing operations.
           </p>
-          <p className="max-w-2xl text-sm leading-7 text-slate-400 sm:text-base">
-            Keep the homepage cinematic up front, then move into platform structure, insights, and pricing without breaking the public routes that already exist.
+          <p className={isDark ? "text-[#F8F9FA]/70" : "text-[#2C3E50]/72"}>
+            Prompt-led websites, publishing workflow oversight, and brand-safe automation surfaces stay aligned inside one calm green product system.
           </p>
         </div>
 
         <div className="flex flex-col items-start gap-4 lg:items-end">
-          <div className="flex flex-wrap gap-3 text-xs tracking-[0.28em] uppercase sm:text-sm">
+          <div className="flex flex-wrap gap-3 text-xs font-semibold uppercase tracking-[0.22em] sm:text-sm">
             {footerLinks.map((link) => (
-                <Link key={link.label} href={link.href} className="rounded-full border border-white/10 transition hover:border-slate-200/50 hover:text-white" style={pillStyle}>
+              <Link
+                key={link.label}
+                href={link.href}
+                className={[
+                  "rounded-full border px-4 py-2 transition-colors duration-300",
+                  isDark
+                    ? "border-white/10 text-[#F8F9FA]/72 hover:border-[#1F6F5F]/70 hover:bg-[#1F6F5F]/16 hover:text-[#F8F9FA]"
+                    : "border-[#124170]/12 text-[#124170] hover:border-[#1F6F5F]/35 hover:bg-[#F8F9FA]",
+                ].join(" ")}
+              >
                 {link.label}
               </Link>
             ))}
@@ -57,17 +70,20 @@ export function MarketingFooter({ contained = false }: MarketingFooterProps) {
           <div className="flex flex-wrap gap-3">
             <Link
               href={routes.login}
-              className="inline-flex min-h-12 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold tracking-[0.28em] text-slate-950 uppercase transition hover:bg-white"
-              style={buttonStyle}
+              className={[
+                "inline-flex min-h-11 items-center justify-center rounded-full px-6 text-sm font-semibold transition-colors duration-300",
+                isDark
+                  ? "border border-white/12 bg-white/[0.05] text-[#F8F9FA] hover:border-[#1F6F5F]/70 hover:bg-[#1F6F5F]/16"
+                  : "border border-[#1F6F5F]/14 bg-[#F8F9FA] text-[#124170] hover:border-[#1F6F5F]/35 hover:bg-[#EAF2EF]",
+              ].join(" ")}
             >
               Login
             </Link>
             <Link
               href={routes.signup}
-              className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/12 bg-white/[0.08] text-xs font-semibold tracking-[0.28em] text-white uppercase transition hover:border-white/25 hover:bg-white/12"
-              style={buttonStyle}
+              className="inline-flex min-h-11 items-center justify-center rounded-full bg-[#1F6F5F] px-6 text-sm font-semibold text-white transition-colors duration-300 hover:bg-[#18584b]"
             >
-              Start building
+              Signup
             </Link>
           </div>
         </div>
@@ -80,7 +96,7 @@ export function MarketingFooter({ contained = false }: MarketingFooterProps) {
   }
 
   return (
-    <div className={wrapperClass} style={wrapperStyle}>
+    <div className={`${shellClass} pb-8 sm:pb-10`} style={shellStyle}>
       {content}
     </div>
   );
