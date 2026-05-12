@@ -122,8 +122,10 @@ export function LandingPage() {
 
                   <div className="space-y-5">
                     <p className="text-xs font-semibold tracking-[0.35em] text-emerald-200 uppercase sm:text-sm">Premium AI automation for public-facing publishing</p>
-                    <h1 className="max-w-[9ch] text-5xl font-black leading-[0.9] tracking-tight text-white uppercase sm:text-6xl lg:text-7xl xl:text-8xl">
-                      Turn prompts into published AI websites
+                    <h1 className="text-5xl font-black leading-[0.9] tracking-tight text-white uppercase sm:text-6xl lg:text-7xl xl:text-8xl">
+                      <span className="block">Turn prompts</span>
+                      <span className="block">into published</span>
+                      <span className="block">AI websites</span>
                     </h1>
                     <p className="max-w-2xl text-base leading-8 text-slate-300 sm:text-lg lg:text-xl">
                       A cinematic AI publisher surface that frames generation, workflow, and launch control inside one clean premium product identity.

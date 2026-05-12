@@ -24,7 +24,7 @@ export function MarketingNav({ currentPath = "/" }: MarketingNavProps) {
         <div className="rounded-[2rem] border border-white/12 bg-slate-950/70 px-4 py-4 shadow-[0_25px_80px_rgba(2,6,23,0.55)] backdrop-blur-xl sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-center justify-between gap-4 lg:grid lg:grid-cols-[auto_1fr_auto] lg:gap-6">
             <Link href={routes.home} className="flex items-center gap-3 text-sm font-semibold tracking-[0.28em] text-white uppercase">
-              <Image src="/images/Chip Icon Logo.svg" alt="ZeroLabsAI" width={44} height={44} className="h-11 w-11" priority />
+              <Image src="/images/Chip Icon Logo.svg" alt="ZeroLabsAI" width={44} height={44} className="shrink-0" priority />
               <span className="hidden sm:inline">ZeroLabsAI</span>
             </Link>
 

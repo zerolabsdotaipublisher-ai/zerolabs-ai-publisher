@@ -20,7 +20,7 @@ export function MarketingFooter() {
           <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl space-y-4">
               <div className="flex items-center gap-3 text-sm font-semibold tracking-[0.28em] text-white uppercase">
-                <Image src="/images/Chip Icon Logo.svg" alt="ZeroLabsAI" width={44} height={44} className="h-11 w-11" />
+                <Image src="/images/Chip Icon Logo.svg" alt="ZeroLabsAI" width={44} height={44} className="shrink-0" />
                 <span>ZeroLabsAI</span>
               </div>
               <p className="max-w-xl text-2xl leading-tight font-semibold text-white sm:text-3xl">
