@@ -4,6 +4,7 @@ import { routes } from "@/config/routes";
 
 interface MarketingNavProps {
   currentPath?: string;
+  contained?: boolean;
 }
 
 const navigationItems = [
@@ -13,66 +14,69 @@ const navigationItems = [
   { label: "Pricing", section: "pricing" },
 ] as const;
 
-const wrapperClass = "mx-auto w-full max-w-[1500px] px-4 sm:px-6 lg:px-10 xl:px-12";
+const wrapperClass = "mx-auto w-full max-w-[1600px]";
+const wrapperStyle = {
+  paddingInline: "clamp(16px, 2vw, 40px)",
+};
+const wrapperTopStyle = {
+  paddingTop: "clamp(24px, 3vw, 32px)",
+};
+const headerStyle = {
+  padding: "16px 20px",
+};
+const actionChipStyle = {
+  padding: "12px 20px",
+};
+const buttonStyle = {
+  padding: "12px 28px",
+};
 
-export function MarketingNav({ currentPath = "/" }: MarketingNavProps) {
+export function MarketingNav({ currentPath = "/", contained = false }: MarketingNavProps) {
   const resolveHref = (section: string) => (currentPath === "/" ? `#${section}` : `/#${section}`);
+  const content = (
+    <header className="rounded-3xl border border-white/15 bg-[#0b2038]/80 shadow-[0_25px_80px_rgba(2,6,23,0.45)] backdrop-blur" style={headerStyle}>
+      <div className="flex items-center justify-between gap-6">
+        <Link href={routes.home} className="flex items-center gap-3 text-white">
+          <Image src="/images/Chip Icon Logo.svg" alt="ZeroLabsAI" width={40} height={40} className="h-10 w-10 shrink-0" priority />
+          <span className="text-sm font-black tracking-[0.3em] uppercase">ZeroLabsAI</span>
+        </Link>
 
-  return (
-    <header className="relative z-30 pt-6 sm:pt-8">
-      <div className={wrapperClass}>
-        <div className="rounded-[2rem] border border-white/12 bg-slate-950/70 px-4 py-4 shadow-[0_25px_80px_rgba(2,6,23,0.55)] backdrop-blur-xl sm:px-6 lg:px-8">
-          <div className="flex flex-wrap items-center justify-between gap-4 lg:grid lg:grid-cols-[auto_1fr_auto] lg:gap-6">
-            <Link href={routes.home} className="flex items-center gap-3 text-sm font-semibold tracking-[0.28em] text-white uppercase">
-              <Image src="/images/Chip Icon Logo.svg" alt="ZeroLabsAI" width={44} height={44} className="shrink-0" priority />
-              <span className="hidden sm:inline">ZeroLabsAI</span>
+        <nav aria-label="Primary navigation" className="hidden items-center gap-12 text-sm tracking-[0.3em] text-slate-300 uppercase lg:flex">
+          {navigationItems.map((item) => (
+            <Link key={item.label} href={resolveHref(item.section)} className="transition hover:text-white">
+              {item.label}
             </Link>
+          ))}
+        </nav>
 
-            <nav
-              aria-label="Primary navigation"
-              className="order-3 flex w-full flex-wrap items-center justify-center gap-x-6 gap-y-3 text-[11px] font-medium tracking-[0.35em] text-slate-300 uppercase lg:order-2 lg:w-auto lg:gap-x-10"
-            >
-              {navigationItems.map((item) => (
-                <Link key={item.label} href={resolveHref(item.section)} className="transition hover:text-emerald-200">
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
-
-            <div className="order-2 flex flex-1 flex-wrap items-center justify-end gap-3 lg:order-3 lg:flex-none">
-              <label className="relative min-w-[180px] flex-1 sm:min-w-[220px] lg:w-[220px] lg:flex-none">
-                <span className="sr-only">Search</span>
-                <Image
-                  src="/images/Search Icon Light.svg"
-                  alt=""
-                  width={18}
-                  height={18}
-                  aria-hidden="true"
-                  className="pointer-events-none absolute top-1/2 left-4 h-[18px] w-[18px] -translate-y-1/2 opacity-70"
-                />
-                <input
-                  type="search"
-                  aria-label="Search"
-                  placeholder="SEARCH"
-                  className="h-11 w-full rounded-full border border-white/12 bg-white/[0.04] pr-4 pl-11 text-xs tracking-[0.32em] text-white uppercase placeholder:text-slate-500 focus:border-emerald-300/60 focus:outline-none"
-                />
-              </label>
-              <Link
-                href={routes.login}
-                className="inline-flex h-11 items-center justify-center rounded-full border border-white/12 bg-white px-5 text-xs font-semibold tracking-[0.28em] text-slate-950 uppercase transition hover:bg-emerald-100"
-              >
-                Login
-              </Link>
-              <Link
-                href={routes.signup}
-                className="inline-flex h-11 items-center justify-center rounded-full border border-emerald-300/20 bg-emerald-400/12 px-5 text-xs font-semibold tracking-[0.28em] text-emerald-50 uppercase transition hover:border-emerald-300/45 hover:bg-emerald-300/18"
-              >
-                Signup
-              </Link>
-            </div>
-          </div>
+        <div className="hidden items-center gap-3 lg:flex">
+          <div className="rounded-full border border-white/15 text-xs tracking-[0.3em] text-slate-400 uppercase" style={actionChipStyle}>Search</div>
+          <Link
+            href={routes.login}
+            className="inline-flex items-center justify-center rounded-full bg-slate-100 text-xs font-black tracking-[0.3em] text-slate-950 uppercase transition hover:bg-white"
+            style={buttonStyle}
+          >
+            Login
+          </Link>
+          <Link
+            href={routes.signup}
+            className="inline-flex items-center justify-center rounded-full bg-slate-100 text-xs font-black tracking-[0.3em] text-slate-950 uppercase transition hover:bg-white"
+            style={buttonStyle}
+          >
+            Signup
+          </Link>
         </div>
       </div>
     </header>
+  );
+
+  if (contained) {
+    return content;
+  }
+
+  return (
+    <div className={wrapperClass} style={{ ...wrapperStyle, ...wrapperTopStyle }}>
+      {content}
+    </div>
   );
 }
