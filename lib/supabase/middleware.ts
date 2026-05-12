@@ -9,6 +9,8 @@ export type SessionUpdateResult = {
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+// Supabase's default auth storage key is `sb-<project-ref>-auth-token`; the
+// SSR helpers use the same convention unless a custom cookie name is supplied.
 const supabaseSessionCookieName =
   supabaseUrl && URL.canParse(supabaseUrl)
     ? `sb-${new URL(supabaseUrl).hostname.split(".")[0]}-auth-token`
