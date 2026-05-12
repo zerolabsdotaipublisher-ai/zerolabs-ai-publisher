@@ -18,87 +18,114 @@ type MetricCard = {
   detail: string;
 };
 
-const productCards: ContentCard[] = [
+type PricingTier = {
+  name: string;
+  positioning: string;
+  summary: string;
+  features: string[];
+};
+
+const sectionShellClass = "mx-auto w-full max-w-7xl px-6 lg:px-8 xl:px-0";
+
+const aboutCards: ContentCard[] = [
   {
     eyebrow: "What it is",
-    title: "An AI publishing operating layer",
+    title: "AI publishing operating layer",
     description:
-      "Zero Labs AI Publisher turns a prompt into coordinated websites, portfolio pages, blog articles, and social content without reducing the product to a basic site builder.",
+      "Zero Labs AI Publisher converts one structured prompt into coordinated websites, articles, and social assets with a consistent execution surface.",
   },
   {
     eyebrow: "What it solves",
     title: "Fragmented publishing workflows",
     description:
-      "Teams replace disconnected copy decks, CMS handoffs, and manual channel updates with one AI-native workflow that keeps structure, review, and distribution connected.",
+      "Replace disconnected CMS edits, copy decks, and handoffs with one system that keeps generation, review, and distribution aligned.",
   },
   {
     eyebrow: "Why it matters",
-    title: "Distribution velocity with governance",
+    title: "Velocity with governance",
     description:
-      "Businesses and creators can scale content operations while maintaining review checkpoints, channel readiness, and a clear path from ideation to measurable output.",
-  },
-];
-
-const audienceCards: ContentCard[] = [
-  {
-    eyebrow: "For businesses",
-    title: "Launch campaign surfaces faster",
-    description: "Stand up high-quality landing pages, product explainers, and brand content with AI-assisted structure and publishing orchestration.",
-  },
-  {
-    eyebrow: "For creators",
-    title: "Turn one idea into many formats",
-    description: "Convert a single prompt into a portfolio update, blog narrative, and social-ready messages that stay aligned across channels.",
-  },
-  {
-    eyebrow: "For automated content teams",
-    title: "Operate repeatable publishing systems",
-    description: "Support approval, review, and insights loops that make AI-generated output manageable for recurring content programs.",
+      "Scale output while preserving approval checkpoints, brand quality, and operational visibility across every publishing channel.",
   },
 ];
 
 const workflowSteps: ContentCard[] = [
   {
     eyebrow: "Prompt",
-    title: "Start with a publishing brief",
-    description: "Define the campaign, website, or content objective once and set the AI system in motion from a structured prompt.",
+    title: "Define the brief",
+    description: "Set intent once and initiate a structured content operation.",
   },
   {
     eyebrow: "Generate",
-    title: "Create website and content drafts",
-    description: "Generate site sections, blog-ready copy, and supporting social messaging in one coordinated production pass.",
+    title: "Produce drafts",
+    description: "Create websites, article narratives, and social variants together.",
   },
   {
     eyebrow: "Review",
-    title: "Apply editorial oversight",
-    description: "Keep human review in the loop so brand quality, accuracy, and final edits stay under operator control.",
+    title: "Apply oversight",
+    description: "Keep humans in control of quality and final editorial decisions.",
   },
   {
     eyebrow: "Publish",
-    title: "Distribute across channels",
-    description: "Prepare AI-generated assets for public launch across websites, blogs, and social touchpoints.",
+    title: "Ship to channels",
+    description: "Move approved output to web, blog, and campaign touchpoints.",
   },
   {
     eyebrow: "Track",
-    title: "Read the performance surface",
-    description: "Use metrics and workflow visibility to understand where automation saves time and where the platform compounds output.",
+    title: "Measure operations",
+    description: "Monitor performance signals to improve automation leverage.",
   },
 ];
 
 const insightMetrics: MetricCard[] = [
-  { label: "Websites generated", value: "128", detail: "Illustrative dashboard volume for multi-site publishing programs" },
-  { label: "Content pieces created", value: "3.4K", detail: "Drafted pages, blog articles, and social assets in the platform surface" },
-  { label: "Publishing channels", value: "12", detail: "Web, blog, portfolio, and social distribution pathways represented in the workflow" },
-  { label: "Automation coverage", value: "82%", detail: "Share of the publishing lifecycle that can be AI-assisted before final review" },
-  { label: "Time saved", value: "41 hrs/wk", detail: "Illustrative operational lift for lean publishing teams" },
-  { label: "AI workflow steps", value: "5", detail: "Prompt → Generate → Review → Publish → Track" },
+  { label: "Web properties generated", value: "128", detail: "Illustrative portfolio volume from coordinated prompt-led production." },
+  { label: "Content units produced", value: "3.4K", detail: "Pages, articles, and campaign assets managed inside one system." },
+  { label: "Workflow automation", value: "82%", detail: "Share of production cycle AI can accelerate before final approval." },
+  { label: "Ops time recovered", value: "41 hrs/wk", detail: "Demonstration efficiency gain for lean publishing teams." },
+  { label: "Distribution channels", value: "12", detail: "Website, blog, and social destinations connected to one workflow." },
+  { label: "Review checkpoints", value: "5", detail: "Structured controls from intake through measurable release." },
 ];
 
-const searchCards: ContentCard[] = [...productCards, ...audienceCards, ...workflowSteps].map((item) => ({
-  title: item.title,
-  description: item.description,
-  eyebrow: item.eyebrow,
-}));
+const pricingTiers: PricingTier[] = [
+  {
+    name: "Starter",
+    positioning: "For focused teams launching core surfaces",
+    summary: "Prompt-to-page workflow for early publishing operations.",
+    features: ["Website and blog generation", "Lightweight approvals", "Core analytics dashboard"],
+  },
+  {
+    name: "Growth",
+    positioning: "For scaling content organizations",
+    summary: "Expanded automation and review depth for multi-channel output.",
+    features: ["Multi-surface orchestration", "Role-based review handoffs", "Performance and cadence insights"],
+  },
+  {
+    name: "Platform",
+    positioning: "For enterprise-grade publishing infrastructure",
+    summary: "Unified AI operations layer for high-volume programs.",
+    features: ["Cross-team governance", "Advanced workflow controls", "Strategic analytics and reporting"],
+  },
+];
+
+const heroValueCards: ContentCard[] = [
+  { title: "Platform posture", description: "AI-native publishing infrastructure", eyebrow: "Core" },
+  { title: "Operational focus", description: "Structured review and release", eyebrow: "Control" },
+  { title: "Business signal", description: "Faster output with measurable quality", eyebrow: "Value" },
+];
+
+const searchCards: ContentCard[] = [
+  ...aboutCards,
+  ...workflowSteps,
+  ...pricingTiers.map((tier) => ({
+    eyebrow: tier.name,
+    title: `${tier.name} tier`,
+    description: `${tier.positioning}. ${tier.summary}`,
+  })),
+  ...insightMetrics.map((metric) => ({
+    eyebrow: metric.label,
+    title: `${metric.value} ${metric.label}`,
+    description: metric.detail,
+  })),
+];
 
 function textIncludesQuery(text: string, query: string) {
   return text.toLowerCase().includes(query);
@@ -108,27 +135,20 @@ export function LandingPage() {
   const [query, setQuery] = useState("");
 
   const normalizedQuery = query.trim().toLowerCase();
+  const isFiltered = normalizedQuery.length > 0;
 
-  const filteredProductCards = useMemo(
+  const filteredAboutCards = useMemo(
     () =>
       normalizedQuery
-        ? productCards.filter((card) => textIncludesQuery(`${card.eyebrow} ${card.title} ${card.description}`, normalizedQuery))
-        : productCards,
-    [normalizedQuery]
-  );
-
-  const filteredAudienceCards = useMemo(
-    () =>
-      normalizedQuery
-        ? audienceCards.filter((card) => textIncludesQuery(`${card.eyebrow} ${card.title} ${card.description}`, normalizedQuery))
-        : audienceCards,
+        ? aboutCards.filter((card) => textIncludesQuery(`${card.eyebrow} ${card.title} ${card.description}`, normalizedQuery))
+        : aboutCards,
     [normalizedQuery]
   );
 
   const filteredWorkflowSteps = useMemo(
     () =>
       normalizedQuery
-        ? workflowSteps.filter((card) => textIncludesQuery(`${card.eyebrow} ${card.title} ${card.description}`, normalizedQuery))
+        ? workflowSteps.filter((step) => textIncludesQuery(`${step.eyebrow} ${step.title} ${step.description}`, normalizedQuery))
         : workflowSteps,
     [normalizedQuery]
   );
@@ -141,6 +161,16 @@ export function LandingPage() {
     [normalizedQuery]
   );
 
+  const filteredPricingTiers = useMemo(
+    () =>
+      normalizedQuery
+        ? pricingTiers.filter((tier) =>
+            textIncludesQuery(`${tier.name} ${tier.positioning} ${tier.summary} ${tier.features.join(" ")}`, normalizedQuery)
+          )
+        : pricingTiers,
+    [normalizedQuery]
+  );
+
   const searchResults = useMemo(
     () =>
       normalizedQuery
@@ -149,124 +179,119 @@ export function LandingPage() {
     [normalizedQuery]
   );
 
-  const isFiltered = normalizedQuery.length > 0;
-  const sectionShellClass = "mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8";
-
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <MarketingNav currentPath="/" />
 
-      <main>
-        <section className="relative overflow-hidden border-b border-white/5">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.2),_transparent_34%),radial-gradient(circle_at_bottom_right,_rgba(59,130,246,0.16),_transparent_32%)]" />
+      <main className="overflow-x-hidden">
+        <section className="relative border-b border-emerald-400/10">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.22),_transparent_45%),radial-gradient(circle_at_bottom_right,_rgba(13,148,136,0.18),_transparent_40%)]" />
           <div
-            className={`relative ${sectionShellClass} grid items-start gap-12 py-16 sm:py-20 lg:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)] lg:gap-14 lg:py-24 xl:py-28`}
+            className={`${sectionShellClass} relative grid items-center gap-12 py-20 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:gap-16 lg:py-28`}
           >
-            <div className="space-y-10">
-              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-4 py-2 text-xs font-medium tracking-[0.12em] text-cyan-100 uppercase sm:text-sm">
-                Investor-ready product surface
+            <div className="space-y-9">
+              <div className="inline-flex items-center rounded-full border border-emerald-300/40 bg-emerald-400/10 px-4 py-2 text-xs font-semibold tracking-[0.16em] text-emerald-100 uppercase">
+                Investor-ready AI infrastructure surface
               </div>
               <div className="space-y-6">
-                <h1 className="max-w-4xl text-4xl font-semibold leading-tight tracking-tight text-white sm:text-5xl lg:text-[3.35rem]">
-                  AI-powered publishing infrastructure for websites, portfolios, blogs, and social content.
+                <h1 className="max-w-2xl text-4xl font-semibold leading-[1.12] tracking-tight text-white sm:text-5xl lg:text-6xl">
+                  AI publishing infrastructure for high-velocity digital operations.
                 </h1>
-                <p className="max-w-3xl text-base leading-8 text-slate-300 sm:text-lg lg:text-xl">
-                  Zero Labs AI Publisher gives teams a premium prompt-to-publish system that generates digital surfaces,
-                  coordinates review, and frames performance visibility like a real platform business.
+                <p className="max-w-2xl text-base leading-8 text-slate-300 sm:text-lg lg:text-xl">
+                  Zero Labs AI Publisher structures prompt-to-publish execution for teams that need modern automation, clear review
+                  controls, and measurable output across websites, blog content, and social channels.
                 </p>
               </div>
+
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                 <Link
-                  href="#workflow"
-                  className="inline-flex items-center justify-center rounded-full bg-cyan-300 px-7 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200"
+                  href={routes.login}
+                  className="inline-flex items-center justify-center rounded-full border border-emerald-300/60 bg-emerald-500/70 px-7 py-3 text-sm font-semibold text-white transition hover:bg-emerald-500"
                 >
-                  Explore the workflow
+                  Start building
                 </Link>
                 <Link
-                  href="#insights"
-                  className="inline-flex items-center justify-center rounded-full border border-white/15 px-7 py-3 text-sm font-semibold text-white transition hover:bg-white/[0.08]"
+                  href="#workflow"
+                  className="inline-flex items-center justify-center rounded-full border border-emerald-300/25 bg-slate-900/80 px-7 py-3 text-sm font-semibold text-emerald-100 transition hover:bg-emerald-500/15"
                 >
-                  View platform insights
+                  Explore workflow
                 </Link>
               </div>
+
               <div className="grid gap-4 sm:grid-cols-3">
-                <div className="h-full rounded-2xl border border-white/10 bg-white/5 p-6">
-                  <p className="text-sm text-slate-400">Platform posture</p>
-                  <p className="mt-3 text-lg font-semibold text-white">AI-native publishing layer</p>
-                </div>
-                <div className="h-full rounded-2xl border border-white/10 bg-white/5 p-6">
-                  <p className="text-sm text-slate-400">Operational focus</p>
-                  <p className="mt-3 text-lg font-semibold text-white">Structured review + distribution</p>
-                </div>
-                <div className="h-full rounded-2xl border border-white/10 bg-white/5 p-6">
-                  <p className="text-sm text-slate-400">Value signal</p>
-                  <p className="mt-3 text-lg font-semibold text-white">Faster publishing with visibility</p>
-                </div>
+                {heroValueCards.map((card) => (
+                  <article key={card.title} className="h-full rounded-2xl border border-emerald-400/20 bg-slate-900/75 p-5">
+                    <p className="text-sm font-semibold tracking-[0.14em] text-emerald-200 uppercase">{card.eyebrow}</p>
+                    <h2 className="mt-3 text-base font-semibold text-white">{card.title}</h2>
+                    <p className="mt-2 text-sm leading-6 text-slate-300">{card.description}</p>
+                  </article>
+                ))}
               </div>
             </div>
 
-            <aside className="rounded-[2rem] border border-white/10 bg-white/[0.06] p-6 shadow-2xl shadow-cyan-950/30 backdrop-blur lg:p-8">
-              <div className="flex items-center justify-between">
+            <aside className="rounded-3xl border border-emerald-400/20 bg-gradient-to-b from-emerald-500/10 via-slate-900 to-slate-900 p-6 shadow-2xl shadow-emerald-950/40 lg:p-8">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-sm uppercase tracking-[0.2em] text-cyan-200">Platform surface</p>
-                  <h2 className="mt-2 text-xl font-semibold text-white sm:text-2xl">Publishing command center</h2>
+                  <p className="text-xs font-semibold tracking-[0.18em] text-emerald-200 uppercase">Command center</p>
+                  <h2 className="mt-2 text-xl font-semibold text-white sm:text-2xl">Publishing operations panel</h2>
                 </div>
-                <span className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-200">
+                <span className="inline-flex w-fit rounded-full border border-emerald-300/50 bg-emerald-400/15 px-3 py-1 text-xs font-semibold text-emerald-100">
                   Workflow active
                 </span>
               </div>
-              <div className="mt-6 space-y-4">
+
+              <div className="mt-6 space-y-3">
                 {[
-                  "Prompt intake aligns site, blog, and social output.",
-                  "Review checkpoints preserve editorial control.",
-                  "Insights surface frames automation readiness for growth teams.",
+                  "Prompt intake aligns web, blog, and social outputs.",
+                  "Review gates preserve quality and compliance.",
+                  "Analytics surfaces show automation leverage and efficiency.",
                 ].map((line) => (
-                  <div key={line} className="rounded-2xl border border-white/10 bg-slate-950/70 p-4 text-sm text-slate-300">
+                  <div key={line} className="rounded-2xl border border-emerald-300/15 bg-slate-950/80 p-4 text-sm text-slate-300">
                     {line}
                   </div>
                 ))}
               </div>
+
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
                 {insightMetrics.slice(0, 4).map((metric) => (
-                  <div key={metric.label} className="rounded-2xl border border-white/10 bg-white/5 p-5">
-                    <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{metric.label}</p>
-                    <p className="mt-3 text-2xl font-semibold text-white">{metric.value}</p>
+                  <article key={metric.label} className="rounded-2xl border border-emerald-300/20 bg-slate-900/90 p-5">
+                    <p className="text-xs tracking-[0.15em] text-slate-400 uppercase">{metric.label}</p>
+                    <p className="mt-3 text-2xl font-semibold text-emerald-100">{metric.value}</p>
                     <p className="mt-2 text-sm text-slate-400">{metric.detail}</p>
-                  </div>
+                  </article>
                 ))}
               </div>
             </aside>
           </div>
         </section>
 
-        <section id="search" className={`${sectionShellClass} py-12 lg:py-16`}>
-          <div className="rounded-[2rem] border border-white/10 bg-white/5 p-6 lg:p-8">
+        <section id="search" className={`${sectionShellClass} py-20 lg:py-28`}>
+          <div className="rounded-3xl border border-emerald-400/20 bg-slate-900/80 p-8 lg:p-10">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
               <div className="max-w-2xl space-y-3">
-                <p className="text-sm uppercase tracking-[0.2em] text-cyan-200">Search the product surface</p>
-                <h2 className="text-2xl font-semibold text-white sm:text-3xl">Find workflows, use cases, and platform signals instantly.</h2>
-                <p className="text-slate-300">
-                  Use a lightweight frontend search to focus the landing page on the product themes, customer segments, and
-                  workflow stages that matter most.
+                <p className="text-sm font-semibold tracking-[0.2em] text-emerald-200 uppercase">Search the platform surface</p>
+                <h2 className="text-3xl font-semibold text-white sm:text-4xl">Find product themes, workflow stages, and business signals.</h2>
+                <p className="text-base leading-7 text-slate-300">
+                  Search helps focus the landing surface without crowding the core investor narrative.
                 </p>
               </div>
               <div className="w-full max-w-xl">
                 <label className="sr-only" htmlFor="landing-search">
                   Search the landing page
                 </label>
-                <div className="flex flex-col gap-3 sm:flex-row">
+                <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
                   <input
                     id="landing-search"
                     type="search"
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Search publishing workflows, analytics, channels, or audiences"
-                    className="min-h-12 flex-1 rounded-full border border-white/15 bg-slate-950/80 px-5 text-white outline-none ring-0 placeholder:text-slate-500 focus:border-cyan-300/60"
+                    placeholder="Search workflows, analytics, business model, or channels"
+                    className="min-h-12 rounded-xl border border-emerald-300/30 bg-slate-950 px-4 text-white placeholder:text-slate-500 focus:border-emerald-400 focus:outline-none"
                   />
                   <button
                     type="button"
                     onClick={() => setQuery("")}
-                    className="rounded-full border border-white/15 px-5 py-3 text-sm font-medium text-slate-200 transition hover:bg-white/[0.08]"
+                    className="rounded-xl border border-emerald-300/30 px-5 py-3 text-sm font-medium text-emerald-100 transition hover:bg-emerald-500/15"
                   >
                     Clear
                   </button>
@@ -274,183 +299,172 @@ export function LandingPage() {
               </div>
             </div>
 
-            <div className="mt-6 grid gap-4 lg:grid-cols-3">
+            <div className="mt-8 grid gap-5 lg:grid-cols-3">
               {searchResults.length > 0 ? (
                 searchResults.map((card) => (
-                  <article
-                    key={card.title}
-                    className="h-full rounded-2xl border border-white/10 bg-slate-950/75 p-6"
-                  >
-                    <p className="text-xs uppercase tracking-[0.18em] text-cyan-200">{card.eyebrow}</p>
+                  <article key={card.title} className="h-full rounded-2xl border border-emerald-300/20 bg-slate-950/80 p-6">
+                    <p className="text-xs font-semibold tracking-[0.15em] text-emerald-200 uppercase">{card.eyebrow}</p>
                     <h3 className="mt-3 text-xl font-semibold text-white">{card.title}</h3>
-                    <p className="mt-3 text-sm leading-7 text-slate-400">{card.description}</p>
+                    <p className="mt-3 text-sm leading-7 text-slate-300">{card.description}</p>
                   </article>
                 ))
               ) : (
-                <article className="rounded-2xl border border-dashed border-white/15 bg-slate-950/75 p-6 text-sm leading-7 text-slate-400 lg:col-span-3">
-                  No landing page sections match that query yet. Try terms like publishing, workflow, insights, creators, or websites.
+                <article className="rounded-2xl border border-dashed border-emerald-300/30 bg-slate-950/80 p-6 text-sm text-slate-300 lg:col-span-3">
+                  No sections match this query yet. Try workflow, analytics, growth, starter, or publish.
                 </article>
               )}
             </div>
           </div>
         </section>
 
-        {filteredProductCards.length > 0 ? (
-          <section id="about" className={`${sectionShellClass} py-12 lg:py-20`}>
-            <div className="max-w-3xl space-y-4">
-              <p className="text-sm uppercase tracking-[0.2em] text-cyan-200">About the platform</p>
-              <h2 className="text-2xl font-semibold text-white sm:text-4xl">What Zero Labs AI Publisher is building.</h2>
-              <p className="text-base leading-8 text-slate-300 sm:text-lg">
-                The platform is designed to help businesses, creators, and automated content teams generate AI-powered websites
-                and orchestrate publishing workflows from one coordinated surface.
-              </p>
-            </div>
-            <div className="mt-10 grid gap-5 lg:grid-cols-3">
-              {filteredProductCards.map((card) => (
-                <article key={card.title} className="h-full rounded-[2rem] border border-white/10 bg-white/5 p-6">
-                  <p className="text-sm uppercase tracking-[0.18em] text-cyan-200">{card.eyebrow}</p>
-                  <h3 className="mt-4 text-xl font-semibold text-white sm:text-2xl">{card.title}</h3>
-                  <p className="mt-4 text-base leading-7 text-slate-300">{card.description}</p>
+        <section id="about" className={`${sectionShellClass} py-20 lg:py-28`}>
+          <div className="max-w-3xl space-y-4">
+            <p className="text-sm font-semibold tracking-[0.2em] text-emerald-200 uppercase">About</p>
+            <h2 className="text-3xl font-semibold text-white sm:text-4xl">A premium AI publishing system built for operational scale.</h2>
+            <p className="text-base leading-8 text-slate-300 sm:text-lg">
+              The platform is designed for teams that need balanced speed, governance, and measurable performance from AI-driven publishing.
+            </p>
+          </div>
+          <div className="mt-10 grid gap-5 lg:grid-cols-3">
+            {filteredAboutCards.length > 0 ? (
+              filteredAboutCards.map((card) => (
+                <article key={card.title} className="h-full rounded-3xl border border-emerald-300/20 bg-slate-900/75 p-7">
+                  <p className="text-xs font-semibold tracking-[0.18em] text-emerald-200 uppercase">{card.eyebrow}</p>
+                  <h3 className="mt-4 text-2xl font-semibold text-white">{card.title}</h3>
+                  <p className="mt-4 text-sm leading-7 text-slate-300">{card.description}</p>
                 </article>
-              ))}
-            </div>
-          </section>
-        ) : null}
+              ))
+            ) : (
+              <article className="rounded-2xl border border-dashed border-emerald-300/30 bg-slate-900/70 p-6 text-sm text-slate-300 lg:col-span-3">
+                Search filtering currently hides this section. Clear search to view full About content.
+              </article>
+            )}
+          </div>
+        </section>
 
-        {filteredAudienceCards.length > 0 ? (
-          <section className={`${sectionShellClass} py-12 lg:py-16`}>
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <div className="max-w-3xl">
-                <p className="text-sm uppercase tracking-[0.2em] text-cyan-200">Who it is for</p>
-                <h2 className="mt-3 text-2xl font-semibold text-white sm:text-4xl">Built for teams that need output, quality, and velocity.</h2>
-              </div>
-              <p className="max-w-2xl text-slate-300">
-                AI-generated websites and automated content publishing only work at scale when the surrounding workflow supports
-                review, repeatability, and multi-channel execution.
-              </p>
-            </div>
-            <div className="mt-10 grid gap-5 lg:grid-cols-3">
-              {filteredAudienceCards.map((card) => (
-                <article key={card.title} className="h-full rounded-[2rem] border border-white/10 bg-slate-900/80 p-6">
-                  <p className="text-sm uppercase tracking-[0.18em] text-cyan-200">{card.eyebrow}</p>
-                  <h3 className="mt-4 text-xl font-semibold text-white sm:text-2xl">{card.title}</h3>
-                  <p className="mt-4 text-base leading-7 text-slate-300">{card.description}</p>
-                </article>
-              ))}
-            </div>
-          </section>
-        ) : null}
-
-        {filteredWorkflowSteps.length > 0 ? (
-          <section id="workflow" className={`${sectionShellClass} py-12 lg:py-20`}>
+        <section id="workflow" className={`${sectionShellClass} py-20 lg:py-28`}>
+          <div className="rounded-3xl border border-emerald-400/20 bg-emerald-500/[0.08] p-8 lg:p-10">
             <div className="max-w-3xl space-y-4">
-              <p className="text-sm uppercase tracking-[0.2em] text-cyan-200">Platform workflow</p>
-              <h2 className="text-2xl font-semibold text-white sm:text-4xl">Prompt → Generate → Review → Publish → Track</h2>
+              <p className="text-sm font-semibold tracking-[0.2em] text-emerald-200 uppercase">Workflow</p>
+              <h2 className="text-3xl font-semibold text-white sm:text-4xl">Prompt → Generate → Review → Publish → Track</h2>
               <p className="text-base leading-8 text-slate-300 sm:text-lg">
-                The publishing system is framed as an end-to-end operating loop, not a one-off content generator. Every stage is
-                designed to make AI output more deployable.
+                A structured operating loop that keeps AI execution practical, reviewable, and deployment-ready.
               </p>
             </div>
+
             <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-5">
-              {filteredWorkflowSteps.map((step, index) => (
-                <article key={step.title} className="h-full rounded-[2rem] border border-white/10 bg-white/5 p-6">
-                  <div className="flex items-center justify-between gap-4">
-                    <p className="text-sm uppercase tracking-[0.18em] text-cyan-200">{step.eyebrow}</p>
-                    <span className="text-sm text-slate-500">0{index + 1}</span>
-                  </div>
-                  <h3 className="mt-4 text-xl font-semibold text-white">{step.title}</h3>
-                  <p className="mt-4 text-sm leading-7 text-slate-300">{step.description}</p>
-                </article>
-              ))}
-            </div>
-          </section>
-        ) : null}
-
-        {filteredInsightMetrics.length > 0 ? (
-          <section id="insights" className={`${sectionShellClass} py-12 lg:py-20`}>
-            <div className="rounded-[2rem] border border-cyan-400/20 bg-cyan-400/[0.06] p-6 lg:p-8">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                <div className="max-w-3xl">
-                  <p className="text-sm uppercase tracking-[0.2em] text-cyan-200">Insights</p>
-                  <h2 className="mt-3 text-2xl font-semibold text-white sm:text-4xl">
-                    A data-aware product surface for operator and investor conversations.
-                  </h2>
-                </div>
-                <p className="max-w-2xl text-slate-300">
-                  These metrics are illustrative product UI values for the marketing surface only. They are presented as demo
-                  platform signals and are not connected to live production telemetry.
-                </p>
-              </div>
-              <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-                {filteredInsightMetrics.map((metric) => (
-                  <article key={metric.label} className="h-full rounded-[2rem] border border-white/10 bg-slate-950/80 p-6">
-                    <p className="text-xs uppercase tracking-[0.18em] text-slate-400">{metric.label}</p>
-                    <p className="mt-4 text-3xl font-semibold text-white">{metric.value}</p>
-                    <p className="mt-4 text-sm leading-7 text-slate-400">{metric.detail}</p>
+              {filteredWorkflowSteps.length > 0 ? (
+                filteredWorkflowSteps.map((step, index) => (
+                  <article key={step.title} className="relative h-full rounded-2xl border border-emerald-300/20 bg-slate-950/85 p-6">
+                    <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-emerald-300/40 bg-emerald-500/15 text-xs font-semibold text-emerald-100">
+                      {index + 1}
+                    </span>
+                    <p className="mt-4 text-xs font-semibold tracking-[0.16em] text-emerald-200 uppercase">{step.eyebrow}</p>
+                    <h3 className="mt-3 text-xl font-semibold text-white">{step.title}</h3>
+                    <p className="mt-3 text-sm leading-7 text-slate-300">{step.description}</p>
+                    {index < filteredWorkflowSteps.length - 1 ? (
+                      <p className="mt-4 text-xs font-semibold tracking-[0.16em] text-emerald-300 uppercase">
+                        Next →
+                      </p>
+                    ) : null}
                   </article>
-                ))}
-              </div>
+                ))
+              ) : (
+                <article className="rounded-2xl border border-dashed border-emerald-300/30 bg-slate-950/80 p-6 text-sm text-slate-300 xl:col-span-5">
+                  No workflow step matches the current query. Clear search to restore all five stages.
+                </article>
+              )}
             </div>
-          </section>
-        ) : null}
+          </div>
+        </section>
 
-        <section className={`${sectionShellClass} pb-20 lg:pb-24`}>
-          <div className="rounded-[2rem] border border-white/10 bg-white/5 p-6 lg:p-8">
-            <div className="grid gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] lg:gap-10">
-              <div className="space-y-5">
-                <p className="text-sm uppercase tracking-[0.2em] text-cyan-200">Vision</p>
-                <h2 className="text-2xl font-semibold text-white sm:text-4xl">
-                  Zero Labs AI Publisher is positioning for the future of AI-powered publishing infrastructure.
-                </h2>
-                <p className="text-base leading-8 text-slate-300 sm:text-lg">
-                  The long-term opportunity is a platform where AI-generated websites, automated content publishing, and social
-                  content automation are managed as one operating system for digital growth.
-                </p>
-                <p className="text-base leading-7 text-slate-400">
-                  That future depends on treating publishing as infrastructure: structured generation, reviewable output,
-                  channel-aware distribution, and an insights surface that helps teams scale automation responsibly.
-                </p>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-                <div className="rounded-[1.75rem] border border-white/10 bg-slate-950/80 p-6">
-                  <p className="text-sm font-medium text-white">AI-generated websites</p>
-                  <p className="mt-2 text-sm leading-7 text-slate-400">
-                    Structure, copy, and digital presentation are generated from a reusable system instead of manual rebuilds.
-                  </p>
-                </div>
-                <div className="rounded-[1.75rem] border border-white/10 bg-slate-950/80 p-6">
-                  <p className="text-sm font-medium text-white">Automated content publishing</p>
-                  <p className="mt-2 text-sm leading-7 text-slate-400">
-                    Blog, website, and campaign publishing can be coordinated through one product surface with consistent review.
-                  </p>
-                </div>
-                <div className="rounded-[1.75rem] border border-white/10 bg-slate-950/80 p-6">
-                  <p className="text-sm font-medium text-white">Social content automation</p>
-                  <p className="mt-2 text-sm leading-7 text-slate-400">
-                    Channel-ready content can be generated and shaped alongside website publishing instead of as a separate toolchain.
-                  </p>
-                </div>
-              </div>
+        <section id="insights" className={`${sectionShellClass} py-20 lg:py-28`}>
+          <div className="max-w-3xl space-y-4">
+            <p className="text-sm font-semibold tracking-[0.2em] text-emerald-200 uppercase">Insights and analytics</p>
+            <h2 className="text-3xl font-semibold text-white sm:text-4xl">Dedicated metrics surface for operators and investor demos.</h2>
+            <p className="text-base leading-8 text-slate-300 sm:text-lg">
+              Illustrative values that demonstrate platform leverage without presenting production telemetry.
+            </p>
+          </div>
+          <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {filteredInsightMetrics.length > 0 ? (
+              filteredInsightMetrics.map((metric) => (
+                <article key={metric.label} className="flex h-full flex-col rounded-3xl border border-emerald-300/20 bg-slate-900/80 p-7">
+                  <p className="text-xs font-semibold tracking-[0.17em] text-slate-400 uppercase">{metric.label}</p>
+                  <p className="mt-5 text-3xl font-semibold text-emerald-100">{metric.value}</p>
+                  <p className="mt-4 text-sm leading-7 text-slate-300">{metric.detail}</p>
+                </article>
+              ))
+            ) : (
+              <article className="rounded-2xl border border-dashed border-emerald-300/30 bg-slate-900/70 p-6 text-sm text-slate-300 xl:col-span-3">
+                Search filtering currently hides analytics cards. Clear search to view the full metrics grid.
+              </article>
+            )}
+          </div>
+        </section>
+
+        <section className={`${sectionShellClass} py-20 lg:py-28`}>
+          <div className="rounded-3xl border border-emerald-400/20 bg-slate-900/80 p-8 lg:p-10">
+            <div className="max-w-3xl space-y-4">
+              <p className="text-sm font-semibold tracking-[0.2em] text-emerald-200 uppercase">Business model</p>
+              <h2 className="text-3xl font-semibold text-white sm:text-4xl">Flexible platform tiers for evolving AI publishing operations.</h2>
+              <p className="text-base leading-8 text-slate-300 sm:text-lg">
+                Positioning tiers are illustrative and designed for investor discussions around market fit and expansion paths.
+              </p>
             </div>
 
-            <div className="mt-8 flex flex-col gap-4 border-t border-white/10 pt-8 sm:flex-row">
+            <div className="mt-10 grid gap-5 lg:grid-cols-3">
+              {filteredPricingTiers.length > 0 ? (
+                filteredPricingTiers.map((tier) => (
+                  <article key={tier.name} className="h-full rounded-2xl border border-emerald-300/25 bg-slate-950/85 p-6">
+                    <p className="text-xs font-semibold tracking-[0.16em] text-emerald-200 uppercase">{tier.name}</p>
+                    <h3 className="mt-3 text-2xl font-semibold text-white">{tier.positioning}</h3>
+                    <p className="mt-3 text-sm leading-7 text-slate-300">{tier.summary}</p>
+                    <ul className="mt-5 space-y-2 text-sm text-slate-300">
+                      {tier.features.map((feature) => (
+                        <li key={feature} className="flex items-start gap-2">
+                          <span className="mt-1 h-1.5 w-1.5 rounded-full bg-emerald-300" />
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </article>
+                ))
+              ) : (
+                <article className="rounded-2xl border border-dashed border-emerald-300/30 bg-slate-950/80 p-6 text-sm text-slate-300 lg:col-span-3">
+                  Search filtering currently hides pricing tiers. Clear search to restore Starter, Growth, and Platform cards.
+                </article>
+              )}
+            </div>
+          </div>
+        </section>
+
+        <section className={`${sectionShellClass} pb-20 lg:pb-28`}>
+          <div className="rounded-3xl border border-emerald-400/25 bg-gradient-to-br from-emerald-500/15 via-slate-900 to-slate-900 p-8 text-center lg:p-12">
+            <p className="text-sm font-semibold tracking-[0.2em] text-emerald-200 uppercase">Next step</p>
+            <h2 className="mt-4 text-3xl font-semibold text-white sm:text-4xl">
+              Launch a premium AI publishing workflow with control and speed.
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">
+              Move from fragmented content tooling to a unified automation platform built for scalable, investor-grade execution.
+            </p>
+            <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
               <Link
                 href={routes.login}
-                className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-200"
+                className="inline-flex items-center justify-center rounded-full border border-emerald-200/60 bg-emerald-500 px-7 py-3 text-sm font-semibold text-white transition hover:bg-emerald-400"
               >
-                Enter the workspace
+                Enter workspace
               </Link>
               <Link
                 href="/blog"
-                className="inline-flex items-center justify-center rounded-full border border-white/15 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/[0.08]"
+                className="inline-flex items-center justify-center rounded-full border border-emerald-200/35 bg-slate-900/70 px-7 py-3 text-sm font-semibold text-emerald-100 transition hover:bg-emerald-500/15"
               >
                 Read platform updates
               </Link>
             </div>
-
             {isFiltered ? (
               <p className="mt-6 text-sm text-slate-400">
-                Search is filtering visible cards across the homepage. Clear the query to restore the full investor-ready surface.
+                Search is filtering homepage sections. Clear query to view the full investor-ready narrative.
               </p>
             ) : null}
           </div>
