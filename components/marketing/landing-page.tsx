@@ -1,8 +1,12 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { routes } from "@/config/routes";
 import { MarketingFooter } from "./marketing-footer";
 import { MarketingNav } from "./marketing-nav";
+import { MarketingTheme } from "./theme-toggle";
 
 type FeatureCard = {
   id: string;
@@ -11,13 +15,19 @@ type FeatureCard = {
   description: string;
   ctaLabel: string;
   href: string;
-  backgroundImage: string;
+  lightAsset: string;
+  darkAsset: string;
 };
 
-type StatCard = {
-  label: string;
-  value: string;
-  detail: string;
+type StorySection = {
+  id: string;
+  eyebrow: string;
+  title: string;
+  description: string;
+  cards: Array<{
+    title: string;
+    description: string;
+  }>;
 };
 
 type PricingTier = {
@@ -27,201 +37,289 @@ type PricingTier = {
   features: string[];
 };
 
-const wrapperClass = "mx-auto w-full max-w-[1600px]";
-const shellStyle = {
-  paddingInline: "clamp(16px, 2vw, 40px)",
-  paddingBlock: "clamp(24px, 3vw, 40px)",
-};
-const heroStyle = {
-  marginTop: 40,
-};
-const heroInnerStyle = {
-  padding: "clamp(48px, 6vw, 80px) clamp(24px, 5vw, 96px)",
-};
-const featureGridStyle = {
-  marginTop: 40,
-};
-const cardStyle = {
-  padding: "clamp(32px, 4vw, 40px)",
-};
-const surfaceStyle = {
-  marginTop: 40,
-  padding: "clamp(32px, 4vw, 40px) clamp(24px, 3vw, 40px)",
-};
-const panelGridStyle = {
-  marginTop: 32,
-};
-const panelStyle = {
-  padding: 24,
-};
-const ctaSectionStyle = {
-  marginTop: 40,
-};
-const ctaPanelStyle = {
-  padding: "clamp(40px, 5vw, 48px) clamp(24px, 3vw, 40px)",
-};
-const footerWrapStyle = {
-  marginTop: 40,
-};
-const primaryButtonStyle = {
-  paddingInline: 40,
-};
-const secondaryButtonStyle = {
-  paddingInline: 40,
-};
+const shellClass = "mx-auto w-full max-w-[1440px] px-5 sm:px-6 lg:px-10 xl:px-12";
+const THEME_STORAGE_KEY = "zero-labs-ai-publisher-theme";
 
 const featureCards: FeatureCard[] = [
   {
-    id: "product",
-    eyebrow: "Product",
+    id: "platform",
+    eyebrow: "AI website generation",
     title: "AI Website Generation",
-    description:
-      "Convert one prompt into a polished site surface with hero positioning, brand-aligned sections, and deployment-ready structure.",
-    ctaLabel: "Learn more",
-    href: "#platform",
-    backgroundImage: "/images/Background Image.svg",
+    description: "Turn a single prompt into a public-ready website with balanced layout, brand-led storytelling, and launch-ready page structure.",
+    ctaLabel: "Explore platform",
+    href: "#platform-story",
+    lightAsset: "/images/AI robot logo light.svg",
+    darkAsset: "/images/AI robot logo dark.svg",
   },
   {
-    id: "platform",
-    eyebrow: "Platform",
+    id: "workflow",
+    eyebrow: "Publishing workflow",
     title: "Automated Publishing Workflow",
-    description:
-      "Coordinate prompts, review steps, and release actions in one AI-native publishing flow without turning the homepage into a dashboard.",
-    ctaLabel: "View workflow",
+    description: "Guide teams from brief to review to release with a calmer operating surface that keeps automation visible without feeling like a dashboard.",
+    ctaLabel: "View insights",
     href: "#insights",
-    backgroundImage: "/images/Banner Light.svg",
+    lightAsset: "/images/Banner Light.svg",
+    darkAsset: "/images/Banner.svg",
   },
 ];
 
-const platformPanels = [
+const storySections: StorySection[] = [
   {
-    eyebrow: "Prompt systems",
-    title: "Structured brief intake",
-    description: "Capture direction once, then distribute it into the website, blog, and supporting automation surfaces.",
+    id: "platform-story",
+    eyebrow: "Platform",
+    title: "Keep the homepage human, then reveal the operating system below the fold.",
+    description: "The public story stays centered and spacious while deeper sections explain how Zero Labs AI Publisher supports prompt intake, human review, and release control.",
+    cards: [
+      {
+        title: "Prompt-to-site structure",
+        description: "Capture brand direction once and turn it into publishable sections, polished copy blocks, and reusable page scaffolding.",
+      },
+      {
+        title: "Human approval flow",
+        description: "Review checkpoints stay visible so teams can guide the system without losing the speed gains of automation.",
+      },
+      {
+        title: "Release orchestration",
+        description: "Coordinate launches, edits, and updates across public surfaces from one calmer publishing workflow.",
+      },
+    ],
   },
   {
-    eyebrow: "Review control",
-    title: "Human checkpoints",
-    description: "Keep approval flow and publishing oversight visible while the visual layer stays calm, premium, and spacious.",
+    id: "insights",
+    eyebrow: "Insights",
+    title: "Use a measured signal layer instead of a cramped metrics dashboard.",
+    description: "A few anchored proof points support the narrative while preserving the premium feel of the homepage.",
+    cards: [
+      {
+        title: "Website launch cadence",
+        description: "Publish website iterations faster while keeping positioning, layout rhythm, and approvals aligned.",
+      },
+      {
+        title: "Editorial confidence",
+        description: "Shorter review loops and clearer ownership help human teams stay in control of AI output.",
+      },
+      {
+        title: "Cross-surface consistency",
+        description: "Brand-safe content structure extends from landing pages to blog and downstream publishing surfaces.",
+      },
+    ],
   },
-  {
-    eyebrow: "Release motion",
-    title: "Publishing orchestration",
-    description: "Move from idea to live AI operations with cleaner transitions across assets, destinations, and launch timing.",
-  },
-] as const;
-
-const insightCards: StatCard[] = [
-  { label: "Generated websites", value: "128", detail: "Illustrative output volume for premium AI-led site creation." },
-  { label: "Publishing workflows", value: "24/7", detail: "Automated release motion with human review at the right checkpoints." },
-  { label: "Approval velocity", value: "82%", detail: "Representative automation leverage before final human publishing approval." },
-] as const;
+];
 
 const pricingTiers: PricingTier[] = [
   {
     name: "Starter",
-    summary: "Launch the core prompt-to-site workflow.",
-    detail: "For focused teams building public-facing AI websites with clean review flow.",
-    features: ["Website generation", "Core publishing workflow", "Login-ready workspace access"],
+    summary: "Launch a prompt-to-site workflow.",
+    detail: "For focused teams shaping one polished AI website with guided review and clean publishing handoff.",
+    features: ["Prompt-led website generation", "Core publishing workflow", "Workspace access for launch teams"],
   },
   {
     name: "Growth",
-    summary: "Expand into orchestrated publishing operations.",
-    detail: "For teams that need more release rhythm, content scale, and structured handoff control.",
-    features: ["Multi-surface generation", "Approval handoffs", "Insights and release visibility"],
+    summary: "Expand into coordinated publishing.",
+    detail: "For teams layering in approval motion, content depth, and a more disciplined operational rhythm.",
+    features: ["Multi-surface publishing control", "Human approval checkpoints", "Reusable product and insight sections"],
   },
   {
     name: "Platform",
     summary: "Operate a premium AI publishing engine.",
-    detail: "For organizations positioning the product as a cinematic AI automation layer, not a cramped dashboard.",
-    features: ["Brand-aligned orchestration", "Governed automation", "Investor-ready product posture"],
+    detail: "For organizations positioning Zero Labs AI Publisher as the orchestration layer for AI-led web operations.",
+    features: ["Brand-governed automation", "Executive-ready product posture", "Operational visibility across launches"],
   },
-] as const;
+];
+
+function resolveInitialTheme(): MarketingTheme {
+  if (typeof window === "undefined") {
+    return "light";
+  }
+
+  const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
+  if (storedTheme === "light" || storedTheme === "dark") {
+    return storedTheme;
+  }
+
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
 
 export function LandingPage() {
+  const [theme, setTheme] = useState<MarketingTheme>("light");
+  const hasInitializedTheme = useRef(false);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      const initialTheme = resolveInitialTheme();
+      hasInitializedTheme.current = true;
+      setTheme(initialTheme);
+      document.documentElement.dataset.theme = initialTheme;
+      document.documentElement.style.colorScheme = initialTheme;
+      window.localStorage.setItem(THEME_STORAGE_KEY, initialTheme);
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+
+  useEffect(() => {
+    if (!hasInitializedTheme.current) {
+      return;
+    }
+
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.style.colorScheme = theme;
+    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+  }, [theme]);
+
+  const isDark = theme === "dark";
+  const heroAccentLogo = isDark ? "/images/AI robot logo dark.svg" : "/images/AI robot logo light.svg";
+
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#071427] text-slate-100">
-      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.82),_rgba(3,7,18,0.98)_58%),radial-gradient(circle_at_20%_15%,_rgba(16,185,129,0.12),_transparent_28%),radial-gradient(circle_at_80%_20%,_rgba(59,130,246,0.12),_transparent_24%)]" />
-      <section className={`${wrapperClass} relative`} style={shellStyle}>
-        <MarketingNav currentPath="/" contained />
+    <main
+      className={[
+        "min-h-screen overflow-x-hidden transition-colors duration-300",
+        isDark ? "bg-[#071A16] text-[#F8F9FA]" : "bg-[#F8F9FA] text-[#2C3E50]",
+      ].join(" ")}
+    >
+      <div
+        className={[
+          "pointer-events-none fixed inset-0",
+          isDark
+            ? "bg-[radial-gradient(circle_at_top,_rgba(31,111,95,0.22),_transparent_34%),radial-gradient(circle_at_80%_12%,_rgba(18,65,112,0.22),_transparent_28%),linear-gradient(180deg,#071A16_0%,#06131F_100%)]"
+            : "bg-[radial-gradient(circle_at_top,_rgba(31,111,95,0.10),_transparent_35%),radial-gradient(circle_at_84%_10%,_rgba(18,65,112,0.08),_transparent_28%),linear-gradient(180deg,#F8F9FA_0%,#F3F7F4_100%)]",
+        ].join(" ")}
+      />
+
+      <div className={`${shellClass} relative py-6 sm:py-8`}>
+        <MarketingNav currentPath="/" contained theme={theme} onToggleTheme={() => setTheme(isDark ? "light" : "dark")} />
 
         <section
           id="product"
-          className="relative overflow-hidden rounded-[3rem] border-[8px] border-slate-100/90 bg-[#09203a] shadow-[0_35px_120px_rgba(2,6,23,0.75)] sm:border-[10px]"
-          style={heroStyle}
+          className={[
+            "relative mt-10 overflow-hidden rounded-[40px] border px-6 py-8 shadow-[0_30px_90px_rgba(18,65,112,0.16)] transition-colors duration-300 sm:px-8 sm:py-10 lg:px-12 lg:py-12 xl:rounded-[48px]",
+            isDark
+              ? "border-[#1F6F5F]/45 bg-[rgba(31,111,95,0.14)]"
+              : "border-[#124170]/16 bg-[rgba(234,242,239,0.74)]",
+          ].join(" ")}
         >
-          <div className="absolute inset-0">
-            <Image src="/images/Background Image BNW.svg" alt="" fill priority className="object-cover opacity-20" />
-            <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(6,16,35,0.94)_0%,rgba(6,16,35,0.88)_44%,rgba(6,16,35,0.44)_72%,rgba(6,16,35,0.12)_100%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_left_center,_rgba(16,185,129,0.14),_transparent_34%)]" />
-          </div>
+          <div className={[
+            "absolute inset-0",
+            isDark
+              ? "bg-[linear-gradient(110deg,rgba(6,19,31,0.92)_0%,rgba(7,26,22,0.88)_48%,rgba(6,19,31,0.38)_100%)]"
+              : "bg-[linear-gradient(110deg,rgba(248,249,250,0.92)_0%,rgba(234,242,239,0.88)_48%,rgba(234,242,239,0.44)_100%)]",
+          ].join(" ")} />
+          <div className={isDark ? "absolute inset-0 bg-[radial-gradient(circle_at_left_center,rgba(31,111,95,0.18),transparent_36%)]" : "absolute inset-0 bg-[radial-gradient(circle_at_left_center,rgba(31,111,95,0.12),transparent_38%)]"} />
 
-          <div className="relative min-h-[620px] lg:min-h-[680px]" style={heroInnerStyle}>
-            <div className="relative z-10 max-w-[720px]">
-              <div className="flex items-center gap-4 text-base font-black tracking-[0.24em] text-white uppercase" style={{ marginBottom: 32 }}>
-                <Image src="/images/Chip Icon Logo.svg" alt="ZeroLabsAI" width={52} height={52} className="h-11 w-11 sm:h-[3.25rem] sm:w-[3.25rem]" priority />
-                <span>ZeroLabsAI</span>
+          <Image
+            src="/images/FULL ROBOT BODY.svg"
+            alt=""
+            width={820}
+            height={1080}
+            priority
+            className="pointer-events-none absolute bottom-0 left-1/2 h-auto w-[70%] max-w-[360px] -translate-x-1/2 object-contain opacity-12 sm:max-w-[420px] lg:hidden"
+          />
+
+          <div className="relative z-10 grid gap-12 lg:grid-cols-[minmax(0,0.96fr)_minmax(280px,0.82fr)] lg:items-center">
+            <div className="max-w-[760px]">
+              <div className="inline-flex items-center gap-3 rounded-full border border-[#1F6F5F]/20 bg-white/20 px-4 py-2 text-sm font-semibold tracking-[0.14em] text-current backdrop-blur-sm">
+                <Image src={heroAccentLogo} alt="Zero Labs AI Publisher brand mark" width={32} height={32} className="h-8 w-8" priority />
+                <span>Zero Labs AI Publisher</span>
               </div>
 
-              <p className="text-xs font-semibold tracking-[0.35em] text-slate-200 uppercase sm:text-sm">Premium AI automation for public-facing publishing</p>
-              <h1 className="max-w-[760px] text-5xl font-black leading-[0.9] tracking-[-0.04em] text-white uppercase sm:text-6xl md:text-7xl lg:text-8xl" style={{ marginTop: 24 }}>
-                Turn prompts into published AI websites
+              <p className={[
+                "mt-6 text-sm font-semibold uppercase tracking-[0.32em]",
+                isDark ? "text-[#F8F9FA]/68" : "text-[#124170]/70",
+              ].join(" ")}>
+                Sustainable &amp; humanistic AI publishing
+              </p>
+              <h1 className="mt-6 max-w-[760px] text-5xl font-black uppercase leading-[0.9] tracking-tight sm:text-6xl lg:text-7xl xl:text-8xl">
+                <span className="block">Turn prompts</span>
+                <span className="block">into published</span>
+                <span className="block">AI websites</span>
               </h1>
-              <p className="max-w-xl text-base leading-8 text-slate-200 sm:text-lg" style={{ marginTop: 32 }}>
-                A cinematic AI publisher surface that frames generation, workflow, and launch control inside one clean premium product identity.
+              <p className={[
+                "mt-6 max-w-xl text-base leading-7 sm:text-lg",
+                isDark ? "text-[#F8F9FA]/76" : "text-[#2C3E50]/78",
+              ].join(" ")}>
+                Zero Labs AI Publisher transforms a prompt into a polished website and guides the publishing workflow all the way to release.
               </p>
 
-              <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap" style={{ marginTop: 40 }}>
+              <div className="mt-8 flex flex-col gap-4 sm:mt-10 sm:flex-row sm:flex-wrap">
                 <Link
                   href={routes.signup}
-                  className="inline-flex min-h-14 items-center justify-center rounded-full bg-slate-100 text-xs font-black tracking-[0.32em] text-slate-950 uppercase transition hover:bg-white"
-                  style={primaryButtonStyle}
+                  className="inline-flex min-h-14 items-center justify-center rounded-full bg-[#1F6F5F] px-8 py-4 text-sm font-semibold text-white transition-colors duration-300 hover:bg-[#18584b] sm:px-10"
                 >
                   Start building
                 </Link>
                 <Link
                   href="#platform"
-                  className="inline-flex min-h-14 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] text-xs font-black tracking-[0.32em] text-white uppercase transition hover:border-white/30 hover:bg-white/10"
-                  style={secondaryButtonStyle}
+                  className={[
+                    "inline-flex min-h-14 items-center justify-center rounded-full border px-8 py-4 text-sm font-semibold transition-colors duration-300 sm:px-10",
+                    isDark
+                      ? "border-[#1F6F5F]/38 bg-white/[0.04] text-[#F8F9FA] hover:border-[#1F6F5F]/70 hover:bg-[#1F6F5F]/16"
+                      : "border-[#124170]/18 bg-transparent text-[#124170] hover:border-[#1F6F5F]/40 hover:bg-[rgba(234,242,239,0.72)]",
+                  ].join(" ")}
                 >
                   Learn more
                 </Link>
               </div>
             </div>
 
-            <Image
-              src="/images/FULL ROBOT BODY.svg"
-              alt=""
-              width={720}
-              height={980}
-              priority
-              className="pointer-events-none absolute right-[-4%] bottom-0 hidden h-[82%] w-auto max-w-none opacity-95 lg:block xl:right-0 xl:h-[88%]"
-            />
+            <div className="relative hidden min-h-[460px] lg:block">
+              <Image
+                src="/images/FULL ROBOT BODY.svg"
+                alt=""
+                width={820}
+                height={1080}
+                priority
+                className="pointer-events-none absolute right-0 bottom-0 h-auto max-h-[640px] w-auto max-w-[100%] object-contain opacity-95 xl:max-h-[680px]"
+              />
+            </div>
           </div>
         </section>
 
-        <section className="grid gap-10 lg:grid-cols-2" style={featureGridStyle}>
+        <section id="platform" className="mt-12 grid gap-8 lg:grid-cols-2 lg:gap-10">
           {featureCards.map((card) => (
             <article
               key={card.title}
-              id={card.id === "platform" ? "platform" : undefined}
-              className="relative min-h-[420px] overflow-hidden rounded-[2rem] border-[8px] border-slate-100/90 bg-white/10 shadow-[0_24px_80px_rgba(2,6,23,0.45)] backdrop-blur"
-              style={cardStyle}
+              className={[
+                "group relative min-h-[320px] overflow-hidden rounded-[32px] border p-8 shadow-[0_18px_48px_rgba(18,65,112,0.08)] transition-colors duration-300 transition-shadow hover:shadow-[0_20px_60px_rgba(31,111,95,0.18)] sm:p-10",
+                isDark
+                  ? "border-[#1F6F5F]/30 bg-transparent hover:bg-[rgba(31,111,95,0.16)]"
+                  : "border-[#124170]/12 bg-transparent hover:bg-[rgba(234,242,239,0.72)]",
+              ].join(" ")}
             >
-              <div className="absolute inset-0">
-                <Image src={card.backgroundImage} alt="" fill className="object-cover opacity-20" />
-                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,20,39,0.48)_0%,rgba(7,20,39,0.88)_100%)]" />
-              </div>
-              <div className="relative flex h-full flex-col justify-between gap-10">
-                <div className="space-y-4">
-                  <p className="text-xs font-semibold tracking-[0.32em] text-slate-200 uppercase">{card.eyebrow}</p>
-                  <h2 className="max-w-[14ch] text-3xl font-black leading-tight tracking-[0.08em] text-white uppercase sm:text-4xl">{card.title}</h2>
-                  <p className="max-w-xl text-sm leading-7 text-slate-200 sm:text-base">{card.description}</p>
+              <div className={[
+                "absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100",
+                isDark ? "bg-[radial-gradient(circle_at_top_right,rgba(31,111,95,0.22),transparent_36%)]" : "bg-[radial-gradient(circle_at_top_right,rgba(18,65,112,0.10),transparent_36%)]",
+              ].join(" ")} />
+              <Image
+                src={isDark ? card.darkAsset : card.lightAsset}
+                alt=""
+                width={220}
+                height={220}
+                className="pointer-events-none absolute right-6 bottom-6 h-24 w-auto opacity-30 transition-opacity duration-300 group-hover:opacity-45 sm:h-28"
+              />
+              <div className="relative flex h-full flex-col justify-between gap-8">
+                <div>
+                  <p className={[
+                    "text-sm font-semibold uppercase tracking-[0.28em]",
+                    isDark ? "text-[#F8F9FA]/62" : "text-[#124170]/68",
+                  ].join(" ")}>
+                    {card.eyebrow}
+                  </p>
+                  <h2 className="mt-5 max-w-[16ch] text-3xl font-semibold leading-tight sm:text-4xl">{card.title}</h2>
+                  <p className={[
+                    "mt-5 max-w-xl text-base leading-7",
+                    isDark ? "text-[#F8F9FA]/74" : "text-[#2C3E50]/76",
+                  ].join(" ")}>
+                    {card.description}
+                  </p>
                 </div>
                 <Link
                   href={card.href}
-                  className="inline-flex w-fit min-h-12 items-center justify-center rounded-full bg-slate-100 text-xs font-black tracking-[0.3em] text-slate-950 uppercase transition hover:bg-white"
-                  style={{ paddingInline: 40 }}
+                  className={[
+                    "inline-flex w-fit min-h-12 items-center justify-center rounded-full px-7 py-3 text-sm font-semibold transition-colors duration-300",
+                    isDark
+                      ? "border border-[#1F6F5F]/38 bg-white/[0.04] text-[#F8F9FA] hover:border-[#1F6F5F]/70 hover:bg-[#1F6F5F]/16"
+                      : "border border-[#1F6F5F]/18 bg-[#F8F9FA] text-[#124170] hover:border-[#1F6F5F]/38 hover:bg-[#EAF2EF]",
+                  ].join(" ")}
                 >
                   {card.ctaLabel}
                 </Link>
@@ -230,106 +328,131 @@ export function LandingPage() {
           ))}
         </section>
 
-        <section className="rounded-[2.5rem] border border-white/10 bg-slate-950/65 shadow-[0_20px_70px_rgba(2,6,23,0.45)] backdrop-blur-xl" style={surfaceStyle}>
-              <div className="max-w-3xl space-y-4">
-                <p className="text-xs font-semibold tracking-[0.32em] text-emerald-200 uppercase">Platform</p>
-                <h2 className="text-3xl font-semibold text-white sm:text-4xl lg:text-5xl">A centered product story with clean operational depth below the fold.</h2>
-                <p className="text-sm leading-7 text-slate-300 sm:text-base lg:text-lg">
-                  The homepage stays spacious and cinematic up front, then introduces the automation layers in a more disciplined, premium rhythm.
+        <div className="mt-12 space-y-12">
+          {storySections.map((section) => (
+            <section
+              key={section.id}
+              id={section.id}
+              className={[
+                "rounded-[40px] border p-8 backdrop-blur-xl transition-colors duration-300 sm:p-10",
+                isDark ? "border-[#1F6F5F]/26 bg-[rgba(18,65,112,0.20)]" : "border-[#124170]/10 bg-[rgba(248,249,250,0.56)]",
+              ].join(" ")}
+            >
+              <div className="max-w-3xl">
+                <p className={[
+                  "text-sm font-semibold uppercase tracking-[0.32em]",
+                  isDark ? "text-[#F8F9FA]/62" : "text-[#124170]/68",
+                ].join(" ")}>
+                  {section.eyebrow}
+                </p>
+                <h2 className="mt-5 text-3xl font-semibold leading-tight sm:text-4xl lg:text-5xl">{section.title}</h2>
+                <p className={[
+                  "mt-5 max-w-3xl text-base leading-7 sm:text-lg",
+                  isDark ? "text-[#F8F9FA]/74" : "text-[#2C3E50]/76",
+                ].join(" ")}>
+                  {section.description}
                 </p>
               </div>
-               <div className="grid gap-5 lg:grid-cols-3 lg:gap-6" style={panelGridStyle}>
-                {platformPanels.map((panel) => (
-                   <article key={panel.title} className="rounded-[1.75rem] border border-white/10 bg-white/[0.03]" style={panelStyle}>
-                    <p className="text-xs font-semibold tracking-[0.28em] text-emerald-200 uppercase">{panel.eyebrow}</p>
-                     <h3 className="text-2xl font-semibold text-white" style={{ marginTop: 16 }}>{panel.title}</h3>
-                     <p className="text-sm leading-7 text-slate-300" style={{ marginTop: 16 }}>{panel.description}</p>
+
+              <div className="mt-10 grid gap-8 lg:grid-cols-3">
+                {section.cards.map((card) => (
+                  <article
+                    key={card.title}
+                    className={[
+                      "min-h-[220px] rounded-[32px] border p-8 transition-colors duration-300 transition-shadow hover:shadow-[0_18px_50px_rgba(31,111,95,0.16)]",
+                      isDark
+                        ? "border-[#1F6F5F]/22 bg-transparent hover:bg-[rgba(31,111,95,0.16)]"
+                        : "border-[#124170]/10 bg-transparent hover:bg-[rgba(234,242,239,0.72)]",
+                    ].join(" ")}
+                  >
+                    <h3 className="text-2xl font-semibold">{card.title}</h3>
+                    <p className={[
+                      "mt-4 text-base leading-7",
+                      isDark ? "text-[#F8F9FA]/72" : "text-[#2C3E50]/74",
+                    ].join(" ")}>
+                      {card.description}
+                    </p>
                   </article>
                 ))}
               </div>
-        </section>
+            </section>
+          ))}
 
-        <section id="insights" className="rounded-[2.5rem] border border-white/10 bg-slate-950/65 shadow-[0_20px_70px_rgba(2,6,23,0.45)] backdrop-blur-xl" style={surfaceStyle}>
-              <div className="max-w-3xl space-y-4">
-                <p className="text-xs font-semibold tracking-[0.32em] text-emerald-200 uppercase">Insights</p>
-                <h2 className="text-3xl font-semibold text-white sm:text-4xl lg:text-5xl">Move analytics lower so the hero stays focused on product positioning.</h2>
-                <p className="text-sm leading-7 text-slate-300 sm:text-base lg:text-lg">
-                  These values stay available for storytelling, but they no longer compete with the headline or dilute the cinematic first impression.
-                </p>
-              </div>
-               <div className="grid gap-5 lg:grid-cols-3 lg:gap-6" style={panelGridStyle}>
-                {insightCards.map((card) => (
-                   <article key={card.label} className="rounded-[1.75rem] border border-white/10 bg-white/[0.03]" style={panelStyle}>
-                    <p className="text-xs font-semibold tracking-[0.28em] text-slate-400 uppercase">{card.label}</p>
-                     <p className="text-4xl font-semibold tracking-tight text-white" style={{ marginTop: 16 }}>{card.value}</p>
-                     <p className="text-sm leading-7 text-slate-300" style={{ marginTop: 16 }}>{card.detail}</p>
-                  </article>
-                ))}
-              </div>
-        </section>
-
-        <section id="pricing" className="rounded-[2.5rem] border border-white/10 bg-slate-950/65 shadow-[0_20px_70px_rgba(2,6,23,0.45)] backdrop-blur-xl" style={surfaceStyle}>
-              <div className="max-w-3xl space-y-4">
-                <p className="text-xs font-semibold tracking-[0.32em] text-emerald-200 uppercase">Pricing</p>
-                <h2 className="text-3xl font-semibold text-white sm:text-4xl lg:text-5xl">Three pricing paths that preserve the premium AI automation posture.</h2>
-                <p className="text-sm leading-7 text-slate-300 sm:text-base lg:text-lg">
-                  Keep the page public-facing and polished while still giving visitors a clear progression from entry tier to enterprise-scale publishing operations.
-                </p>
-              </div>
-               <div className="grid gap-5 lg:grid-cols-3 lg:gap-6" style={panelGridStyle}>
-                {pricingTiers.map((tier) => (
-                   <article key={tier.name} className="flex h-full flex-col rounded-[1.75rem] border border-white/10 bg-white/[0.03]" style={panelStyle}>
-                    <p className="text-xs font-semibold tracking-[0.28em] text-emerald-200 uppercase">{tier.name}</p>
-                     <h3 className="text-2xl font-semibold text-white" style={{ marginTop: 16 }}>{tier.summary}</h3>
-                     <p className="text-sm leading-7 text-slate-300" style={{ marginTop: 16 }}>{tier.detail}</p>
-                     <ul className="space-y-3 text-sm leading-6 text-slate-200" style={{ marginTop: 24 }}>
-                      {tier.features.map((feature) => (
-                        <li key={feature} className="flex items-start gap-3">
-                          <span className="mt-2 h-2 w-2 rounded-full bg-emerald-300" />
-                          <span>{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </article>
-                ))}
-              </div>
-        </section>
-
-        <section style={ctaSectionStyle}>
-          <div
-            className="overflow-hidden rounded-[2.5rem] border border-emerald-300/20 bg-[linear-gradient(135deg,rgba(16,185,129,0.18),rgba(7,20,39,0.86)_38%,rgba(3,7,18,0.96)_100%)] text-center shadow-[0_20px_70px_rgba(2,6,23,0.5)]"
-            style={ctaPanelStyle}
+          <section
+            id="pricing"
+            className={[
+              "rounded-[40px] border p-8 backdrop-blur-xl transition-colors duration-300 sm:p-10",
+              isDark ? "border-[#1F6F5F]/26 bg-[rgba(18,65,112,0.20)]" : "border-[#124170]/10 bg-[rgba(248,249,250,0.56)]",
+            ].join(" ")}
           >
-            <p className="text-xs font-semibold tracking-[0.32em] text-emerald-100 uppercase">Next step</p>
-            <h2 className="mx-auto max-w-3xl text-3xl font-semibold text-white sm:text-4xl lg:text-5xl" style={{ marginTop: 16 }}>
-              Launch a premium AI publishing workflow with a cleaner homepage and a clearer story.
-            </h2>
-            <p className="mx-auto max-w-2xl text-sm leading-7 text-slate-200 sm:text-base lg:text-lg" style={{ marginTop: 16 }}>
-              Keep the public entry point cinematic while preserving the existing login and blog routes for downstream product access.
-            </p>
-            <div className="flex flex-col justify-center gap-4 sm:flex-row" style={{ marginTop: 32 }}>
-              <Link
-                href={routes.login}
-                className="inline-flex min-h-14 items-center justify-center rounded-full bg-white text-xs font-semibold tracking-[0.32em] text-slate-950 uppercase transition hover:bg-emerald-100"
-                style={{ paddingInline: 32 }}
-              >
-                Login
-              </Link>
-              <Link
-                href="/blog"
-                className="inline-flex min-h-14 items-center justify-center rounded-full border border-white/15 bg-white/[0.05] text-xs font-semibold tracking-[0.32em] text-white uppercase transition hover:border-emerald-300/45 hover:bg-emerald-300/10"
-                style={{ paddingInline: 32 }}
-              >
-                Visit blog
-              </Link>
+            <div className="max-w-3xl">
+              <p className={[
+                "text-sm font-semibold uppercase tracking-[0.32em]",
+                isDark ? "text-[#F8F9FA]/62" : "text-[#124170]/68",
+              ].join(" ")}>
+                Pricing
+              </p>
+              <h2 className="mt-5 text-3xl font-semibold leading-tight sm:text-4xl lg:text-5xl">
+                Three pricing paths for teams growing into AI-powered publishing operations.
+              </h2>
+              <p className={[
+                "mt-5 max-w-3xl text-base leading-7 sm:text-lg",
+                isDark ? "text-[#F8F9FA]/74" : "text-[#2C3E50]/76",
+              ].join(" ")}>
+                Each tier keeps the homepage public-facing and calm while expanding how much of the publishing workflow Zero Labs AI Publisher can orchestrate.
+              </p>
             </div>
-          </div>
-        </section>
 
-        <div style={footerWrapStyle}>
-          <MarketingFooter contained />
+            <div className="mt-10 grid gap-8 lg:grid-cols-3">
+              {pricingTiers.map((tier) => (
+                <article
+                  key={tier.name}
+                  className={[
+                    "flex min-h-[320px] flex-col rounded-[32px] border p-8 transition-colors duration-300 transition-shadow hover:shadow-[0_18px_50px_rgba(31,111,95,0.16)]",
+                    isDark
+                      ? "border-[#1F6F5F]/22 bg-transparent hover:bg-[rgba(31,111,95,0.16)]"
+                      : "border-[#124170]/10 bg-transparent hover:bg-[rgba(234,242,239,0.72)]",
+                  ].join(" ")}
+                >
+                  <p className={[
+                    "text-sm font-semibold uppercase tracking-[0.28em]",
+                    isDark ? "text-[#F8F9FA]/62" : "text-[#124170]/68",
+                  ].join(" ")}>
+                    {tier.name}
+                  </p>
+                  <h3 className="mt-5 text-2xl font-semibold">{tier.summary}</h3>
+                  <p className={[
+                    "mt-4 text-base leading-7",
+                    isDark ? "text-[#F8F9FA]/72" : "text-[#2C3E50]/74",
+                  ].join(" ")}>
+                    {tier.detail}
+                  </p>
+                  <ul className="mt-6 space-y-4 text-sm leading-6 sm:text-base">
+                    {tier.features.map((feature) => (
+                      <li key={feature} className="flex items-start gap-3">
+                        <span className="mt-2 h-2.5 w-2.5 shrink-0 rounded-full bg-[#1F6F5F]" />
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-auto pt-8">
+                    <Link
+                      href={routes.signup}
+                      className="inline-flex min-h-12 items-center justify-center rounded-full bg-[#1F6F5F] px-7 py-3 text-sm font-semibold text-white transition-colors duration-300 hover:bg-[#18584b]"
+                    >
+                      Choose {tier.name}
+                    </Link>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
         </div>
-      </section>
+
+        <div className="mt-12">
+          <MarketingFooter contained theme={theme} />
+        </div>
+      </div>
     </main>
   );
 }
