@@ -241,8 +241,7 @@ export function LandingPage() {
                   Sustainable & humanistic AI publishing
                 </p>
                 <h1 className={`${headingClass} max-w-[760px] text-5xl font-black leading-[1] tracking-[-0.04em] sm:text-6xl lg:text-7xl xl:text-[5.5rem]`}>
-                  <span className="block">Turn prompts into</span>
-                  <span className="block">published AI websites</span>
+                  Turn prompts into published AI websites
                 </h1>
                 <p className={[
                   "max-w-xl text-base leading-7 sm:text-lg",
@@ -379,7 +378,7 @@ export function LandingPage() {
                   </p>
               </div>
 
-              <div className="mt-[40px] grid gap-6 sm:gap-8 lg:grid-cols-3 lg:gap-8" style={{ marginTop: "40px" }}>
+              <div className="grid gap-6 sm:gap-8 lg:grid-cols-3 lg:gap-8" style={{ marginTop: "40px" }}>
                 {section.cards.map((card) => (
                   <article
                     key={card.title}
@@ -456,7 +455,7 @@ export function LandingPage() {
                       {tier.detail}
                     </p>
                   </div>
-                  <ul className="mt-[24px] space-y-[16px] text-sm leading-6 sm:text-base" style={{ marginTop: "24px" }}>
+                  <ul className="space-y-[16px] text-sm leading-6 sm:text-base" style={{ marginTop: "24px" }}>
                     {tier.features.map((feature) => (
                       <li key={feature} className="flex items-start gap-3">
                         <span className="mt-2 h-2.5 w-2.5 shrink-0 rounded-full bg-[#1F6F5F]" />
