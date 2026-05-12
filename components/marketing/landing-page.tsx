@@ -100,7 +100,7 @@ const searchCards: ContentCard[] = [...productCards, ...audienceCards, ...workfl
   eyebrow: item.eyebrow,
 }));
 
-function includesQuery(text: string, query: string) {
+function textIncludesQuery(text: string, query: string) {
   return text.toLowerCase().includes(query);
 }
 
@@ -112,7 +112,7 @@ export function LandingPage() {
   const filteredProductCards = useMemo(
     () =>
       normalizedQuery
-        ? productCards.filter((card) => includesQuery(`${card.eyebrow} ${card.title} ${card.description}`, normalizedQuery))
+        ? productCards.filter((card) => textIncludesQuery(`${card.eyebrow} ${card.title} ${card.description}`, normalizedQuery))
         : productCards,
     [normalizedQuery]
   );
@@ -120,7 +120,7 @@ export function LandingPage() {
   const filteredAudienceCards = useMemo(
     () =>
       normalizedQuery
-        ? audienceCards.filter((card) => includesQuery(`${card.eyebrow} ${card.title} ${card.description}`, normalizedQuery))
+        ? audienceCards.filter((card) => textIncludesQuery(`${card.eyebrow} ${card.title} ${card.description}`, normalizedQuery))
         : audienceCards,
     [normalizedQuery]
   );
@@ -128,7 +128,7 @@ export function LandingPage() {
   const filteredWorkflowSteps = useMemo(
     () =>
       normalizedQuery
-        ? workflowSteps.filter((card) => includesQuery(`${card.eyebrow} ${card.title} ${card.description}`, normalizedQuery))
+        ? workflowSteps.filter((card) => textIncludesQuery(`${card.eyebrow} ${card.title} ${card.description}`, normalizedQuery))
         : workflowSteps,
     [normalizedQuery]
   );
@@ -136,7 +136,7 @@ export function LandingPage() {
   const filteredInsightMetrics = useMemo(
     () =>
       normalizedQuery
-        ? insightMetrics.filter((metric) => includesQuery(`${metric.label} ${metric.value} ${metric.detail}`, normalizedQuery))
+        ? insightMetrics.filter((metric) => textIncludesQuery(`${metric.label} ${metric.value} ${metric.detail}`, normalizedQuery))
         : insightMetrics,
     [normalizedQuery]
   );
@@ -144,7 +144,7 @@ export function LandingPage() {
   const searchResults = useMemo(
     () =>
       normalizedQuery
-        ? searchCards.filter((card) => includesQuery(`${card.eyebrow} ${card.title} ${card.description}`, normalizedQuery))
+        ? searchCards.filter((card) => textIncludesQuery(`${card.eyebrow} ${card.title} ${card.description}`, normalizedQuery))
         : searchCards.slice(0, 3),
     [normalizedQuery]
   );
@@ -275,7 +275,7 @@ export function LandingPage() {
               {searchResults.length > 0 ? (
                 searchResults.map((card) => (
                   <article
-                    key={`${card.eyebrow}-${card.title}`}
+                    key={card.title}
                     className="rounded-3xl border border-white/10 bg-slate-950/75 p-5"
                   >
                     <p className="text-xs uppercase tracking-[0.18em] text-cyan-200">{card.eyebrow}</p>

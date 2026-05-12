@@ -4,7 +4,7 @@ import Link from "next/link";
 import { routes } from "@/config/routes";
 
 interface MarketingNavProps {
-  currentPath?: typeof routes.home | "/blog" | typeof routes.login;
+  currentPath?: string;
 }
 
 const navigationItems = [
