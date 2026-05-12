@@ -46,7 +46,7 @@ export function MarketingNav({
   const content = (
     <header
       className={[
-        "rounded-[32px] border px-[16px] py-[16px] shadow-[0_24px_70px_rgba(18,65,112,0.12)] backdrop-blur-xl transition-colors duration-300 sm:px-[24px] lg:px-[32px]",
+        "rounded-[32px] border shadow-[0_24px_70px_rgba(18,65,112,0.12)] backdrop-blur-xl transition-colors duration-300",
         isDark
           ? "border-white/10 bg-[rgba(7,26,22,0.88)] text-[#F8F9FA]"
           : "border-[#1F6F5F]/14 bg-[rgba(248,249,250,0.86)] text-[#2C3E50]",
@@ -106,7 +106,7 @@ export function MarketingNav({
           <Link
             href={routes.login}
             className={[
-              "inline-flex min-h-11 items-center justify-center rounded-full px-[24px] text-sm font-semibold transition-colors duration-300",
+              "inline-flex min-h-11 items-center justify-center rounded-full text-sm font-semibold transition-colors duration-300",
               isDark
                 ? "border border-white/12 bg-white/[0.05] text-[#F8F9FA] hover:border-[#1F6F5F]/70 hover:bg-[#1F6F5F]/16"
                 : "border border-[#1F6F5F]/14 bg-[#F8F9FA] text-[#124170] hover:border-[#1F6F5F]/35 hover:bg-[#EAF2EF]",
@@ -118,7 +118,7 @@ export function MarketingNav({
           <Link
             href={routes.signup}
             className={[
-              "inline-flex min-h-11 items-center justify-center rounded-full px-[24px] text-sm font-semibold transition-colors duration-300",
+              "inline-flex min-h-11 items-center justify-center rounded-full text-sm font-semibold transition-colors duration-300",
               isDark
                 ? "bg-[#1F6F5F] text-white hover:bg-[#18584b]"
                 : "bg-[#1F6F5F] text-white hover:bg-[#18584b]",

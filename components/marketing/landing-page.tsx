@@ -202,7 +202,7 @@ export function LandingPage() {
         <section
           id="product"
           className={[
-            "relative mt-[32px] overflow-hidden rounded-[40px] border p-[32px] shadow-[0_30px_90px_rgba(18,65,112,0.16)] transition-colors duration-300 sm:mt-[40px] sm:p-[40px] lg:p-[64px] xl:rounded-[48px]",
+            "relative mt-[32px] overflow-hidden rounded-[40px] border shadow-[0_30px_90px_rgba(18,65,112,0.16)] transition-colors duration-300 sm:mt-[40px] xl:rounded-[48px]",
             isDark
               ? "border-[#1F6F5F]/45 bg-[rgba(31,111,95,0.14)]"
               : "border-[#124170]/16 bg-[rgba(234,242,239,0.74)]",
@@ -255,7 +255,7 @@ export function LandingPage() {
               <div className="mt-[32px] flex flex-col gap-4 sm:mt-[40px] sm:flex-row sm:flex-wrap" style={{ marginTop: "clamp(32px, 4vw, 40px)" }}>
                 <Link
                   href={routes.signup}
-                  className="inline-flex min-h-14 items-center justify-center rounded-full bg-[#1F6F5F] px-[32px] py-[16px] text-sm font-semibold text-white transition-colors duration-300 hover:bg-[#18584b] sm:px-[40px]"
+                  className="inline-flex min-h-14 items-center justify-center rounded-full bg-[#1F6F5F] text-sm font-semibold text-white transition-colors duration-300 hover:bg-[#18584b]"
                   style={{ padding: "16px 32px" }}
                 >
                   Start building
@@ -263,7 +263,7 @@ export function LandingPage() {
                 <Link
                   href="#platform"
                   className={[
-                    "inline-flex min-h-14 items-center justify-center rounded-full border px-[32px] py-[16px] text-sm font-semibold transition-colors duration-300 sm:px-[40px]",
+                    "inline-flex min-h-14 items-center justify-center rounded-full border text-sm font-semibold transition-colors duration-300",
                     isDark
                       ? "border-[#1F6F5F]/38 bg-white/[0.04] text-[#F8F9FA] hover:border-[#1F6F5F]/70 hover:bg-[#1F6F5F]/16"
                       : "border-[#124170]/18 bg-transparent text-[#124170] hover:border-[#1F6F5F]/40 hover:bg-[rgba(234,242,239,0.72)]",
@@ -297,7 +297,7 @@ export function LandingPage() {
             <article
               key={card.title}
               className={[
-                "group relative min-h-[320px] overflow-hidden rounded-[32px] border p-[32px] shadow-[0_18px_48px_rgba(18,65,112,0.08)] transition-[background-color,border-color,color,box-shadow] duration-300 hover:shadow-[0_20px_60px_rgba(31,111,95,0.18)] sm:p-[40px]",
+                "group relative min-h-[320px] overflow-hidden rounded-[32px] border shadow-[0_18px_48px_rgba(18,65,112,0.08)] transition-[background-color,border-color,color,box-shadow] duration-300 hover:shadow-[0_20px_60px_rgba(31,111,95,0.18)]",
                 isDark
                   ? "border-[#1F6F5F]/30 bg-transparent hover:border-[#1F6F5F]/52 hover:bg-[rgba(31,111,95,0.16)]"
                   : "border-[#124170]/12 bg-transparent hover:border-[#1F6F5F]/28 hover:bg-[rgba(234,242,239,0.72)]",
@@ -336,7 +336,7 @@ export function LandingPage() {
                 <Link
                   href={card.href}
                   className={[
-                    "inline-flex w-fit min-h-12 items-center justify-center rounded-full px-[28px] py-[12px] text-sm font-semibold transition-colors duration-300",
+                    "inline-flex w-fit min-h-12 items-center justify-center rounded-full text-sm font-semibold transition-colors duration-300",
                     isDark
                       ? "border border-[#1F6F5F]/38 bg-white/[0.04] text-[#F8F9FA] hover:border-[#1F6F5F]/70 hover:bg-[#1F6F5F]/16"
                       : "border border-[#1F6F5F]/18 bg-[#F8F9FA] text-[#124170] hover:border-[#1F6F5F]/38 hover:bg-[#EAF2EF]",
@@ -356,7 +356,7 @@ export function LandingPage() {
               key={section.id}
               id={section.id}
               className={[
-                "rounded-[40px] border p-[32px] backdrop-blur-xl transition-colors duration-300 sm:p-[40px] lg:py-[64px]",
+                "rounded-[40px] border backdrop-blur-xl transition-colors duration-300",
                 isDark ? "border-[#1F6F5F]/26 bg-[rgba(18,65,112,0.20)]" : "border-[#124170]/10 bg-[rgba(248,249,250,0.56)]",
               ].join(" ")}
               style={{ padding: "clamp(32px, 4vw, 40px)" }}
@@ -384,7 +384,7 @@ export function LandingPage() {
                   <article
                     key={card.title}
                     className={[
-                      "min-h-[220px] rounded-[32px] border p-[32px] transition-[background-color,border-color,color,box-shadow] duration-300 hover:shadow-[0_18px_50px_rgba(31,111,95,0.16)]",
+                      "min-h-[220px] rounded-[32px] border transition-[background-color,border-color,color,box-shadow] duration-300 hover:shadow-[0_18px_50px_rgba(31,111,95,0.16)]",
                       isDark
                         ? "border-[#1F6F5F]/22 bg-transparent hover:border-[#1F6F5F]/44 hover:bg-[rgba(31,111,95,0.16)]"
                         : "border-[#124170]/10 bg-transparent hover:border-[#1F6F5F]/24 hover:bg-[rgba(234,242,239,0.72)]",
@@ -406,7 +406,7 @@ export function LandingPage() {
           <section
             id="pricing"
             className={[
-              "rounded-[40px] border p-[32px] backdrop-blur-xl transition-colors duration-300 sm:p-[40px] lg:py-[64px]",
+              "rounded-[40px] border backdrop-blur-xl transition-colors duration-300",
               isDark ? "border-[#1F6F5F]/26 bg-[rgba(18,65,112,0.20)]" : "border-[#124170]/10 bg-[rgba(248,249,250,0.56)]",
             ].join(" ")}
             style={{ padding: "clamp(32px, 4vw, 40px)" }}
@@ -434,7 +434,7 @@ export function LandingPage() {
                 <article
                   key={tier.name}
                   className={[
-                    "flex min-h-[320px] flex-col rounded-[32px] border p-[32px] transition-[background-color,border-color,color,box-shadow] duration-300 hover:shadow-[0_18px_50px_rgba(31,111,95,0.16)]",
+                    "flex min-h-[320px] flex-col rounded-[32px] border transition-[background-color,border-color,color,box-shadow] duration-300 hover:shadow-[0_18px_50px_rgba(31,111,95,0.16)]",
                     isDark
                       ? "border-[#1F6F5F]/22 bg-transparent hover:border-[#1F6F5F]/44 hover:bg-[rgba(31,111,95,0.16)]"
                       : "border-[#124170]/10 bg-transparent hover:border-[#1F6F5F]/24 hover:bg-[rgba(234,242,239,0.72)]",
@@ -467,7 +467,7 @@ export function LandingPage() {
                   <div className="mt-auto pt-[32px]">
                     <Link
                       href={routes.signup}
-                      className="inline-flex min-h-12 items-center justify-center rounded-full bg-[#1F6F5F] px-[28px] py-[12px] text-sm font-semibold text-white transition-colors duration-300 hover:bg-[#18584b]"
+                      className="inline-flex min-h-12 items-center justify-center rounded-full bg-[#1F6F5F] text-sm font-semibold text-white transition-colors duration-300 hover:bg-[#18584b]"
                       style={{ padding: "12px 28px" }}
                     >
                       Choose {tier.name}

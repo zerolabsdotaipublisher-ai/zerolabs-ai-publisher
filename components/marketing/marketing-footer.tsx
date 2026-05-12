@@ -32,7 +32,7 @@ export function MarketingFooter({ contained = false, theme = "light" }: Marketin
   const content = (
     <footer
       className={[
-        "rounded-[32px] border p-[32px] shadow-[0_24px_70px_rgba(18,65,112,0.10)] backdrop-blur-xl transition-colors duration-300 sm:p-[40px]",
+        "rounded-[32px] border shadow-[0_24px_70px_rgba(18,65,112,0.10)] backdrop-blur-xl transition-colors duration-300",
         isDark
           ? "border-[#1F6F5F]/28 bg-[linear-gradient(135deg,rgba(6,19,31,0.92),rgba(7,26,22,0.88))] text-[#F8F9FA]"
           : "border-[#124170]/14 bg-[linear-gradient(135deg,rgba(234,242,239,0.84),rgba(248,249,250,0.92))] text-[#2C3E50]",
@@ -78,7 +78,7 @@ export function MarketingFooter({ contained = false, theme = "light" }: Marketin
           <div className="flex flex-wrap gap-3">
             <Link
               href={routes.signup}
-              className="inline-flex min-h-11 items-center justify-center rounded-full bg-[#1F6F5F] px-[24px] text-sm font-semibold text-white transition-colors duration-300 hover:bg-[#18584b]"
+              className="inline-flex min-h-11 items-center justify-center rounded-full bg-[#1F6F5F] text-sm font-semibold text-white transition-colors duration-300 hover:bg-[#18584b]"
               style={{ paddingInline: "24px" }}
             >
               Start building
