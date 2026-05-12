@@ -57,11 +57,10 @@ export async function updateSession(request: NextRequest): Promise<SessionUpdate
 
   const {
     data: { user },
-    error,
   } = await supabase.auth.getUser();
 
   return {
     response,
-    hasSession: !error && Boolean(user),
+    hasSession: Boolean(user),
   };
 }

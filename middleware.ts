@@ -19,9 +19,10 @@ const protectedPaths = [
   routes.generatedSites,
   routes.preview,
 ];
+const protectedPathPrefixes = protectedPaths.map((path) => `${path}/`);
 
 function isProtectedPath(pathname: string): boolean {
-  return protectedPaths.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+  return protectedPaths.some((path, index) => pathname === path || pathname.startsWith(protectedPathPrefixes[index]));
 }
 
 export async function middleware(request: NextRequest): Promise<NextResponse> {
