@@ -5,7 +5,7 @@ import { AuthProvider } from "@/providers/auth-provider";
 
 export const metadata: Metadata = {
   title: "Zero Labs AI Publisher",
-  description: "AI-powered automated publishing platform for websites, portfolios, and social media",
+  description: "Investor-ready AI publishing infrastructure for websites, portfolios, blogs, and social content.",
 };
 
 export default function RootLayout({
