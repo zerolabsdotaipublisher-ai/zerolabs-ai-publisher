@@ -13,6 +13,12 @@ const footerLinks = [
 ] as const;
 
 const shellClass = "mx-auto w-full max-w-[1440px] px-5 sm:px-6 lg:px-10 xl:px-12";
+const shellStyle = {
+  marginInline: "auto",
+  width: "100%",
+  maxWidth: "1440px",
+  paddingInline: "clamp(20px, 3vw, 48px)",
+};
 
 interface MarketingFooterProps {
   contained?: boolean;
@@ -26,11 +32,12 @@ export function MarketingFooter({ contained = false, theme = "light" }: Marketin
   const content = (
     <footer
       className={[
-        "rounded-[32px] border p-8 shadow-[0_24px_70px_rgba(18,65,112,0.10)] backdrop-blur-xl transition-colors duration-300 sm:p-10",
+        "rounded-[32px] border p-[32px] shadow-[0_24px_70px_rgba(18,65,112,0.10)] backdrop-blur-xl transition-colors duration-300 sm:p-[40px]",
         isDark
           ? "border-[#1F6F5F]/28 bg-[linear-gradient(135deg,rgba(6,19,31,0.92),rgba(7,26,22,0.88))] text-[#F8F9FA]"
           : "border-[#124170]/14 bg-[linear-gradient(135deg,rgba(234,242,239,0.84),rgba(248,249,250,0.92))] text-[#2C3E50]",
       ].join(" ")}
+      style={{ padding: "clamp(32px, 4vw, 40px)" }}
     >
       <div className="flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between lg:gap-12">
         <div className="max-w-2xl space-y-5">
@@ -58,7 +65,7 @@ export function MarketingFooter({ contained = false, theme = "light" }: Marketin
                 key={link.label}
                 href={link.href}
                 className={[
-                  "rounded-full border px-4 py-2 transition-colors duration-300",
+                  "rounded-full border px-[16px] py-[8px] transition-colors duration-300",
                   isDark
                     ? "border-white/10 text-[#F8F9FA]/72 hover:border-[#1F6F5F]/70 hover:bg-[#1F6F5F]/16 hover:text-[#F8F9FA]"
                     : "border-[#124170]/12 text-[#124170] hover:border-[#1F6F5F]/35 hover:bg-[rgba(31,111,95,0.08)]",
@@ -71,7 +78,8 @@ export function MarketingFooter({ contained = false, theme = "light" }: Marketin
           <div className="flex flex-wrap gap-3">
             <Link
               href={routes.signup}
-              className="inline-flex min-h-11 items-center justify-center rounded-full bg-[#1F6F5F] px-6 text-sm font-semibold text-white transition-colors duration-300 hover:bg-[#18584b]"
+              className="inline-flex min-h-11 items-center justify-center rounded-full bg-[#1F6F5F] px-[24px] text-sm font-semibold text-white transition-colors duration-300 hover:bg-[#18584b]"
+              style={{ paddingInline: "24px" }}
             >
               Start building
             </Link>
@@ -86,7 +94,7 @@ export function MarketingFooter({ contained = false, theme = "light" }: Marketin
   }
 
   return (
-    <div className={`${shellClass} pb-8 sm:pb-10`}>
+    <div className={`${shellClass} pb-[32px] sm:pb-[40px]`} style={{ ...shellStyle, paddingBottom: "clamp(32px, 4vw, 40px)" }}>
       {content}
     </div>
   );

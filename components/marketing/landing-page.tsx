@@ -40,6 +40,12 @@ type PricingTier = {
 const shellClass = "mx-auto w-full max-w-[1440px] px-5 sm:px-6 lg:px-10 xl:px-12";
 const THEME_STORAGE_KEY = "zero-labs-ai-publisher-theme";
 const headingClass = "font-[family:var(--font-heading)]";
+const shellStyle = {
+  marginInline: "auto",
+  width: "100%",
+  maxWidth: "1440px",
+  paddingInline: "clamp(20px, 3vw, 48px)",
+};
 
 const featureCards: FeatureCard[] = [
   {
@@ -187,17 +193,21 @@ export function LandingPage() {
         ].join(" ")}
         />
 
-      <div className={`${shellClass} relative pt-6 pb-8 md:pt-8 md:pb-10 lg:pb-12`}>
+      <div
+        className={`${shellClass} relative pt-[24px] pb-[32px] md:pt-[32px] md:pb-[40px] lg:pb-[48px]`}
+        style={{ ...shellStyle, paddingTop: "clamp(24px, 3vw, 32px)", paddingBottom: "clamp(32px, 4vw, 48px)" }}
+      >
         <MarketingNav currentPath="/" contained theme={theme} onToggleTheme={() => setTheme(isDark ? "light" : "dark")} />
 
         <section
           id="product"
           className={[
-            "relative mt-8 overflow-hidden rounded-[40px] border p-8 shadow-[0_30px_90px_rgba(18,65,112,0.16)] transition-colors duration-300 sm:mt-10 sm:p-10 lg:p-16 xl:rounded-[48px]",
+            "relative mt-[32px] overflow-hidden rounded-[40px] border p-[32px] shadow-[0_30px_90px_rgba(18,65,112,0.16)] transition-colors duration-300 sm:mt-[40px] sm:p-[40px] lg:p-[64px] xl:rounded-[48px]",
             isDark
               ? "border-[#1F6F5F]/45 bg-[rgba(31,111,95,0.14)]"
               : "border-[#124170]/16 bg-[rgba(234,242,239,0.74)]",
           ].join(" ")}
+          style={{ marginTop: "clamp(32px, 4vw, 40px)", padding: "clamp(32px, 5vw, 64px)" }}
         >
           <div className={[
             "absolute inset-0",
@@ -218,45 +228,47 @@ export function LandingPage() {
 
           <div className="relative z-10 grid gap-12 lg:grid-cols-[minmax(0,0.96fr)_minmax(280px,0.82fr)] lg:items-center lg:gap-14 xl:gap-16">
             <div className="max-w-[760px]">
-              <div className="inline-flex items-center gap-3 rounded-full border border-[#1F6F5F]/20 bg-white/20 px-4 py-2 text-sm font-semibold tracking-[0.14em] text-current backdrop-blur-sm">
-                <Image src={heroAccentLogo} alt="" width={32} height={32} className="h-8 w-8" priority />
-                <span>Zero Labs AI Publisher</span>
+              <div style={{ display: "grid", gap: "24px" }}>
+                <div className="inline-flex items-center gap-3 rounded-full border border-[#1F6F5F]/20 bg-white/20 px-[16px] py-[8px] text-sm font-semibold tracking-[0.14em] text-current backdrop-blur-sm">
+                  <Image src={heroAccentLogo} alt="" width={32} height={32} className="h-8 w-8" priority />
+                  <span>Zero Labs AI Publisher</span>
+                </div>
+
+                <p className={[
+                  "text-sm font-semibold uppercase tracking-[0.32em]",
+                  isDark ? "text-[#F8F9FA]/68" : "text-[#124170]/70",
+                ].join(" ")}>
+                  Sustainable & humanistic AI publishing
+                </p>
+                <h1 className={`${headingClass} max-w-[760px] text-5xl font-black leading-[0.92] tracking-[-0.04em] sm:text-6xl lg:text-7xl xl:text-[5.5rem]`}>
+                  <span className="block">Turn prompts into</span>
+                  <span className="block">published AI websites</span>
+                </h1>
+                <p className={[
+                  "max-w-xl text-base leading-7 sm:text-lg",
+                  isDark ? "text-[#F8F9FA]/76" : "text-[#2C3E50]/78",
+                ].join(" ")}>
+                  Zero Labs AI Publisher transforms a prompt into a polished website and guides the publishing workflow all the way to release.
+                </p>
               </div>
 
-              <p className={[
-                "mt-6 text-sm font-semibold uppercase tracking-[0.32em]",
-                isDark ? "text-[#F8F9FA]/68" : "text-[#124170]/70",
-              ].join(" ")}>
-                Sustainable & humanistic AI publishing
-              </p>
-              <h1
-                className={`${headingClass} mt-6 max-w-[760px] text-5xl font-black leading-[0.92] tracking-[-0.04em] sm:text-6xl lg:text-7xl xl:text-[5.5rem]`}
-              >
-                <span className="block">Turn prompts into</span>
-                <span className="block">published AI websites</span>
-              </h1>
-              <p className={[
-                "mt-6 max-w-xl text-base leading-7 sm:text-lg",
-                isDark ? "text-[#F8F9FA]/76" : "text-[#2C3E50]/78",
-              ].join(" ")}>
-                Zero Labs AI Publisher transforms a prompt into a polished website and guides the publishing workflow all the way to release.
-              </p>
-
-              <div className="mt-8 flex flex-col gap-4 sm:mt-10 sm:flex-row sm:flex-wrap">
+              <div className="mt-[32px] flex flex-col gap-4 sm:mt-[40px] sm:flex-row sm:flex-wrap" style={{ marginTop: "clamp(32px, 4vw, 40px)" }}>
                 <Link
                   href={routes.signup}
-                  className="inline-flex min-h-14 items-center justify-center rounded-full bg-[#1F6F5F] px-8 py-4 text-sm font-semibold text-white transition-colors duration-300 hover:bg-[#18584b] sm:px-10"
+                  className="inline-flex min-h-14 items-center justify-center rounded-full bg-[#1F6F5F] px-[32px] py-[16px] text-sm font-semibold text-white transition-colors duration-300 hover:bg-[#18584b] sm:px-[40px]"
+                  style={{ padding: "16px 32px" }}
                 >
                   Start building
                 </Link>
                 <Link
                   href="#platform"
                   className={[
-                    "inline-flex min-h-14 items-center justify-center rounded-full border px-8 py-4 text-sm font-semibold transition-colors duration-300 sm:px-10",
+                    "inline-flex min-h-14 items-center justify-center rounded-full border px-[32px] py-[16px] text-sm font-semibold transition-colors duration-300 sm:px-[40px]",
                     isDark
                       ? "border-[#1F6F5F]/38 bg-white/[0.04] text-[#F8F9FA] hover:border-[#1F6F5F]/70 hover:bg-[#1F6F5F]/16"
                       : "border-[#124170]/18 bg-transparent text-[#124170] hover:border-[#1F6F5F]/40 hover:bg-[rgba(234,242,239,0.72)]",
                   ].join(" ")}
+                  style={{ padding: "16px 32px" }}
                 >
                   Learn more
                 </Link>
@@ -276,16 +288,21 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section id="platform" className="mt-8 grid gap-6 sm:mt-10 lg:grid-cols-2 lg:gap-10">
+        <section
+          id="platform"
+          className="mt-[32px] grid gap-6 sm:mt-[40px] lg:grid-cols-2 lg:gap-10"
+          style={{ marginTop: "clamp(32px, 4vw, 40px)" }}
+        >
           {featureCards.map((card) => (
             <article
               key={card.title}
               className={[
-                "group relative min-h-[320px] overflow-hidden rounded-[32px] border p-8 shadow-[0_18px_48px_rgba(18,65,112,0.08)] transition-[background-color,border-color,color,box-shadow] duration-300 hover:shadow-[0_20px_60px_rgba(31,111,95,0.18)] sm:p-10",
+                "group relative min-h-[320px] overflow-hidden rounded-[32px] border p-[32px] shadow-[0_18px_48px_rgba(18,65,112,0.08)] transition-[background-color,border-color,color,box-shadow] duration-300 hover:shadow-[0_20px_60px_rgba(31,111,95,0.18)] sm:p-[40px]",
                 isDark
                   ? "border-[#1F6F5F]/30 bg-transparent hover:border-[#1F6F5F]/52 hover:bg-[rgba(31,111,95,0.16)]"
                   : "border-[#124170]/12 bg-transparent hover:border-[#1F6F5F]/28 hover:bg-[rgba(234,242,239,0.72)]",
               ].join(" ")}
+              style={{ padding: "clamp(32px, 4vw, 40px)" }}
             >
               <div className={[
                 "absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100",
@@ -296,21 +313,21 @@ export function LandingPage() {
                 alt=""
                 width={220}
                 height={220}
-                className="pointer-events-none absolute right-6 bottom-6 h-24 w-auto opacity-30 transition-opacity duration-300 group-hover:opacity-45 sm:h-28"
+                className="pointer-events-none absolute right-[24px] bottom-[24px] h-24 w-auto opacity-30 transition-opacity duration-300 group-hover:opacity-45 sm:h-28"
               />
               <div className="relative flex h-full flex-col justify-between gap-8">
-                <div>
+                <div style={{ display: "grid", gap: "20px" }}>
                   <p className={[
                     "text-sm font-semibold uppercase tracking-[0.28em]",
                     isDark ? "text-[#F8F9FA]/62" : "text-[#124170]/68",
                   ].join(" ")}>
                     {card.eyebrow}
                   </p>
-                  <h2 className={`${headingClass} mt-5 max-w-[16ch] text-3xl font-semibold leading-tight sm:text-4xl`}>
+                  <h2 className={`${headingClass} max-w-[16ch] text-3xl font-semibold leading-tight sm:text-4xl`}>
                     {card.title}
                   </h2>
                   <p className={[
-                    "mt-5 max-w-xl text-base leading-7",
+                    "max-w-xl text-base leading-7",
                     isDark ? "text-[#F8F9FA]/74" : "text-[#2C3E50]/76",
                   ].join(" ")}>
                     {card.description}
@@ -319,11 +336,12 @@ export function LandingPage() {
                 <Link
                   href={card.href}
                   className={[
-                    "inline-flex w-fit min-h-12 items-center justify-center rounded-full px-7 py-3 text-sm font-semibold transition-colors duration-300",
+                    "inline-flex w-fit min-h-12 items-center justify-center rounded-full px-[28px] py-[12px] text-sm font-semibold transition-colors duration-300",
                     isDark
                       ? "border border-[#1F6F5F]/38 bg-white/[0.04] text-[#F8F9FA] hover:border-[#1F6F5F]/70 hover:bg-[#1F6F5F]/16"
                       : "border border-[#1F6F5F]/18 bg-[#F8F9FA] text-[#124170] hover:border-[#1F6F5F]/38 hover:bg-[#EAF2EF]",
                   ].join(" ")}
+                  style={{ padding: "12px 28px" }}
                 >
                   {card.ctaLabel}
                 </Link>
@@ -332,52 +350,53 @@ export function LandingPage() {
           ))}
         </section>
 
-        <div className="mt-12 space-y-12 sm:mt-16 lg:space-y-16">
+        <div className="mt-[48px] space-y-12 sm:mt-[64px] lg:space-y-16" style={{ marginTop: "clamp(48px, 6vw, 64px)" }}>
           {storySections.map((section) => (
             <section
               key={section.id}
               id={section.id}
               className={[
-                "rounded-[40px] border p-8 backdrop-blur-xl transition-colors duration-300 sm:p-10 lg:py-16",
+                "rounded-[40px] border p-[32px] backdrop-blur-xl transition-colors duration-300 sm:p-[40px] lg:py-[64px]",
                 isDark ? "border-[#1F6F5F]/26 bg-[rgba(18,65,112,0.20)]" : "border-[#124170]/10 bg-[rgba(248,249,250,0.56)]",
               ].join(" ")}
+              style={{ padding: "clamp(32px, 4vw, 40px)" }}
             >
-              <div className="max-w-3xl">
+              <div className="max-w-3xl" style={{ display: "grid", gap: "20px" }}>
                 <p className={[
                   "text-sm font-semibold uppercase tracking-[0.32em]",
                   isDark ? "text-[#F8F9FA]/62" : "text-[#124170]/68",
                 ].join(" ")}>
                   {section.eyebrow}
                 </p>
-                <h2 className={`${headingClass} mt-5 text-3xl font-semibold leading-tight sm:text-4xl lg:text-5xl`}>
+                <h2 className={`${headingClass} text-3xl font-semibold leading-tight sm:text-4xl lg:text-5xl`}>
                   {section.title}
                 </h2>
                 <p className={[
-                  "mt-5 max-w-3xl text-base leading-7 sm:text-lg",
+                  "max-w-3xl text-base leading-7 sm:text-lg",
                   isDark ? "text-[#F8F9FA]/74" : "text-[#2C3E50]/76",
                 ].join(" ")}>
                   {section.description}
-                </p>
+                  </p>
               </div>
 
-              <div className="mt-10 grid gap-6 sm:gap-8 lg:grid-cols-3 lg:gap-8">
+              <div className="mt-[40px] grid gap-6 sm:gap-8 lg:grid-cols-3 lg:gap-8" style={{ marginTop: "40px" }}>
                 {section.cards.map((card) => (
                   <article
                     key={card.title}
                     className={[
-                      "min-h-[220px] rounded-[32px] border p-8 transition-[background-color,border-color,color,box-shadow] duration-300 hover:shadow-[0_18px_50px_rgba(31,111,95,0.16)]",
+                      "min-h-[220px] rounded-[32px] border p-[32px] transition-[background-color,border-color,color,box-shadow] duration-300 hover:shadow-[0_18px_50px_rgba(31,111,95,0.16)]",
                       isDark
                         ? "border-[#1F6F5F]/22 bg-transparent hover:border-[#1F6F5F]/44 hover:bg-[rgba(31,111,95,0.16)]"
                         : "border-[#124170]/10 bg-transparent hover:border-[#1F6F5F]/24 hover:bg-[rgba(234,242,239,0.72)]",
                     ].join(" ")}
+                    style={{ padding: "32px" }}
                   >
-                    <h3 className={`${headingClass} text-2xl font-semibold`}>{card.title}</h3>
-                    <p className={[
-                      "mt-4 text-base leading-7",
-                      isDark ? "text-[#F8F9FA]/72" : "text-[#2C3E50]/74",
-                    ].join(" ")}>
-                      {card.description}
-                    </p>
+                    <div style={{ display: "grid", gap: "16px" }}>
+                      <h3 className={`${headingClass} text-2xl font-semibold`}>{card.title}</h3>
+                      <p className={[isDark ? "text-[#F8F9FA]/72" : "text-[#2C3E50]/74", "text-base leading-7"].join(" ")}>
+                        {card.description}
+                      </p>
+                    </div>
                   </article>
                 ))}
               </div>
@@ -387,53 +406,57 @@ export function LandingPage() {
           <section
             id="pricing"
             className={[
-              "rounded-[40px] border p-8 backdrop-blur-xl transition-colors duration-300 sm:p-10 lg:py-16",
+              "rounded-[40px] border p-[32px] backdrop-blur-xl transition-colors duration-300 sm:p-[40px] lg:py-[64px]",
               isDark ? "border-[#1F6F5F]/26 bg-[rgba(18,65,112,0.20)]" : "border-[#124170]/10 bg-[rgba(248,249,250,0.56)]",
             ].join(" ")}
+            style={{ padding: "clamp(32px, 4vw, 40px)" }}
           >
-            <div className="max-w-3xl">
+            <div className="max-w-3xl" style={{ display: "grid", gap: "20px" }}>
               <p className={[
                 "text-sm font-semibold uppercase tracking-[0.32em]",
                 isDark ? "text-[#F8F9FA]/62" : "text-[#124170]/68",
               ].join(" ")}>
                 Pricing
               </p>
-              <h2 className={`${headingClass} mt-5 text-3xl font-semibold leading-tight sm:text-4xl lg:text-5xl`}>
+              <h2 className={`${headingClass} text-3xl font-semibold leading-tight sm:text-4xl lg:text-5xl`}>
                 Three pricing paths for teams growing into AI-powered publishing operations.
               </h2>
               <p className={[
-                "mt-5 max-w-3xl text-base leading-7 sm:text-lg",
+                "max-w-3xl text-base leading-7 sm:text-lg",
                 isDark ? "text-[#F8F9FA]/74" : "text-[#2C3E50]/76",
               ].join(" ")}>
                 Each tier keeps the homepage public-facing and calm while expanding how much of the publishing workflow Zero Labs AI Publisher can orchestrate.
               </p>
             </div>
 
-            <div className="mt-10 grid gap-6 sm:gap-8 lg:grid-cols-3 lg:gap-8">
+            <div className="mt-[40px] grid gap-6 sm:gap-8 lg:grid-cols-3 lg:gap-8" style={{ marginTop: "40px" }}>
               {pricingTiers.map((tier) => (
                 <article
                   key={tier.name}
                   className={[
-                    "flex min-h-[320px] flex-col rounded-[32px] border p-8 transition-[background-color,border-color,color,box-shadow] duration-300 hover:shadow-[0_18px_50px_rgba(31,111,95,0.16)]",
+                    "flex min-h-[320px] flex-col rounded-[32px] border p-[32px] transition-[background-color,border-color,color,box-shadow] duration-300 hover:shadow-[0_18px_50px_rgba(31,111,95,0.16)]",
                     isDark
                       ? "border-[#1F6F5F]/22 bg-transparent hover:border-[#1F6F5F]/44 hover:bg-[rgba(31,111,95,0.16)]"
                       : "border-[#124170]/10 bg-transparent hover:border-[#1F6F5F]/24 hover:bg-[rgba(234,242,239,0.72)]",
                   ].join(" ")}
+                  style={{ padding: "32px" }}
                 >
-                  <p className={[
-                    "text-sm font-semibold uppercase tracking-[0.28em]",
-                    isDark ? "text-[#F8F9FA]/62" : "text-[#124170]/68",
-                  ].join(" ")}>
-                    {tier.name}
-                  </p>
-                  <h3 className={`${headingClass} mt-5 text-2xl font-semibold`}>{tier.summary}</h3>
-                  <p className={[
-                    "mt-4 text-base leading-7",
-                    isDark ? "text-[#F8F9FA]/72" : "text-[#2C3E50]/74",
-                  ].join(" ")}>
-                    {tier.detail}
-                  </p>
-                  <ul className="mt-6 space-y-4 text-sm leading-6 sm:text-base">
+                  <div style={{ display: "grid", gap: "20px" }}>
+                    <p className={[
+                      "text-sm font-semibold uppercase tracking-[0.28em]",
+                      isDark ? "text-[#F8F9FA]/62" : "text-[#124170]/68",
+                    ].join(" ")}>
+                      {tier.name}
+                    </p>
+                    <h3 className={`${headingClass} text-2xl font-semibold`}>{tier.summary}</h3>
+                    <p className={[
+                      "text-base leading-7",
+                      isDark ? "text-[#F8F9FA]/72" : "text-[#2C3E50]/74",
+                    ].join(" ")}>
+                      {tier.detail}
+                    </p>
+                  </div>
+                  <ul className="mt-[24px] space-y-[16px] text-sm leading-6 sm:text-base" style={{ marginTop: "24px" }}>
                     {tier.features.map((feature) => (
                       <li key={feature} className="flex items-start gap-3">
                         <span className="mt-2 h-2.5 w-2.5 shrink-0 rounded-full bg-[#1F6F5F]" />
@@ -441,10 +464,11 @@ export function LandingPage() {
                       </li>
                     ))}
                   </ul>
-                  <div className="mt-auto pt-8">
+                  <div className="mt-auto pt-[32px]">
                     <Link
                       href={routes.signup}
-                      className="inline-flex min-h-12 items-center justify-center rounded-full bg-[#1F6F5F] px-7 py-3 text-sm font-semibold text-white transition-colors duration-300 hover:bg-[#18584b]"
+                      className="inline-flex min-h-12 items-center justify-center rounded-full bg-[#1F6F5F] px-[28px] py-[12px] text-sm font-semibold text-white transition-colors duration-300 hover:bg-[#18584b]"
+                      style={{ padding: "12px 28px" }}
                     >
                       Choose {tier.name}
                     </Link>
@@ -455,7 +479,7 @@ export function LandingPage() {
           </section>
         </div>
 
-        <div className="mt-16 sm:mt-20">
+        <div className="mt-[64px] sm:mt-[80px]" style={{ marginTop: "clamp(64px, 8vw, 80px)" }}>
           <MarketingFooter contained theme={theme} />
         </div>
       </div>
