@@ -25,11 +25,11 @@ export function MarketingNav({ currentPath = "/" }: MarketingNavProps) {
   };
 
   return (
-    <header className="sticky top-0 z-30 border-b border-white/10 bg-slate-950/80 backdrop-blur">
-      <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-4 lg:px-8">
+    <header className="sticky top-0 z-30 border-b border-white/10 bg-slate-950/85 backdrop-blur-xl">
+      <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
         <Link
           href={routes.home}
-          className="flex items-center gap-3 text-sm font-semibold tracking-[0.24em] text-white uppercase"
+          className="flex items-center gap-3 text-xs font-semibold tracking-[0.22em] text-white uppercase sm:text-sm"
         >
           <span className="flex h-10 w-10 items-center justify-center rounded-full border border-cyan-400/50 bg-cyan-400/10 text-cyan-200">
             ZL
@@ -37,19 +37,22 @@ export function MarketingNav({ currentPath = "/" }: MarketingNavProps) {
           Zero Labs AI Publisher
         </Link>
 
-        <nav aria-label="Primary navigation" className="flex flex-1 flex-wrap items-center justify-end gap-3 text-sm text-slate-200">
+        <nav
+          aria-label="Primary navigation"
+          className="flex w-full flex-wrap items-center justify-start gap-2 text-sm text-slate-200 md:w-auto md:flex-1 md:justify-end md:gap-3"
+        >
           {navigationItems.map((item) => (
             <Link
               key={item.label}
               href={resolveHref(item)}
-              className="rounded-full px-4 py-2 transition hover:bg-white/10 hover:text-white"
+              className="rounded-full px-4 py-2.5 transition hover:bg-white/10 hover:text-white"
             >
               {item.label}
             </Link>
           ))}
           <Link
             href={routes.login}
-            className="rounded-full border border-cyan-400/40 bg-cyan-400/10 px-4 py-2 font-medium text-cyan-100 transition hover:border-cyan-300/70 hover:bg-cyan-300/15"
+            className="inline-flex items-center justify-center rounded-full border border-cyan-300/50 bg-cyan-300/15 px-5 py-2.5 font-semibold text-cyan-100 transition hover:border-cyan-200/80 hover:bg-cyan-300/25 hover:text-white"
           >
             Login
           </Link>
