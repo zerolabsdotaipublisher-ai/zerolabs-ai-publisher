@@ -1,18 +1,7 @@
 import type { Metadata } from "next";
-import { Fraunces, Inter } from "next/font/google";
 import "./globals.css";
 import { getPublicConfig } from "@/config";
 import { AuthProvider } from "@/providers/auth-provider";
-
-const bodyFont = Inter({
-  subsets: ["latin"],
-  variable: "--font-body",
-});
-
-const headingFont = Fraunces({
-  subsets: ["latin"],
-  variable: "--font-heading",
-});
 
 export const metadata: Metadata = {
   title: "Zero Labs AI Publisher",
@@ -28,7 +17,7 @@ export default function RootLayout({
 
   return (
     <html lang="en">
-      <body className={`${bodyFont.variable} ${headingFont.variable} ${bodyFont.className}`}>
+      <body>
         <AuthProvider
           supabaseConfig={{
             url: publicConfig.supabase.url,
