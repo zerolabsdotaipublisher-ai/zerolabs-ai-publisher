@@ -39,11 +39,7 @@ type PricingTier = {
 
 const shellClass = "mx-auto w-full max-w-[1440px] px-5 sm:px-6 lg:px-10 xl:px-12";
 const THEME_STORAGE_KEY = "zero-labs-ai-publisher-theme";
-const shellStyle = {
-  marginInline: "auto",
-  maxWidth: "1440px",
-  paddingInline: "clamp(20px, 3vw, 48px)",
-};
+const headingClass = "font-[family:var(--font-heading)]";
 
 const featureCards: FeatureCard[] = [
   {
@@ -181,23 +177,23 @@ export function LandingPage() {
         "min-h-screen overflow-x-hidden transition-colors duration-300",
         isDark ? "bg-[#071A16] text-[#F8F9FA]" : "bg-[#F8F9FA] text-[#2C3E50]",
       ].join(" ")}
-    >
-      <div
-        className={[
-          "pointer-events-none fixed inset-0",
+      >
+        <div
+          className={[
+            "pointer-events-none fixed inset-0",
           isDark
             ? "bg-[radial-gradient(circle_at_top,_rgba(31,111,95,0.22),_transparent_34%),radial-gradient(circle_at_80%_12%,_rgba(18,65,112,0.22),_transparent_28%),linear-gradient(180deg,#071A16_0%,#06131F_100%)]"
             : "bg-[radial-gradient(circle_at_top,_rgba(31,111,95,0.10),_transparent_35%),radial-gradient(circle_at_84%_10%,_rgba(18,65,112,0.08),_transparent_28%),linear-gradient(180deg,#F8F9FA_0%,#F3F7F4_100%)]",
         ].join(" ")}
-      />
+        />
 
-      <div className={`${shellClass} relative py-6 sm:py-8`} style={shellStyle}>
+      <div className={`${shellClass} relative pt-6 pb-8 md:pt-8 md:pb-10 lg:pb-12`}>
         <MarketingNav currentPath="/" contained theme={theme} onToggleTheme={() => setTheme(isDark ? "light" : "dark")} />
 
         <section
           id="product"
           className={[
-            "relative mt-10 overflow-hidden rounded-[40px] border px-6 py-8 shadow-[0_30px_90px_rgba(18,65,112,0.16)] transition-colors duration-300 sm:px-8 sm:py-10 lg:px-12 lg:py-12 xl:rounded-[48px]",
+            "relative mt-8 overflow-hidden rounded-[40px] border p-8 shadow-[0_30px_90px_rgba(18,65,112,0.16)] transition-colors duration-300 sm:mt-10 sm:p-10 lg:p-16 xl:rounded-[48px]",
             isDark
               ? "border-[#1F6F5F]/45 bg-[rgba(31,111,95,0.14)]"
               : "border-[#124170]/16 bg-[rgba(234,242,239,0.74)]",
@@ -217,10 +213,10 @@ export function LandingPage() {
             width={820}
             height={1080}
             priority
-            className="pointer-events-none absolute bottom-0 left-1/2 h-auto w-[70%] max-w-[360px] -translate-x-1/2 object-contain opacity-10 sm:max-w-[420px] lg:hidden"
+            className="pointer-events-none absolute bottom-0 left-1/2 h-auto w-[70%] max-w-[320px] -translate-x-1/2 object-contain opacity-10 sm:max-w-[380px] lg:hidden"
           />
 
-          <div className="relative z-10 grid gap-12 lg:grid-cols-[minmax(0,0.96fr)_minmax(280px,0.82fr)] lg:items-center">
+          <div className="relative z-10 grid gap-12 lg:grid-cols-[minmax(0,0.96fr)_minmax(280px,0.82fr)] lg:items-center lg:gap-14 xl:gap-16">
             <div className="max-w-[760px]">
               <div className="inline-flex items-center gap-3 rounded-full border border-[#1F6F5F]/20 bg-white/20 px-4 py-2 text-sm font-semibold tracking-[0.14em] text-current backdrop-blur-sm">
                 <Image src={heroAccentLogo} alt="" width={32} height={32} className="h-8 w-8" priority />
@@ -233,10 +229,11 @@ export function LandingPage() {
               ].join(" ")}>
                 Sustainable & humanistic AI publishing
               </p>
-              <h1 className="mt-6 max-w-[760px] text-5xl font-black uppercase leading-[0.9] tracking-tight sm:text-6xl lg:text-7xl xl:text-8xl">
-                <span className="block">Turn prompts</span>
-                <span className="block">into published</span>
-                <span className="block">AI websites</span>
+              <h1
+                className={`${headingClass} mt-6 max-w-[760px] text-5xl font-black leading-[0.92] tracking-[-0.04em] sm:text-6xl lg:text-7xl xl:text-[5.5rem]`}
+              >
+                <span className="block">Turn prompts into</span>
+                <span className="block">published AI websites</span>
               </h1>
               <p className={[
                 "mt-6 max-w-xl text-base leading-7 sm:text-lg",
@@ -279,15 +276,15 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section id="platform" className="mt-12 grid gap-8 lg:grid-cols-2 lg:gap-10">
+        <section id="platform" className="mt-8 grid gap-6 sm:mt-10 lg:grid-cols-2 lg:gap-10">
           {featureCards.map((card) => (
             <article
               key={card.title}
               className={[
                 "group relative min-h-[320px] overflow-hidden rounded-[32px] border p-8 shadow-[0_18px_48px_rgba(18,65,112,0.08)] transition-[background-color,border-color,color,box-shadow] duration-300 hover:shadow-[0_20px_60px_rgba(31,111,95,0.18)] sm:p-10",
                 isDark
-                  ? "border-[#1F6F5F]/30 bg-transparent hover:bg-[rgba(31,111,95,0.16)]"
-                  : "border-[#124170]/12 bg-transparent hover:bg-[rgba(234,242,239,0.72)]",
+                  ? "border-[#1F6F5F]/30 bg-transparent hover:border-[#1F6F5F]/52 hover:bg-[rgba(31,111,95,0.16)]"
+                  : "border-[#124170]/12 bg-transparent hover:border-[#1F6F5F]/28 hover:bg-[rgba(234,242,239,0.72)]",
               ].join(" ")}
             >
               <div className={[
@@ -309,7 +306,9 @@ export function LandingPage() {
                   ].join(" ")}>
                     {card.eyebrow}
                   </p>
-                  <h2 className="mt-5 max-w-[16ch] text-3xl font-semibold leading-tight sm:text-4xl">{card.title}</h2>
+                  <h2 className={`${headingClass} mt-5 max-w-[16ch] text-3xl font-semibold leading-tight sm:text-4xl`}>
+                    {card.title}
+                  </h2>
                   <p className={[
                     "mt-5 max-w-xl text-base leading-7",
                     isDark ? "text-[#F8F9FA]/74" : "text-[#2C3E50]/76",
@@ -333,13 +332,13 @@ export function LandingPage() {
           ))}
         </section>
 
-        <div className="mt-12 space-y-12">
+        <div className="mt-12 space-y-12 sm:mt-16 lg:space-y-16">
           {storySections.map((section) => (
             <section
               key={section.id}
               id={section.id}
               className={[
-                "rounded-[40px] border p-8 backdrop-blur-xl transition-colors duration-300 sm:p-10",
+                "rounded-[40px] border p-8 backdrop-blur-xl transition-colors duration-300 sm:p-10 lg:py-16",
                 isDark ? "border-[#1F6F5F]/26 bg-[rgba(18,65,112,0.20)]" : "border-[#124170]/10 bg-[rgba(248,249,250,0.56)]",
               ].join(" ")}
             >
@@ -350,7 +349,9 @@ export function LandingPage() {
                 ].join(" ")}>
                   {section.eyebrow}
                 </p>
-                <h2 className="mt-5 text-3xl font-semibold leading-tight sm:text-4xl lg:text-5xl">{section.title}</h2>
+                <h2 className={`${headingClass} mt-5 text-3xl font-semibold leading-tight sm:text-4xl lg:text-5xl`}>
+                  {section.title}
+                </h2>
                 <p className={[
                   "mt-5 max-w-3xl text-base leading-7 sm:text-lg",
                   isDark ? "text-[#F8F9FA]/74" : "text-[#2C3E50]/76",
@@ -359,18 +360,18 @@ export function LandingPage() {
                 </p>
               </div>
 
-              <div className="mt-10 grid gap-8 lg:grid-cols-3">
+              <div className="mt-10 grid gap-6 sm:gap-8 lg:grid-cols-3 lg:gap-8">
                 {section.cards.map((card) => (
                   <article
                     key={card.title}
                     className={[
                       "min-h-[220px] rounded-[32px] border p-8 transition-[background-color,border-color,color,box-shadow] duration-300 hover:shadow-[0_18px_50px_rgba(31,111,95,0.16)]",
                       isDark
-                        ? "border-[#1F6F5F]/22 bg-transparent hover:bg-[rgba(31,111,95,0.16)]"
-                        : "border-[#124170]/10 bg-transparent hover:bg-[rgba(234,242,239,0.72)]",
+                        ? "border-[#1F6F5F]/22 bg-transparent hover:border-[#1F6F5F]/44 hover:bg-[rgba(31,111,95,0.16)]"
+                        : "border-[#124170]/10 bg-transparent hover:border-[#1F6F5F]/24 hover:bg-[rgba(234,242,239,0.72)]",
                     ].join(" ")}
                   >
-                    <h3 className="text-2xl font-semibold">{card.title}</h3>
+                    <h3 className={`${headingClass} text-2xl font-semibold`}>{card.title}</h3>
                     <p className={[
                       "mt-4 text-base leading-7",
                       isDark ? "text-[#F8F9FA]/72" : "text-[#2C3E50]/74",
@@ -386,7 +387,7 @@ export function LandingPage() {
           <section
             id="pricing"
             className={[
-              "rounded-[40px] border p-8 backdrop-blur-xl transition-colors duration-300 sm:p-10",
+              "rounded-[40px] border p-8 backdrop-blur-xl transition-colors duration-300 sm:p-10 lg:py-16",
               isDark ? "border-[#1F6F5F]/26 bg-[rgba(18,65,112,0.20)]" : "border-[#124170]/10 bg-[rgba(248,249,250,0.56)]",
             ].join(" ")}
           >
@@ -397,7 +398,7 @@ export function LandingPage() {
               ].join(" ")}>
                 Pricing
               </p>
-              <h2 className="mt-5 text-3xl font-semibold leading-tight sm:text-4xl lg:text-5xl">
+              <h2 className={`${headingClass} mt-5 text-3xl font-semibold leading-tight sm:text-4xl lg:text-5xl`}>
                 Three pricing paths for teams growing into AI-powered publishing operations.
               </h2>
               <p className={[
@@ -408,15 +409,15 @@ export function LandingPage() {
               </p>
             </div>
 
-            <div className="mt-10 grid gap-8 lg:grid-cols-3">
+            <div className="mt-10 grid gap-6 sm:gap-8 lg:grid-cols-3 lg:gap-8">
               {pricingTiers.map((tier) => (
                 <article
                   key={tier.name}
                   className={[
                     "flex min-h-[320px] flex-col rounded-[32px] border p-8 transition-[background-color,border-color,color,box-shadow] duration-300 hover:shadow-[0_18px_50px_rgba(31,111,95,0.16)]",
                     isDark
-                      ? "border-[#1F6F5F]/22 bg-transparent hover:bg-[rgba(31,111,95,0.16)]"
-                      : "border-[#124170]/10 bg-transparent hover:bg-[rgba(234,242,239,0.72)]",
+                      ? "border-[#1F6F5F]/22 bg-transparent hover:border-[#1F6F5F]/44 hover:bg-[rgba(31,111,95,0.16)]"
+                      : "border-[#124170]/10 bg-transparent hover:border-[#1F6F5F]/24 hover:bg-[rgba(234,242,239,0.72)]",
                   ].join(" ")}
                 >
                   <p className={[
@@ -425,7 +426,7 @@ export function LandingPage() {
                   ].join(" ")}>
                     {tier.name}
                   </p>
-                  <h3 className="mt-5 text-2xl font-semibold">{tier.summary}</h3>
+                  <h3 className={`${headingClass} mt-5 text-2xl font-semibold`}>{tier.summary}</h3>
                   <p className={[
                     "mt-4 text-base leading-7",
                     isDark ? "text-[#F8F9FA]/72" : "text-[#2C3E50]/74",
@@ -454,7 +455,7 @@ export function LandingPage() {
           </section>
         </div>
 
-        <div className="mt-12">
+        <div className="mt-16 sm:mt-20">
           <MarketingFooter contained theme={theme} />
         </div>
       </div>

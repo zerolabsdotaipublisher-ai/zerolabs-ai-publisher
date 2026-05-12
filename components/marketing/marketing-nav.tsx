@@ -19,11 +19,6 @@ const navigationItems: Array<{ label: string; href: string; desktopOnly?: boolea
 ] as const;
 
 const shellClass = "mx-auto w-full max-w-[1440px] px-5 sm:px-6 lg:px-10 xl:px-12";
-const shellStyle = {
-  marginInline: "auto",
-  maxWidth: "1440px",
-  paddingInline: "clamp(20px, 3vw, 48px)",
-};
 
 export function MarketingNav({
   currentPath = "/",
@@ -45,13 +40,13 @@ export function MarketingNav({
   const content = (
     <header
       className={[
-        "rounded-[32px] border px-4 py-4 shadow-[0_24px_70px_rgba(18,65,112,0.12)] backdrop-blur-xl transition-colors duration-300 sm:px-6",
+        "rounded-[32px] border px-4 py-4 shadow-[0_24px_70px_rgba(18,65,112,0.12)] backdrop-blur-xl transition-colors duration-300 sm:px-6 lg:px-8",
         isDark
           ? "border-white/10 bg-[rgba(7,26,22,0.88)] text-[#F8F9FA]"
           : "border-[#1F6F5F]/14 bg-[rgba(248,249,250,0.86)] text-[#2C3E50]",
       ].join(" ")}
     >
-      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:items-center">
+      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(240px,1fr)_auto_minmax(240px,1fr)] lg:items-center lg:gap-6">
         <div className="flex items-center justify-between gap-3 lg:justify-start">
           <Link href={routes.home} className="flex min-w-0 items-center gap-3">
             <Image
@@ -62,14 +57,16 @@ export function MarketingNav({
               priority
               className="h-10 w-auto shrink-0"
             />
-            <span className="min-w-0 text-sm font-semibold tracking-[0.14em] text-current sm:text-base">Zero Labs AI Publisher</span>
+            <span className="min-w-0 font-[family:var(--font-heading)] text-sm font-semibold tracking-[0.1em] text-current sm:text-base">
+              Zero Labs AI Publisher
+            </span>
           </Link>
         </div>
 
         <nav
           aria-label="Primary navigation"
           className={[
-            "flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs font-semibold uppercase tracking-[0.26em] sm:text-sm",
+            "flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs font-semibold uppercase tracking-[0.24em] sm:text-sm",
             isDark ? "text-[#F8F9FA]/72" : "text-[#2C3E50]/72",
           ].join(" ")}
         >
@@ -132,7 +129,7 @@ export function MarketingNav({
   }
 
   return (
-    <div className={`${shellClass} py-6 sm:py-8`} style={shellStyle}>
+    <div className={`${shellClass} pt-6 md:pt-8`}>
       {content}
     </div>
   );
