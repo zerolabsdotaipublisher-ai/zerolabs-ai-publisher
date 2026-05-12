@@ -19,6 +19,11 @@ const navigationItems: Array<{ label: string; href: string; desktopOnly?: boolea
 ] as const;
 
 const shellClass = "mx-auto w-full max-w-[1440px] px-5 sm:px-6 lg:px-10 xl:px-12";
+const shellStyle = {
+  marginInline: "auto",
+  maxWidth: "1440px",
+  paddingInline: "clamp(20px, 3vw, 48px)",
+};
 
 export function MarketingNav({
   currentPath = "/",
@@ -48,10 +53,10 @@ export function MarketingNav({
     >
       <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] lg:items-center">
         <div className="flex items-center justify-between gap-3 lg:justify-start">
-          <Link href={routes.home} className="flex min-w-0 items-center gap-3" aria-label="Zero Labs AI Publisher home">
+          <Link href={routes.home} className="flex min-w-0 items-center gap-3">
             <Image
               src={logoSrc}
-              alt="Zero Labs AI Publisher logo"
+              alt=""
               width={180}
               height={40}
               priority
@@ -59,8 +64,6 @@ export function MarketingNav({
             />
             <span className="min-w-0 text-sm font-semibold tracking-[0.14em] text-current sm:text-base">Zero Labs AI Publisher</span>
           </Link>
-
-          {onToggleTheme ? <ThemeToggle theme={theme} onToggle={onToggleTheme} /> : null}
         </div>
 
         <nav
@@ -118,6 +121,7 @@ export function MarketingNav({
           >
             Signup
           </Link>
+          {onToggleTheme ? <ThemeToggle theme={theme} onToggle={onToggleTheme} /> : null}
         </div>
       </div>
     </header>
@@ -127,5 +131,9 @@ export function MarketingNav({
     return content;
   }
 
-  return <div className={`${shellClass} py-6 sm:py-8`}>{content}</div>;
+  return (
+    <div className={`${shellClass} py-6 sm:py-8`} style={shellStyle}>
+      {content}
+    </div>
+  );
 }

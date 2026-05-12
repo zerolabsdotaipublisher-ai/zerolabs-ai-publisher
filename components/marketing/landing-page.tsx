@@ -39,6 +39,11 @@ type PricingTier = {
 
 const shellClass = "mx-auto w-full max-w-[1440px] px-5 sm:px-6 lg:px-10 xl:px-12";
 const THEME_STORAGE_KEY = "zero-labs-ai-publisher-theme";
+const shellStyle = {
+  marginInline: "auto",
+  maxWidth: "1440px",
+  paddingInline: "clamp(20px, 3vw, 48px)",
+};
 
 const featureCards: FeatureCard[] = [
   {
@@ -145,7 +150,7 @@ export function LandingPage() {
   const hasInitializedTheme = useRef(false);
 
   useEffect(() => {
-    const frame = window.requestAnimationFrame(() => {
+    const frameId = window.requestAnimationFrame(() => {
       const initialTheme = resolveInitialTheme();
       hasInitializedTheme.current = true;
       setTheme(initialTheme);
@@ -154,7 +159,7 @@ export function LandingPage() {
       window.localStorage.setItem(THEME_STORAGE_KEY, initialTheme);
     });
 
-    return () => window.cancelAnimationFrame(frame);
+    return () => window.cancelAnimationFrame(frameId);
   }, []);
 
   useEffect(() => {
@@ -186,7 +191,7 @@ export function LandingPage() {
         ].join(" ")}
       />
 
-      <div className={`${shellClass} relative py-6 sm:py-8`}>
+      <div className={`${shellClass} relative py-6 sm:py-8`} style={shellStyle}>
         <MarketingNav currentPath="/" contained theme={theme} onToggleTheme={() => setTheme(isDark ? "light" : "dark")} />
 
         <section
@@ -212,13 +217,13 @@ export function LandingPage() {
             width={820}
             height={1080}
             priority
-            className="pointer-events-none absolute bottom-0 left-1/2 h-auto w-[70%] max-w-[360px] -translate-x-1/2 object-contain opacity-12 sm:max-w-[420px] lg:hidden"
+            className="pointer-events-none absolute bottom-0 left-1/2 h-auto w-[70%] max-w-[360px] -translate-x-1/2 object-contain opacity-10 sm:max-w-[420px] lg:hidden"
           />
 
           <div className="relative z-10 grid gap-12 lg:grid-cols-[minmax(0,0.96fr)_minmax(280px,0.82fr)] lg:items-center">
             <div className="max-w-[760px]">
               <div className="inline-flex items-center gap-3 rounded-full border border-[#1F6F5F]/20 bg-white/20 px-4 py-2 text-sm font-semibold tracking-[0.14em] text-current backdrop-blur-sm">
-                <Image src={heroAccentLogo} alt="Zero Labs AI Publisher brand mark" width={32} height={32} className="h-8 w-8" priority />
+                <Image src={heroAccentLogo} alt="" width={32} height={32} className="h-8 w-8" priority />
                 <span>Zero Labs AI Publisher</span>
               </div>
 
@@ -226,7 +231,7 @@ export function LandingPage() {
                 "mt-6 text-sm font-semibold uppercase tracking-[0.32em]",
                 isDark ? "text-[#F8F9FA]/68" : "text-[#124170]/70",
               ].join(" ")}>
-                Sustainable &amp; humanistic AI publishing
+                Sustainable & humanistic AI publishing
               </p>
               <h1 className="mt-6 max-w-[760px] text-5xl font-black uppercase leading-[0.9] tracking-tight sm:text-6xl lg:text-7xl xl:text-8xl">
                 <span className="block">Turn prompts</span>
@@ -279,7 +284,7 @@ export function LandingPage() {
             <article
               key={card.title}
               className={[
-                "group relative min-h-[320px] overflow-hidden rounded-[32px] border p-8 shadow-[0_18px_48px_rgba(18,65,112,0.08)] transition-colors duration-300 transition-shadow hover:shadow-[0_20px_60px_rgba(31,111,95,0.18)] sm:p-10",
+                "group relative min-h-[320px] overflow-hidden rounded-[32px] border p-8 shadow-[0_18px_48px_rgba(18,65,112,0.08)] transition-[background-color,border-color,color,box-shadow] duration-300 hover:shadow-[0_20px_60px_rgba(31,111,95,0.18)] sm:p-10",
                 isDark
                   ? "border-[#1F6F5F]/30 bg-transparent hover:bg-[rgba(31,111,95,0.16)]"
                   : "border-[#124170]/12 bg-transparent hover:bg-[rgba(234,242,239,0.72)]",
@@ -359,7 +364,7 @@ export function LandingPage() {
                   <article
                     key={card.title}
                     className={[
-                      "min-h-[220px] rounded-[32px] border p-8 transition-colors duration-300 transition-shadow hover:shadow-[0_18px_50px_rgba(31,111,95,0.16)]",
+                      "min-h-[220px] rounded-[32px] border p-8 transition-[background-color,border-color,color,box-shadow] duration-300 hover:shadow-[0_18px_50px_rgba(31,111,95,0.16)]",
                       isDark
                         ? "border-[#1F6F5F]/22 bg-transparent hover:bg-[rgba(31,111,95,0.16)]"
                         : "border-[#124170]/10 bg-transparent hover:bg-[rgba(234,242,239,0.72)]",
@@ -408,7 +413,7 @@ export function LandingPage() {
                 <article
                   key={tier.name}
                   className={[
-                    "flex min-h-[320px] flex-col rounded-[32px] border p-8 transition-colors duration-300 transition-shadow hover:shadow-[0_18px_50px_rgba(31,111,95,0.16)]",
+                    "flex min-h-[320px] flex-col rounded-[32px] border p-8 transition-[background-color,border-color,color,box-shadow] duration-300 hover:shadow-[0_18px_50px_rgba(31,111,95,0.16)]",
                     isDark
                       ? "border-[#1F6F5F]/22 bg-transparent hover:bg-[rgba(31,111,95,0.16)]"
                       : "border-[#124170]/10 bg-transparent hover:bg-[rgba(234,242,239,0.72)]",

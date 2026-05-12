@@ -12,6 +12,11 @@ const footerLinks = [
 ] as const;
 
 const shellClass = "mx-auto w-full max-w-[1440px] px-5 sm:px-6 lg:px-10 xl:px-12";
+const shellStyle = {
+  marginInline: "auto",
+  maxWidth: "1440px",
+  paddingInline: "clamp(20px, 3vw, 48px)",
+};
 
 interface MarketingFooterProps {
   contained?: boolean;
@@ -34,7 +39,7 @@ export function MarketingFooter({ contained = false, theme = "light" }: Marketin
       <div className="flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-2xl space-y-4">
           <div className="flex items-center gap-3">
-            <Image src={logoSrc} alt="Zero Labs AI Publisher logo" width={180} height={40} className="h-10 w-auto" />
+            <Image src={logoSrc} alt="" width={180} height={40} className="h-10 w-auto" />
             <span className="text-sm font-semibold tracking-[0.14em] text-current sm:text-base">Zero Labs AI Publisher</span>
           </div>
           <p className="max-w-xl text-2xl font-semibold leading-tight sm:text-3xl">
@@ -69,7 +74,7 @@ export function MarketingFooter({ contained = false, theme = "light" }: Marketin
                 "inline-flex min-h-11 items-center justify-center rounded-full px-6 text-sm font-semibold transition-colors duration-300",
                 isDark
                   ? "border border-white/12 bg-white/[0.05] text-[#F8F9FA] hover:border-[#1F6F5F]/70 hover:bg-[#1F6F5F]/16"
-                  : "border border-[#1F6F5F]/14 bg-[#F8F9FA] text-[#124170] hover:border-[#1F6F5F]/35 hover:bg-[#F8F9FA]",
+                  : "border border-[#1F6F5F]/14 bg-[#F8F9FA] text-[#124170] hover:border-[#1F6F5F]/35 hover:bg-[#EAF2EF]",
               ].join(" ")}
             >
               Login
@@ -90,5 +95,9 @@ export function MarketingFooter({ contained = false, theme = "light" }: Marketin
     return content;
   }
 
-  return <div className={`${shellClass} pb-8 sm:pb-10`}>{content}</div>;
+  return (
+    <div className={`${shellClass} pb-8 sm:pb-10`} style={shellStyle}>
+      {content}
+    </div>
+  );
 }
