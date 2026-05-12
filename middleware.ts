@@ -3,17 +3,40 @@ import { NextResponse } from "next/server";
 import { routes } from "@/config/routes";
 import { updateSession } from "@/lib/supabase/middleware";
 
-const protectedPaths = [routes.dashboard, routes.profile];
+const protectedPaths = [
+  routes.dashboard,
+  routes.activity,
+  routes.contentLibrary,
+  routes.review,
+  routes.approval,
+  routes.createWebsite,
+  routes.generateWebsite,
+  routes.websites,
+  routes.profile,
+  routes.edit,
+  routes.revisions,
+  routes.editor,
+  routes.generatedSites,
+  routes.preview,
+];
+
+function isProtectedPath(pathname: string): boolean {
+  return protectedPaths.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+}
 
 export async function middleware(request: NextRequest): Promise<NextResponse> {
   const { pathname, search } = request.nextUrl;
-  const { response, user } = await updateSession(request);
 
-  if (!protectedPaths.some((path) => pathname.startsWith(path))) {
-    return response;
+  // Keep public routes out of Supabase middleware entirely so the homepage,
+  // login, logout callback, and marketing pages cannot get trapped in auth
+  // refresh work or redirect loops at the edge.
+  if (!isProtectedPath(pathname)) {
+    return NextResponse.next();
   }
 
-  if (user) {
+  const { response, hasSession } = await updateSession(request);
+
+  if (hasSession) {
     return response;
   }
 
@@ -24,7 +47,6 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
 }
 
 export const config = {
-  // Exclude API routes from auth middleware to avoid interfering with route handlers.
-  // API auth routes use server-side Supabase clients for auth/session operations.
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  // Keep static assets and API handlers out of edge auth checks entirely.
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|assets).*)"],
 };
