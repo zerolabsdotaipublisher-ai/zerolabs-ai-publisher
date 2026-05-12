@@ -9,11 +9,13 @@ const footerLinks = [
   { label: "Insights", href: `${routes.home}#insights` },
   { label: "Pricing", href: `${routes.home}#pricing` },
   { label: "Blog", href: "/blog" },
+  { label: "Login", href: routes.login },
 ] as const;
 
 const shellClass = "mx-auto w-full max-w-[1440px] px-5 sm:px-6 lg:px-10 xl:px-12";
 const shellStyle = {
   marginInline: "auto",
+  width: "100%",
   maxWidth: "1440px",
   paddingInline: "clamp(20px, 3vw, 48px)",
 };
@@ -30,37 +32,46 @@ export function MarketingFooter({ contained = false, theme = "light" }: Marketin
   const content = (
     <footer
       className={[
-        "rounded-[32px] border px-6 py-8 shadow-[0_24px_70px_rgba(18,65,112,0.10)] backdrop-blur-xl transition-colors duration-300 sm:px-8 lg:px-10",
+        "rounded-[40px] border shadow-[0_30px_100px_rgba(18,65,112,0.10)] backdrop-blur-2xl transition-colors duration-300",
         isDark
-          ? "border-white/10 bg-[rgba(6,19,31,0.82)] text-[#F8F9FA]"
-          : "border-[#1F6F5F]/14 bg-[rgba(234,242,239,0.82)] text-[#2C3E50]",
+          ? "border-[#1F6F5F]/20 bg-[linear-gradient(135deg,rgba(6,19,31,0.90),rgba(7,26,22,0.82),rgba(18,65,112,0.38))] text-[#F8F9FA]"
+          : "border-[#124170]/10 bg-[linear-gradient(135deg,rgba(248,249,250,0.82),rgba(234,242,239,0.88),rgba(18,65,112,0.08))] text-[#2C3E50]",
       ].join(" ")}
+      style={{ padding: "clamp(36px, 5vw, 56px)" }}
     >
-      <div className="flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
-        <div className="max-w-2xl space-y-4">
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,1.2fr)_minmax(300px,0.8fr)] lg:items-end lg:gap-16">
+        <div className="max-w-2xl space-y-6">
           <div className="flex items-center gap-3">
             <Image src={logoSrc} alt="" width={180} height={40} className="h-10 w-auto" />
-            <span className="text-sm font-semibold tracking-[0.14em] text-current sm:text-base">Zero Labs AI Publisher</span>
+            <span className="font-[family:var(--font-heading)] text-sm font-semibold tracking-[0.1em] text-current sm:text-base">
+              Zero Labs AI Publisher
+            </span>
           </div>
-          <p className="max-w-xl text-2xl font-semibold leading-tight sm:text-3xl">
-            Zero Labs AI Publisher is built by Zero Labs for AI-powered publishing operations.
+          <p className={["text-xs font-medium tracking-[0.16em]", isDark ? "text-[#F8F9FA]/54" : "text-[#124170]/54"].join(" ")}>
+            Sustainable AI · Editorial storytelling · Humanistic publishing
           </p>
-          <p className={isDark ? "text-[#F8F9FA]/70" : "text-[#2C3E50]/72"}>
-            Prompt-led websites, publishing workflow oversight, and brand-safe automation surfaces stay aligned inside one calm green product system.
+          <p className="max-w-2xl font-[family:var(--font-heading)] text-3xl font-semibold leading-[1.08] sm:text-4xl lg:text-[2.9rem]">
+            Zero Labs AI Publisher
+          </p>
+          <p className={["max-w-xl text-base leading-8 sm:text-lg", isDark ? "text-[#F8F9FA]/72" : "text-[#2C3E50]/76"].join(" ")}>
+            AI-powered publishing infrastructure for sustainable, humanistic digital operations.
+          </p>
+          <p className={["text-sm", isDark ? "text-[#F8F9FA]/62" : "text-[#2C3E50]/62"].join(" ")}>
+            © 2026 Zero Labs AI Publisher. Built by Zero Labs.
           </p>
         </div>
 
-        <div className="flex flex-col items-start gap-4 lg:items-end">
-          <div className="flex flex-wrap gap-3 text-xs font-semibold uppercase tracking-[0.22em] sm:text-sm">
+        <div className="flex flex-col items-start gap-6 lg:items-end">
+          <div className="flex flex-wrap gap-3 text-sm font-medium tracking-[0.04em] lg:justify-end">
             {footerLinks.map((link) => (
               <Link
                 key={link.label}
                 href={link.href}
                 className={[
-                  "rounded-full border px-4 py-2 transition-colors duration-300",
+                  "rounded-full border px-[18px] py-[10px] transition-colors duration-300",
                   isDark
-                    ? "border-white/10 text-[#F8F9FA]/72 hover:border-[#1F6F5F]/70 hover:bg-[#1F6F5F]/16 hover:text-[#F8F9FA]"
-                    : "border-[#124170]/12 text-[#124170] hover:border-[#1F6F5F]/35 hover:bg-[#F8F9FA]",
+                    ? "border-white/8 text-[#F8F9FA]/74 hover:border-[#1F6F5F]/55 hover:bg-[#1F6F5F]/12 hover:text-[#F8F9FA]"
+                    : "border-[#124170]/10 text-[#124170] hover:border-[#1F6F5F]/30 hover:bg-[rgba(31,111,95,0.08)]",
                 ].join(" ")}
               >
                 {link.label}
@@ -69,21 +80,11 @@ export function MarketingFooter({ contained = false, theme = "light" }: Marketin
           </div>
           <div className="flex flex-wrap gap-3">
             <Link
-              href={routes.login}
-              className={[
-                "inline-flex min-h-11 items-center justify-center rounded-full px-6 text-sm font-semibold transition-colors duration-300",
-                isDark
-                  ? "border border-white/12 bg-white/[0.05] text-[#F8F9FA] hover:border-[#1F6F5F]/70 hover:bg-[#1F6F5F]/16"
-                  : "border border-[#1F6F5F]/14 bg-[#F8F9FA] text-[#124170] hover:border-[#1F6F5F]/35 hover:bg-[#EAF2EF]",
-              ].join(" ")}
-            >
-              Login
-            </Link>
-            <Link
               href={routes.signup}
-              className="inline-flex min-h-11 items-center justify-center rounded-full bg-[#1F6F5F] px-6 text-sm font-semibold text-white transition-colors duration-300 hover:bg-[#18584b]"
+              className="inline-flex min-h-11 items-center justify-center rounded-full bg-[#1F6F5F] text-sm font-semibold text-white transition-colors duration-300 hover:bg-[#18584b]"
+              style={{ paddingInline: "24px" }}
             >
-              Signup
+              Start building
             </Link>
           </div>
         </div>
@@ -96,7 +97,7 @@ export function MarketingFooter({ contained = false, theme = "light" }: Marketin
   }
 
   return (
-    <div className={`${shellClass} pb-8 sm:pb-10`} style={shellStyle}>
+    <div className={`${shellClass} pb-[32px] sm:pb-[40px]`} style={{ ...shellStyle, paddingBottom: "clamp(32px, 4vw, 40px)" }}>
       {content}
     </div>
   );
