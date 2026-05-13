@@ -86,14 +86,29 @@ export function MarketingNav({
           ))}
         </nav>
 
-        <div className="flex flex-wrap items-center justify-end gap-3">
-          <div className="marketing-pill-control hidden min-w-[108px] text-sm font-semibold tracking-[0.08em] md:inline-flex">
+        <div className="flex flex-wrap items-center justify-end gap-3 lg:w-full lg:max-w-[360px]">
+          <form
+            role="search"
+            className="marketing-search-control order-3 w-full min-w-0 sm:order-none sm:w-[200px] xl:w-[232px]"
+            onSubmit={(event) => event.preventDefault()}
+          >
+            <label className="sr-only" htmlFor="marketing-search">
+              Search Zero Labs AI Publisher
+            </label>
             <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4 stroke-current" fill="none" strokeWidth="1.8">
               <circle cx="11" cy="11" r="6.5" />
               <path d="m16 16 4.5 4.5" strokeLinecap="round" />
             </svg>
-            <span>Search</span>
-          </div>
+            <input
+              id="marketing-search"
+              type="search"
+              name="q"
+              placeholder="Search"
+              aria-label="Search Zero Labs AI Publisher"
+              autoComplete="off"
+              className="min-w-0 flex-1"
+            />
+          </form>
           <Link href={routes.login} className="marketing-secondary-button min-w-[78px] text-sm font-semibold">
             Login
           </Link>

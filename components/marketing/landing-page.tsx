@@ -15,8 +15,6 @@ type FeatureCard = {
   description: string;
   ctaLabel: string;
   href: string;
-  lightAsset: string;
-  darkAsset: string;
 };
 
 type StorySection = {
@@ -49,7 +47,8 @@ const shellStyle = {
 const heroToFeaturesSpacing = "clamp(48px, 7vw, 72px)";
 const featureToStorySpacing = "clamp(64px, 9vw, 96px)";
 const majorSectionSpacing = "clamp(56px, 7vw, 96px)";
-const footerSpacing = "clamp(80px, 10vw, 120px)";
+const pricingToBannerSpacing = "clamp(64px, 8vw, 96px)";
+const bannerToFooterSpacing = "clamp(72px, 8vw, 96px)";
 
 const featureCards: FeatureCard[] = [
   {
@@ -59,8 +58,6 @@ const featureCards: FeatureCard[] = [
     description: "Turn a single prompt into a public-ready website with balanced layout, brand-led storytelling, and launch-ready page structure.",
     ctaLabel: "Explore platform",
     href: "#platform-story",
-    lightAsset: "/images/AI robot logo light.svg",
-    darkAsset: "/images/AI robot logo dark.svg",
   },
   {
     id: "workflow",
@@ -69,8 +66,6 @@ const featureCards: FeatureCard[] = [
     description: "Guide teams from brief to review to release with a calmer operating surface that keeps automation visible without feeling like a dashboard.",
     ctaLabel: "View insights",
     href: "#insights",
-    lightAsset: "/images/Banner Light.svg",
-    darkAsset: "/images/Banner.svg",
   },
 ];
 
@@ -347,16 +342,45 @@ export function LandingPage() {
                     : "radial-gradient(circle at top right, rgba(173,230,205,0.22), transparent 40%)",
                 }}
               />
-              <Image
-                src={isDark ? card.darkAsset : card.lightAsset}
-                alt=""
-                width={220}
-                height={220}
-                className="pointer-events-none absolute right-[28px] bottom-[28px] h-24 w-auto transition-opacity duration-300 group-hover:opacity-60 sm:h-28"
-                style={{ opacity: isDark ? 0.28 : 0.26 }}
-              />
               <div className="relative flex h-full flex-col justify-between" style={{ gap: "clamp(24px, 3vw, 42px)" }}>
                 <div style={{ display: "grid", gap: "22px" }}>
+                  <span
+                    aria-hidden="true"
+                    className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border"
+                    style={{
+                      borderColor: isDark ? "rgba(173,230,205,0.2)" : "rgba(31,111,95,0.2)",
+                      background: isDark ? "rgba(11,36,29,0.3)" : "rgba(248,249,250,0.36)",
+                      color: isDark ? "#EAF2EF" : "#124170",
+                      boxShadow: isDark ? "0 12px 30px rgba(0,0,0,0.14)" : "0 12px 30px rgba(18,65,112,0.08)",
+                    }}
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="h-5 w-5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      {card.id === "platform" ? (
+                        <>
+                          <path d="M6.5 8.5h11" />
+                          <path d="M6.5 12h11" />
+                          <path d="M6.5 15.5h6.5" />
+                          <path d="M5 5.75h14a1.25 1.25 0 0 1 1.25 1.25v10a1.25 1.25 0 0 1-1.25 1.25H5A1.25 1.25 0 0 1 3.75 17V7A1.25 1.25 0 0 1 5 5.75Z" />
+                        </>
+                      ) : (
+                        <>
+                          <path d="M7 6.75h6" />
+                          <path d="M7 12h10" />
+                          <path d="M7 17.25h4.5" />
+                          <path d="M16.75 6.75h.5" />
+                          <path d="M16.75 17.25h.5" />
+                        </>
+                      )}
+                    </svg>
+                  </span>
                   <p className="marketing-label-muted text-sm font-semibold tracking-[0.08em]">{card.eyebrow}</p>
                   <h2 className={`${headingClass} max-w-[16ch] text-3xl font-semibold leading-tight sm:text-4xl`}>{card.title}</h2>
                   <p className="marketing-copy-muted max-w-xl text-base" style={{ lineHeight: 1.8 }}>
@@ -490,7 +514,60 @@ export function LandingPage() {
           </section>
         </div>
 
-        <div style={{ marginTop: footerSpacing }}>
+        <section
+          aria-labelledby="banner-showcase-title"
+          className="marketing-panel-surface relative overflow-hidden rounded-[40px] backdrop-blur-xl"
+          style={{
+            marginTop: pricingToBannerSpacing,
+            ...buildPanelStyle(
+              "clamp(24px, 4vw, 40px)",
+              isDark ? "rgba(11,36,29,0.68)" : "rgba(248,249,250,0.74)",
+              isDark ? "0 0 42px rgba(31,111,95,0.18), 0 24px 90px rgba(0,0,0,0.16)" : "0 0 34px rgba(31,111,95,0.12), 0 24px 90px rgba(18,65,112,0.08)",
+              isDark ? "rgba(173,230,205,0.22)" : "rgba(31,111,95,0.18)",
+              isDark ? "rgba(173,230,205,0.3)" : "rgba(31,111,95,0.26)"
+            ),
+          }}
+        >
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background: isDark
+                ? "radial-gradient(circle at top right, rgba(31,111,95,0.16), transparent 32%), radial-gradient(circle at 12% 18%, rgba(173,230,205,0.08), transparent 24%)"
+                : "radial-gradient(circle at top right, rgba(31,111,95,0.12), transparent 32%), radial-gradient(circle at 12% 18%, rgba(173,230,205,0.12), transparent 24%)",
+            }}
+          />
+          <div className="relative grid gap-8 lg:grid-cols-[minmax(0,0.72fr)_minmax(0,1fr)] lg:items-center lg:gap-12">
+            <div className="max-w-xl space-y-5">
+              <p className="marketing-label-muted text-sm font-semibold tracking-[0.08em]">Visual showcase</p>
+              <h2 id="banner-showcase-title" className={`${headingClass} text-3xl font-semibold leading-tight sm:text-4xl lg:text-5xl`}>
+                A calmer public surface for AI-powered publishing.
+              </h2>
+              <p className="marketing-copy-muted text-base sm:text-lg" style={{ lineHeight: 1.85 }}>
+                Give the launch story room to breathe with a dedicated visual moment that supports the narrative without crowding the feature cards.
+              </p>
+            </div>
+
+            <div
+              className="relative rounded-[32px] border p-6 sm:p-8 lg:p-10"
+              style={{
+                borderColor: isDark ? "rgba(173,230,205,0.18)" : "rgba(31,111,95,0.16)",
+                background: isDark ? "rgba(6,26,20,0.36)" : "rgba(248,249,250,0.6)",
+                boxShadow: isDark ? "0 18px 54px rgba(0,0,0,0.16)" : "0 18px 54px rgba(18,65,112,0.06)",
+              }}
+            >
+              <Image
+                src={isDark ? "/images/Banner.svg" : "/images/Banner Light.svg"}
+                alt="Zero Labs AI Publisher banner"
+                width={1280}
+                height={720}
+                className="h-auto max-h-[420px] w-full object-contain"
+                priority
+              />
+            </div>
+          </div>
+        </section>
+
+        <div style={{ marginTop: bannerToFooterSpacing }}>
           <MarketingFooter contained theme={theme} />
         </div>
       </div>

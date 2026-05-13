@@ -4,15 +4,6 @@ import Link from "next/link";
 import { routes } from "@/config/routes";
 import { MarketingTheme } from "./theme-toggle";
 
-const footerLinks = [
-  { label: "Product", href: `${routes.home}#product` },
-  { label: "Platform", href: `${routes.home}#platform` },
-  { label: "Insights", href: `${routes.home}#insights` },
-  { label: "Pricing", href: `${routes.home}#pricing` },
-  { label: "Blog", href: "/blog" },
-  { label: "Login", href: routes.login },
-] as const;
-
 const shellClass = "mx-auto w-full max-w-[1440px] px-5 sm:px-6 lg:px-10 xl:px-12";
 const shellStyle = {
   marginInline: "auto",
@@ -69,19 +60,10 @@ export function MarketingFooter({ contained = false, theme = "light" }: Marketin
           <p className="marketing-copy-muted text-sm">© 2026 Zero Labs AI Publisher. Built by Zero Labs.</p>
         </div>
 
-        <div className="flex flex-col items-start gap-7 lg:items-end">
-          <div className="flex flex-wrap gap-3 text-sm font-medium tracking-[0.04em] lg:justify-end">
-            {footerLinks.map((link) => (
-              <Link key={link.label} href={link.href} className="marketing-pill-control inline-flex rounded-full px-[18px] py-[10px] text-sm font-semibold">
-                {link.label}
-              </Link>
-            ))}
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <Link href={routes.signup} className="marketing-primary-button inline-flex min-h-11 items-center justify-center rounded-full px-6 text-sm font-semibold">
-              Start building
-            </Link>
-          </div>
+        <div className="flex items-start lg:justify-end">
+          <Link href={routes.signup} className="marketing-primary-button inline-flex min-h-11 items-center justify-center rounded-full px-6 text-sm font-semibold">
+            Start building
+          </Link>
         </div>
       </div>
     </footer>
