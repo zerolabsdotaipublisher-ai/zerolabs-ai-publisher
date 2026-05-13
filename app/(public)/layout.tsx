@@ -39,7 +39,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
 
         <aside className="auth-visual-panel">
           <span className="auth-panel-eyebrow">Calmer publishing workflows</span>
-          <h2>Bring your AI publishing workspace in line with the homepage brand.</h2>
+          <h2>Keep every AI publishing step calm, credible, and brand-safe.</h2>
           <p>
             Balanced surfaces, human-first review, and a green editorial palette keep Zero Labs AI Publisher feeling
             premium from first visit through sign-in.
