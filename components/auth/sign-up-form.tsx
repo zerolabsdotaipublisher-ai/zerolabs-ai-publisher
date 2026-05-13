@@ -1,8 +1,8 @@
 "use client";
 
 import { useId, useState, type FormEvent } from "react";
-import { routes } from "@/config/routes";
 import { PasswordField } from "@/components/auth/password-field";
+import { routes } from "@/config/routes";
 import { getSupabaseAppUrl, getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 function validateRegistration(email: string, password: string, confirmPassword: string): string | null {

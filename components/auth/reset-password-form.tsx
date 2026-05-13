@@ -2,8 +2,8 @@
 
 import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { routes } from "@/config/routes";
 import { PasswordField } from "@/components/auth/password-field";
+import { routes } from "@/config/routes";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 const REDIRECT_DELAY_AFTER_SUCCESS_MS = 1200;

@@ -17,12 +17,12 @@ function isValidEmail(value: string, emailInput: HTMLInputElement): boolean {
 function mapResetRequestError(message: string): string {
   const lower = message.toLowerCase();
 
-  if (lower.includes("failed to fetch")) {
-    return "We could not send the reset link. Please check your connection and try again.";
-  }
-
   if (lower.includes("rate limit") || lower.includes("too many requests")) {
     return "We could not send the reset link right now. Please wait a moment and try again.";
+  }
+
+  if (lower.includes("failed to fetch")) {
+    return "We could not send the reset link. Please check your connection and try again.";
   }
 
   return "We could not send the reset link. Please check your connection and try again.";
