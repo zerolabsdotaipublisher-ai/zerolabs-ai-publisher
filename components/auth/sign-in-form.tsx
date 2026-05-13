@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState, type FormEvent } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { PasswordField } from "@/components/auth/password-field";
 import { resolveSafeNextPath } from "@/lib/auth/redirect";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -72,7 +72,6 @@ function mapSignInError(message: string): string {
 
 export function SignInForm() {
   const id = useId();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = getSupabaseBrowserClient();
   const { initialMessage, initialError } = resolveInitialState(searchParams);
@@ -109,7 +108,7 @@ export function SignInForm() {
         return;
       }
 
-      router.replace(nextPath);
+      window.location.replace(nextPath);
     } catch {
       setError("Unable to sign in right now. Please check your connection and try again.");
     } finally {

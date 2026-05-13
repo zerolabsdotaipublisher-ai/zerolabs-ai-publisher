@@ -1,21 +1,18 @@
 import { DashboardHome } from "@/components/dashboard/dashboard-home";
+import { routes } from "@/config/routes";
 import {
   buildDashboardSummary,
   getDashboardUserDisplayName,
   getDefaultDashboardErrorMessage,
   type DashboardSummary,
 } from "@/lib/dashboard";
-import { getServerUser } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/supabase/auth";
 
 export default async function DashboardPage() {
-  const user = await getServerUser();
+  const user = await requireUser(routes.dashboard);
 
-  if (!user) {
-    return <DashboardHome initialError={getDefaultDashboardErrorMessage()} />;
-  }
-
-  let initialError: string | undefined;
   let initialSummary: DashboardSummary | undefined;
+  let initialError: string | undefined;
 
   try {
     initialSummary = await buildDashboardSummary({
