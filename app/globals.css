@@ -12,6 +12,64 @@
   --marketing-green: #1f6f5f;
   --marketing-ocean: #124170;
   --marketing-text: #2c3e50;
+  --marketing-surface-bg: rgba(248, 249, 250, 0.76);
+  --marketing-surface-border: rgba(31, 111, 95, 0.16);
+  --marketing-surface-shadow: 0 30px 100px rgba(18, 65, 112, 0.08);
+  --marketing-surface-hover-border: rgba(31, 111, 95, 0.24);
+  --marketing-surface-hover-shadow: 0 0 30px rgba(31, 111, 95, 0.12), 0 24px 80px rgba(18, 65, 112, 0.08);
+  --marketing-card-border: rgba(31, 111, 95, 0.16);
+  --marketing-card-hover-bg: rgba(234, 242, 239, 0.38);
+  --marketing-card-hover-border: rgba(31, 111, 95, 0.35);
+  --marketing-card-hover-shadow: 0 0 36px rgba(31, 111, 95, 0.16), 0 24px 70px rgba(18, 65, 112, 0.1);
+  --marketing-secondary-bg: rgba(248, 249, 250, 0.9);
+  --marketing-secondary-border: rgba(31, 111, 95, 0.3);
+  --marketing-secondary-text: #124170;
+  --marketing-secondary-hover-bg: #eaf2ef;
+  --marketing-secondary-hover-border: rgba(31, 111, 95, 0.45);
+  --marketing-secondary-hover-shadow: 0 0 28px rgba(31, 111, 95, 0.14), 0 18px 50px rgba(18, 65, 112, 0.1);
+  --marketing-pill-bg: rgba(248, 249, 250, 0.84);
+  --marketing-pill-border: rgba(31, 111, 95, 0.2);
+  --marketing-pill-text: #2c3e50;
+  --marketing-pill-hover-bg: rgba(234, 242, 239, 0.96);
+  --marketing-pill-hover-border: rgba(31, 111, 95, 0.34);
+  --marketing-pill-hover-shadow: 0 0 28px rgba(31, 111, 95, 0.12), 0 20px 54px rgba(18, 65, 112, 0.08);
+  --marketing-muted: rgba(44, 62, 80, 0.74);
+  --marketing-subtle: rgba(18, 65, 112, 0.8);
+  --marketing-tag-bg: rgba(248, 249, 250, 0.68);
+  --marketing-tag-border: rgba(31, 111, 95, 0.24);
+}
+
+html[data-theme="dark"] {
+  --marketing-bg: #061a14;
+  --marketing-surface: #0b241d;
+  --marketing-green: #1f6f5f;
+  --marketing-ocean: #124170;
+  --marketing-text: #f8f9fa;
+  --marketing-surface-bg: rgba(11, 36, 29, 0.76);
+  --marketing-surface-border: rgba(173, 230, 205, 0.18);
+  --marketing-surface-shadow: 0 30px 100px rgba(0, 0, 0, 0.22);
+  --marketing-surface-hover-border: rgba(173, 230, 205, 0.28);
+  --marketing-surface-hover-shadow: 0 0 34px rgba(31, 111, 95, 0.18), 0 24px 80px rgba(0, 0, 0, 0.22);
+  --marketing-card-border: rgba(173, 230, 205, 0.2);
+  --marketing-card-hover-bg: rgba(31, 111, 95, 0.08);
+  --marketing-card-hover-border: rgba(173, 230, 205, 0.35);
+  --marketing-card-hover-shadow: 0 0 40px rgba(31, 111, 95, 0.22), 0 24px 80px rgba(0, 0, 0, 0.2);
+  --marketing-secondary-bg: rgba(11, 36, 29, 0.12);
+  --marketing-secondary-border: rgba(248, 249, 250, 0.28);
+  --marketing-secondary-text: #f8f9fa;
+  --marketing-secondary-hover-bg: rgba(31, 111, 95, 0.08);
+  --marketing-secondary-hover-border: #1f6f5f;
+  --marketing-secondary-hover-shadow: 0 0 32px rgba(31, 111, 95, 0.18), 0 20px 60px rgba(0, 0, 0, 0.18);
+  --marketing-pill-bg: rgba(11, 36, 29, 0.22);
+  --marketing-pill-border: rgba(248, 249, 250, 0.18);
+  --marketing-pill-text: #f8f9fa;
+  --marketing-pill-hover-bg: rgba(31, 111, 95, 0.08);
+  --marketing-pill-hover-border: rgba(173, 230, 205, 0.35);
+  --marketing-pill-hover-shadow: 0 0 32px rgba(31, 111, 95, 0.18), 0 20px 60px rgba(0, 0, 0, 0.18);
+  --marketing-muted: rgba(248, 249, 250, 0.82);
+  --marketing-subtle: rgba(248, 249, 250, 0.72);
+  --marketing-tag-bg: rgba(11, 36, 29, 0.42);
+  --marketing-tag-border: rgba(173, 230, 205, 0.24);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -141,6 +199,106 @@ a {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border-width: 0;
+}
+
+.marketing-panel-surface {
+  border: 1px solid var(--marketing-surface-border);
+  background: var(--marketing-surface-bg);
+  box-shadow: var(--marketing-surface-shadow);
+  transition: border-color 300ms ease, background-color 300ms ease, box-shadow 300ms ease, transform 300ms ease;
+}
+
+.marketing-panel-surface:hover,
+.marketing-panel-surface:focus-within {
+  border-color: var(--marketing-surface-hover-border);
+  box-shadow: var(--marketing-surface-hover-shadow);
+}
+
+.marketing-glow-card {
+  border: 1px solid var(--marketing-card-border);
+  background: var(--marketing-card-bg, transparent);
+  box-shadow: var(--marketing-card-shadow, none);
+  transition: background-color 300ms ease, border-color 300ms ease, box-shadow 300ms ease, transform 300ms ease, color 300ms ease, opacity 300ms ease;
+  will-change: transform, box-shadow;
+}
+
+.marketing-glow-card:hover,
+.marketing-glow-card:focus-within {
+  background: var(--marketing-card-hover-bg);
+  border-color: var(--marketing-card-hover-border);
+  box-shadow: var(--marketing-card-hover-shadow);
+  transform: translateY(-4px) scale(1.01);
+}
+
+.marketing-primary-button,
+.marketing-secondary-button,
+.marketing-pill-control,
+.marketing-icon-button {
+  transition: background-color 300ms ease, border-color 300ms ease, box-shadow 300ms ease, color 300ms ease, transform 300ms ease;
+}
+
+.marketing-primary-button {
+  border: 1px solid #1f6f5f;
+  background: #1f6f5f;
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 18px 50px rgba(31, 111, 95, 0.18);
+}
+
+.marketing-primary-button:hover,
+.marketing-primary-button:focus-visible {
+  background: #18584b;
+  border-color: #18584b;
+  box-shadow: 0 0 30px rgba(31, 111, 95, 0.2), 0 24px 60px rgba(0, 0, 0, 0.14);
+  transform: translateY(-1px);
+}
+
+.marketing-secondary-button {
+  border: 1px solid var(--marketing-secondary-border);
+  background: var(--marketing-secondary-bg);
+  color: var(--marketing-secondary-text);
+  font-weight: 700;
+  box-shadow: none;
+}
+
+.marketing-secondary-button:hover,
+.marketing-secondary-button:focus-visible {
+  border-color: var(--marketing-secondary-hover-border);
+  background: var(--marketing-secondary-hover-bg);
+  box-shadow: var(--marketing-secondary-hover-shadow);
+  transform: translateY(-1px);
+}
+
+.marketing-pill-control,
+.marketing-icon-button {
+  border: 1px solid var(--marketing-pill-border);
+  background: var(--marketing-pill-bg);
+  color: var(--marketing-pill-text);
+  font-weight: 600;
+  box-shadow: none;
+}
+
+.marketing-pill-control:hover,
+.marketing-pill-control:focus-visible,
+.marketing-icon-button:hover,
+.marketing-icon-button:focus-visible {
+  border-color: var(--marketing-pill-hover-border);
+  background: var(--marketing-pill-hover-bg);
+  box-shadow: var(--marketing-pill-hover-shadow);
+  transform: translateY(-1px);
+}
+
+.marketing-label-muted {
+  color: var(--marketing-subtle);
+}
+
+.marketing-copy-muted {
+  color: var(--marketing-muted);
+}
+
+.marketing-tag {
+  border: 1px solid var(--marketing-tag-border);
+  background: var(--marketing-tag-bg);
 }
 
 .app-header {
