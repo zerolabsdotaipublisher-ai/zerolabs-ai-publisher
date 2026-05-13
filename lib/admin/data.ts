@@ -508,9 +508,14 @@ export function formatAdminDate(value: string | null | undefined): string {
     return "No data yet";
   }
 
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "No data yet";
+  }
+
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
-  }).format(new Date(value));
+  }).format(date);
 }
