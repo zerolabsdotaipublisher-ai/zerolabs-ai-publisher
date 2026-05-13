@@ -5,7 +5,14 @@ import { routes } from "@/config/routes";
 import { getSupabaseAppUrl, getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 function isValidEmail(value: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  if (typeof document === "undefined") {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  }
+
+  const emailInput = document.createElement("input");
+  emailInput.type = "email";
+  emailInput.value = value;
+  return emailInput.checkValidity();
 }
 
 function mapResetRequestError(message: string): string {

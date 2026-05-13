@@ -7,6 +7,8 @@ import { routes } from "@/config/routes";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { PasswordField } from "@/components/auth/password-field";
 
+const REDIRECT_DELAY_MS = 1200;
+
 function readResetLinkError(
   searchParams: URLSearchParams | ReadonlyURLSearchParams,
   hashParams: URLSearchParams,
@@ -105,7 +107,7 @@ export function ResetPasswordForm() {
       window.setTimeout(() => {
         router.replace(routes.login);
         router.refresh();
-      }, 1200);
+      }, REDIRECT_DELAY_MS);
     } catch {
       setError("Password update failed. Please request a new reset link.");
       setIsSubmitting(false);
