@@ -15,7 +15,7 @@ export function PasswordField({ label, toggleLabel = "password", className, ...i
   return (
     <label htmlFor={inputProps.id}>
       {label}
-      <div className="auth-password-field">
+      <span className="auth-password-field">
         <input {...inputProps} className={className} type={isVisible ? "text" : "password"} />
         <button
           type="button"
@@ -26,7 +26,7 @@ export function PasswordField({ label, toggleLabel = "password", className, ...i
         >
           {isVisible ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
         </button>
-      </div>
+      </span>
     </label>
   );
 }
