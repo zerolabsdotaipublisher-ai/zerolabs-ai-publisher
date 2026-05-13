@@ -366,20 +366,22 @@ function buildAlerts(
 
   const alerts: AdminAlertItem[] = [];
 
-  if ((failedPublishJobs ?? 0) > 0) {
+  const publishJobCount = failedPublishJobs ?? 0;
+  if (publishJobCount > 0) {
     alerts.push({
       id: "failed-publish-jobs",
       title: "Publishing jobs need attention",
-      detail: `${failedPublishJobs} publish job${failedPublishJobs === 1 ? "" : "s"} are failed or waiting for retry.`,
+      detail: `${publishJobCount} publish job${publishJobCount === 1 ? "" : "s"} are failed or waiting for retry.`,
       tone: "error",
     });
   }
 
-  if ((failedScheduleRuns ?? 0) > 0) {
+  const scheduleRunCount = failedScheduleRuns ?? 0;
+  if (scheduleRunCount > 0) {
     alerts.push({
       id: "failed-schedule-runs",
       title: "Schedule runs failed",
-      detail: `${failedScheduleRuns} content schedule run${failedScheduleRuns === 1 ? "" : "s"} reported an error.`,
+      detail: `${scheduleRunCount} content schedule run${scheduleRunCount === 1 ? "" : "s"} reported an error.`,
       tone: "warning",
     });
   }
