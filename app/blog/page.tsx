@@ -7,7 +7,7 @@ export default function BlogPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <MarketingNav currentPath="/blog" />
-      <main className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-6 py-20 lg:px-8">
+      <main className="marketing-shell flex w-full flex-col gap-10 py-20">
         <section className="rounded-[2rem] border border-white/10 bg-white/5 p-8 lg:p-12">
           <p className="text-sm uppercase tracking-[0.2em] text-cyan-200">Blog</p>
           <h1 className="mt-4 text-4xl font-semibold text-white sm:text-5xl">AI publishing insights, platform updates, and automation strategy coming soon.</h1>

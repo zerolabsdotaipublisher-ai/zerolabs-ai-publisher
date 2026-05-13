@@ -221,6 +221,23 @@ a {
   border-width: 0;
 }
 
+.marketing-shell {
+  width: min(1680px, calc(100vw - 96px));
+  margin-inline: auto;
+}
+
+@media (max-width: 1024px) {
+  .marketing-shell {
+    width: calc(100vw - 48px);
+  }
+}
+
+@media (max-width: 640px) {
+  .marketing-shell {
+    width: calc(100vw - 24px);
+  }
+}
+
 .marketing-panel-surface {
   border: 1px solid var(--marketing-surface-border);
   background: var(--marketing-surface-bg);
