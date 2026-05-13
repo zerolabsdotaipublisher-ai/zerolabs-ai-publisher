@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { routes } from "@/config/routes";
-import { getServerUser } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/supabase/auth";
 
 export default async function DashboardPage() {
-  const user = await getServerUser();
+  const user = await requireUser(routes.dashboard);
   const cards = [
     {
       title: "Websites",
