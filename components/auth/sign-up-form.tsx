@@ -1,16 +1,47 @@
 "use client";
 
-import { useState, useId, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
-import { getSupabaseAppUrl, getSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { useId, useState, type FormEvent } from "react";
 import { routes } from "@/config/routes";
 import { PasswordField } from "@/components/auth/password-field";
+import { getSupabaseAppUrl, getSupabaseBrowserClient } from "@/lib/supabase/browser";
+
+function validateRegistration(email: string, password: string, confirmPassword: string): string | null {
+  const trimmedEmail = email.trim();
+
+  if (!trimmedEmail) {
+    return "Email is required.";
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+    return "Please enter a valid email address.";
+  }
+
+  if (!password) {
+    return "Password is required.";
+  }
+
+  if (password.length < 8) {
+    return "Password must be at least 8 characters.";
+  }
+
+  if (!confirmPassword) {
+    return "Please confirm your password.";
+  }
+
+  if (password !== confirmPassword) {
+    return "Passwords do not match.";
+  }
+
+  return null;
+}
 
 function mapSignUpError(message: string): string {
   const lower = message.toLowerCase();
+
   if (lower.includes("already registered") || lower.includes("already exists")) {
     return "An account with this email already exists. Try signing in instead.";
   }
+
   if (
     lower.includes("password should be") ||
     lower.includes("password is too short") ||
@@ -18,6 +49,7 @@ function mapSignUpError(message: string): string {
   ) {
     return "Password must be at least 8 characters.";
   }
+
   if (
     lower.includes("invalid email") ||
     lower.includes("invalid format") ||
@@ -25,30 +57,25 @@ function mapSignUpError(message: string): string {
   ) {
     return "Please enter a valid email address.";
   }
+
   if (lower.includes("rate limit") || lower.includes("too many requests") || lower.includes("email rate limit")) {
     return "Too many sign-up attempts. Please wait a moment and try again.";
   }
-  return "Something went wrong. Please try again.";
-}
 
-function validateRegistration(email: string, password: string, confirmPassword: string): string | null {
-  if (!email.trim()) return "Email is required.";
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return "Please enter a valid email address.";
-  if (!password) return "Password is required.";
-  if (password.length < 8) return "Password must be at least 8 characters.";
-  if (password !== confirmPassword) return "Passwords do not match.";
-  return null;
+  if (lower.includes("failed to fetch")) {
+    return "Unable to create your account right now. Please check your connection and try again.";
+  }
+
+  return "Something went wrong. Please try again.";
 }
 
 export function SignUpForm() {
   const id = useId();
-  const router = useRouter();
   const supabase = getSupabaseBrowserClient();
-
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [fullName, setFullName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -61,6 +88,7 @@ export function SignUpForm() {
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    setSuccess(false);
 
     const validationError = validateRegistration(email, password, confirmPassword);
     if (validationError) {
@@ -70,25 +98,30 @@ export function SignUpForm() {
 
     setIsSubmitting(true);
 
-    const { error: signUpError } = await supabase.auth.signUp({
-      email: email.trim(),
-      password,
-      options: {
-        data: { full_name: fullName.trim() !== "" ? fullName.trim() : undefined },
-        emailRedirectTo: `${getSupabaseAppUrl()}${routes.authCallback}`,
-      },
-    });
+    try {
+      const { error: signUpError } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          data: {
+            full_name: fullName.trim() ? fullName.trim() : undefined,
+          },
+          emailRedirectTo: `${getSupabaseAppUrl()}${routes.authCallback}`,
+        },
+      });
 
-    if (signUpError) {
-      setError(mapSignUpError(signUpError.message));
+      if (signUpError) {
+        setError(mapSignUpError(signUpError.message));
+        return;
+      }
+
+      setSuccess(true);
+      window.location.assign(`${routes.login}?message=check_email`);
+    } catch {
+      setError("Unable to create your account right now. Please check your connection and try again.");
+    } finally {
       setIsSubmitting(false);
-      return;
     }
-
-    setSuccess(true);
-    setIsSubmitting(false);
-    router.replace(`${routes.login}?message=check_email`);
-    router.refresh();
   }
 
   return (
@@ -117,7 +150,7 @@ export function SignUpForm() {
           required
           autoComplete="email"
           aria-required="true"
-          aria-describedby={error ? errorId : undefined}
+          aria-describedby={displayedError ? errorId : undefined}
         />
       </label>
 
@@ -142,7 +175,7 @@ export function SignUpForm() {
       </span>
 
       <PasswordField
-        id={`${id}-confirm`}
+        id={`${id}-confirm-password`}
         label={
           <>
             Confirm password <span aria-hidden="true">*</span>
@@ -163,7 +196,6 @@ export function SignUpForm() {
           {displayedError}
         </p>
       ) : null}
-
       {success ? (
         <p className="auth-success" role="status">
           Account created. Check your email to confirm, then sign in.

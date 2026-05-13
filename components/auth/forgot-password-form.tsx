@@ -9,10 +9,10 @@ function isValidEmail(value: string, emailInput: HTMLInputElement | null): boole
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
   }
 
-  const nextEmailInput = emailInput ?? document.createElement("input");
-  nextEmailInput.type = "email";
-  nextEmailInput.value = value;
-  return nextEmailInput.checkValidity();
+  const validator = emailInput ?? document.createElement("input");
+  validator.type = "email";
+  validator.value = value;
+  return validator.checkValidity();
 }
 
 function mapResetRequestError(message: string): string {
@@ -32,39 +32,39 @@ function mapResetRequestError(message: string): string {
 export function ForgotPasswordForm() {
   const id = useId();
   const supabase = getSupabaseBrowserClient();
-  const emailInputValidatorRef = useRef<HTMLInputElement | null>(null);
-
-  const [identifier, setIdentifier] = useState("");
+  const emailValidatorRef = useRef<HTMLInputElement | null>(null);
+  const [email, setEmail] = useState("");
   const [confirmedEmail, setConfirmedEmail] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const errorId = `${id}-error`;
+
   const helperId = `${id}-helper`;
+  const errorId = `${id}-error`;
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setMessage(null);
     setError(null);
+    setMessage(null);
 
-    const trimmedIdentifier = identifier.trim();
+    const trimmedEmail = email.trim();
 
     if (!confirmedEmail) {
-      if (!trimmedIdentifier) {
+      if (!trimmedEmail) {
         setError("Email is required.");
         return;
       }
 
-      if (!emailInputValidatorRef.current && typeof document !== "undefined") {
-        emailInputValidatorRef.current = document.createElement("input");
+      if (!emailValidatorRef.current && typeof document !== "undefined") {
+        emailValidatorRef.current = document.createElement("input");
       }
 
-      if (!isValidEmail(trimmedIdentifier, emailInputValidatorRef.current)) {
+      if (!isValidEmail(trimmedEmail, emailValidatorRef.current)) {
         setError("Enter the email address for your account. Password reset links are sent by email.");
         return;
       }
 
-      setConfirmedEmail(trimmedIdentifier);
+      setConfirmedEmail(trimmedEmail);
       return;
     }
 
@@ -76,13 +76,12 @@ export function ForgotPasswordForm() {
 
       if (resetError) {
         setError(mapResetRequestError(resetError.message));
-        setIsSubmitting(false);
         return;
       }
 
       setMessage("If an account exists for this email, a reset link has been sent.");
       setConfirmedEmail(null);
-      setIdentifier("");
+      setEmail("");
     } catch {
       setError("We could not send the reset link. Please check your connection and try again.");
     } finally {
@@ -107,11 +106,11 @@ export function ForgotPasswordForm() {
             <button
               type="button"
               className="auth-secondary-button"
+              disabled={isSubmitting}
               onClick={() => {
                 setConfirmedEmail(null);
                 setError(null);
               }}
-              disabled={isSubmitting}
             >
               Use different email
             </button>
@@ -119,13 +118,13 @@ export function ForgotPasswordForm() {
         </div>
       ) : (
         <>
-          <label htmlFor={`${id}-identifier`}>
+          <label htmlFor={`${id}-email`}>
             Email
             <input
-              id={`${id}-identifier`}
+              id={`${id}-email`}
               type="email"
-              value={identifier}
-              onChange={(event) => setIdentifier(event.target.value)}
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
               required
               autoComplete="email"
               aria-describedby={error ? `${helperId} ${errorId}` : helperId}
