@@ -13,6 +13,7 @@ Auth handles *who you are*; the profile handles *how the product knows you*.
 |---------------|---------------|----------|--------------------------------------------|
 | `id`          | `uuid`        | No       | Primary key — references `auth.users(id)`. System-managed. |
 | `email`       | `text`        | No       | Cached from auth identity. System-managed. |
+| `role`        | `text`        | No       | Server-authoritative app role (`user` or `admin`). |
 | `full_name`   | `text`        | Yes      | User-editable display name.                |
 | `avatar_url`  | `text`        | Yes      | User-editable avatar URL.                  |
 | `preferences` | `jsonb`       | Yes      | Reserved for future app preferences.       |
@@ -27,7 +28,7 @@ Auth handles *who you are*; the profile handles *how the product knows you*.
 - `avatar_url`
 
 **System-managed** (never set by the caller):
-- `id`, `email`, `created_at`, `updated_at`
+- `id`, `email`, `role`, `created_at`, `updated_at`
 
 ---
 
@@ -39,6 +40,7 @@ Migrations live in `supabase/migrations/`:
 |----------------------------------------------|---------------------------------------------|
 | `20260327000000_auth_profiles.sql`           | Creates table, RLS, updated_at trigger      |
 | `20260330000000_profiles_extension.sql`      | Adds `preferences` and `metadata` columns   |
+| `20260513151500_profile_roles.sql`           | Adds `role` and seeds the Zero Labs admin   |
 
 ---
 
@@ -81,7 +83,8 @@ Use this in page-level code to handle edge cases where the callback sync was ski
 
 #### `syncProfileFromAuthUser(user: User): Promise<void>`
 Upserts a profile from `auth.users` metadata (`full_name`, `avatar_url`).  
-Called during auth callback and auth state change events to keep profile data in sync with the auth provider (e.g. Google display name updates).
+Called during auth callback and auth state change events to keep profile data in sync with the auth provider (e.g. Google display name updates).  
+Also preserves database roles for existing users and seeds the designated admin email into the `admin` role during profile sync.
 
 ---
 
@@ -160,7 +163,7 @@ The schema is ready for extension without breaking changes:
 
 - `preferences` (`jsonb`) — store UI preferences, notification settings, etc.
 - `metadata` (`jsonb`) — store arbitrary product metadata (onboarding state, feature flags per user, etc.)
-- `role` — add a `role` column when RBAC is introduced (suggested: `text` with a `check` constraint)
+- `role` — currently supports `user` and `admin`; future RBAC can extend this via migration
 
 New columns should be added via a new timestamped migration file and documented here.
 

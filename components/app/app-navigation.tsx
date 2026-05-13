@@ -5,34 +5,49 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { routes } from "@/config/routes";
+import type { ProfileRole } from "@/lib/supabase/profile";
 
-const navLinks = [
+const customerNavLinks = [
   { href: routes.dashboard, label: "Dashboard" },
   { href: routes.activity, label: "Activity" },
   { href: routes.contentLibrary, label: "Content library" },
+  { href: routes.review, label: "Review" },
+  { href: routes.approval, label: "Approval" },
+  { href: routes.createWebsite, label: "Create website" },
   { href: routes.websites, label: "Websites" },
   { href: routes.profile, label: "Profile" },
 ];
 
+const adminNavLinks = [
+  { href: routes.adminDashboard, label: "Admin Dashboard" },
+  { href: routes.adminUsers, label: "Users" },
+  { href: routes.adminWebsites, label: "Websites" },
+  { href: routes.adminAnalytics, label: "Analytics" },
+  { href: routes.adminMonitoring, label: "Monitoring" },
+];
+
 interface AppNavigationProps {
   userEmail?: string | null;
+  userRole: ProfileRole;
 }
 
 function isActivePath(pathname: string, href: string) {
-  if (href === routes.dashboard) {
+  if (href === routes.dashboard || href === routes.adminDashboard) {
     return pathname === href;
   }
 
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function AppNavigation({ userEmail }: AppNavigationProps) {
+export function AppNavigation({ userEmail, userRole }: AppNavigationProps) {
   const pathname = usePathname();
+  const navLinks = userRole === "admin" ? adminNavLinks : customerNavLinks;
+  const dashboardHref = userRole === "admin" ? routes.adminDashboard : routes.dashboard;
 
   return (
     <header className="app-header">
       <nav className="app-nav" aria-label="Primary">
-        <Link href={routes.dashboard} className="app-nav-brand" aria-label="Open Zero Labs AI Publisher dashboard">
+        <Link href={dashboardHref} className="app-nav-brand" aria-label="Open Zero Labs AI Publisher dashboard">
           <Image src="/images/Zero Labs Logo transparent.svg" alt="" aria-hidden="true" width={168} height={40} priority className="app-nav-brand-logo" />
           <span className="app-nav-brand-copy">
             <span className="app-nav-brand-title">Zero Labs</span>
