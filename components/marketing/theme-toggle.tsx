@@ -15,12 +15,7 @@ export function ThemeToggle({ theme, onToggle }: ThemeToggleProps) {
       type="button"
       onClick={onToggle}
       aria-label={isDark ? "Switch Zero Labs AI Publisher to light mode" : "Switch Zero Labs AI Publisher to dark mode"}
-      className={[
-        "inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
-        isDark
-          ? "border-white/15 bg-white/[0.08] text-[#F8F9FA] hover:border-[#1F6F5F]/70 hover:bg-[#1F6F5F]/18 focus-visible:ring-[#1F6F5F] focus-visible:ring-offset-[#071A16]"
-          : "border-[#1F6F5F]/18 bg-[#EAF2EF]/75 text-[#124170] hover:border-[#1F6F5F]/40 hover:bg-[#EAF2EF] focus-visible:ring-[#124170] focus-visible:ring-offset-[#F8F9FA]",
-      ].join(" ")}
+      className="marketing-icon-button inline-flex min-h-11 min-w-11 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F6F5F] focus-visible:ring-offset-2"
     >
       <span className="sr-only">Toggle color theme</span>
       {isDark ? (

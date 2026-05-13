@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { routes } from "@/config/routes";
@@ -46,7 +46,10 @@ const shellStyle = {
   maxWidth: "1440px",
   paddingInline: "clamp(20px, 3vw, 48px)",
 };
-const sectionSpacing = "clamp(72px, 8vw, 112px)";
+const heroToFeaturesSpacing = "clamp(48px, 7vw, 72px)";
+const featureToStorySpacing = "clamp(64px, 9vw, 96px)";
+const majorSectionSpacing = "clamp(56px, 7vw, 96px)";
+const footerSpacing = "clamp(80px, 10vw, 120px)";
 
 const featureCards: FeatureCard[] = [
   {
@@ -148,6 +151,26 @@ function resolveInitialTheme(): MarketingTheme {
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
+function buildCardStyle(padding: string, background: string, shadow: string): CSSProperties {
+  return {
+    padding,
+    boxShadow: shadow,
+    ["--marketing-card-bg" as string]: background,
+    ["--marketing-card-shadow" as string]: shadow,
+  } as CSSProperties;
+}
+
+function buildPanelStyle(padding: string, background: string, shadow: string, border: string, hoverBorder: string): CSSProperties {
+  return {
+    padding,
+    ["--marketing-surface-bg" as string]: background,
+    ["--marketing-surface-border" as string]: border,
+    ["--marketing-surface-shadow" as string]: shadow,
+    ["--marketing-surface-hover-border" as string]: hoverBorder,
+    ["--marketing-surface-hover-shadow" as string]: shadow,
+  } as CSSProperties;
+}
+
 export function LandingPage() {
   const [theme, setTheme] = useState<MarketingTheme>("light");
   const hasInitializedTheme = useRef(false);
@@ -177,65 +200,65 @@ export function LandingPage() {
 
   const isDark = theme === "dark";
   const heroAccentLogo = isDark ? "/images/AI robot logo dark.svg" : "/images/AI robot logo light.svg";
+  const heroPrimaryGlow = isDark ? "rgba(31,111,95,0.18)" : "rgba(31,111,95,0.18)";
+  const heroChalkGlow = isDark ? "rgba(234,242,239,0.10)" : "rgba(234,242,239,0.10)";
+  const heroMintGlow = isDark ? "rgba(173,230,205,0.10)" : "rgba(173,230,205,0.10)";
 
   return (
     <main
-      className={[
-        "min-h-screen overflow-x-hidden transition-colors duration-300",
-        isDark ? "bg-[#071A16] text-[#F8F9FA]" : "bg-[#F8F9FA] text-[#2C3E50]",
-      ].join(" ")}
+      className="min-h-screen overflow-x-hidden text-[var(--marketing-text)] transition-colors duration-300"
+      style={{ backgroundColor: isDark ? "#061A14" : "#F8F9FA" }}
     >
       <div
-        className={[
-          "pointer-events-none fixed inset-0",
-          isDark
-            ? "bg-[radial-gradient(circle_at_top,_rgba(31,111,95,0.18),_transparent_32%),radial-gradient(circle_at_80%_12%,_rgba(18,65,112,0.16),_transparent_30%),linear-gradient(180deg,#071A16_0%,#06131F_100%)]"
-            : "bg-[radial-gradient(circle_at_top,_rgba(31,111,95,0.10),_transparent_38%),radial-gradient(circle_at_84%_10%,_rgba(18,65,112,0.08),_transparent_30%),linear-gradient(180deg,#F8F9FA_0%,#F4F7F5_100%)]",
-        ].join(" ")}
+        className="pointer-events-none fixed inset-0"
+        style={{
+          background: isDark
+            ? `radial-gradient(circle at top, ${heroPrimaryGlow}, transparent 32%), radial-gradient(circle at 18% 22%, ${heroMintGlow}, transparent 34%), radial-gradient(circle at 84% 12%, rgba(18,65,112,0.10), transparent 26%), linear-gradient(180deg, #061A14 0%, #0B241D 56%, #061A14 100%)`
+            : `radial-gradient(circle at top, ${heroPrimaryGlow}, transparent 34%), radial-gradient(circle at 20% 18%, ${heroChalkGlow}, transparent 36%), radial-gradient(circle at 82% 10%, ${heroMintGlow}, transparent 32%), linear-gradient(180deg, #F8F9FA 0%, #F2F6F3 48%, #F8F9FA 100%)`,
+        }}
       />
 
       <div
-        className={`${shellClass} relative pt-[24px] pb-[32px] md:pt-[32px] md:pb-[40px] lg:pb-[48px]`}
-        style={{ ...shellStyle, paddingTop: "clamp(32px, 5vw, 56px)", paddingBottom: "clamp(48px, 6vw, 72px)" }}
+        className={`${shellClass} relative pt-[24px] pb-[56px] md:pt-[32px] md:pb-[64px] lg:pb-[72px]`}
+        style={{ ...shellStyle, paddingTop: "clamp(32px, 5vw, 56px)", paddingBottom: "clamp(56px, 7vw, 88px)" }}
       >
         <MarketingNav currentPath="/" contained theme={theme} onToggleTheme={() => setTheme(isDark ? "light" : "dark")} />
 
         <section
           id="product"
-          className={[
-            "relative overflow-hidden rounded-[44px] border transition-colors duration-300 xl:rounded-[52px]",
-            isDark
-              ? "border-[#1F6F5F]/24 bg-[rgba(11,30,27,0.66)]"
-              : "border-[#124170]/10 bg-[rgba(248,249,250,0.62)]",
-          ].join(" ")}
+          className="relative overflow-hidden rounded-[44px] border border-transparent transition-colors duration-300 xl:rounded-[52px]"
           style={{
             marginTop: "clamp(48px, 6vw, 80px)",
             padding: "clamp(36px, 6vw, 84px)",
             minHeight: "clamp(620px, 70vw, 780px)",
-            boxShadow: isDark ? "0 32px 120px rgba(3, 12, 20, 0.38)" : "0 32px 120px rgba(18, 65, 112, 0.12)",
+            borderColor: isDark ? "rgba(173,230,205,0.18)" : "rgba(31,111,95,0.16)",
+            background: isDark ? "rgba(11,36,29,0.74)" : "rgba(248,249,250,0.74)",
+            boxShadow: isDark ? "0 32px 120px rgba(0, 0, 0, 0.28)" : "0 32px 120px rgba(18, 65, 112, 0.10)",
           }}
         >
           <div
-            className={[
-              "absolute inset-0",
-              isDark
-                ? "bg-[linear-gradient(118deg,rgba(6,19,31,0.95)_0%,rgba(7,26,22,0.88)_48%,rgba(6,19,31,0.22)_100%)]"
-                : "bg-[linear-gradient(118deg,rgba(248,249,250,0.96)_0%,rgba(234,242,239,0.84)_48%,rgba(234,242,239,0.24)_100%)]",
-            ].join(" ")}
+            className="absolute inset-0"
+            style={{
+              background: isDark
+                ? "linear-gradient(118deg, rgba(6,26,20,0.94) 0%, rgba(11,36,29,0.88) 42%, rgba(18,65,112,0.14) 100%)"
+                : "linear-gradient(118deg, rgba(248,249,250,0.96) 0%, rgba(234,242,239,0.88) 42%, rgba(173,230,205,0.18) 100%)",
+            }}
           />
           <div
-            className={
-              isDark
-                ? "absolute inset-0 bg-[radial-gradient(circle_at_left_center,rgba(31,111,95,0.16),transparent_34%)]"
-                : "absolute inset-0 bg-[radial-gradient(circle_at_left_center,rgba(31,111,95,0.10),transparent_36%)]"
-            }
+            className="absolute inset-0"
+            style={{
+              background: isDark
+                ? "radial-gradient(circle at left center, rgba(31,111,95,0.18), transparent 36%), radial-gradient(circle at 76% 18%, rgba(173,230,205,0.12), transparent 24%)"
+                : "radial-gradient(circle at left center, rgba(31,111,95,0.16), transparent 36%), radial-gradient(circle at 78% 18%, rgba(173,230,205,0.14), transparent 24%)",
+            }}
           />
           <div
-            className={
-              isDark
-                ? "absolute inset-0 bg-[radial-gradient(circle_at_82%_18%,rgba(18,65,112,0.24),transparent_30%)]"
-                : "absolute inset-0 bg-[radial-gradient(circle_at_82%_18%,rgba(18,65,112,0.12),transparent_32%)]"
-            }
+            className="absolute inset-0"
+            style={{
+              background: isDark
+                ? "radial-gradient(circle at 86% 16%, rgba(18,65,112,0.08), transparent 24%)"
+                : "radial-gradient(circle at 86% 16%, rgba(18,65,112,0.06), transparent 24%)",
+            }}
           />
 
           <Image
@@ -245,24 +268,19 @@ export function LandingPage() {
             height={1080}
             priority
             className="pointer-events-none absolute right-[-8%] bottom-[-8%] h-auto w-[72%] max-w-[320px] object-contain sm:max-w-[360px] lg:hidden"
-            style={{ opacity: 0.09 }}
+            style={{ opacity: isDark ? 0.18 : 0.16, filter: "drop-shadow(0 0 36px rgba(31,111,95,0.16)) saturate(1.04)" }}
           />
 
           <div className="relative z-10 grid min-h-[inherit] gap-14 lg:grid-cols-[minmax(0,0.92fr)_minmax(320px,0.78fr)] lg:items-center">
             <div className="max-w-[640px] self-center">
               <div style={{ display: "grid", gap: "clamp(24px, 3vw, 32px)" }}>
-                <div
-                  className={[
-                    "inline-flex w-fit items-center gap-3 rounded-full border px-[16px] py-[10px] text-sm font-semibold tracking-[0.08em] text-current backdrop-blur-md",
-                    isDark ? "border-white/8 bg-white/[0.05]" : "border-[#124170]/10 bg-white/55",
-                  ].join(" ")}
-                >
+                <div className="marketing-tag inline-flex w-fit items-center gap-3 rounded-full px-[16px] py-[10px] text-sm font-semibold tracking-[0.08em] text-current backdrop-blur-md">
                   <Image src={heroAccentLogo} alt="" width={32} height={32} className="h-8 w-8" priority />
                   <span>Zero Labs AI Publisher</span>
                 </div>
 
-                <p className={["max-w-md text-sm font-medium tracking-[0.08em]", isDark ? "text-[#F8F9FA]/68" : "text-[#124170]/70"].join(" ")}>
-                  Sustainable & humanistic AI publishing
+                <p className="marketing-label-muted max-w-md text-sm font-semibold tracking-[0.08em]">
+                  Sustainable humanistic AI · futuristic nature interface
                 </p>
                 <h1
                   className={`${headingClass} max-w-[720px] text-[clamp(3.6rem,7vw,6.25rem)] font-semibold tracking-[-0.045em]`}
@@ -274,32 +292,16 @@ export function LandingPage() {
                   <br />
                   AI websites
                 </h1>
-                <p
-                  className={["max-w-[34rem] text-base sm:text-lg", isDark ? "text-[#F8F9FA]/76" : "text-[#2C3E50]/78"].join(" ")}
-                  style={{ lineHeight: 1.9 }}
-                >
+                <p className="marketing-copy-muted max-w-[34rem] text-base sm:text-lg" style={{ lineHeight: 1.85 }}>
                   Zero Labs AI Publisher transforms a prompt into a polished website and guides the publishing workflow all the way to release.
                 </p>
               </div>
 
               <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap" style={{ marginTop: "clamp(36px, 4vw, 52px)" }}>
-                <Link
-                  href={routes.signup}
-                  className="inline-flex min-h-14 items-center justify-center rounded-full bg-[#1F6F5F] text-sm font-semibold text-white transition-colors duration-300 hover:bg-[#18584b]"
-                  style={{ padding: "16px 32px", boxShadow: "0 18px 50px rgba(31,111,95,0.18)" }}
-                >
+                <Link href={routes.signup} className="marketing-primary-button inline-flex min-h-14 items-center justify-center rounded-full px-8 text-sm font-semibold">
                   Start building
                 </Link>
-                <Link
-                  href="#platform"
-                  className={[
-                    "inline-flex min-h-14 items-center justify-center rounded-full border text-sm font-semibold transition-colors duration-300",
-                    isDark
-                      ? "border-[#1F6F5F]/38 bg-white/[0.04] text-[#F8F9FA] hover:border-[#1F6F5F]/60 hover:bg-[#1F6F5F]/12"
-                      : "border-[#124170]/14 bg-transparent text-[#124170] hover:border-[#1F6F5F]/30 hover:bg-[rgba(234,242,239,0.72)]",
-                  ].join(" ")}
-                  style={{ padding: "16px 32px" }}
-                >
+                <Link href="#platform" className="marketing-secondary-button inline-flex min-h-14 items-center justify-center rounded-full px-8 text-sm font-semibold">
                   Learn more
                 </Link>
               </div>
@@ -312,8 +314,11 @@ export function LandingPage() {
                 width={820}
                 height={1080}
                 priority
-                className="pointer-events-none absolute right-[-4%] bottom-[-6%] h-auto max-h-[560px] w-auto max-w-[92%] object-contain xl:max-h-[620px]"
-                style={{ opacity: isDark ? 0.62 : 0.5 }}
+                className="pointer-events-none absolute right-[-3%] bottom-[-4%] h-auto max-h-[580px] w-auto max-w-[92%] object-contain xl:max-h-[640px]"
+                style={{
+                  opacity: isDark ? 0.72 : 0.54,
+                  filter: "drop-shadow(0 0 56px rgba(31,111,95,0.18)) saturate(1.08) brightness(1.02)",
+                }}
               />
             </div>
           </div>
@@ -322,59 +327,43 @@ export function LandingPage() {
         <section
           id="platform"
           className="grid gap-8 lg:grid-cols-2"
-          style={{ marginTop: "clamp(56px, 8vw, 88px)", gap: "clamp(28px, 3vw, 48px)" }}
+          style={{ marginTop: heroToFeaturesSpacing, gap: "clamp(28px, 3vw, 40px)" }}
         >
           {featureCards.map((card) => (
             <article
               key={card.title}
-              className={[
-                "group relative min-h-[360px] overflow-hidden rounded-[36px] border transition-[background-color,border-color,color,box-shadow,transform] duration-300",
-                isDark
-                  ? "border-[#1F6F5F]/16 bg-transparent hover:border-[#1F6F5F]/32 hover:bg-[rgba(31,111,95,0.10)]"
-                  : "border-[#124170]/8 bg-transparent hover:border-[#1F6F5F]/20 hover:bg-[rgba(234,242,239,0.66)]",
-              ].join(" ")}
-              style={{
-                padding: "clamp(34px, 4vw, 48px)",
-                boxShadow: isDark ? "0 18px 60px rgba(3, 12, 20, 0.18)" : "0 18px 60px rgba(18, 65, 112, 0.06)",
-              }}
+              className="marketing-glow-card group relative min-h-[360px] overflow-hidden rounded-[36px]"
+              style={buildCardStyle(
+                "clamp(34px, 4vw, 48px)",
+                isDark ? "rgba(11,36,29,0.18)" : "rgba(248,249,250,0.20)",
+                isDark ? "0 18px 60px rgba(0, 0, 0, 0.12)" : "0 18px 60px rgba(18, 65, 112, 0.04)"
+              )}
             >
               <div
-                className={[
-                  "absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100",
-                  isDark ? "bg-[radial-gradient(circle_at_top_right,rgba(31,111,95,0.18),transparent_38%)]" : "bg-[radial-gradient(circle_at_top_right,rgba(18,65,112,0.08),transparent_40%)]",
-                ].join(" ")}
+                className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                style={{
+                  background: isDark
+                    ? "radial-gradient(circle at top right, rgba(31,111,95,0.20), transparent 38%)"
+                    : "radial-gradient(circle at top right, rgba(173,230,205,0.22), transparent 40%)",
+                }}
               />
               <Image
                 src={isDark ? card.darkAsset : card.lightAsset}
                 alt=""
                 width={220}
                 height={220}
-                className="pointer-events-none absolute right-[28px] bottom-[28px] h-24 w-auto transition-opacity duration-300 group-hover:opacity-45 sm:h-28"
-                style={{ opacity: isDark ? 0.22 : 0.24 }}
+                className="pointer-events-none absolute right-[28px] bottom-[28px] h-24 w-auto transition-opacity duration-300 group-hover:opacity-60 sm:h-28"
+                style={{ opacity: isDark ? 0.28 : 0.26 }}
               />
               <div className="relative flex h-full flex-col justify-between" style={{ gap: "clamp(24px, 3vw, 42px)" }}>
                 <div style={{ display: "grid", gap: "22px" }}>
-                  <p className={["text-sm font-medium tracking-[0.08em]", isDark ? "text-[#F8F9FA]/62" : "text-[#124170]/68"].join(" ")}>
-                    {card.eyebrow}
-                  </p>
+                  <p className="marketing-label-muted text-sm font-semibold tracking-[0.08em]">{card.eyebrow}</p>
                   <h2 className={`${headingClass} max-w-[16ch] text-3xl font-semibold leading-tight sm:text-4xl`}>{card.title}</h2>
-                  <p
-                    className={["max-w-xl text-base", isDark ? "text-[#F8F9FA]/74" : "text-[#2C3E50]/76"].join(" ")}
-                    style={{ lineHeight: 1.85 }}
-                  >
+                  <p className="marketing-copy-muted max-w-xl text-base" style={{ lineHeight: 1.8 }}>
                     {card.description}
                   </p>
                 </div>
-                <Link
-                  href={card.href}
-                  className={[
-                    "inline-flex w-fit min-h-12 items-center justify-center rounded-full text-sm font-semibold transition-colors duration-300",
-                    isDark
-                      ? "border border-[#1F6F5F]/30 bg-white/[0.04] text-[#F8F9FA] hover:border-[#1F6F5F]/55 hover:bg-[#1F6F5F]/12"
-                      : "border border-[#1F6F5F]/16 bg-[#F8F9FA] text-[#124170] hover:border-[#1F6F5F]/30 hover:bg-[#EAF2EF]",
-                  ].join(" ")}
-                  style={{ padding: "12px 28px" }}
-                >
+                <Link href={card.href} className="marketing-secondary-button inline-flex w-fit min-h-12 items-center justify-center rounded-full px-7 text-sm font-semibold">
                   {card.ctaLabel}
                 </Link>
               </div>
@@ -382,29 +371,32 @@ export function LandingPage() {
           ))}
         </section>
 
-        <div className="space-y-12 lg:space-y-16" style={{ marginTop: sectionSpacing }}>
+        <div style={{ marginTop: featureToStorySpacing, display: "grid", gap: majorSectionSpacing }}>
           {storySections.map((section) => (
             <section
               key={section.id}
               id={section.id}
-              className={[
-                "rounded-[40px] border backdrop-blur-xl transition-colors duration-300",
-                isDark ? "border-[#1F6F5F]/18 bg-[rgba(18,65,112,0.18)]" : "border-[#124170]/8 bg-[rgba(248,249,250,0.50)]",
-              ].join(" ")}
-              style={{
-                padding: "clamp(36px, 5vw, 56px)",
-                boxShadow: isDark ? "0 20px 80px rgba(3, 12, 20, 0.12)" : "0 20px 80px rgba(18, 65, 112, 0.05)",
-              }}
+              className="marketing-panel-surface relative overflow-hidden rounded-[40px] backdrop-blur-xl"
+              style={buildPanelStyle(
+                "clamp(36px, 5vw, 56px)",
+                isDark ? "rgba(11,36,29,0.72)" : "rgba(248,249,250,0.74)",
+                isDark ? "0 20px 80px rgba(0, 0, 0, 0.16)" : "0 20px 80px rgba(18, 65, 112, 0.05)",
+                isDark ? "rgba(173,230,205,0.16)" : "rgba(31,111,95,0.14)",
+                isDark ? "rgba(173,230,205,0.22)" : "rgba(31,111,95,0.18)"
+              )}
             >
-              <div className="max-w-[760px]" style={{ display: "grid", gap: "22px" }}>
-                <p className={["text-sm font-medium tracking-[0.08em]", isDark ? "text-[#F8F9FA]/62" : "text-[#124170]/68"].join(" ")}>
-                  {section.eyebrow}
-                </p>
+              <div
+                className="pointer-events-none absolute inset-0"
+                style={{
+                  background: isDark
+                    ? "radial-gradient(circle at top right, rgba(31,111,95,0.16), transparent 34%), radial-gradient(circle at 14% 20%, rgba(173,230,205,0.08), transparent 24%)"
+                    : "radial-gradient(circle at top right, rgba(31,111,95,0.12), transparent 34%), radial-gradient(circle at 14% 20%, rgba(173,230,205,0.12), transparent 24%)",
+                }}
+              />
+              <div className="relative max-w-[760px]" style={{ display: "grid", gap: "22px" }}>
+                <p className="marketing-label-muted text-sm font-semibold tracking-[0.08em]">{section.eyebrow}</p>
                 <h2 className={`${headingClass} text-3xl font-semibold leading-tight sm:text-4xl lg:text-5xl`}>{section.title}</h2>
-                <p
-                  className={["max-w-3xl text-base sm:text-lg", isDark ? "text-[#F8F9FA]/74" : "text-[#2C3E50]/76"].join(" ")}
-                  style={{ lineHeight: 1.9 }}
-                >
+                <p className="marketing-copy-muted max-w-3xl text-base sm:text-lg" style={{ lineHeight: 1.85 }}>
                   {section.description}
                 </p>
               </div>
@@ -413,24 +405,16 @@ export function LandingPage() {
                 {section.cards.map((card) => (
                   <article
                     key={card.title}
-                    className={[
-                      "min-h-[240px] rounded-[32px] border transition-[background-color,border-color,color,box-shadow,transform] duration-300",
-                      isDark
-                        ? "border-[#1F6F5F]/14 bg-transparent hover:border-[#1F6F5F]/28 hover:bg-[rgba(31,111,95,0.10)]"
-                        : "border-[#124170]/8 bg-transparent hover:border-[#1F6F5F]/18 hover:bg-[rgba(234,242,239,0.66)]",
-                    ].join(" ")}
-                    style={{
-                      padding: "clamp(28px, 3vw, 36px)",
-                      boxShadow: isDark ? "0 16px 48px rgba(3, 12, 20, 0.08)" : "0 16px 48px rgba(18, 65, 112, 0.04)",
-                      background: isDark ? "rgba(14,32,42,0.28)" : "rgba(234,242,239,0.42)",
-                    }}
+                    className="marketing-glow-card min-h-[240px] rounded-[32px]"
+                    style={buildCardStyle(
+                      "clamp(28px, 3vw, 36px)",
+                      isDark ? "rgba(11,36,29,0.14)" : "rgba(248,249,250,0.16)",
+                      isDark ? "0 16px 48px rgba(0, 0, 0, 0.08)" : "0 16px 48px rgba(18, 65, 112, 0.04)"
+                    )}
                   >
                     <div style={{ display: "grid", gap: "18px" }}>
                       <h3 className={`${headingClass} text-2xl font-semibold`}>{card.title}</h3>
-                      <p
-                        className={[isDark ? "text-[#F8F9FA]/72" : "text-[#2C3E50]/74", "text-base"].join(" ")}
-                        style={{ lineHeight: 1.85 }}
-                      >
+                      <p className="marketing-copy-muted text-base" style={{ lineHeight: 1.8 }}>
                         {card.description}
                       </p>
                     </div>
@@ -442,26 +426,29 @@ export function LandingPage() {
 
           <section
             id="pricing"
-            className={[
-              "rounded-[40px] border backdrop-blur-xl transition-colors duration-300",
-              isDark ? "border-[#1F6F5F]/18 bg-[rgba(18,65,112,0.18)]" : "border-[#124170]/8 bg-[rgba(248,249,250,0.50)]",
-            ].join(" ")}
-            style={{
-              padding: "clamp(36px, 5vw, 56px)",
-              boxShadow: isDark ? "0 20px 80px rgba(3, 12, 20, 0.12)" : "0 20px 80px rgba(18, 65, 112, 0.05)",
-            }}
+            className="marketing-panel-surface relative overflow-hidden rounded-[40px] backdrop-blur-xl"
+            style={buildPanelStyle(
+              "clamp(36px, 5vw, 56px)",
+              isDark ? "rgba(11,36,29,0.72)" : "rgba(248,249,250,0.74)",
+              isDark ? "0 20px 80px rgba(0, 0, 0, 0.16)" : "0 20px 80px rgba(18, 65, 112, 0.05)",
+              isDark ? "rgba(173,230,205,0.16)" : "rgba(31,111,95,0.14)",
+              isDark ? "rgba(173,230,205,0.22)" : "rgba(31,111,95,0.18)"
+            )}
           >
-            <div className="max-w-[760px]" style={{ display: "grid", gap: "22px" }}>
-              <p className={["text-sm font-medium tracking-[0.08em]", isDark ? "text-[#F8F9FA]/62" : "text-[#124170]/68"].join(" ")}>
-                Pricing
-              </p>
+            <div
+              className="pointer-events-none absolute inset-0"
+              style={{
+                background: isDark
+                  ? "radial-gradient(circle at top right, rgba(31,111,95,0.14), transparent 32%), radial-gradient(circle at 16% 14%, rgba(173,230,205,0.08), transparent 26%)"
+                  : "radial-gradient(circle at top right, rgba(31,111,95,0.10), transparent 32%), radial-gradient(circle at 16% 14%, rgba(173,230,205,0.12), transparent 26%)",
+              }}
+            />
+            <div className="relative max-w-[760px]" style={{ display: "grid", gap: "22px" }}>
+              <p className="marketing-label-muted text-sm font-semibold tracking-[0.08em]">Pricing</p>
               <h2 className={`${headingClass} text-3xl font-semibold leading-tight sm:text-4xl lg:text-5xl`}>
                 Three pricing paths for teams growing into AI-powered publishing operations.
               </h2>
-              <p
-                className={["max-w-3xl text-base sm:text-lg", isDark ? "text-[#F8F9FA]/74" : "text-[#2C3E50]/76"].join(" ")}
-                style={{ lineHeight: 1.9 }}
-              >
+              <p className="marketing-copy-muted max-w-3xl text-base sm:text-lg" style={{ lineHeight: 1.85 }}>
                 Each tier keeps the homepage public-facing and calm while expanding how much of the publishing workflow Zero Labs AI Publisher can orchestrate.
               </p>
             </div>
@@ -470,44 +457,30 @@ export function LandingPage() {
               {pricingTiers.map((tier) => (
                 <article
                   key={tier.name}
-                  className={[
-                    "flex min-h-[340px] flex-col rounded-[32px] border transition-[background-color,border-color,color,box-shadow,transform] duration-300",
-                    isDark
-                      ? "border-[#1F6F5F]/14 bg-transparent hover:border-[#1F6F5F]/28 hover:bg-[rgba(31,111,95,0.10)]"
-                      : "border-[#124170]/8 bg-transparent hover:border-[#1F6F5F]/18 hover:bg-[rgba(234,242,239,0.66)]",
-                  ].join(" ")}
-                  style={{
-                    padding: "clamp(28px, 3vw, 36px)",
-                    boxShadow: isDark ? "0 16px 48px rgba(3, 12, 20, 0.08)" : "0 16px 48px rgba(18, 65, 112, 0.04)",
-                    background: isDark ? "rgba(14,32,42,0.28)" : "rgba(234,242,239,0.42)",
-                  }}
+                  className="marketing-glow-card flex min-h-[340px] flex-col rounded-[32px]"
+                  style={buildCardStyle(
+                    "clamp(28px, 3vw, 36px)",
+                    isDark ? "rgba(11,36,29,0.14)" : "rgba(248,249,250,0.16)",
+                    isDark ? "0 16px 48px rgba(0, 0, 0, 0.08)" : "0 16px 48px rgba(18, 65, 112, 0.04)"
+                  )}
                 >
                   <div style={{ display: "grid", gap: "18px" }}>
-                    <p className={["text-sm font-medium tracking-[0.08em]", isDark ? "text-[#F8F9FA]/62" : "text-[#124170]/68"].join(" ")}>
-                      {tier.name}
-                    </p>
+                    <p className="marketing-label-muted text-sm font-semibold tracking-[0.08em]">{tier.name}</p>
                     <h3 className={`${headingClass} text-2xl font-semibold`}>{tier.summary}</h3>
-                    <p
-                      className={["text-base", isDark ? "text-[#F8F9FA]/72" : "text-[#2C3E50]/74"].join(" ")}
-                      style={{ lineHeight: 1.85 }}
-                    >
+                    <p className="marketing-copy-muted text-base" style={{ lineHeight: 1.8 }}>
                       {tier.detail}
                     </p>
                   </div>
-                  <ul className="space-y-[16px] text-sm leading-6 sm:text-base" style={{ marginTop: "24px" }}>
+                  <ul className="mt-6 space-y-[16px] text-sm leading-6 sm:text-base">
                     {tier.features.map((feature) => (
                       <li key={feature} className="flex items-start gap-3">
                         <span className="mt-2 h-2.5 w-2.5 shrink-0 rounded-full bg-[#1F6F5F]" />
-                        <span>{feature}</span>
+                        <span className="marketing-copy-muted">{feature}</span>
                       </li>
                     ))}
                   </ul>
-                  <div className="mt-auto" style={{ paddingTop: "32px" }}>
-                    <Link
-                      href={routes.signup}
-                      className="inline-flex min-h-12 items-center justify-center rounded-full bg-[#1F6F5F] text-sm font-semibold text-white transition-colors duration-300 hover:bg-[#18584b]"
-                      style={{ padding: "12px 28px" }}
-                    >
+                  <div className="mt-auto pt-8">
+                    <Link href={routes.signup} className="marketing-primary-button inline-flex min-h-12 items-center justify-center rounded-full px-7 text-sm font-semibold">
                       Choose {tier.name}
                     </Link>
                   </div>
@@ -517,7 +490,7 @@ export function LandingPage() {
           </section>
         </div>
 
-        <div style={{ marginTop: "clamp(96px, 10vw, 140px)" }}>
+        <div style={{ marginTop: footerSpacing }}>
           <MarketingFooter contained theme={theme} />
         </div>
       </div>

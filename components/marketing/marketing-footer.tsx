@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { routes } from "@/config/routes";
@@ -25,21 +26,30 @@ interface MarketingFooterProps {
   theme?: MarketingTheme;
 }
 
+function buildFooterSurfaceStyle(isDark: boolean): CSSProperties {
+  return {
+    padding: "clamp(40px, 5vw, 64px)",
+    ["--marketing-surface-bg" as string]: isDark
+      ? "linear-gradient(135deg, rgba(11,36,29,0.82), rgba(6,26,20,0.86), rgba(18,65,112,0.10))"
+      : "linear-gradient(135deg, rgba(248,249,250,0.84), rgba(234,242,239,0.88), rgba(173,230,205,0.16))",
+    ["--marketing-surface-border" as string]: isDark ? "rgba(173,230,205,0.18)" : "rgba(31,111,95,0.16)",
+    ["--marketing-surface-shadow" as string]: isDark
+      ? "0 30px 100px rgba(0,0,0,0.24)"
+      : "0 30px 100px rgba(18,65,112,0.08)",
+    ["--marketing-surface-hover-border" as string]: isDark ? "rgba(173,230,205,0.28)" : "rgba(31,111,95,0.24)",
+    ["--marketing-surface-hover-shadow" as string]: isDark
+      ? "0 0 34px rgba(31,111,95,0.18), 0 30px 100px rgba(0,0,0,0.24)"
+      : "0 0 28px rgba(31,111,95,0.12), 0 30px 100px rgba(18,65,112,0.08)",
+  } as CSSProperties;
+}
+
 export function MarketingFooter({ contained = false, theme = "light" }: MarketingFooterProps) {
   const isDark = theme === "dark";
   const logoSrc = isDark ? "/images/Zero Labs Logo transparent.svg" : "/images/Zero Labs Logo colored.svg";
 
   const content = (
-    <footer
-      className={[
-        "rounded-[40px] border shadow-[0_30px_100px_rgba(18,65,112,0.10)] backdrop-blur-2xl transition-colors duration-300",
-        isDark
-          ? "border-[#1F6F5F]/20 bg-[linear-gradient(135deg,rgba(6,19,31,0.90),rgba(7,26,22,0.82),rgba(18,65,112,0.38))] text-[#F8F9FA]"
-          : "border-[#124170]/10 bg-[linear-gradient(135deg,rgba(248,249,250,0.82),rgba(234,242,239,0.88),rgba(18,65,112,0.08))] text-[#2C3E50]",
-      ].join(" ")}
-      style={{ padding: "clamp(36px, 5vw, 56px)" }}
-    >
-      <div className="grid gap-10 lg:grid-cols-[minmax(0,1.2fr)_minmax(300px,0.8fr)] lg:items-end lg:gap-16">
+    <footer className="marketing-panel-surface rounded-[40px] backdrop-blur-2xl" style={buildFooterSurfaceStyle(isDark)}>
+      <div className="grid gap-12 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)] lg:items-end lg:gap-20">
         <div className="max-w-2xl space-y-6">
           <div className="flex items-center gap-3">
             <Image src={logoSrc} alt="" width={180} height={40} className="h-10 w-auto" />
@@ -47,43 +57,28 @@ export function MarketingFooter({ contained = false, theme = "light" }: Marketin
               Zero Labs AI Publisher
             </span>
           </div>
-          <p className={["text-xs font-medium tracking-[0.16em]", isDark ? "text-[#F8F9FA]/54" : "text-[#124170]/54"].join(" ")}>
+          <p className="marketing-label-muted text-xs font-semibold tracking-[0.16em]">
             Sustainable AI · Editorial storytelling · Humanistic publishing
           </p>
           <p className="max-w-2xl font-[family:var(--font-heading)] text-3xl font-semibold leading-[1.08] sm:text-4xl lg:text-[2.9rem]">
             Zero Labs AI Publisher
           </p>
-          <p className={["max-w-xl text-base leading-8 sm:text-lg", isDark ? "text-[#F8F9FA]/72" : "text-[#2C3E50]/76"].join(" ")}>
+          <p className="marketing-copy-muted max-w-xl text-base leading-8 sm:text-lg">
             AI-powered publishing infrastructure for sustainable, humanistic digital operations.
           </p>
-          <p className={["text-sm", isDark ? "text-[#F8F9FA]/62" : "text-[#2C3E50]/62"].join(" ")}>
-            © 2026 Zero Labs AI Publisher. Built by Zero Labs.
-          </p>
+          <p className="marketing-copy-muted text-sm">© 2026 Zero Labs AI Publisher. Built by Zero Labs.</p>
         </div>
 
-        <div className="flex flex-col items-start gap-6 lg:items-end">
+        <div className="flex flex-col items-start gap-7 lg:items-end">
           <div className="flex flex-wrap gap-3 text-sm font-medium tracking-[0.04em] lg:justify-end">
             {footerLinks.map((link) => (
-              <Link
-                key={link.label}
-                href={link.href}
-                className={[
-                  "rounded-full border px-[18px] py-[10px] transition-colors duration-300",
-                  isDark
-                    ? "border-white/8 text-[#F8F9FA]/74 hover:border-[#1F6F5F]/55 hover:bg-[#1F6F5F]/12 hover:text-[#F8F9FA]"
-                    : "border-[#124170]/10 text-[#124170] hover:border-[#1F6F5F]/30 hover:bg-[rgba(31,111,95,0.08)]",
-                ].join(" ")}
-              >
+              <Link key={link.label} href={link.href} className="marketing-pill-control inline-flex rounded-full px-[18px] py-[10px] text-sm font-semibold">
                 {link.label}
               </Link>
             ))}
           </div>
           <div className="flex flex-wrap gap-3">
-            <Link
-              href={routes.signup}
-              className="inline-flex min-h-11 items-center justify-center rounded-full bg-[#1F6F5F] text-sm font-semibold text-white transition-colors duration-300 hover:bg-[#18584b]"
-              style={{ paddingInline: "24px" }}
-            >
+            <Link href={routes.signup} className="marketing-primary-button inline-flex min-h-11 items-center justify-center rounded-full px-6 text-sm font-semibold">
               Start building
             </Link>
           </div>
@@ -97,7 +92,7 @@ export function MarketingFooter({ contained = false, theme = "light" }: Marketin
   }
 
   return (
-    <div className={`${shellClass} pb-[32px] sm:pb-[40px]`} style={{ ...shellStyle, paddingBottom: "clamp(32px, 4vw, 40px)" }}>
+    <div className={`${shellClass} pb-[64px] sm:pb-[72px]`} style={{ ...shellStyle, paddingBottom: "clamp(64px, 6vw, 88px)" }}>
       {content}
     </div>
   );
