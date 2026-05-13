@@ -39,6 +39,10 @@
   --marketing-icon-hover-bg: #eaf2ef;
   --marketing-icon-hover-border: rgba(31, 111, 95, 0.42);
   --marketing-icon-hover-shadow: 0 0 24px rgba(31, 111, 95, 0.12), 0 16px 44px rgba(18, 65, 112, 0.08);
+  --marketing-search-bg: rgba(248, 249, 250, 0.92);
+  --marketing-search-border: rgba(31, 111, 95, 0.28);
+  --marketing-search-text: #124170;
+  --marketing-search-placeholder: rgba(18, 65, 112, 0.55);
   --marketing-muted: rgba(44, 62, 80, 0.74);
   --marketing-subtle: rgba(18, 65, 112, 0.8);
   --marketing-tag-bg: rgba(248, 249, 250, 0.68);
@@ -78,6 +82,10 @@ html[data-theme="dark"] {
   --marketing-icon-hover-bg: rgba(31, 111, 95, 0.12);
   --marketing-icon-hover-border: rgba(173, 230, 205, 0.38);
   --marketing-icon-hover-shadow: 0 0 32px rgba(31, 111, 95, 0.18), 0 18px 54px rgba(0, 0, 0, 0.18);
+  --marketing-search-bg: rgba(11, 36, 29, 0.34);
+  --marketing-search-border: rgba(248, 249, 250, 0.22);
+  --marketing-search-text: #f8f9fa;
+  --marketing-search-placeholder: rgba(248, 249, 250, 0.6);
   --marketing-muted: rgba(248, 249, 250, 0.82);
   --marketing-subtle: rgba(248, 249, 250, 0.72);
   --marketing-tag-bg: rgba(11, 36, 29, 0.42);
@@ -329,6 +337,53 @@ a {
   background: var(--marketing-icon-hover-bg);
   box-shadow: var(--marketing-icon-hover-shadow);
   transform: translateY(-1px);
+}
+
+.marketing-search-control {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  gap: 10px;
+  border: 1px solid var(--marketing-search-border);
+  border-radius: 9999px;
+  background: var(--marketing-search-bg);
+  color: var(--marketing-search-text);
+  padding: 0 14px 0 16px;
+  box-shadow: none;
+  backdrop-filter: blur(18px);
+  transition: border-color 300ms ease, background-color 300ms ease, box-shadow 300ms ease, color 300ms ease;
+}
+
+.marketing-search-control svg {
+  flex-shrink: 0;
+  color: currentColor;
+}
+
+.marketing-search-control input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--marketing-search-text);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.2;
+  padding: 12px 0;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.marketing-search-control input::placeholder {
+  color: var(--marketing-search-placeholder);
+}
+
+.marketing-search-control input:focus {
+  outline: none;
+}
+
+.marketing-search-control:focus-within {
+  border-color: #1f6f5f;
+  box-shadow: 0 0 0 3px rgba(31, 111, 95, 0.18), 0 16px 44px rgba(18, 65, 112, 0.08);
 }
 
 .marketing-label-muted {

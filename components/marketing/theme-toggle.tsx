@@ -9,6 +9,7 @@ interface ThemeToggleProps {
 
 export function ThemeToggle({ theme, onToggle }: ThemeToggleProps) {
   const isDark = theme === "dark";
+  const iconColor = isDark ? "#F8F9FA" : "#124170";
 
   return (
     <button
@@ -16,15 +17,17 @@ export function ThemeToggle({ theme, onToggle }: ThemeToggleProps) {
       onClick={onToggle}
       aria-label={isDark ? "Switch Zero Labs AI Publisher to light mode" : "Switch Zero Labs AI Publisher to dark mode"}
       className="marketing-icon-button focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F6F5F] focus-visible:ring-offset-2"
+      style={{ color: iconColor }}
     >
       <span className="sr-only">Toggle color theme</span>
       {isDark ? (
-        <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 fill-current">
-          <path d="M12 17.5a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11Zm0-15.5a1 1 0 0 1 1 1v1.5a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1Zm0 16.5a1 1 0 0 1 1 1V21a1 1 0 1 1-2 0v-1.5a1 1 0 0 1 1-1Zm9-7.5a1 1 0 0 1 0 2h-1.5a1 1 0 1 1 0-2H21ZM5.5 12a1 1 0 0 1-1 1H3a1 1 0 1 1 0-2h1.5a1 1 0 0 1 1 1Zm11.157-6.657a1 1 0 0 1 1.414 0l1.06 1.06a1 1 0 0 1-1.414 1.415l-1.06-1.061a1 1 0 0 1 0-1.414ZM6.283 16.717a1 1 0 0 1 1.414 0l1.06 1.06a1 1 0 0 1-1.414 1.415l-1.06-1.061a1 1 0 0 1 0-1.414Zm12.848 2.474a1 1 0 0 1-1.414 0l-1.06-1.06a1 1 0 1 1 1.414-1.415l1.06 1.061a1 1 0 0 1 0 1.414ZM8.757 7.343A1 1 0 0 1 7.343 7.34L6.282 6.283a1 1 0 1 1 1.415-1.414l1.06 1.06a1 1 0 0 1 0 1.414Z" />
+        <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="4.25" />
+          <path d="M12 2.75v2.1M12 19.15v2.1M21.25 12h-2.1M4.85 12h-2.1M18.54 5.46l-1.48 1.48M6.94 17.06l-1.48 1.48M18.54 18.54l-1.48-1.48M6.94 6.94 5.46 5.46" />
         </svg>
       ) : (
-        <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 fill-current">
-          <path d="M14.768 3.96a1 1 0 0 1 .79 1.608 7 7 0 1 0 8.885 8.885 1 1 0 0 1 1.608.79A9 9 0 1 1 13.97 2.352a1 1 0 0 1 .799 1.608Z" transform="translate(-2 -2)" />
+        <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
+          <path d="M14.46 2.82a.95.95 0 0 1 .77 1.47 7.5 7.5 0 1 0 9.48 9.49.95.95 0 0 1 1.48.76A9.5 9.5 0 1 1 13.7 2.05a.95.95 0 0 1 .76.77Z" transform="translate(-2 -2)" />
         </svg>
       )}
     </button>
