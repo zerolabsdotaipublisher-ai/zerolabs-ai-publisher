@@ -75,7 +75,10 @@ export function ResetPasswordForm() {
   const [message, setMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const invalidLinkMessage = useMemo(() => readResetLinkError(searchParams, hashParams), [hashParams, searchParams]);
+  const [persistedInvalidLinkMessage] = useState(invalidLinkMessage);
   const errorId = `${id}-error`;
+  const passwordMismatchError = confirmPassword && password !== confirmPassword ? "Passwords do not match." : null;
+  const displayedError = error ?? passwordMismatchError;
 
   useEffect(() => {
     return () => {
@@ -84,6 +87,12 @@ export function ResetPasswordForm() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (invalidLinkMessage && (searchParams.toString() || hashParams.toString())) {
+      router.replace(routes.resetPassword);
+    }
+  }, [hashParams, invalidLinkMessage, router, searchParams]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -115,7 +124,6 @@ export function ResetPasswordForm() {
 
       redirectTimeoutRef.current = window.setTimeout(() => {
         router.replace(routes.login);
-        router.refresh();
       }, REDIRECT_DELAY_AFTER_SUCCESS_MS);
     } catch {
       setError("Password update failed. Please request a new reset link.");
@@ -126,12 +134,12 @@ export function ResetPasswordForm() {
     setIsSubmitting(false);
   }
 
-  if (invalidLinkMessage) {
+  if (persistedInvalidLinkMessage) {
     return (
       <div className="auth-form" aria-live="polite">
         <h1>Reset password</h1>
         <p className="auth-error" role="alert">
-          {invalidLinkMessage}
+          {persistedInvalidLinkMessage}
         </p>
         <Link href={routes.forgotPassword} className="auth-inline-link-button">
           Request new reset link
@@ -152,7 +160,7 @@ export function ResetPasswordForm() {
         required
         autoComplete="new-password"
         minLength={8}
-        aria-describedby={error ? errorId : undefined}
+        aria-describedby={displayedError ? errorId : undefined}
       />
       <PasswordField
         id={`${id}-confirm-password`}
@@ -163,11 +171,11 @@ export function ResetPasswordForm() {
         required
         autoComplete="new-password"
         minLength={8}
-        aria-describedby={error ? errorId : undefined}
+        aria-describedby={displayedError ? errorId : undefined}
       />
-      {error ? (
+      {displayedError ? (
         <p id={errorId} className="auth-error" role="alert">
-          {error}
+          {displayedError}
         </p>
       ) : null}
       {message ? (
@@ -175,7 +183,7 @@ export function ResetPasswordForm() {
           {message}
         </p>
       ) : null}
-      <button type="submit" disabled={isSubmitting} aria-busy={isSubmitting}>
+      <button type="submit" disabled={isSubmitting || Boolean(passwordMismatchError)} aria-busy={isSubmitting}>
         {isSubmitting ? "Updating…" : "Update password"}
       </button>
     </form>

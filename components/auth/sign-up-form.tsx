@@ -55,6 +55,8 @@ export function SignUpForm() {
 
   const errorId = `${id}-error`;
   const passwordHintId = `${id}-password-hint`;
+  const passwordMismatchError = confirmPassword && password !== confirmPassword ? "Passwords do not match." : null;
+  const displayedError = error ?? passwordMismatchError;
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -133,7 +135,7 @@ export function SignUpForm() {
         autoComplete="new-password"
         minLength={8}
         aria-required="true"
-        aria-describedby={error ? errorId : passwordHintId}
+        aria-describedby={displayedError ? errorId : passwordHintId}
       />
       <span id={passwordHintId} className="auth-field-hint">
         Minimum 8 characters
@@ -153,12 +155,12 @@ export function SignUpForm() {
         autoComplete="new-password"
         minLength={8}
         aria-required="true"
-        aria-describedby={error ? errorId : undefined}
+        aria-describedby={displayedError ? errorId : undefined}
       />
 
-      {error ? (
+      {displayedError ? (
         <p id={errorId} className="auth-error" role="alert">
-          {error}
+          {displayedError}
         </p>
       ) : null}
 
@@ -168,7 +170,7 @@ export function SignUpForm() {
         </p>
       ) : null}
 
-      <button type="submit" disabled={isSubmitting} aria-busy={isSubmitting}>
+      <button type="submit" disabled={isSubmitting || Boolean(passwordMismatchError)} aria-busy={isSubmitting}>
         {isSubmitting ? "Creating account…" : "Create account"}
       </button>
       <span className="sr-only" aria-live="polite" aria-atomic="true">
