@@ -38,7 +38,23 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
         </section>
 
         <aside className="auth-visual-panel">
-          <span className="auth-panel-eyebrow">Calmer publishing workflows</span>
+          <span className="auth-panel-logo-wrap">
+            <Image
+              src="/images/Zero Labs Logo colored.svg"
+              alt="Zero Labs AI Publisher"
+              width={64}
+              height={64}
+              className="auth-panel-logo auth-panel-logo-light"
+            />
+            <Image
+              src="/images/Zero Labs Logo transparent.svg"
+              alt=""
+              aria-hidden="true"
+              width={64}
+              height={64}
+              className="auth-panel-logo auth-panel-logo-dark"
+            />
+          </span>
           <h2>Keep every AI publishing step calm, credible, and brand-safe.</h2>
           <p>
             Balanced surfaces, human-first review, and a green editorial palette keep Zero Labs AI Publisher feeling
