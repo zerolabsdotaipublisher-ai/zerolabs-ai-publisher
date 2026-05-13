@@ -4,12 +4,15 @@ import { useId, useState, type FormEvent } from "react";
 import { routes } from "@/config/routes";
 import { getSupabaseAppUrl, getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
+let emailInputValidator: HTMLInputElement | null = null;
+
 function isValidEmail(value: string): boolean {
   if (typeof document === "undefined") {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
   }
 
-  const emailInput = document.createElement("input");
+  const emailInput = emailInputValidator ?? document.createElement("input");
+  emailInputValidator = emailInput;
   emailInput.type = "email";
   emailInput.value = value;
   return emailInput.checkValidity();
