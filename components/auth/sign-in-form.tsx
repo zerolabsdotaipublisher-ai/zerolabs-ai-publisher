@@ -108,7 +108,7 @@ export function SignInForm() {
         return;
       }
 
-      window.location.assign(nextPath);
+      window.location.replace(nextPath);
     } catch {
       setError("Unable to sign in right now. Please check your connection and try again.");
     } finally {

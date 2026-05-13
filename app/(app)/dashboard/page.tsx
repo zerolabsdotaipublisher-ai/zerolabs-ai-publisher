@@ -3,7 +3,7 @@ import { routes } from "@/config/routes";
 import { requireUser } from "@/lib/supabase/auth";
 
 export default async function DashboardPage() {
-  const user = await requireUser(routes.dashboard);
+  const { email } = await requireUser(routes.dashboard);
   const cards = [
     {
       title: "Websites",
@@ -56,9 +56,9 @@ export default async function DashboardPage() {
               </p>
             </div>
           </div>
-          {user?.email ? (
+          {email ? (
             <p className="text-sm" style={{ color: "var(--marketing-muted)" }}>
-              Signed in as <span className="font-medium">{user.email}</span>
+              Signed in as <span className="font-medium">{email}</span>
             </p>
           ) : null}
         </div>
