@@ -6,6 +6,18 @@ function renderMetric(value: number | null, emptyLabel = "No data yet"): string 
   return value === null ? emptyLabel : String(value);
 }
 
+function renderAdminAccountLabel(count: number | null): string {
+  if (count === 1) {
+    return "admin account";
+  }
+
+  if (count === null) {
+    return "admin account(s)";
+  }
+
+  return "admin accounts";
+}
+
 export default async function AdminUsersPage() {
   await requireAdminUser(routes.adminUsers);
 
@@ -23,7 +35,7 @@ export default async function AdminUsersPage() {
         <aside className="dashboard-welcome-card" aria-label="Admin users summary">
           <span className="dashboard-welcome-label">User summary</span>
           <strong>{renderMetric(dashboard.users.total)} total users</strong>
-          <p>{renderMetric(dashboard.users.admins)} admin account{dashboard.users.admins === 1 ? "" : dashboard.users.admins === null ? "(s)" : "s"} · {renderMetric(dashboard.users.recentSignups)} recent signups</p>
+          <p>{renderMetric(dashboard.users.admins)} {renderAdminAccountLabel(dashboard.users.admins)} · {renderMetric(dashboard.users.recentSignups)} recent signups</p>
         </aside>
       </header>
 
