@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { PasswordField } from "@/components/auth/password-field";
 import { routes } from "@/config/routes";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -73,6 +74,7 @@ function mapUpdateError(message: string): string {
 
 export function ResetPasswordForm() {
   const id = useId();
+  const router = useRouter();
   const supabase = getSupabaseBrowserClient();
   const redirectTimeoutRef = useRef<number | null>(null);
   const invalidLinkMessage = useMemo(() => {
@@ -134,7 +136,7 @@ export function ResetPasswordForm() {
       setMessage("Password updated successfully. Redirecting to sign in…");
       await Promise.allSettled([supabase.auth.signOut(), fetch("/api/auth/sign-out", { method: "POST" })]);
       redirectTimeoutRef.current = window.setTimeout(() => {
-        window.location.assign(routes.login);
+        router.replace(routes.login);
       }, REDIRECT_DELAY_AFTER_SUCCESS_MS);
     } catch {
       setError("Password update failed. Please request a new reset link.");

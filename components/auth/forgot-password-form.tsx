@@ -1,14 +1,15 @@
 "use client";
 
-import { useId, useRef, useState, type FormEvent } from "react";
+import { useId, useState, type FormEvent } from "react";
 import { routes } from "@/config/routes";
 import { getSupabaseAppUrl, getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
-function isValidEmail(value: string, emailInput: HTMLInputElement): boolean {
+function isValidEmail(value: string): boolean {
   if (typeof document === "undefined") {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
   }
 
+  const emailInput = document.createElement("input");
   emailInput.type = "email";
   emailInput.value = value;
   return emailInput.checkValidity();
@@ -31,7 +32,6 @@ function mapResetRequestError(message: string): string {
 export function ForgotPasswordForm() {
   const id = useId();
   const supabase = getSupabaseBrowserClient();
-  const emailValidatorRef = useRef<HTMLInputElement | null>(null);
   const [email, setEmail] = useState("");
   const [confirmedEmail, setConfirmedEmail] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -54,11 +54,7 @@ export function ForgotPasswordForm() {
         return;
       }
 
-      if (!emailValidatorRef.current && typeof document !== "undefined") {
-        emailValidatorRef.current = document.createElement("input");
-      }
-
-      if (emailValidatorRef.current && !isValidEmail(trimmedEmail, emailValidatorRef.current)) {
+      if (!isValidEmail(trimmedEmail)) {
         setError("Enter the email address for your account. Password reset links are sent by email.");
         return;
       }

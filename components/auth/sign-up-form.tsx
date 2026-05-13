@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { PasswordField } from "@/components/auth/password-field";
 import { routes } from "@/config/routes";
 import { getSupabaseAppUrl, getSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -71,6 +72,7 @@ function mapSignUpError(message: string): string {
 
 export function SignUpForm() {
   const id = useId();
+  const router = useRouter();
   const supabase = getSupabaseBrowserClient();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -118,7 +120,7 @@ export function SignUpForm() {
       }
 
       setSuccess(true);
-      window.location.assign(`${routes.login}?message=check_email`);
+      router.replace(`${routes.login}?message=check_email`);
     } catch {
       setError("Unable to create your account right now. Please check your connection and try again.");
     } finally {
