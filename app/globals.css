@@ -421,28 +421,32 @@ a {
      0 24px 80px rgba(18, 65, 112, 0.08);
 }
 
-.auth-panel-eyebrow,
+.auth-panel-logo-wrap,
 .auth-visual-panel p,
 .auth-panel-list {
   position: relative;
   z-index: 1;
+}
+
+.auth-visual-panel p,
+.auth-panel-list {
   font-family: var(--font-body), sans-serif;
 }
 
-.auth-panel-eyebrow {
-   display: inline-flex;
-   width: fit-content;
-   align-items: center;
-   min-height: 2.25rem;
-  padding: 0 0.85rem;
-  border: 1px solid rgba(31, 111, 95, 0.16);
-  border-radius: 9999px;
-  background: rgba(248, 249, 250, 0.72);
-   color: #1f6f5f;
-   font-size: 0.82rem;
-   font-weight: 700;
-   letter-spacing: 0.04em;
-   text-transform: uppercase;
+.auth-panel-logo-wrap {
+  display: inline-flex;
+  width: fit-content;
+}
+
+.auth-panel-logo {
+  width: 64px;
+  height: auto;
+  margin-bottom: clamp(1.5rem, 3vw, 2.25rem);
+  filter: drop-shadow(0 0 22px rgba(31, 111, 95, 0.22));
+}
+
+.auth-panel-logo-dark {
+  display: none;
 }
 
 .auth-visual-panel h2 {
@@ -613,10 +617,12 @@ a {
     color: #ade6cd;
   }
 
-  html:not([data-theme="light"]) .auth-panel-eyebrow {
-    border-color: rgba(173, 230, 205, 0.22);
-    background: rgba(11, 36, 29, 0.48);
-    color: #ade6cd;
+  html:not([data-theme="light"]) .auth-panel-logo-light {
+    display: none;
+  }
+
+  html:not([data-theme="light"]) .auth-panel-logo-dark {
+    display: inline-flex;
   }
 
   html:not([data-theme="light"]) .auth-panel-list {
@@ -676,6 +682,14 @@ html[data-theme="dark"] .auth-brand-logo-dark {
   display: inline-flex;
 }
 
+html[data-theme="dark"] .auth-panel-logo-light {
+  display: none;
+}
+
+html[data-theme="dark"] .auth-panel-logo-dark {
+  display: inline-flex;
+}
+
 html[data-theme="dark"] .auth-brand-label,
 html[data-theme="dark"] .auth-form h1,
 html[data-theme="dark"] .auth-visual-panel h2 {
@@ -719,12 +733,6 @@ html[data-theme="dark"] .auth-page .auth-error {
 html[data-theme="dark"] .auth-page .auth-success {
   border-color: rgba(173, 230, 205, 0.22);
   background: rgba(31, 111, 95, 0.14);
-  color: #ade6cd;
-}
-
-html[data-theme="dark"] .auth-panel-eyebrow {
-  border-color: rgba(173, 230, 205, 0.22);
-  background: rgba(11, 36, 29, 0.48);
   color: #ade6cd;
 }
 
