@@ -1,13 +1,13 @@
 "use client";
 
-import { useId, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams, type ReadonlyURLSearchParams } from "next/navigation";
 import { routes } from "@/config/routes";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { PasswordField } from "@/components/auth/password-field";
 
-const REDIRECT_DELAY_MS = 1200;
+const REDIRECT_DELAY_AFTER_SUCCESS_MS = 1200;
 
 function readResetLinkError(
   searchParams: URLSearchParams | ReadonlyURLSearchParams,
@@ -64,6 +64,7 @@ export function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const supabase = getSupabaseBrowserClient();
+  const redirectTimeoutRef = useRef<number | null>(null);
 
   const [hashParams] = useState(
     () => (typeof window === "undefined" ? new URLSearchParams() : new URLSearchParams(window.location.hash.replace(/^#/, ""))),
@@ -75,6 +76,14 @@ export function ResetPasswordForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const invalidLinkMessage = useMemo(() => readResetLinkError(searchParams, hashParams), [hashParams, searchParams]);
   const errorId = `${id}-error`;
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimeoutRef.current) {
+        window.clearTimeout(redirectTimeoutRef.current);
+      }
+    };
+  }, []);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -104,10 +113,10 @@ export function ResetPasswordForm() {
         fetch("/api/auth/sign-out", { method: "POST" }),
       ]);
 
-      window.setTimeout(() => {
+      redirectTimeoutRef.current = window.setTimeout(() => {
         router.replace(routes.login);
         router.refresh();
-      }, REDIRECT_DELAY_MS);
+      }, REDIRECT_DELAY_AFTER_SUCCESS_MS);
     } catch {
       setError("Password update failed. Please request a new reset link.");
       setIsSubmitting(false);
