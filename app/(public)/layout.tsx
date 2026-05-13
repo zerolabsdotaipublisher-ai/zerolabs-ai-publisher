@@ -9,7 +9,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
       <div className="auth-page-backdrop" aria-hidden="true" />
       <div className="auth-shell">
         <section className="auth-card">
-          <Link href={routes.home} className="auth-brand">
+          <Link href={routes.home} className="auth-brand" aria-label="Return to Zero Labs AI Publisher homepage">
             <span className="auth-brand-logo-wrap" aria-hidden="true">
               <Image
                 src="/images/Zero Labs Logo colored.svg"

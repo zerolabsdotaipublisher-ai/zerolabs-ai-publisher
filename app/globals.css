@@ -259,9 +259,6 @@ a {
   max-width: 28rem;
   display: flex;
   flex-direction: column;
-}
-
-.auth-form {
   gap: 1rem;
 }
 
