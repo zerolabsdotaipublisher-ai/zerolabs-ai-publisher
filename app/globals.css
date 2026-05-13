@@ -173,6 +173,8 @@ a {
 .auth-shell {
   position: relative;
   z-index: 1;
+  width: 100%;
+  max-width: 1120px;
   width: min(1120px, 100%);
   display: grid;
   grid-template-columns: minmax(0, 440px) minmax(0, 1fr);

@@ -30,7 +30,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
             </span>
             <span className="auth-brand-copy">
               <span className="auth-brand-label">Zero Labs AI Publisher</span>
-              <span className="auth-brand-tagline">Sustainable &amp; Humanistic AI publishing</span>
+              <span className="auth-brand-tagline">Sustainable & Humanistic AI publishing</span>
             </span>
           </Link>
 
