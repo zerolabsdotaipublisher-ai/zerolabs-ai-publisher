@@ -21,18 +21,24 @@
   --marketing-card-hover-bg: rgba(234, 242, 239, 0.38);
   --marketing-card-hover-border: rgba(31, 111, 95, 0.35);
   --marketing-card-hover-shadow: 0 0 36px rgba(31, 111, 95, 0.16), 0 24px 70px rgba(18, 65, 112, 0.1);
-  --marketing-secondary-bg: rgba(248, 249, 250, 0.9);
-  --marketing-secondary-border: rgba(31, 111, 95, 0.3);
+  --marketing-secondary-bg: rgba(248, 249, 250, 0.92);
+  --marketing-secondary-border: rgba(31, 111, 95, 0.28);
   --marketing-secondary-text: #124170;
   --marketing-secondary-hover-bg: #eaf2ef;
   --marketing-secondary-hover-border: rgba(31, 111, 95, 0.45);
   --marketing-secondary-hover-shadow: 0 0 28px rgba(31, 111, 95, 0.14), 0 18px 50px rgba(18, 65, 112, 0.1);
-  --marketing-pill-bg: rgba(248, 249, 250, 0.84);
-  --marketing-pill-border: rgba(31, 111, 95, 0.2);
-  --marketing-pill-text: #2c3e50;
+  --marketing-pill-bg: rgba(248, 249, 250, 0.92);
+  --marketing-pill-border: rgba(31, 111, 95, 0.24);
+  --marketing-pill-text: #124170;
   --marketing-pill-hover-bg: rgba(234, 242, 239, 0.96);
   --marketing-pill-hover-border: rgba(31, 111, 95, 0.34);
   --marketing-pill-hover-shadow: 0 0 28px rgba(31, 111, 95, 0.12), 0 20px 54px rgba(18, 65, 112, 0.08);
+  --marketing-icon-bg: rgba(248, 249, 250, 0.92);
+  --marketing-icon-border: rgba(31, 111, 95, 0.28);
+  --marketing-icon-text: #124170;
+  --marketing-icon-hover-bg: #eaf2ef;
+  --marketing-icon-hover-border: rgba(31, 111, 95, 0.42);
+  --marketing-icon-hover-shadow: 0 0 24px rgba(31, 111, 95, 0.12), 0 16px 44px rgba(18, 65, 112, 0.08);
   --marketing-muted: rgba(44, 62, 80, 0.74);
   --marketing-subtle: rgba(18, 65, 112, 0.8);
   --marketing-tag-bg: rgba(248, 249, 250, 0.68);
@@ -54,18 +60,24 @@ html[data-theme="dark"] {
   --marketing-card-hover-bg: rgba(31, 111, 95, 0.08);
   --marketing-card-hover-border: rgba(173, 230, 205, 0.35);
   --marketing-card-hover-shadow: 0 0 40px rgba(31, 111, 95, 0.22), 0 24px 80px rgba(0, 0, 0, 0.2);
-  --marketing-secondary-bg: rgba(11, 36, 29, 0.12);
+  --marketing-secondary-bg: rgba(11, 36, 29, 0.28);
   --marketing-secondary-border: rgba(248, 249, 250, 0.28);
   --marketing-secondary-text: #f8f9fa;
   --marketing-secondary-hover-bg: rgba(31, 111, 95, 0.08);
   --marketing-secondary-hover-border: #1f6f5f;
   --marketing-secondary-hover-shadow: 0 0 32px rgba(31, 111, 95, 0.18), 0 20px 60px rgba(0, 0, 0, 0.18);
-  --marketing-pill-bg: rgba(11, 36, 29, 0.22);
-  --marketing-pill-border: rgba(248, 249, 250, 0.18);
+  --marketing-pill-bg: rgba(11, 36, 29, 0.28);
+  --marketing-pill-border: rgba(248, 249, 250, 0.22);
   --marketing-pill-text: #f8f9fa;
   --marketing-pill-hover-bg: rgba(31, 111, 95, 0.08);
   --marketing-pill-hover-border: rgba(173, 230, 205, 0.35);
   --marketing-pill-hover-shadow: 0 0 32px rgba(31, 111, 95, 0.18), 0 20px 60px rgba(0, 0, 0, 0.18);
+  --marketing-icon-bg: rgba(11, 36, 29, 0.34);
+  --marketing-icon-border: rgba(248, 249, 250, 0.28);
+  --marketing-icon-text: #f8f9fa;
+  --marketing-icon-hover-bg: rgba(31, 111, 95, 0.12);
+  --marketing-icon-hover-border: rgba(173, 230, 205, 0.38);
+  --marketing-icon-hover-shadow: 0 0 32px rgba(31, 111, 95, 0.18), 0 18px 54px rgba(0, 0, 0, 0.18);
   --marketing-muted: rgba(248, 249, 250, 0.82);
   --marketing-subtle: rgba(248, 249, 250, 0.72);
   --marketing-tag-bg: rgba(11, 36, 29, 0.42);
@@ -234,13 +246,23 @@ a {
 .marketing-secondary-button,
 .marketing-pill-control,
 .marketing-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  gap: 8px;
+  line-height: 1;
+  white-space: nowrap;
+  text-decoration: none;
   transition: background-color 300ms ease, border-color 300ms ease, box-shadow 300ms ease, color 300ms ease, transform 300ms ease;
 }
 
 .marketing-primary-button {
   border: 1px solid #1f6f5f;
+  border-radius: 9999px;
   background: #1f6f5f;
   color: #ffffff;
+  padding-inline: 24px;
   font-weight: 700;
   box-shadow: 0 18px 50px rgba(31, 111, 95, 0.18);
 }
@@ -255,8 +277,10 @@ a {
 
 .marketing-secondary-button {
   border: 1px solid var(--marketing-secondary-border);
+  border-radius: 9999px;
   background: var(--marketing-secondary-bg);
   color: var(--marketing-secondary-text);
+  padding-inline: 22px;
   font-weight: 700;
   box-shadow: none;
 }
@@ -269,22 +293,41 @@ a {
   transform: translateY(-1px);
 }
 
-.marketing-pill-control,
-.marketing-icon-button {
+.marketing-pill-control {
   border: 1px solid var(--marketing-pill-border);
+  border-radius: 9999px;
   background: var(--marketing-pill-bg);
   color: var(--marketing-pill-text);
+  padding-inline: 22px;
   font-weight: 600;
   box-shadow: none;
 }
 
 .marketing-pill-control:hover,
-.marketing-pill-control:focus-visible,
-.marketing-icon-button:hover,
-.marketing-icon-button:focus-visible {
+.marketing-pill-control:focus-visible {
   border-color: var(--marketing-pill-hover-border);
   background: var(--marketing-pill-hover-bg);
   box-shadow: var(--marketing-pill-hover-shadow);
+  transform: translateY(-1px);
+}
+
+.marketing-icon-button {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  padding: 0;
+  border: 1px solid var(--marketing-icon-border);
+  border-radius: 9999px;
+  background: var(--marketing-icon-bg);
+  color: var(--marketing-icon-text);
+  box-shadow: 0 12px 32px rgba(18, 65, 112, 0.08);
+}
+
+.marketing-icon-button:hover,
+.marketing-icon-button:focus-visible {
+  border-color: var(--marketing-icon-hover-border);
+  background: var(--marketing-icon-hover-bg);
+  box-shadow: var(--marketing-icon-hover-shadow);
   transform: translateY(-1px);
 }
 

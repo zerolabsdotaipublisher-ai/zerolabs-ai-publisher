@@ -87,23 +87,17 @@ export function MarketingNav({
         </nav>
 
         <div className="flex flex-wrap items-center justify-end gap-3">
-          <div className="marketing-pill-control hidden min-h-11 items-center gap-2 rounded-full px-[18px] text-xs font-semibold tracking-[0.08em] md:inline-flex">
+          <div className="marketing-pill-control hidden min-w-[108px] text-sm font-semibold tracking-[0.08em] md:inline-flex">
             <svg aria-hidden="true" viewBox="0 0 24 24" className="h-4 w-4 stroke-current" fill="none" strokeWidth="1.8">
               <circle cx="11" cy="11" r="6.5" />
               <path d="m16 16 4.5 4.5" strokeLinecap="round" />
             </svg>
             <span>Search</span>
           </div>
-          <Link
-            href={routes.login}
-            className="marketing-secondary-button inline-flex min-h-11 items-center justify-center rounded-full px-6 text-sm font-semibold"
-          >
+          <Link href={routes.login} className="marketing-secondary-button min-w-[78px] text-sm font-semibold">
             Login
           </Link>
-          <Link
-            href={routes.signup}
-            className="marketing-primary-button inline-flex min-h-11 items-center justify-center rounded-full px-6 text-sm font-semibold"
-          >
+          <Link href={routes.signup} className="marketing-primary-button min-w-[92px] text-sm font-semibold">
             Signup
           </Link>
           {onToggleTheme ? <ThemeToggle theme={theme} onToggle={onToggleTheme} /> : null}

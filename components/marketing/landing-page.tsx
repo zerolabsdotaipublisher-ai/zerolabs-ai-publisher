@@ -274,7 +274,7 @@ export function LandingPage() {
           <div className="relative z-10 grid min-h-[inherit] gap-14 lg:grid-cols-[minmax(0,0.92fr)_minmax(320px,0.78fr)] lg:items-center">
             <div className="max-w-[640px] self-center">
               <div style={{ display: "grid", gap: "clamp(24px, 3vw, 32px)" }}>
-                <div className="marketing-tag inline-flex w-fit items-center gap-3 rounded-full px-[16px] py-[10px] text-sm font-semibold tracking-[0.08em] text-current backdrop-blur-md">
+                <div className="inline-flex items-center gap-3 text-sm font-semibold tracking-[0.08em] text-current">
                   <Image src={heroAccentLogo} alt="" width={32} height={32} className="h-8 w-8" priority />
                   <span>Zero Labs AI Publisher</span>
                 </div>
