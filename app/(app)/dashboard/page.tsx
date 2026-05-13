@@ -1,9 +1,14 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { routes } from "@/config/routes";
-import { requireUser } from "@/lib/supabase/auth";
+import { requireUserProfile } from "@/lib/supabase/auth";
 
 export default async function DashboardPage() {
-  const user = await requireUser(routes.dashboard);
+  const { user, profile } = await requireUserProfile(routes.dashboard);
+
+  if (profile.role === "admin") {
+    redirect(routes.adminDashboard);
+  }
 
   const actions = [
     {

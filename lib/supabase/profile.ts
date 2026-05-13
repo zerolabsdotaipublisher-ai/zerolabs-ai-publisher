@@ -13,11 +13,15 @@ import { getSupabaseServiceClient } from "./server";
  * caller.  Only editable fields (full_name, avatar_url) may be supplied to
  * updateProfile().
  */
+export type ProfileRole = "user" | "admin";
+
 export type Profile = {
   /** UUID — matches auth.users.id. System-managed. */
   id: string;
   /** Cached from auth identity. System-managed. */
   email: string;
+  /** Server-authoritative application role. */
+  role: ProfileRole;
   /** User-editable display name. */
   full_name: string | null;
   /** User-editable avatar URL. */
@@ -50,6 +54,8 @@ type AuthUserMetadata = {
   avatar_url?: string;
 };
 
+const ADMIN_PROFILE_EMAILS = new Set(["zerolabsaipublisher@gmail.com"]);
+
 function extractUserMetadataFromAuth(user: User): AuthUserMetadata {
   const raw = user.user_metadata;
 
@@ -68,6 +74,10 @@ function extractUserMetadataFromAuth(user: User): AuthUserMetadata {
   }
 
   return metadata;
+}
+
+function resolveSeededProfileRole(email: string): ProfileRole | null {
+  return ADMIN_PROFILE_EMAILS.has(email.trim().toLowerCase()) ? "admin" : null;
 }
 
 // ---------------------------------------------------------------------------
@@ -173,16 +183,26 @@ export async function syncProfileFromAuthUser(user: User): Promise<void> {
 
   const supabase = getSupabaseServiceClient();
   const metadata = extractUserMetadataFromAuth(user);
+  const seededRole = resolveSeededProfileRole(user.email);
 
-  const { error } = await supabase.from("profiles").upsert(
-    {
-      id: user.id,
-      email: user.email,
-      full_name: metadata.full_name ?? null,
-      avatar_url: metadata.avatar_url ?? null,
-    },
-    { onConflict: "id" },
-  );
+  const profileRow: {
+    id: string;
+    email: string;
+    full_name: string | null;
+    avatar_url: string | null;
+    role?: ProfileRole;
+  } = {
+    id: user.id,
+    email: user.email,
+    full_name: metadata.full_name ?? null,
+    avatar_url: metadata.avatar_url ?? null,
+  };
+
+  if (seededRole) {
+    profileRow.role = seededRole;
+  }
+
+  const { error } = await supabase.from("profiles").upsert(profileRow, { onConflict: "id" });
 
   if (error) {
     logger.error("profile sync failed", {
