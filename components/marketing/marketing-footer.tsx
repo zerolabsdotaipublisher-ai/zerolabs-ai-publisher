@@ -4,14 +4,6 @@ import Link from "next/link";
 import { routes } from "@/config/routes";
 import { MarketingTheme } from "./theme-toggle";
 
-const shellClass = "mx-auto w-full max-w-[1440px] px-5 sm:px-6 lg:px-10 xl:px-12";
-const shellStyle = {
-  marginInline: "auto",
-  width: "100%",
-  maxWidth: "1440px",
-  paddingInline: "clamp(20px, 3vw, 48px)",
-};
-
 interface MarketingFooterProps {
   contained?: boolean;
   theme?: MarketingTheme;
@@ -74,7 +66,7 @@ export function MarketingFooter({ contained = false, theme = "light" }: Marketin
   }
 
   return (
-    <div className={`${shellClass} pb-[64px] sm:pb-[72px]`} style={{ ...shellStyle, paddingBottom: "clamp(64px, 6vw, 88px)" }}>
+    <div className="marketing-shell pb-[64px] sm:pb-[72px]" style={{ paddingBottom: "clamp(64px, 6vw, 88px)" }}>
       {content}
     </div>
   );

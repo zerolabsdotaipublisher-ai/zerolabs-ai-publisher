@@ -21,14 +21,6 @@ const navigationItems: Array<{ label: string; href: string; desktopOnly?: boolea
   { label: "Blog", href: "/blog", desktopOnly: true },
 ] as const;
 
-const shellClass = "mx-auto w-full max-w-[1440px] px-5 sm:px-6 lg:px-10 xl:px-12";
-const shellStyle = {
-  marginInline: "auto",
-  width: "100%",
-  maxWidth: "1440px",
-  paddingInline: "clamp(20px, 3vw, 48px)",
-};
-
 function buildSurfaceStyle(isDark: boolean): CSSProperties {
   return {
     padding: "clamp(18px, 2.2vw, 24px) clamp(20px, 3vw, 36px)",
@@ -63,8 +55,8 @@ export function MarketingNav({
 
   const content = (
     <header className="marketing-panel-surface rounded-[36px] backdrop-blur-2xl" style={buildSurfaceStyle(isDark)}>
-      <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(260px,1fr)_auto_minmax(260px,1fr)] lg:items-center lg:gap-8">
-        <div className="flex items-center justify-between gap-3 lg:justify-start">
+      <div className="flex flex-col gap-5 xl:grid xl:grid-cols-[minmax(300px,1fr)_auto_minmax(360px,1fr)] xl:items-center xl:gap-8">
+        <div className="flex items-center justify-between gap-3 xl:justify-start">
           <Link href={routes.home} className="flex min-w-0 items-center gap-3">
             <Image src={logoSrc} alt="" width={180} height={40} priority className="h-10 w-auto shrink-0" />
             <span className="min-w-0 font-[family:var(--font-heading)] text-sm font-semibold tracking-[0.06em] text-current sm:text-base">
@@ -88,10 +80,10 @@ export function MarketingNav({
           ))}
         </nav>
 
-        <div className="flex flex-wrap items-center justify-end gap-3 lg:w-full lg:max-w-[360px]">
+        <div className="flex flex-wrap items-center justify-end gap-3 xl:w-full xl:max-w-[420px]">
           <form
             role="search"
-            className="marketing-search-control order-3 w-full min-w-0 sm:order-none sm:w-[200px] xl:w-[232px]"
+            className="marketing-search-control order-3 w-full min-w-0 sm:order-none sm:w-[220px] xl:w-[260px]"
             onSubmit={(event) => event.preventDefault()}
           >
             <label className="sr-only" htmlFor="marketing-search">
@@ -128,7 +120,7 @@ export function MarketingNav({
   }
 
   return (
-    <div className={`${shellClass} pt-[24px] md:pt-[32px]`} style={{ ...shellStyle, paddingTop: "clamp(32px, 5vw, 56px)" }}>
+    <div className="marketing-shell pt-[24px] md:pt-[32px]" style={{ paddingTop: "clamp(32px, 5vw, 56px)" }}>
       {content}
     </div>
   );
