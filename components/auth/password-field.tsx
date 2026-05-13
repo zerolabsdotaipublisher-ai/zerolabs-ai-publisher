@@ -2,6 +2,7 @@
 
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 type PasswordFieldProps = Omit<ComponentPropsWithoutRef<"input">, "type"> & {
   label: ReactNode;
@@ -10,12 +11,11 @@ type PasswordFieldProps = Omit<ComponentPropsWithoutRef<"input">, "type"> & {
 
 export function PasswordField({ label, toggleLabel = "password", className, ...inputProps }: PasswordFieldProps) {
   const [isVisible, setIsVisible] = useState(false);
-  const buttonText = isVisible ? "Hide password" : "Show password";
 
   return (
     <label htmlFor={inputProps.id}>
       {label}
-      <span className="auth-password-field">
+      <div className="auth-password-field">
         <input {...inputProps} className={className} type={isVisible ? "text" : "password"} />
         <button
           type="button"
@@ -24,9 +24,9 @@ export function PasswordField({ label, toggleLabel = "password", className, ...i
           aria-label={`${isVisible ? "Hide" : "Show"} ${toggleLabel}`}
           aria-pressed={isVisible}
         >
-          {buttonText}
+          {isVisible ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
         </button>
-      </span>
+      </div>
     </label>
   );
 }

@@ -321,50 +321,45 @@ a {
 
 .auth-password-field input {
   width: 100%;
-  min-height: 3.25rem;
-  padding: 0.9rem 8rem 0.9rem 1rem;
-  border: 1px solid rgba(31, 111, 95, 0.22);
-  border-radius: 0.95rem;
-  background: rgba(248, 249, 250, 0.96);
-  color: #2c3e50;
+  padding-right: 3rem;
 }
 
-.auth-password-field input:focus,
-.auth-password-field input:focus-visible {
-  border-color: #1f6f5f;
-  box-shadow: 0 0 0 4px rgba(31, 111, 95, 0.16);
-}
-
-.auth-password-toggle {
+.auth-form .auth-password-toggle {
   position: absolute;
   top: 50%;
-  right: 0.75rem;
+  right: 0.85rem;
   z-index: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: auto;
-  min-width: auto;
+  width: 2rem;
+  min-width: 2rem;
   height: 2rem;
-  padding: 0 0.65rem;
+  min-height: 2rem;
+  padding: 0;
   border: 0;
   border-radius: 9999px;
   background: transparent;
-  color: #1f6f5f;
-  font-size: 0.78rem;
-  font-weight: 700;
+  color: rgba(31, 111, 95, 0.72);
   line-height: 1;
-  white-space: nowrap;
+  box-shadow: none;
   cursor: pointer;
-  transition: background-color 200ms ease, color 200ms ease, box-shadow 200ms ease;
+  transition: background-color 160ms ease, color 160ms ease, transform 160ms ease;
   transform: translateY(-50%);
 }
 
-.auth-password-toggle:hover,
-.auth-password-toggle:focus-visible {
+.auth-form .auth-password-toggle:hover,
+.auth-form .auth-password-toggle:focus-visible {
   outline: none;
   background: rgba(31, 111, 95, 0.08);
+  color: #1f6f5f;
   box-shadow: none;
+  transform: translateY(-50%);
+}
+
+.auth-form .auth-password-toggle svg {
+  width: 1rem;
+  height: 1rem;
 }
 
 .auth-form .auth-inline-link-button {
@@ -717,20 +712,15 @@ html[data-theme="dark"] .auth-panel-logo-dark {
      color: #f8f9fa;
   }
 
-  html:not([data-theme="light"]) .auth-password-field input {
-    border-color: rgba(173, 230, 205, 0.24);
-    background: rgba(8, 42, 32, 0.55);
-    color: #f8f9fa;
-  }
+html:not([data-theme="light"]) .auth-form .auth-password-toggle {
+  color: rgba(173, 230, 205, 0.78);
+}
 
-  html:not([data-theme="light"]) .auth-password-toggle {
-    color: #ade6cd;
-  }
-
-  html:not([data-theme="light"]) .auth-password-toggle:hover,
-  html:not([data-theme="light"]) .auth-password-toggle:focus-visible {
-    background: rgba(173, 230, 205, 0.12);
-  }
+html:not([data-theme="light"]) .auth-form .auth-password-toggle:hover,
+html:not([data-theme="light"]) .auth-form .auth-password-toggle:focus-visible {
+  background: rgba(173, 230, 205, 0.12);
+  color: #d7f5e8;
+}
 
   html:not([data-theme="light"]) .auth-form input::placeholder {
     color: rgba(248, 249, 250, 0.45);
@@ -835,19 +825,14 @@ html[data-theme="dark"] .auth-form input {
   color: #f8f9fa;
 }
 
-html[data-theme="dark"] .auth-password-field input {
-  border-color: rgba(173, 230, 205, 0.24);
-  background: rgba(8, 42, 32, 0.55);
-  color: #f8f9fa;
+html[data-theme="dark"] .auth-form .auth-password-toggle {
+  color: rgba(173, 230, 205, 0.78);
 }
 
-html[data-theme="dark"] .auth-password-toggle {
-  color: #ade6cd;
-}
-
-html[data-theme="dark"] .auth-password-toggle:hover,
-html[data-theme="dark"] .auth-password-toggle:focus-visible {
+html[data-theme="dark"] .auth-form .auth-password-toggle:hover,
+html[data-theme="dark"] .auth-form .auth-password-toggle:focus-visible {
   background: rgba(173, 230, 205, 0.12);
+  color: #d7f5e8;
 }
 
 html[data-theme="dark"] .auth-form input::placeholder {
