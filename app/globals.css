@@ -445,6 +445,10 @@ a {
   filter: drop-shadow(0 0 22px rgba(31, 111, 95, 0.22));
 }
 
+.auth-panel-logo-light {
+  display: inline-flex;
+}
+
 .auth-panel-logo-dark {
   display: none;
 }
