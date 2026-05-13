@@ -19,7 +19,7 @@ export default async function DashboardPage() {
         <div>
           <h1>Dashboard</h1>
           <p>Welcome to Zero Labs AI Publisher</p>
-          <p>{user.email ?? "Signed in"}</p>
+          {user.email ? <p>{user.email}</p> : null}
         </div>
       </header>
 
