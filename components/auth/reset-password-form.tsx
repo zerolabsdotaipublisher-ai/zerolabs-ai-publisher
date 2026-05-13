@@ -45,7 +45,7 @@ function validateResetPassword(password: string, confirmPassword: string): strin
     return "Please confirm your new password.";
   }
 
-  if (password != confirmPassword) {
+  if (password !== confirmPassword) {
     return "Passwords do not match.";
   }
 
