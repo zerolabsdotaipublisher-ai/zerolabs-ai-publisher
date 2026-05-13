@@ -76,7 +76,7 @@ export function ResetPasswordForm() {
   const id = useId();
   const router = useRouter();
   const supabase = getSupabaseBrowserClient();
-  const redirectTimeoutRef = useRef<ReturnType<typeof window.setTimeout> | null>(null);
+  const redirectTimeoutRef = useRef<number | null>(null);
   const invalidLinkMessage = useMemo(() => {
     if (typeof window === "undefined") {
       return null;
