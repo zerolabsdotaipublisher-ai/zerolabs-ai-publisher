@@ -7,7 +7,7 @@ import { PasswordField } from "@/components/auth/password-field";
 import { routes } from "@/config/routes";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
-const REDIRECT_DELAY_AFTER_SUCCESS_MS = 1200;
+const REDIRECT_DELAY_AFTER_SUCCESS = 1200;
 
 function readResetLinkError(searchParams: URLSearchParams, hashParams: URLSearchParams): string | null {
   const error = searchParams.get("error") ?? hashParams.get("error");
@@ -76,7 +76,7 @@ export function ResetPasswordForm() {
   const id = useId();
   const router = useRouter();
   const supabase = getSupabaseBrowserClient();
-  const redirectTimeoutRef = useRef<number | null>(null);
+  const redirectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const invalidLinkMessage = useMemo(() => {
     if (typeof window === "undefined") {
       return null;
@@ -137,7 +137,7 @@ export function ResetPasswordForm() {
       await Promise.allSettled([supabase.auth.signOut(), fetch("/api/auth/sign-out", { method: "POST" })]);
       redirectTimeoutRef.current = window.setTimeout(() => {
         router.replace(routes.login);
-      }, REDIRECT_DELAY_AFTER_SUCCESS_MS);
+      }, REDIRECT_DELAY_AFTER_SUCCESS);
     } catch {
       setError("Password update failed. Please request a new reset link.");
     } finally {

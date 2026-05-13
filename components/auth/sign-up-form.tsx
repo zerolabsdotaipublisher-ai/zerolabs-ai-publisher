@@ -90,8 +90,6 @@ export function SignUpForm() {
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
-    setSuccess(false);
-
     const validationError = validateRegistration(email, password, confirmPassword);
     if (validationError) {
       setError(validationError);

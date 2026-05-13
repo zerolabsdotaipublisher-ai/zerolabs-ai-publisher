@@ -55,7 +55,7 @@ export function ForgotPasswordForm() {
       }
 
       if (!isValidEmail(trimmedEmail)) {
-        setError("Enter the email address for your account. Password reset links are sent by email.");
+        setError("Please enter a valid email address.");
         return;
       }
 
