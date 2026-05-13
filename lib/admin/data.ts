@@ -225,8 +225,8 @@ async function listAuthUsers(limit = 100): Promise<User[]> {
 async function listProfileRows(limit = 100): Promise<ProfileRow[]> {
   const supabase = getSupabaseServiceClient();
 
-  return safeRows(() =>
-    supabase.from("profiles").select("id, email, role, created_at").order("created_at", { ascending: false }).limit(limit),
+  return safeRows(async () =>
+    await supabase.from("profiles").select("id, email, role, created_at").order("created_at", { ascending: false }).limit(limit),
   );
 }
 
@@ -236,8 +236,8 @@ async function getEmailMap(userIds: string[]): Promise<Map<string, string>> {
   }
 
   const supabase = getSupabaseServiceClient();
-  const profiles = await safeRows<{ id: string; email: string }>(() =>
-    supabase.from("profiles").select("id, email").in("id", userIds),
+  const profiles = await safeRows<{ id: string; email: string }>(async () =>
+    await supabase.from("profiles").select("id, email").in("id", userIds),
   );
 
   return new Map(profiles.map((profile) => [profile.id, profile.email]));
@@ -246,8 +246,8 @@ async function getEmailMap(userIds: string[]): Promise<Map<string, string>> {
 async function listRecentWebsiteRows(limit = 12): Promise<WebsiteRow[]> {
   const supabase = getSupabaseServiceClient();
 
-  return safeRows(() =>
-    supabase
+  return safeRows(async () =>
+    await supabase
       .from("website_structures")
       .select("id, user_id, site_title, website_type, status, generated_at, updated_at")
       .is("deleted_at", null)
@@ -259,8 +259,8 @@ async function listRecentWebsiteRows(limit = 12): Promise<WebsiteRow[]> {
 async function listRecentPublishJobs(limit = 6): Promise<PublishJobRow[]> {
   const supabase = getSupabaseServiceClient();
 
-  return safeRows(() =>
-    supabase
+  return safeRows(async () =>
+    await supabase
       .from("social_publish_jobs")
       .select("id, platform, status, updated_at, published_at, last_error")
       .order("updated_at", { ascending: false })
@@ -271,8 +271,8 @@ async function listRecentPublishJobs(limit = 6): Promise<PublishJobRow[]> {
 async function listRecentScheduleRuns(limit = 6): Promise<ScheduleRunRow[]> {
   const supabase = getSupabaseServiceClient();
 
-  return safeRows(() =>
-    supabase
+  return safeRows(async () =>
+    await supabase
       .from("content_schedule_runs")
       .select("id, status, updated_at, completed_at, error")
       .order("updated_at", { ascending: false })
@@ -284,16 +284,16 @@ async function getWebsiteCounts() {
   const supabase = getSupabaseServiceClient();
 
   const [total, published, drafts] = await Promise.all([
-    safeCount(() => supabase.from("website_structures").select("id", { count: "exact", head: true }).is("deleted_at", null)),
-    safeCount(() =>
-      supabase
+    safeCount(async () => await supabase.from("website_structures").select("id", { count: "exact", head: true }).is("deleted_at", null)),
+    safeCount(async () =>
+      await supabase
         .from("website_structures")
         .select("id", { count: "exact", head: true })
         .is("deleted_at", null)
         .eq("status", "published"),
     ),
-    safeCount(() =>
-      supabase.from("website_structures").select("id", { count: "exact", head: true }).is("deleted_at", null).eq("status", "draft"),
+    safeCount(async () =>
+      await supabase.from("website_structures").select("id", { count: "exact", head: true }).is("deleted_at", null).eq("status", "draft"),
     ),
   ]);
 
@@ -304,8 +304,8 @@ async function getUserCounts() {
   const supabase = getSupabaseServiceClient();
 
   const [total, admins] = await Promise.all([
-    safeCount(() => supabase.from("profiles").select("id", { count: "exact", head: true })),
-    safeCount(() => supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "admin")),
+    safeCount(async () => await supabase.from("profiles").select("id", { count: "exact", head: true })),
+    safeCount(async () => await supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "admin")),
   ]);
 
   return { total, admins };
@@ -315,10 +315,10 @@ async function getMonitoringCounts() {
   const supabase = getSupabaseServiceClient();
 
   const [failedPublishJobs, failedScheduleRuns] = await Promise.all([
-    safeCount(() =>
-      supabase.from("social_publish_jobs").select("id", { count: "exact", head: true }).in("status", ["failed", "retry_pending"]),
+    safeCount(async () =>
+      await supabase.from("social_publish_jobs").select("id", { count: "exact", head: true }).in("status", ["failed", "retry_pending"]),
     ),
-    safeCount(() => supabase.from("content_schedule_runs").select("id", { count: "exact", head: true }).eq("status", "failed")),
+    safeCount(async () => await supabase.from("content_schedule_runs").select("id", { count: "exact", head: true }).eq("status", "failed")),
   ]);
 
   const totalFailed =
@@ -408,7 +408,7 @@ function buildRecentActivity(
   publishJobs: PublishJobRow[],
   scheduleRuns: ScheduleRunRow[],
 ): AdminActivityItem[] {
-  const websiteActivity = websites.slice(0, 4).map((website) => ({
+  const websiteActivity: AdminActivityItem[] = websites.slice(0, 4).map((website) => ({
     id: `website-${website.id}`,
     title: `${website.title} updated`,
     detail: `${website.websiteType} website · ${website.status} · ${website.ownerEmail}`,
@@ -416,7 +416,7 @@ function buildRecentActivity(
     tone: website.status === "published" ? "info" : "warning",
   }));
 
-  const publishActivity = publishJobs.map((job) => ({
+  const publishActivity: AdminActivityItem[] = publishJobs.map((job) => ({
     id: `publish-${job.id}`,
     title: `${job.platform} publish job ${job.status}`,
     detail: job.last_error ? job.last_error : "Publishing workflow updated recently.",
@@ -424,7 +424,7 @@ function buildRecentActivity(
     tone: toToneFromStatus(job.status),
   }));
 
-  const scheduleActivity = scheduleRuns.map((run) => ({
+  const scheduleActivity: AdminActivityItem[] = scheduleRuns.map((run) => ({
     id: `schedule-${run.id}`,
     title: `Content schedule run ${run.status}`,
     detail: run.error ? run.error : "Content scheduling workflow updated recently.",
@@ -449,11 +449,11 @@ export async function listAdminWebsites(limit = 25): Promise<AdminWebsiteRecord[
 }
 
 export async function getAdminDashboardData(): Promise<AdminDashboardData> {
-  const [users, userCounts, websiteCounts, websiteRows, monitoringCounts, publishJobs, scheduleRuns] = await Promise.all([
-    listAdminUsers(6),
+  const [allUsers, userCounts, websiteCounts, websiteRows, monitoringCounts, publishJobs, scheduleRuns] = await Promise.all([
+    listAdminUsers(100),
     getUserCounts(),
     getWebsiteCounts(),
-    listRecentWebsiteRows(8),
+    listRecentWebsiteRows(100),
     getMonitoringCounts(),
     listRecentPublishJobs(4),
     listRecentScheduleRuns(4),
@@ -461,8 +461,8 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
 
   const emailMap = await getEmailMap([...new Set(websiteRows.map((row) => row.user_id))]);
   const websites = mapWebsites(websiteRows, emailMap);
-  const recentSignups = countItemsSince(users, 7);
-  const userGrowth = countItemsSince(users, 30);
+  const recentSignups = countItemsSince(allUsers, 7);
+  const userGrowth = countItemsSince(allUsers, 30);
   const websiteGenerationVolume = countItemsSince(
     websites.map((website) => ({ createdAt: website.createdAt })),
     30,
@@ -478,13 +478,13 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
       total: userCounts.total,
       admins: userCounts.admins,
       recentSignups,
-      records: users,
+      records: allUsers.slice(0, 6),
     },
     websites: {
       total: websiteCounts.total,
       published: websiteCounts.published,
       drafts: websiteCounts.drafts,
-      records: websites,
+      records: websites.slice(0, 8),
     },
     monitoring: {
       failedJobs: monitoringCounts.totalFailed,
