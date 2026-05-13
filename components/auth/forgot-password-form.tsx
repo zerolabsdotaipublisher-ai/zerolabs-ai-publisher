@@ -4,15 +4,14 @@ import { useId, useRef, useState, type FormEvent } from "react";
 import { routes } from "@/config/routes";
 import { getSupabaseAppUrl, getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
-function isValidEmail(value: string, emailInput: HTMLInputElement | null): boolean {
+function isValidEmail(value: string, emailInput: HTMLInputElement): boolean {
   if (typeof document === "undefined") {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
   }
 
-  const validator = emailInput ?? document.createElement("input");
-  validator.type = "email";
-  validator.value = value;
-  return validator.checkValidity();
+  emailInput.type = "email";
+  emailInput.value = value;
+  return emailInput.checkValidity();
 }
 
 function mapResetRequestError(message: string): string {
@@ -59,7 +58,7 @@ export function ForgotPasswordForm() {
         emailValidatorRef.current = document.createElement("input");
       }
 
-      if (!isValidEmail(trimmedEmail, emailValidatorRef.current)) {
+      if (emailValidatorRef.current && !isValidEmail(trimmedEmail, emailValidatorRef.current)) {
         setError("Enter the email address for your account. Password reset links are sent by email.");
         return;
       }

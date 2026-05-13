@@ -99,12 +99,14 @@ export function SignUpForm() {
     setIsSubmitting(true);
 
     try {
+      const trimmedEmail = email.trim();
+      const trimmedFullName = fullName.trim();
       const { error: signUpError } = await supabase.auth.signUp({
-        email: email.trim(),
+        email: trimmedEmail,
         password,
         options: {
           data: {
-            full_name: fullName.trim() ? fullName.trim() : undefined,
+            full_name: trimmedFullName || undefined,
           },
           emailRedirectTo: `${getSupabaseAppUrl()}${routes.authCallback}`,
         },
