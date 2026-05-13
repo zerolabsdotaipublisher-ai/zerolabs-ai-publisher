@@ -4,6 +4,7 @@ import { useState, useId, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseAppUrl, getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { routes } from "@/config/routes";
+import { PasswordField } from "@/components/auth/password-field";
 
 function mapSignUpError(message: string): string {
   const lower = message.toLowerCase();
@@ -118,38 +119,42 @@ export function SignUpForm() {
         />
       </label>
 
-      <label htmlFor={`${id}-password`}>
-        Password <span aria-hidden="true">*</span>
-        <input
-          id={`${id}-password`}
-          type="password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          required
-          autoComplete="new-password"
-          minLength={8}
-          aria-required="true"
-          aria-describedby={error ? errorId : passwordHintId}
-        />
-      </label>
+      <PasswordField
+        id={`${id}-password`}
+        label={
+          <>
+            Password <span aria-hidden="true">*</span>
+          </>
+        }
+        toggleLabel="password"
+        value={password}
+        onChange={(event) => setPassword(event.target.value)}
+        required
+        autoComplete="new-password"
+        minLength={8}
+        aria-required="true"
+        aria-describedby={error ? errorId : passwordHintId}
+      />
       <span id={passwordHintId} className="auth-field-hint">
         Minimum 8 characters
       </span>
 
-      <label htmlFor={`${id}-confirm`}>
-        Confirm password <span aria-hidden="true">*</span>
-        <input
-          id={`${id}-confirm`}
-          type="password"
-          value={confirmPassword}
-          onChange={(event) => setConfirmPassword(event.target.value)}
-          required
-          autoComplete="new-password"
-          minLength={8}
-          aria-required="true"
-          aria-describedby={error ? errorId : undefined}
-        />
-      </label>
+      <PasswordField
+        id={`${id}-confirm`}
+        label={
+          <>
+            Confirm password <span aria-hidden="true">*</span>
+          </>
+        }
+        toggleLabel="confirm password"
+        value={confirmPassword}
+        onChange={(event) => setConfirmPassword(event.target.value)}
+        required
+        autoComplete="new-password"
+        minLength={8}
+        aria-required="true"
+        aria-describedby={error ? errorId : undefined}
+      />
 
       {error ? (
         <p id={errorId} className="auth-error" role="alert">

@@ -314,6 +314,63 @@ a {
    box-shadow: 0 0 0 4px rgba(31, 111, 95, 0.16);
 }
 
+.auth-password-field {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 3.25rem;
+  padding-right: 0.6rem;
+  border: 1px solid rgba(31, 111, 95, 0.22);
+  border-radius: 0.95rem;
+  background: rgba(248, 249, 250, 0.96);
+  transition: border-color 200ms ease, box-shadow 200ms ease, background-color 200ms ease;
+}
+
+.auth-password-field:focus-within {
+  border-color: #1f6f5f;
+  box-shadow: 0 0 0 4px rgba(31, 111, 95, 0.16);
+}
+
+.auth-password-field input {
+  min-height: 3.25rem;
+  flex: 1 1 auto;
+  padding: 0.9rem 0 0.9rem 1rem;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.auth-password-field input:focus,
+.auth-password-field input:focus-visible {
+  border: none;
+  box-shadow: none;
+}
+
+.auth-form .auth-password-toggle,
+.auth-form .auth-inline-link-button {
+  width: auto;
+  min-height: auto;
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  box-shadow: none;
+  transform: none;
+}
+
+.auth-form .auth-password-toggle {
+  flex: 0 0 auto;
+  border-color: transparent;
+  background: transparent;
+  color: #1f6f5f;
+}
+
+.auth-form .auth-password-toggle:hover,
+.auth-form .auth-password-toggle:focus-visible {
+  background: rgba(31, 111, 95, 0.08);
+  border-color: transparent;
+  box-shadow: none;
+  transform: none;
+}
+
 .auth-form button,
 .dashboard-panel button {
   display: inline-flex;
@@ -396,6 +453,47 @@ a {
   font-family: var(--font-body), sans-serif;
   font-size: 0.85rem;
    color: rgba(44, 62, 80, 0.76);
+}
+
+.auth-confirmation-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1rem;
+  border: 1px solid rgba(31, 111, 95, 0.18);
+  border-radius: 1rem;
+  background: rgba(31, 111, 95, 0.05);
+}
+
+.auth-confirmation-copy {
+  font-family: var(--font-body), sans-serif;
+  line-height: 1.6;
+  color: #2c3e50;
+}
+
+.auth-button-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.auth-form .auth-secondary-button,
+.auth-form .auth-inline-link-button {
+  display: inline-flex;
+  justify-content: center;
+  border: 1px solid rgba(31, 111, 95, 0.28);
+  background: rgba(248, 249, 250, 0.92);
+  color: #1f6f5f;
+}
+
+.auth-form .auth-secondary-button:hover,
+.auth-form .auth-secondary-button:focus-visible,
+.auth-form .auth-inline-link-button:hover,
+.auth-form .auth-inline-link-button:focus-visible {
+  background: rgba(31, 111, 95, 0.08);
+  border-color: #1f6f5f;
+  box-shadow: none;
+  transform: none;
 }
 
 .auth-terms-notice {

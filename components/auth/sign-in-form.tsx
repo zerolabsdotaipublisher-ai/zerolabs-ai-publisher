@@ -4,6 +4,7 @@ import { useState, useId, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { resolveSafeNextPath } from "@/lib/auth/redirect";
+import { PasswordField } from "@/components/auth/password-field";
 
 function resolveInitialState(searchParams: ReturnType<typeof useSearchParams>): {
   initialMessage: string | null;
@@ -108,19 +109,21 @@ export function SignInForm() {
         />
       </label>
 
-      <label htmlFor={`${id}-password`}>
-        Password <span aria-hidden="true">*</span>
-        <input
-          id={`${id}-password`}
-          type="password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          required
-          autoComplete="current-password"
-          aria-required="true"
-          aria-describedby={error ? errorId : undefined}
-        />
-      </label>
+      <PasswordField
+        id={`${id}-password`}
+        label={
+          <>
+            Password <span aria-hidden="true">*</span>
+          </>
+        }
+        toggleLabel="password"
+        value={password}
+        onChange={(event) => setPassword(event.target.value)}
+        required
+        autoComplete="current-password"
+        aria-required="true"
+        aria-describedby={error ? errorId : undefined}
+      />
 
       {error ? (
         <p id={errorId} className="auth-error" role="alert">
