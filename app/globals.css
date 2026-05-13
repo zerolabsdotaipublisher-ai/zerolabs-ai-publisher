@@ -421,16 +421,19 @@ a {
      0 24px 80px rgba(18, 65, 112, 0.08);
 }
 
+.auth-panel-logo-wrap,
 .auth-visual-panel p,
 .auth-panel-list {
   position: relative;
   z-index: 1;
+}
+
+.auth-visual-panel p,
+.auth-panel-list {
   font-family: var(--font-body), sans-serif;
 }
 
 .auth-panel-logo-wrap {
-  position: relative;
-  z-index: 1;
   display: inline-flex;
   width: fit-content;
   margin-bottom: clamp(1.5rem, 3vw, 2.25rem);
@@ -448,6 +451,16 @@ a {
 
 .auth-panel-logo-dark {
   display: none;
+}
+
+html:not([data-theme="light"]) .auth-panel-logo-light,
+html[data-theme="dark"] .auth-panel-logo-light {
+  display: none;
+}
+
+html:not([data-theme="light"]) .auth-panel-logo-dark,
+html[data-theme="dark"] .auth-panel-logo-dark {
+  display: inline-flex;
 }
 
 .auth-visual-panel h2 {
@@ -616,16 +629,6 @@ a {
     border-color: rgba(173, 230, 205, 0.22);
     background: rgba(31, 111, 95, 0.14);
     color: #ade6cd;
-  }
-
-  html:not([data-theme="light"]) .auth-panel-logo-light,
-  html[data-theme="dark"] .auth-panel-logo-light {
-    display: none;
-  }
-
-  html:not([data-theme="light"]) .auth-panel-logo-dark,
-  html[data-theme="dark"] .auth-panel-logo-dark {
-    display: inline-flex;
   }
 
   html:not([data-theme="light"]) .auth-panel-list {
