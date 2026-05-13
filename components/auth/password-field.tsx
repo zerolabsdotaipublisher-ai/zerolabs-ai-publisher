@@ -10,6 +10,7 @@ type PasswordFieldProps = Omit<ComponentPropsWithoutRef<"input">, "type"> & {
 
 export function PasswordField({ label, toggleLabel = "password", className, ...inputProps }: PasswordFieldProps) {
   const [isVisible, setIsVisible] = useState(false);
+  const buttonText = isVisible ? "Hide password" : "Show password";
 
   return (
     <label htmlFor={inputProps.id}>
@@ -23,7 +24,7 @@ export function PasswordField({ label, toggleLabel = "password", className, ...i
           aria-label={`${isVisible ? "Hide" : "Show"} ${toggleLabel}`}
           aria-pressed={isVisible}
         >
-          {isVisible ? "Hide" : "Show"}
+          {buttonText}
         </button>
       </span>
     </label>

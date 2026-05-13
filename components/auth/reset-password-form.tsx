@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams, type ReadonlyURLSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { routes } from "@/config/routes";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { PasswordField } from "@/components/auth/password-field";
@@ -10,7 +10,7 @@ import { PasswordField } from "@/components/auth/password-field";
 const REDIRECT_DELAY_AFTER_SUCCESS_MS = 1200;
 
 function readResetLinkError(
-  searchParams: URLSearchParams | ReadonlyURLSearchParams,
+  searchParams: URLSearchParams,
   hashParams: URLSearchParams,
 ): string | null {
   const error = searchParams.get("error") ?? hashParams.get("error");
@@ -62,20 +62,23 @@ function mapUpdateError(message: string): string {
 export function ResetPasswordForm() {
   const id = useId();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const supabase = getSupabaseBrowserClient();
   const redirectTimeoutRef = useRef<number | null>(null);
+  const [invalidLinkMessage] = useState(() => {
+    if (typeof window === "undefined") {
+      return null;
+    }
 
-  const [hashParams] = useState(
-    () => (typeof window === "undefined" ? new URLSearchParams() : new URLSearchParams(window.location.hash.replace(/^#/, ""))),
-  );
+    return readResetLinkError(
+      new URLSearchParams(window.location.search),
+      new URLSearchParams(window.location.hash.replace(/^#/, "")),
+    );
+  });
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const invalidLinkMessage = useMemo(() => readResetLinkError(searchParams, hashParams), [hashParams, searchParams]);
-  const [persistedInvalidLinkMessage] = useState(invalidLinkMessage);
   const errorId = `${id}-error`;
   const passwordMismatchError = confirmPassword && password !== confirmPassword ? "Passwords do not match." : null;
   const displayedError = error ?? passwordMismatchError;
@@ -89,10 +92,10 @@ export function ResetPasswordForm() {
   }, []);
 
   useEffect(() => {
-    if (invalidLinkMessage && (searchParams.toString() || hashParams.toString())) {
+    if (invalidLinkMessage && typeof window !== "undefined" && (window.location.search || window.location.hash)) {
       router.replace(routes.resetPassword);
     }
-  }, [hashParams, invalidLinkMessage, router, searchParams]);
+  }, [invalidLinkMessage, router]);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -134,12 +137,12 @@ export function ResetPasswordForm() {
     setIsSubmitting(false);
   }
 
-  if (persistedInvalidLinkMessage) {
+  if (invalidLinkMessage) {
     return (
       <div className="auth-form" aria-live="polite">
         <h1>Reset password</h1>
         <p className="auth-error" role="alert">
-          {persistedInvalidLinkMessage}
+          {invalidLinkMessage}
         </p>
         <Link href={routes.forgotPassword} className="auth-inline-link-button">
           Request new reset link

@@ -358,6 +358,7 @@ a {
 
 .auth-form .auth-password-toggle {
   flex: 0 0 auto;
+  min-width: 8.5rem;
   border-color: transparent;
   background: transparent;
   color: #1f6f5f;

@@ -120,14 +120,14 @@ export function ForgotPasswordForm() {
       ) : (
         <>
           <label htmlFor={`${id}-identifier`}>
-            Email or username
+            Email
             <input
               id={`${id}-identifier`}
-              type="text"
+              type="email"
               value={identifier}
               onChange={(event) => setIdentifier(event.target.value)}
               required
-              autoComplete="username"
+              autoComplete="email"
               aria-describedby={error ? `${helperId} ${errorId}` : helperId}
             />
           </label>
