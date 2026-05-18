@@ -454,10 +454,10 @@ function buildAlerts(
 function mapWebsites(rows: WebsiteRow[], emailMap: Map<string, string>): AdminWebsiteRecord[] {
   return rows.map((row) => ({
     id: row.id,
-    title: row.site_title || "Unavailable",
+    title: row.site_title ?? "Unavailable",
     ownerEmail: emailMap.get(row.user_id) ?? "Unavailable",
-    status: row.status || "Unavailable",
-    websiteType: row.website_type || "Unavailable",
+    status: row.status ?? "Unavailable",
+    websiteType: row.website_type ?? "Unavailable",
     createdAt: row.generated_at,
     updatedAt: row.updated_at,
   }));
