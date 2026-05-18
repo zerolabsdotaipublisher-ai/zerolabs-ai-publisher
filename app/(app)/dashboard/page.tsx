@@ -1,63 +1,106 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { SignOutButton } from "@/components/auth/sign-out-button";
 import { routes } from "@/config/routes";
-import { requireUserProfile } from "@/lib/supabase/auth";
+import { logger } from "@/lib/observability";
+import { requireUser } from "@/lib/supabase/auth";
+import { createFallbackProfile, getSafeProfile } from "@/lib/supabase/profile";
 
-export default async function DashboardPage() {
-  const { user, profile } = await requireUserProfile(routes.dashboard);
+export const dynamic = "force-dynamic";
 
-  if (profile.role === "admin") {
-    redirect(routes.adminDashboard);
-  }
+const workspaceActions = [
+  {
+    href: routes.createWebsite,
+    kicker: "Launch",
+    label: "Create website",
+    description: "Spin up a new AI website project with the guided workflow.",
+  },
+  {
+    href: routes.websites,
+    kicker: "Manage",
+    label: "View websites",
+    description: "Open your active website list, publishing state, and controls.",
+  },
+  {
+    href: routes.contentLibrary,
+    kicker: "Library",
+    label: "Content library",
+    description: "Browse generated drafts, assets, and ready-to-review content.",
+  },
+  {
+    href: routes.activity,
+    kicker: "Monitor",
+    label: "Activity",
+    description: "Track recent publishing activity, retries, and updates.",
+  },
+  {
+    href: routes.profile,
+    kicker: "Account",
+    label: "Profile",
+    description: "Review your account details and workspace settings.",
+  },
+];
 
-  const actions = [
-    {
-      href: routes.createWebsite,
-      kicker: "Launch",
-      label: "Create website",
-      description: "Spin up a new AI website project with the current guided workflow.",
-    },
-    {
-      href: routes.websites,
-      kicker: "Manage",
-      label: "View websites",
-      description: "Open your active website list, status, and publishing controls.",
-    },
-    {
-      href: routes.contentLibrary,
-      kicker: "Library",
-      label: "Content library",
-      description: "Browse generated drafts, assets, and ready-to-review content.",
-    },
-    {
-      href: routes.activity,
-      kicker: "Monitor",
-      label: "Activity",
-      description: "Track recent publishing activity, retries, and important updates.",
-    },
-    {
-      href: routes.profile,
-      kicker: "Account",
-      label: "Profile",
-      description: "Review your account details and keep workspace settings current.",
-    },
-  ];
+const adminActions = [
+  {
+    href: routes.adminDashboard,
+    kicker: "Admin",
+    label: "Open Admin Dashboard",
+    description: "Open the admin overview only when you want the operations workspace.",
+  },
+  {
+    href: routes.adminUsers,
+    kicker: "Users",
+    label: "Manage Users",
+    description: "Review account roles, signups, and user visibility safely.",
+  },
+  {
+    href: routes.adminWebsites,
+    kicker: "Websites",
+    label: "Manage Websites",
+    description: "Inspect website records and publishing state from the admin area.",
+  },
+  {
+    href: routes.adminMonitoring,
+    kicker: "Ops",
+    label: "Monitoring Center",
+    description: "Open monitoring and recent platform activity when needed.",
+  },
+];
 
+type DashboardView = {
+  mode: "standard" | "emergency";
+  userEmail?: string | null;
+  isAdmin?: boolean;
+};
+
+function DashboardActionGrid({ actions, prefetch = true }: { actions: typeof workspaceActions; prefetch?: boolean }) {
+  return (
+    <div className="dashboard-quick-actions-grid">
+      {actions.map((action) => (
+        <Link key={action.href} href={action.href} prefetch={prefetch} className="dashboard-quick-action">
+          <span className="dashboard-quick-action-kicker">{action.kicker}</span>
+          <strong>{action.label}</strong>
+          <span className="dashboard-quick-action-description">{action.description}</span>
+          <span className="dashboard-quick-action-arrow">Open →</span>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+function renderStandardDashboard(userEmail?: string | null, isAdmin = false) {
   return (
     <section className="dashboard-home-shell" aria-label="Dashboard homepage">
       <header className="dashboard-home-header">
         <div className="dashboard-hero-panel">
           <span className="dashboard-eyebrow">Zero Labs workspace</span>
           <h1>Dashboard</h1>
-          <p>
-            Welcome back to Zero Labs AI Publisher. Move between websites, content, activity, and profile settings
-            from one calm, green-glass workspace.
-          </p>
+          <p>Welcome back to Zero Labs AI Publisher. Your customer dashboard loads first as the stable entry point for authenticated users.</p>
         </div>
 
         <aside className="dashboard-welcome-card" aria-label="Account overview">
           <span className="dashboard-welcome-label">Signed in as</span>
-          <strong>{user.email ?? "Zero Labs user"}</strong>
+          <strong>{userEmail ?? "Zero Labs user"}</strong>
           <p>Your publishing controls are ready, and your dashboard session is active.</p>
         </aside>
       </header>
@@ -70,17 +113,109 @@ export default async function DashboardPage() {
           </div>
         </header>
 
-        <div className="dashboard-quick-actions-grid">
-          {actions.map((action) => (
-            <Link key={action.href} href={action.href} className="dashboard-quick-action">
-              <span className="dashboard-quick-action-kicker">{action.kicker}</span>
-              <strong>{action.label}</strong>
-              <span className="dashboard-quick-action-description">{action.description}</span>
-              <span className="dashboard-quick-action-arrow">Open →</span>
-            </Link>
-          ))}
+        <DashboardActionGrid actions={workspaceActions} />
+      </section>
+
+      {isAdmin ? (
+        <section className="dashboard-panel-shell" aria-label="Admin shortcuts">
+          <header className="dashboard-section-heading">
+            <div>
+              <h2>Admin access</h2>
+              <p>Admin tools are optional links only. Your main dashboard remains the stable landing route.</p>
+            </div>
+          </header>
+
+          <DashboardActionGrid actions={adminActions} prefetch={false} />
+        </section>
+      ) : null}
+    </section>
+  );
+}
+
+function renderEmergencyDashboard(userEmail?: string | null) {
+  return (
+    <section className="dashboard-home-shell" aria-label="Dashboard temporarily unavailable">
+      <header className="dashboard-home-header">
+        <div className="dashboard-hero-panel">
+          <span className="dashboard-eyebrow">Zero Labs workspace</span>
+          <h1>Dashboard temporarily unavailable</h1>
+          <p>We hit a dashboard rendering issue, but your session stayed online and a safe fallback view is being shown.</p>
         </div>
+
+        <aside className="dashboard-welcome-card" aria-label="Account overview">
+          <span className="dashboard-welcome-label">Signed in as</span>
+          <strong>{userEmail ?? "Zero Labs user"}</strong>
+          <p>Use the safe actions below to continue working or sign out.</p>
+        </aside>
+      </header>
+
+      <section className="dashboard-panel-shell dashboard-panel-shell-emphasis" aria-label="Dashboard recovery actions">
+        <header className="dashboard-section-heading">
+          <div>
+            <h2>Recovery actions</h2>
+            <p className="dashboard-empty-note">Dashboard data could not be rendered, so a stable fallback view is being shown instead.</p>
+          </div>
+        </header>
+
+        <div className="dashboard-quick-actions-grid">
+          <Link href={routes.dashboard} className="dashboard-quick-action">
+            <span className="dashboard-quick-action-kicker">Retry</span>
+            <strong>Reload dashboard</strong>
+            <span className="dashboard-quick-action-description">Try rendering the dashboard again without leaving your session.</span>
+            <span className="dashboard-quick-action-arrow">Reload →</span>
+          </Link>
+          <Link href={routes.profile} className="dashboard-quick-action">
+            <span className="dashboard-quick-action-kicker">Account</span>
+            <strong>Open profile</strong>
+            <span className="dashboard-quick-action-description">Continue working from a safe account page while dashboard services recover.</span>
+            <span className="dashboard-quick-action-arrow">Open →</span>
+          </Link>
+        </div>
+
+        <SignOutButton
+          containerClassName="app-nav-signout-group"
+          className="app-nav-signout"
+          errorClassName="app-nav-error"
+        />
       </section>
     </section>
   );
+}
+
+async function loadDashboardView(): Promise<DashboardView> {
+  const user = await requireUser(routes.dashboard);
+
+  try {
+    const profile = await getSafeProfile(user);
+
+    return {
+      mode: "standard",
+      userEmail: user.email,
+      isAdmin: profile.role === "admin",
+    };
+  } catch (error) {
+    logger.error("DashboardPage fell back to the emergency dashboard UI", {
+      category: "error",
+      service: "dashboard",
+      userId: user.id,
+      error: { message: error instanceof Error ? error.message : String(error), name: "DashboardRenderError" },
+    });
+
+    const fallbackProfile = createFallbackProfile(user);
+
+    return {
+      mode: "emergency",
+      userEmail: fallbackProfile.email || user.email,
+    };
+  }
+}
+
+export default async function DashboardPage() {
+  const view = await loadDashboardView();
+
+  if (view.mode === "emergency") {
+    return renderEmergencyDashboard(view.userEmail);
+  }
+
+  return renderStandardDashboard(view.userEmail, view.isAdmin);
 }

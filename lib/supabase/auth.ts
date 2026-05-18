@@ -1,9 +1,23 @@
+import type { User } from "@supabase/supabase-js";
+import type { Profile } from "./profile";
 import { redirect } from "next/navigation";
 import { routes } from "@/config/routes";
-import { ensureProfile } from "./profile";
+import { logger } from "@/lib/observability";
+import { createFallbackProfile, getSafeProfile } from "./profile";
 import { getServerUser } from "./server";
 
-export async function requireUser(redirectPath?: string) {
+export interface UserProfileResult {
+  user: User;
+  profile: Profile;
+}
+
+export interface AdminUserResult {
+  user: User | null;
+  profile: Profile | null;
+  isAdmin: boolean;
+}
+
+export async function requireUser(redirectPath?: string): Promise<User> {
   const user = await getServerUser();
 
   if (!user) {
@@ -14,19 +28,60 @@ export async function requireUser(redirectPath?: string) {
   return user;
 }
 
-export async function requireUserProfile(redirectPath?: string) {
+export async function requireUserProfile(redirectPath?: string): Promise<UserProfileResult> {
   const user = await requireUser(redirectPath);
-  const profile = await ensureProfile(user);
 
-  return { user, profile };
+  try {
+    const profile = await getSafeProfile(user);
+    return { user, profile };
+  } catch (error) {
+    logger.error("requireUserProfile fell back to a safe in-memory profile", {
+      category: "error",
+      service: "supabase",
+      userId: user.id,
+      error: { message: error instanceof Error ? error.message : String(error), name: "SupabaseProfileError" },
+    });
+
+    return {
+      user,
+      profile: createFallbackProfile(user),
+    };
+  }
 }
 
-export async function requireAdminUser(redirectPath?: string) {
-  const auth = await requireUserProfile(redirectPath);
+export async function requireAdminUser(): Promise<AdminUserResult> {
+  const user = await getServerUser();
 
-  if (auth.profile.role !== "admin") {
-    redirect(routes.dashboard);
+  if (!user) {
+    return {
+      user: null,
+      profile: null,
+      isAdmin: false,
+    };
   }
 
-  return auth;
+  try {
+    const profile = await getSafeProfile(user);
+
+    return {
+      user,
+      profile,
+      isAdmin: profile.role === "admin",
+    };
+  } catch (error) {
+    logger.warn("requireAdminUser fell back to a non-admin profile", {
+      category: "error",
+      service: "supabase",
+      userId: user.id,
+      error: { message: error instanceof Error ? error.message : String(error), name: "SupabaseProfileError" },
+    });
+
+    const profile = createFallbackProfile(user);
+
+    return {
+      user,
+      profile,
+      isAdmin: false,
+    };
+  }
 }

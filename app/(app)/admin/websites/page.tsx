@@ -1,15 +1,67 @@
+import { AdminFallback } from "@/components/admin/admin-fallback";
 import { routes } from "@/config/routes";
 import { formatAdminDate, getAdminDashboardData, listAdminWebsites } from "@/lib/admin/data";
+import { logger } from "@/lib/observability";
 import { requireAdminUser } from "@/lib/supabase/auth";
 
-function renderMetric(value: number | null, emptyLabel = "No data yet"): string {
-  return value === null ? emptyLabel : String(value);
+export const dynamic = "force-dynamic";
+
+function renderMetric(value: number): string {
+  return String(value);
+}
+
+async function loadAdminWebsitesView() {
+  try {
+    const { user, isAdmin } = await requireAdminUser();
+
+    if (!user || !isAdmin) {
+      return {
+        ok: false as const,
+        userEmail: user?.email,
+        title: "Admin access unavailable",
+        description: "Admin access could not be confirmed for the websites page, so a fallback view is being shown.",
+        retryHref: routes.adminWebsites,
+      };
+    }
+
+    const [dashboard, websites] = await Promise.all([getAdminDashboardData(), listAdminWebsites(24)]);
+
+    return {
+      ok: true as const,
+      dashboard,
+      websites,
+    };
+  } catch (error) {
+    logger.error("AdminWebsitesPage fell back to AdminFallback", {
+      category: "error",
+      service: "dashboard",
+      error: { message: error instanceof Error ? error.message : String(error), name: "AdminWebsitesRenderError" },
+    });
+
+    return {
+      ok: false as const,
+      title: "Admin websites temporarily limited",
+      description: "Admin website data could not be loaded safely, so a fallback view is being shown.",
+      retryHref: routes.adminWebsites,
+    };
+  }
 }
 
 export default async function AdminWebsitesPage() {
-  await requireAdminUser(routes.adminWebsites);
+  const view = await loadAdminWebsitesView();
 
-  const [dashboard, websites] = await Promise.all([getAdminDashboardData(), listAdminWebsites(24)]);
+  if (!view.ok) {
+    return (
+      <AdminFallback
+        userEmail={view.userEmail}
+        title={view.title}
+        description={view.description}
+        retryHref={view.retryHref}
+      />
+    );
+  }
+
+  const { dashboard, websites } = view;
 
   return (
     <section className="dashboard-home-shell" aria-label="Admin websites page">
@@ -17,7 +69,7 @@ export default async function AdminWebsitesPage() {
         <div className="dashboard-hero-panel">
           <span className="dashboard-eyebrow">Zero Labs operations</span>
           <h1>Admin Websites</h1>
-          <p>Review websites created across the platform, including owner email visibility, creation dates, and current lifecycle status.</p>
+          <p>Review websites created across the platform, including owner email visibility and lifecycle status.</p>
         </div>
 
         <aside className="dashboard-welcome-card" aria-label="Admin websites summary">
@@ -31,7 +83,7 @@ export default async function AdminWebsitesPage() {
         <header className="dashboard-section-heading">
           <div>
             <h2>Website directory</h2>
-            <p>Safe management view of website records. When website data is unavailable, the page stays stable and shows an empty state.</p>
+            <p>Safe website management view that remains stable even when data sources are unavailable.</p>
           </div>
         </header>
 
@@ -46,7 +98,7 @@ export default async function AdminWebsitesPage() {
             ))}
           </ul>
         ) : (
-          <p className="dashboard-empty-note">No website records yet.</p>
+          <p className="dashboard-empty-note">No website records available.</p>
         )}
       </section>
     </section>

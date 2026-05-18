@@ -1,15 +1,66 @@
+import { AdminFallback } from "@/components/admin/admin-fallback";
 import { routes } from "@/config/routes";
 import { getAdminDashboardData } from "@/lib/admin/data";
+import { logger } from "@/lib/observability";
 import { requireAdminUser } from "@/lib/supabase/auth";
 
-function renderMetric(value: number | null, emptyLabel = "No data yet"): string {
-  return value === null ? emptyLabel : String(value);
+export const dynamic = "force-dynamic";
+
+function renderMetric(value: number): string {
+  return String(value);
+}
+
+async function loadAdminAnalyticsView() {
+  try {
+    const { user, isAdmin } = await requireAdminUser();
+
+    if (!user || !isAdmin) {
+      return {
+        ok: false as const,
+        userEmail: user?.email,
+        title: "Admin access unavailable",
+        description: "Admin access could not be confirmed for the analytics page, so a fallback view is being shown.",
+        retryHref: routes.adminAnalytics,
+      };
+    }
+
+    const dashboard = await getAdminDashboardData();
+
+    return {
+      ok: true as const,
+      dashboard,
+    };
+  } catch (error) {
+    logger.error("AdminAnalyticsPage fell back to AdminFallback", {
+      category: "error",
+      service: "dashboard",
+      error: { message: error instanceof Error ? error.message : String(error), name: "AdminAnalyticsRenderError" },
+    });
+
+    return {
+      ok: false as const,
+      title: "Admin analytics temporarily limited",
+      description: "Admin analytics data could not be loaded safely, so a fallback view is being shown.",
+      retryHref: routes.adminAnalytics,
+    };
+  }
 }
 
 export default async function AdminAnalyticsPage() {
-  await requireAdminUser(routes.adminAnalytics);
+  const view = await loadAdminAnalyticsView();
 
-  const dashboard = await getAdminDashboardData();
+  if (!view.ok) {
+    return (
+      <AdminFallback
+        userEmail={view.userEmail}
+        title={view.title}
+        description={view.description}
+        retryHref={view.retryHref}
+      />
+    );
+  }
+
+  const { dashboard } = view;
 
   return (
     <section className="dashboard-home-shell" aria-label="Admin analytics page">
@@ -17,13 +68,13 @@ export default async function AdminAnalyticsPage() {
         <div className="dashboard-hero-panel">
           <span className="dashboard-eyebrow">Zero Labs operations</span>
           <h1>Admin Analytics</h1>
-          <p>Follow stable platform analytics focused on website generation volume, publishing activity, and user growth placeholders.</p>
+          <p>Follow stable platform analytics focused on generation volume, publishing activity, and user growth.</p>
         </div>
 
         <aside className="dashboard-welcome-card" aria-label="Admin analytics summary">
           <span className="dashboard-welcome-label">Analytics snapshot</span>
           <strong>{renderMetric(dashboard.analytics.websiteGenerationVolume)} recent generations</strong>
-          <p>Safe stat-card analytics with “No data yet” fallbacks where live reporting is not available.</p>
+          <p>Safe stat-card analytics are shown even when live reporting is limited.</p>
         </aside>
       </header>
 
@@ -31,7 +82,7 @@ export default async function AdminAnalyticsPage() {
         <header className="dashboard-section-heading">
           <div>
             <h2>Analytics metrics</h2>
-            <p>These cards intentionally avoid unstable dashboard summary logic and rely only on safe server-side queries.</p>
+            <p>These cards rely on safe server-side fallbacks instead of unstable admin routing or redirects.</p>
           </div>
         </header>
 

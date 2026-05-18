@@ -1,42 +1,95 @@
 import Link from "next/link";
+import { AdminFallback } from "@/components/admin/admin-fallback";
 import { routes } from "@/config/routes";
 import { formatAdminDate, getAdminDashboardData } from "@/lib/admin/data";
+import { logger } from "@/lib/observability";
 import { requireAdminUser } from "@/lib/supabase/auth";
 
-function renderMetric(value: number | null, emptyLabel = "No data yet"): string {
-  return value === null ? emptyLabel : String(value);
+export const dynamic = "force-dynamic";
+
+const adminTools = [
+  {
+    href: routes.adminUsers,
+    kicker: "Users",
+    label: "User management",
+    description: "Review account roles, signups, and account status details.",
+  },
+  {
+    href: routes.adminWebsites,
+    kicker: "Websites",
+    label: "Website management",
+    description: "Track created websites, publishing state, and owner visibility.",
+  },
+  {
+    href: routes.adminMonitoring,
+    kicker: "Ops",
+    label: "Monitoring",
+    description: "See recent activity, failed jobs, and platform health summaries.",
+  },
+  {
+    href: routes.adminAnalytics,
+    kicker: "Insights",
+    label: "Analytics",
+    description: "Follow generation volume, publishing activity, and growth placeholders.",
+  },
+];
+
+function renderMetric(value: number): string {
+  return String(value);
+}
+
+async function loadAdminDashboardView() {
+  try {
+    const { user, isAdmin } = await requireAdminUser();
+
+    if (!user || !isAdmin) {
+      return {
+        ok: false as const,
+        userEmail: user?.email,
+        title: "Admin access unavailable",
+        description: "Admin access could not be confirmed for this request, so a fallback view is being shown.",
+        retryHref: routes.adminDashboard,
+      };
+    }
+
+    const dashboard = await getAdminDashboardData();
+
+    return {
+      ok: true as const,
+      userEmail: user.email,
+      dashboard,
+    };
+  } catch (error) {
+    logger.error("AdminDashboardPage fell back to AdminFallback", {
+      category: "error",
+      service: "dashboard",
+      error: { message: error instanceof Error ? error.message : String(error), name: "AdminDashboardRenderError" },
+    });
+
+    return {
+      ok: false as const,
+      title: "Admin dashboard temporarily limited",
+      description: "Admin dashboard data could not be loaded safely, so a fallback view is being shown.",
+      retryHref: routes.adminDashboard,
+    };
+  }
 }
 
 export default async function AdminDashboardPage() {
-  const { user } = await requireAdminUser(routes.adminDashboard);
-  const dashboard = await getAdminDashboardData();
+  const view = await loadAdminDashboardView();
 
-  const tools = [
-    {
-      href: routes.adminUsers,
-      kicker: "Users",
-      label: "User management",
-      description: "Review account roles, signups, and basic account status details.",
-    },
-    {
-      href: routes.adminWebsites,
-      kicker: "Websites",
-      label: "Website management",
-      description: "Track created websites, publishing state, and owner visibility.",
-    },
-    {
-      href: routes.adminMonitoring,
-      kicker: "Ops",
-      label: "Monitoring",
-      description: "See recent activity, failed jobs, and platform health summaries.",
-    },
-    {
-      href: routes.adminAnalytics,
-      kicker: "Insights",
-      label: "Analytics",
-      description: "Follow generation volume, publishing activity, and growth placeholders.",
-    },
-  ];
+  if (!view.ok) {
+    return (
+      <AdminFallback
+        userEmail={view.userEmail}
+        title={view.title}
+        description={view.description}
+        retryHref={view.retryHref}
+      />
+    );
+  }
+
+  const { userEmail, dashboard } = view;
 
   return (
     <section className="dashboard-home-shell" aria-label="Admin dashboard homepage">
@@ -44,13 +97,13 @@ export default async function AdminDashboardPage() {
         <div className="dashboard-hero-panel">
           <span className="dashboard-eyebrow">Zero Labs operations</span>
           <h1>Admin Dashboard</h1>
-          <p>Manage Zero Labs AI Publisher operations with role-aware visibility across users, websites, monitoring, and analytics.</p>
+          <p>Manage platform operations with safe server-rendered summaries across users, websites, monitoring, and analytics.</p>
         </div>
 
         <aside className="dashboard-welcome-card" aria-label="Admin account overview">
           <span className="dashboard-welcome-label">Signed in as</span>
-          <strong>{user.email ?? "Zero Labs admin"}</strong>
-          <p>This workspace is showing server-authoritative admin data and safe placeholders when operational data is unavailable.</p>
+          <strong>{userEmail ?? "Zero Labs admin"}</strong>
+          <p>This workspace shows safe fallbacks when admin data is unavailable instead of failing the page.</p>
         </aside>
       </header>
 
@@ -58,7 +111,7 @@ export default async function AdminDashboardPage() {
         <header className="dashboard-section-heading">
           <div>
             <h2>Platform overview</h2>
-            <p>Track the current state of users, websites, and system monitoring from one admin workspace.</p>
+            <p>Track the current state of users, websites, and monitoring from one admin workspace.</p>
           </div>
         </header>
 
@@ -98,7 +151,7 @@ export default async function AdminDashboardPage() {
               <h2>Users</h2>
               <p>Review total users, recent signups, and role assignments.</p>
             </div>
-            <Link href={routes.adminUsers} className="dashboard-inline-link">
+            <Link href={routes.adminUsers} prefetch={false} className="dashboard-inline-link">
               Manage users
             </Link>
           </header>
@@ -129,7 +182,7 @@ export default async function AdminDashboardPage() {
               ))}
             </ul>
           ) : (
-            <p className="dashboard-empty-note">No user data yet.</p>
+            <p className="dashboard-empty-note">No user data available.</p>
           )}
         </section>
 
@@ -139,7 +192,7 @@ export default async function AdminDashboardPage() {
               <h2>Websites</h2>
               <p>Watch created websites, published output, and draft inventory.</p>
             </div>
-            <Link href={routes.adminWebsites} className="dashboard-inline-link">
+            <Link href={routes.adminWebsites} prefetch={false} className="dashboard-inline-link">
               Manage websites
             </Link>
           </header>
@@ -170,7 +223,7 @@ export default async function AdminDashboardPage() {
               ))}
             </ul>
           ) : (
-            <p className="dashboard-empty-note">No website data yet.</p>
+            <p className="dashboard-empty-note">No website data available.</p>
           )}
         </section>
       </div>
@@ -182,7 +235,7 @@ export default async function AdminDashboardPage() {
               <h2>Activity &amp; monitoring</h2>
               <p>Track recent operational events, failed jobs, and monitoring alerts.</p>
             </div>
-            <Link href={routes.adminMonitoring} className="dashboard-inline-link">
+            <Link href={routes.adminMonitoring} prefetch={false} className="dashboard-inline-link">
               Open monitoring
             </Link>
           </header>
@@ -217,7 +270,7 @@ export default async function AdminDashboardPage() {
               ))}
             </ul>
           ) : (
-            <p className="dashboard-empty-note">No recent activity yet.</p>
+            <p className="dashboard-empty-note">No recent activity available.</p>
           )}
         </section>
 
@@ -227,7 +280,7 @@ export default async function AdminDashboardPage() {
               <h2>Analytics</h2>
               <p>Use stable stat cards now and expand into deeper reporting when more datasets become available.</p>
             </div>
-            <Link href={routes.adminAnalytics} className="dashboard-inline-link">
+            <Link href={routes.adminAnalytics} prefetch={false} className="dashboard-inline-link">
               Open analytics
             </Link>
           </header>
@@ -246,7 +299,7 @@ export default async function AdminDashboardPage() {
             <article className="dashboard-metric-card">
               <span className="dashboard-metric-label">User growth</span>
               <strong className="dashboard-metric-value">{renderMetric(dashboard.analytics.userGrowth)}</strong>
-              <span className="dashboard-metric-hint">Stable placeholder when no auth data is available</span>
+              <span className="dashboard-metric-hint">Safe fallback values are shown when auth data is unavailable</span>
             </article>
           </div>
         </section>
@@ -261,8 +314,8 @@ export default async function AdminDashboardPage() {
         </header>
 
         <div className="dashboard-quick-actions-grid">
-          {tools.map((tool) => (
-            <Link key={tool.href} href={tool.href} className="dashboard-quick-action">
+          {adminTools.map((tool) => (
+            <Link key={tool.href} href={tool.href} prefetch={false} className="dashboard-quick-action">
               <span className="dashboard-quick-action-kicker">{tool.kicker}</span>
               <strong>{tool.label}</strong>
               <span className="dashboard-quick-action-description">{tool.description}</span>
