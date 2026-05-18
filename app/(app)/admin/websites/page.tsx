@@ -1,15 +1,57 @@
+import { AdminFallback } from "@/components/admin/admin-fallback";
 import { routes } from "@/config/routes";
 import { formatAdminDate, getAdminDashboardData, listAdminWebsites } from "@/lib/admin/data";
+import { logger } from "@/lib/observability";
 import { requireAdminUser } from "@/lib/supabase/auth";
+
+export const dynamic = "force-dynamic";
 
 function renderMetric(value: number | null, emptyLabel = "No data yet"): string {
   return value === null ? emptyLabel : String(value);
 }
 
-export default async function AdminWebsitesPage() {
-  await requireAdminUser(routes.adminWebsites);
+async function loadAdminWebsitesPage() {
+  try {
+    const { user, isAdmin } = await requireAdminUser(routes.adminWebsites);
 
-  const [dashboard, websites] = await Promise.all([getAdminDashboardData(), listAdminWebsites(24)]);
+    if (!isAdmin) {
+      return {
+        ok: false as const,
+        userEmail: user.email,
+        retryHref: routes.adminWebsites,
+        description: "Admin website data is temporarily unavailable, so the safe fallback view is being shown.",
+      };
+    }
+
+    const [dashboard, websites] = await Promise.all([getAdminDashboardData(), listAdminWebsites(24)]);
+
+    return {
+      ok: true as const,
+      dashboard,
+      websites,
+    };
+  } catch (error) {
+    logger.error("AdminWebsitesPage fell back to admin fallback UI", {
+      category: "error",
+      service: "dashboard",
+      error: { message: error instanceof Error ? error.message : String(error), name: "AdminWebsitesRenderError" },
+    });
+
+    return {
+      ok: false as const,
+      retryHref: routes.adminWebsites,
+    };
+  }
+}
+
+export default async function AdminWebsitesPage() {
+  const result = await loadAdminWebsitesPage();
+
+  if (!result.ok) {
+    return <AdminFallback userEmail={result.userEmail} retryHref={result.retryHref} description={result.description} />;
+  }
+
+  const { dashboard, websites } = result;
 
   return (
     <section className="dashboard-home-shell" aria-label="Admin websites page">

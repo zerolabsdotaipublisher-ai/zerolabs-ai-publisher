@@ -1,15 +1,54 @@
+import { AdminFallback } from "@/components/admin/admin-fallback";
 import { routes } from "@/config/routes";
 import { formatAdminDate, getAdminDashboardData } from "@/lib/admin/data";
+import { logger } from "@/lib/observability";
 import { requireAdminUser } from "@/lib/supabase/auth";
+
+export const dynamic = "force-dynamic";
 
 function renderMetric(value: number | null, emptyLabel = "No data yet"): string {
   return value === null ? emptyLabel : String(value);
 }
 
-export default async function AdminMonitoringPage() {
-  await requireAdminUser(routes.adminMonitoring);
+async function loadAdminMonitoringPage() {
+  try {
+    const { user, isAdmin } = await requireAdminUser(routes.adminMonitoring);
 
-  const dashboard = await getAdminDashboardData();
+    if (!isAdmin) {
+      return {
+        ok: false as const,
+        userEmail: user.email,
+        retryHref: routes.adminMonitoring,
+        description: "Admin monitoring is temporarily unavailable, so the safe fallback view is being shown.",
+      };
+    }
+
+    return {
+      ok: true as const,
+      dashboard: await getAdminDashboardData(),
+    };
+  } catch (error) {
+    logger.error("AdminMonitoringPage fell back to admin fallback UI", {
+      category: "error",
+      service: "dashboard",
+      error: { message: error instanceof Error ? error.message : String(error), name: "AdminMonitoringRenderError" },
+    });
+
+    return {
+      ok: false as const,
+      retryHref: routes.adminMonitoring,
+    };
+  }
+}
+
+export default async function AdminMonitoringPage() {
+  const result = await loadAdminMonitoringPage();
+
+  if (!result.ok) {
+    return <AdminFallback userEmail={result.userEmail} retryHref={result.retryHref} description={result.description} />;
+  }
+
+  const { dashboard } = result;
 
   return (
     <section className="dashboard-home-shell" aria-label="Admin monitoring page">

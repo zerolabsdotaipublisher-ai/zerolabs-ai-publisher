@@ -1,13 +1,13 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { routes } from "@/config/routes";
-import { getAdminDashboardData } from "@/lib/admin/data";
 import { logger } from "@/lib/observability";
 import { requireUser } from "@/lib/supabase/auth";
 import { createFallbackProfile, getSafeProfile } from "@/lib/supabase/profile";
 
-function renderStandardDashboard(userEmail?: string | null) {
+export const dynamic = "force-dynamic";
+
+function renderStandardDashboard(userEmail?: string | null, isAdmin = false) {
   const actions = [
     {
       href: routes.createWebsite,
@@ -38,6 +38,33 @@ function renderStandardDashboard(userEmail?: string | null) {
       kicker: "Account",
       label: "Profile",
       description: "Review your account details and keep workspace settings current.",
+    },
+  ];
+
+  const adminActions = [
+    {
+      href: routes.adminDashboard,
+      kicker: "Admin",
+      label: "Open Admin Dashboard",
+      description: "Open the admin overview when you want the operations workspace.",
+    },
+    {
+      href: routes.adminUsers,
+      kicker: "Users",
+      label: "Manage Users",
+      description: "Review account roles, signups, and user visibility safely.",
+    },
+    {
+      href: routes.adminAnalytics,
+      kicker: "Analytics",
+      label: "Website Analytics",
+      description: "Check stable analytics placeholders and reporting summaries.",
+    },
+    {
+      href: routes.adminMonitoring,
+      kicker: "Ops",
+      label: "Monitoring Center",
+      description: "Open monitoring and recent platform activity when needed.",
     },
   ];
 
@@ -79,6 +106,28 @@ function renderStandardDashboard(userEmail?: string | null) {
           ))}
         </div>
       </section>
+
+      {isAdmin ? (
+        <section className="dashboard-panel-shell" aria-label="Admin shortcuts">
+          <header className="dashboard-section-heading">
+            <div>
+              <h2>Admin access</h2>
+              <p>Admin tools are available as optional overlays. Your main dashboard stays the stable landing route.</p>
+            </div>
+          </header>
+
+          <div className="dashboard-quick-actions-grid">
+            {adminActions.map((action) => (
+              <Link key={action.href} href={action.href} className="dashboard-quick-action">
+                <span className="dashboard-quick-action-kicker">{action.kicker}</span>
+                <strong>{action.label}</strong>
+                <span className="dashboard-quick-action-description">{action.description}</span>
+                <span className="dashboard-quick-action-arrow">Open →</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
     </section>
   );
 }
@@ -133,17 +182,17 @@ function renderEmergencyDashboard(userEmail?: string | null) {
   );
 }
 
-export default async function DashboardPage() {
+async function loadDashboardView() {
   const user = await requireUser(routes.dashboard);
-  const profile = await getSafeProfile(user).catch(() => createFallbackProfile(user));
 
   try {
-    if (profile.role === "admin") {
-      await getAdminDashboardData();
-      redirect(routes.adminDashboard);
-    }
+    const profile = await getSafeProfile(user).catch(() => createFallbackProfile(user));
 
-    return renderStandardDashboard(user.email);
+    return {
+      mode: "standard" as const,
+      userEmail: user.email,
+      isAdmin: profile.role === "admin",
+    };
   } catch (error) {
     logger.error("DashboardPage fell back to emergency dashboard UI", {
       category: "error",
@@ -151,6 +200,20 @@ export default async function DashboardPage() {
       userId: user.id,
       error: { message: error instanceof Error ? error.message : String(error), name: "DashboardRenderError" },
     });
-    return renderEmergencyDashboard(user.email);
+
+    return {
+      mode: "emergency" as const,
+      userEmail: user.email,
+    };
   }
+}
+
+export default async function DashboardPage() {
+  const view = await loadDashboardView();
+
+  if (view.mode === "emergency") {
+    return renderEmergencyDashboard(view.userEmail);
+  }
+
+  return renderStandardDashboard(view.userEmail, view.isAdmin);
 }

@@ -1,16 +1,56 @@
 import Link from "next/link";
+import { AdminFallback } from "@/components/admin/admin-fallback";
 import { routes } from "@/config/routes";
+import { logger } from "@/lib/observability";
 import { formatAdminDate, getAdminDashboardData } from "@/lib/admin/data";
 import { requireAdminUser } from "@/lib/supabase/auth";
+
+export const dynamic = "force-dynamic";
 
 function renderMetric(value: number | null, emptyLabel = "No data yet"): string {
   return value === null ? emptyLabel : String(value);
 }
 
-export default async function AdminDashboardPage() {
-  const { user } = await requireAdminUser(routes.adminDashboard);
-  const dashboard = await getAdminDashboardData();
+async function loadAdminDashboardPage() {
+  try {
+    const { user, isAdmin } = await requireAdminUser(routes.adminDashboard);
 
+    if (!isAdmin) {
+      return {
+        ok: false as const,
+        userEmail: user.email,
+        retryHref: routes.adminDashboard,
+        description: "Admin access could not be confirmed on the server, so the stable fallback view is being shown.",
+      };
+    }
+
+    return {
+      ok: true as const,
+      user,
+      dashboard: await getAdminDashboardData(),
+    };
+  } catch (error) {
+    logger.error("AdminDashboardPage fell back to admin fallback UI", {
+      category: "error",
+      service: "dashboard",
+      error: { message: error instanceof Error ? error.message : String(error), name: "AdminDashboardRenderError" },
+    });
+
+    return {
+      ok: false as const,
+      retryHref: routes.adminDashboard,
+    };
+  }
+}
+
+export default async function AdminDashboardPage() {
+  const result = await loadAdminDashboardPage();
+
+  if (!result.ok) {
+    return <AdminFallback userEmail={result.userEmail} retryHref={result.retryHref} description={result.description} />;
+  }
+
+  const { user, dashboard } = result;
   const tools = [
     {
       href: routes.adminUsers,

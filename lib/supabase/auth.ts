@@ -35,10 +35,8 @@ export async function requireUserProfile(redirectPath?: string) {
 
 export async function requireAdminUser(redirectPath?: string) {
   const auth = await requireUserProfile(redirectPath);
-
-  if (auth.profile.role !== "admin") {
-    redirect(routes.dashboard);
-  }
-
-  return auth;
+  return {
+    ...auth,
+    isAdmin: auth.profile.role === "admin",
+  };
 }
