@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { routes } from "@/config/routes";
-import { ensureProfile } from "./profile";
+import { logger } from "@/lib/observability";
+import { createFallbackProfile, getSafeProfile } from "./profile";
 import { getServerUser } from "./server";
 
 export async function requireUser(redirectPath?: string) {
@@ -16,7 +17,18 @@ export async function requireUser(redirectPath?: string) {
 
 export async function requireUserProfile(redirectPath?: string) {
   const user = await requireUser(redirectPath);
-  const profile = await ensureProfile(user);
+  let profile = createFallbackProfile(user);
+
+  try {
+    profile = await getSafeProfile(user);
+  } catch (error) {
+    logger.error("requireUserProfile fell back to regular user profile", {
+      category: "error",
+      service: "supabase",
+      userId: user.id,
+      error: { message: error instanceof Error ? error.message : String(error), name: "SupabaseProfileError" },
+    });
+  }
 
   return { user, profile };
 }

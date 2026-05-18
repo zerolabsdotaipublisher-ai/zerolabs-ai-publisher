@@ -1,15 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { SignOutButton } from "@/components/auth/sign-out-button";
 import { routes } from "@/config/routes";
-import { requireUserProfile } from "@/lib/supabase/auth";
+import { getAdminDashboardData } from "@/lib/admin/data";
+import { logger } from "@/lib/observability";
+import { requireUser } from "@/lib/supabase/auth";
+import { createFallbackProfile, getSafeProfile } from "@/lib/supabase/profile";
 
-export default async function DashboardPage() {
-  const { user, profile } = await requireUserProfile(routes.dashboard);
-
-  if (profile.role === "admin") {
-    redirect(routes.adminDashboard);
-  }
-
+function renderStandardDashboard(userEmail?: string | null) {
   const actions = [
     {
       href: routes.createWebsite,
@@ -57,7 +55,7 @@ export default async function DashboardPage() {
 
         <aside className="dashboard-welcome-card" aria-label="Account overview">
           <span className="dashboard-welcome-label">Signed in as</span>
-          <strong>{user.email ?? "Zero Labs user"}</strong>
+          <strong>{userEmail ?? "Zero Labs user"}</strong>
           <p>Your publishing controls are ready, and your dashboard session is active.</p>
         </aside>
       </header>
@@ -83,4 +81,76 @@ export default async function DashboardPage() {
       </section>
     </section>
   );
+}
+
+function renderEmergencyDashboard(userEmail?: string | null) {
+  return (
+    <section className="dashboard-home-shell" aria-label="Dashboard temporarily unavailable">
+      <header className="dashboard-home-header">
+        <div className="dashboard-hero-panel">
+          <span className="dashboard-eyebrow">Zero Labs workspace</span>
+          <h1>Dashboard temporarily unavailable</h1>
+          <p>We hit a server-side dashboard issue, but your session is still active and the app stayed online.</p>
+        </div>
+
+        <aside className="dashboard-welcome-card" aria-label="Account overview">
+          <span className="dashboard-welcome-label">Signed in as</span>
+          <strong>{userEmail ?? "Zero Labs user"}</strong>
+          <p>Use the actions below to retry safely or sign out.</p>
+        </aside>
+      </header>
+
+      <section className="dashboard-panel-shell dashboard-panel-shell-emphasis" aria-label="Dashboard recovery actions">
+        <header className="dashboard-section-heading">
+          <div>
+            <h2>Recovery actions</h2>
+            <p className="dashboard-empty-note">Dashboard data could not be rendered, so a safe fallback view is being shown instead.</p>
+          </div>
+        </header>
+
+        <div className="dashboard-quick-actions-grid">
+          <Link href={routes.dashboard} className="dashboard-quick-action">
+            <span className="dashboard-quick-action-kicker">Retry</span>
+            <strong>Reload dashboard</strong>
+            <span className="dashboard-quick-action-description">Try rendering the dashboard again without leaving your session.</span>
+            <span className="dashboard-quick-action-arrow">Reload →</span>
+          </Link>
+          <Link href={routes.profile} className="dashboard-quick-action">
+            <span className="dashboard-quick-action-kicker">Account</span>
+            <strong>Open profile</strong>
+            <span className="dashboard-quick-action-description">Continue working in a safe account page while dashboard services recover.</span>
+            <span className="dashboard-quick-action-arrow">Open →</span>
+          </Link>
+        </div>
+
+        <SignOutButton
+          containerClassName="app-nav-signout-group"
+          className="app-nav-signout"
+          errorClassName="app-nav-error"
+        />
+      </section>
+    </section>
+  );
+}
+
+export default async function DashboardPage() {
+  const user = await requireUser(routes.dashboard);
+  const profile = await getSafeProfile(user).catch(() => createFallbackProfile(user));
+
+  try {
+    if (profile.role === "admin") {
+      await getAdminDashboardData();
+      redirect(routes.adminDashboard);
+    }
+
+    return renderStandardDashboard(user.email);
+  } catch (error) {
+    logger.error("DashboardPage fell back to emergency dashboard UI", {
+      category: "error",
+      service: "dashboard",
+      userId: user.id,
+      error: { message: error instanceof Error ? error.message : String(error), name: "DashboardRenderError" },
+    });
+    return renderEmergencyDashboard(user.email);
+  }
 }

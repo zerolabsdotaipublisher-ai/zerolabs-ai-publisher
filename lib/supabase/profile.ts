@@ -127,12 +127,12 @@ function normalizeProfileRole(role: unknown): ProfileRole {
   return role === "admin" ? "admin" : "user";
 }
 
-function buildFallbackProfile(user: User): Profile {
-  const timestamp = user.created_at ?? getCurrentIsoTimestamp();
+function createFallbackProfileRecord(id: string, email: string, createdAt?: string | null): Profile {
+  const timestamp = createdAt ?? getCurrentIsoTimestamp();
 
   return {
-    id: user.id,
-    email: user.email ?? "",
+    id,
+    email,
     role: "user",
     full_name: null,
     avatar_url: null,
@@ -141,6 +141,12 @@ function buildFallbackProfile(user: User): Profile {
     created_at: timestamp,
     updated_at: timestamp,
   };
+}
+
+export function createFallbackProfile(user: User): Profile {
+  const timestamp = user.created_at ?? getCurrentIsoTimestamp();
+
+  return createFallbackProfileRecord(user.id, user.email ?? "", timestamp);
 }
 
 function normalizeProfileRow(data: Partial<Profile>): Profile {
@@ -168,37 +174,47 @@ function normalizeProfileRow(data: Partial<Profile>): Profile {
  * Returns null when no profile exists for the given ID.
  */
 export async function getProfile(userId: string): Promise<Profile | null> {
-  const supabase = getSupabaseServiceClient();
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", userId)
-    .single();
+  try {
+    const supabase = getSupabaseServiceClient();
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single();
 
-  if (error) {
-    // PGRST116 = "no rows returned" — not an error, simply absent
-    if (error.code === "PGRST116") return null;
+    if (error) {
+      // PGRST116 = "no rows returned" — not an error, simply absent
+      if (error.code === "PGRST116") return null;
 
-    if (isRecoverableProfileSchemaError(error)) {
-      logger.warn("getProfile fallback due to missing profile schema", {
+      if (isRecoverableProfileSchemaError(error)) {
+        logger.warn("getProfile fallback due to missing profile schema", {
+          category: "error",
+          service: "supabase",
+          userId,
+          error: { message: error.message, name: "SupabaseProfileSchemaWarning" },
+        });
+        return null;
+      }
+
+      logger.error("getProfile failed; returning null fallback", {
         category: "error",
         service: "supabase",
         userId,
-        error: { message: error.message, name: "SupabaseProfileSchemaWarning" },
+        error: { message: error.message, name: "SupabaseProfileError" },
       });
       return null;
     }
 
-    logger.error("getProfile failed", {
+    return normalizeProfileRow(data as Partial<Profile>);
+  } catch (error) {
+    logger.error("getProfile threw unexpectedly; returning null fallback", {
       category: "error",
       service: "supabase",
       userId,
-      error: { message: error.message, name: "SupabaseProfileError" },
+      error: { message: error instanceof Error ? error.message : String(error), name: "SupabaseProfileError" },
     });
-    throw error;
+    return null;
   }
-
-  return normalizeProfileRow(data as Partial<Profile>);
 }
 
 /**
@@ -207,25 +223,35 @@ export async function getProfile(userId: string): Promise<Profile | null> {
  * Returns the updated profile row.
  */
 export async function updateProfile(userId: string, data: ProfileUpdateData): Promise<Profile> {
-  const supabase = getSupabaseServiceClient();
-  const { data: updated, error } = await supabase
-    .from("profiles")
-    .update(data)
-    .eq("id", userId)
-    .select()
-    .single();
+  try {
+    const supabase = getSupabaseServiceClient();
+    const { data: updated, error } = await supabase
+      .from("profiles")
+      .update(data)
+      .eq("id", userId)
+      .select()
+      .single();
 
-  if (error) {
-    logger.error("updateProfile failed", {
+    if (error) {
+      logger.error("updateProfile failed; returning fallback profile", {
+        category: "error",
+        service: "supabase",
+        userId,
+        error: { message: error.message, name: "SupabaseProfileError" },
+      });
+      return (await getProfile(userId)) ?? createFallbackProfileRecord(userId, "");
+    }
+
+    return normalizeProfileRow(updated as Partial<Profile>);
+  } catch (error) {
+    logger.error("updateProfile threw unexpectedly; returning fallback profile", {
       category: "error",
       service: "supabase",
       userId,
-      error: { message: error.message, name: "SupabaseProfileError" },
+      error: { message: error instanceof Error ? error.message : String(error), name: "SupabaseProfileError" },
     });
-    throw error;
+    return (await getProfile(userId)) ?? createFallbackProfileRecord(userId, "");
   }
-
-  return updated as Profile;
 }
 
 /**
@@ -244,7 +270,21 @@ export async function ensureProfile(user: User): Promise<Profile> {
   await syncProfileFromAuthUser(user);
 
   const created = await getProfile(user.id);
-  return created ?? buildFallbackProfile(user);
+  return created ?? createFallbackProfile(user);
+}
+
+export async function getSafeProfile(user: User): Promise<Profile> {
+  try {
+    return await ensureProfile(user);
+  } catch (error) {
+    logger.error("getSafeProfile fell back to in-memory profile", {
+      category: "error",
+      service: "supabase",
+      userId: user.id,
+      error: { message: error instanceof Error ? error.message : String(error), name: "SupabaseProfileError" },
+    });
+    return createFallbackProfile(user);
+  }
 }
 
 /**
@@ -264,80 +304,88 @@ export async function syncProfileFromAuthUser(user: User): Promise<void> {
       service: "supabase",
       userId: user.id,
     });
-    throw new Error("Auth user is missing an email address");
+    return;
   }
 
-  const supabase = getSupabaseServiceClient();
-  const metadata = extractUserMetadataFromAuth(user);
-  const seededRole = resolveSeededProfileRole(user.email);
+  try {
+    const supabase = getSupabaseServiceClient();
+    const metadata = extractUserMetadataFromAuth(user);
+    const seededRole = resolveSeededProfileRole(user.email);
 
-  const profileRow: {
-    id: string;
-    email: string;
-    full_name: string | null;
-    avatar_url: string | null;
-    role?: ProfileRole;
-  } = {
-    id: user.id,
-    email: user.email,
-    full_name: metadata.full_name ?? null,
-    avatar_url: metadata.avatar_url ?? null,
-  };
+    const profileRow: {
+      id: string;
+      email: string;
+      full_name: string | null;
+      avatar_url: string | null;
+      role?: ProfileRole;
+    } = {
+      id: user.id,
+      email: user.email,
+      full_name: metadata.full_name ?? null,
+      avatar_url: metadata.avatar_url ?? null,
+    };
 
-  if (seededRole) {
-    profileRow.role = seededRole;
-  }
+    if (seededRole) {
+      profileRow.role = seededRole;
+    }
 
-  const { error } = await supabase.from("profiles").upsert(profileRow, { onConflict: "id" });
+    const { error } = await supabase.from("profiles").upsert(profileRow, { onConflict: "id" });
 
-  if (error) {
-    if (profileRow.role && isMissingProfileRoleColumnError(error)) {
-      logger.warn("profile sync falling back because role column is unavailable", {
-        category: "error",
-        service: "supabase",
-        userId: user.id,
-        error: { message: error.message, name: "SupabaseProfileSchemaWarning" },
-      });
+    if (error) {
+      if (profileRow.role && isMissingProfileRoleColumnError(error)) {
+        logger.warn("profile sync falling back because role column is unavailable", {
+          category: "error",
+          service: "supabase",
+          userId: user.id,
+          error: { message: error.message, name: "SupabaseProfileSchemaWarning" },
+        });
 
-      const fallbackProfileRow = {
-        id: profileRow.id,
-        email: profileRow.email,
-        full_name: profileRow.full_name,
-        avatar_url: profileRow.avatar_url,
-      };
-      const { error: fallbackError } = await supabase.from("profiles").upsert(fallbackProfileRow, { onConflict: "id" });
+        const fallbackProfileRow = {
+          id: profileRow.id,
+          email: profileRow.email,
+          full_name: profileRow.full_name,
+          avatar_url: profileRow.avatar_url,
+        };
+        const { error: fallbackError } = await supabase.from("profiles").upsert(fallbackProfileRow, { onConflict: "id" });
 
-      if (!fallbackError) {
-        return;
+        if (!fallbackError) {
+          return;
+        }
+
+        if (isRecoverableProfileSchemaError(fallbackError)) {
+          logger.warn("profile sync skipped because profile schema is unavailable", {
+            category: "error",
+            service: "supabase",
+            userId: user.id,
+            error: { message: fallbackError.message, name: "SupabaseProfileSchemaWarning" },
+          });
+          return;
+        }
       }
 
-      if (isRecoverableProfileSchemaError(fallbackError)) {
+      if (isRecoverableProfileSchemaError(error)) {
         logger.warn("profile sync skipped because profile schema is unavailable", {
           category: "error",
           service: "supabase",
           userId: user.id,
-          error: { message: fallbackError.message, name: "SupabaseProfileSchemaWarning" },
+          error: { message: error.message, name: "SupabaseProfileSchemaWarning" },
         });
         return;
       }
-    }
 
-    if (isRecoverableProfileSchemaError(error)) {
-      logger.warn("profile sync skipped because profile schema is unavailable", {
+      logger.error("profile sync failed; continuing with fallback profile", {
         category: "error",
         service: "supabase",
         userId: user.id,
-        error: { message: error.message, name: "SupabaseProfileSchemaWarning" },
+        error: { message: error.message, name: "SupabaseProfileSyncError" },
       });
-      return;
     }
-
-    logger.error("profile sync failed", {
+  } catch (error) {
+    logger.error("profile sync threw unexpectedly; continuing with fallback profile", {
       category: "error",
       service: "supabase",
       userId: user.id,
-      error: { message: error.message, name: "SupabaseProfileSyncError" },
+      error: { message: error instanceof Error ? error.message : String(error), name: "SupabaseProfileSyncError" },
     });
-    throw error;
   }
 }

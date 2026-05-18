@@ -37,7 +37,16 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     return NextResponse.next();
   }
 
-  const { response, hasSession } = await updateSession(request);
+  let response = NextResponse.next();
+  let hasSession = true;
+
+  try {
+    const sessionResult = await updateSession(request);
+    response = sessionResult.response;
+    hasSession = sessionResult.hasSession;
+  } catch (error) {
+    console.warn("middleware session refresh failed; allowing request to continue", error);
+  }
 
   if (hasSession) {
     return response;
