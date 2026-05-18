@@ -76,63 +76,63 @@ export interface AdminAlertItem {
 
 export interface AdminDashboardData {
   users: {
-    total: number | null;
-    admins: number | null;
-    recentSignups: number | null;
+    total: number;
+    admins: number;
+    recentSignups: number;
     records: AdminUserRecord[];
   };
   websites: {
-    total: number | null;
-    published: number | null;
-    drafts: number | null;
+    total: number;
+    published: number;
+    drafts: number;
     records: AdminWebsiteRecord[];
   };
   monitoring: {
-    failedJobs: number | null;
+    failedJobs: number;
     systemStatus: string;
     systemTone: AdminTone;
     alerts: AdminAlertItem[];
     recentActivity: AdminActivityItem[];
   };
   analytics: {
-    websiteGenerationVolume: number | null;
-    publishingActivity: number | null;
-    userGrowth: number | null;
+    websiteGenerationVolume: number;
+    publishingActivity: number;
+    userGrowth: number;
   };
 }
 
 function createEmptyAdminDashboardData(): AdminDashboardData {
   return {
     users: {
-      total: null,
-      admins: null,
-      recentSignups: null,
+      total: 0,
+      admins: 0,
+      recentSignups: 0,
       records: [],
     },
     websites: {
-      total: null,
-      published: null,
-      drafts: null,
+      total: 0,
+      published: 0,
+      drafts: 0,
       records: [],
     },
     monitoring: {
-      failedJobs: null,
-      systemStatus: "Monitoring limited",
+      failedJobs: 0,
+      systemStatus: "Unavailable",
       systemTone: "warning",
       alerts: [
         {
           id: "admin-data-unavailable",
           title: "Admin data unavailable",
-          detail: "Admin metrics are temporarily unavailable. Empty states are being shown instead of failing the page.",
+          detail: "Admin metrics are temporarily unavailable, so safe fallback values are being shown instead of failing the page.",
           tone: "warning",
         },
       ],
       recentActivity: [],
     },
     analytics: {
-      websiteGenerationVolume: null,
-      publishingActivity: null,
-      userGrowth: null,
+      websiteGenerationVolume: 0,
+      publishingActivity: 0,
+      userGrowth: 0,
     },
   };
 }
@@ -146,9 +146,9 @@ function parseTimestamp(value: string | null | undefined): number {
   return Number.isNaN(parsed) ? 0 : parsed;
 }
 
-function countItemsSince(values: Array<{ createdAt: string | null }>, days: number): number | null {
+function countItemsSince(values: Array<{ createdAt: string | null }>, days: number): number {
   if (values.length === 0) {
-    return null;
+    return 0;
   }
 
   const threshold = Date.now() - days * 24 * 60 * 60 * 1000;
@@ -178,7 +178,7 @@ function mergeUsers(authUsers: User[], profiles: ProfileRow[]): AdminUserRecord[
 
     return {
       id: authUser.id,
-      email: authUser.email ?? profile?.email ?? "Unknown email",
+      email: authUser.email ?? profile?.email ?? "Unavailable",
       role: profile?.role ?? "user",
       createdAt: authUser.created_at ?? profile?.created_at ?? null,
       status: summarizeUserStatus(authUser),
@@ -193,7 +193,7 @@ function mergeUsers(authUsers: User[], profiles: ProfileRow[]): AdminUserRecord[
 
     merged.push({
       id: profile.id,
-      email: profile.email,
+      email: profile.email || "Unavailable",
       role: profile.role,
       createdAt: profile.created_at,
       status: "Profile synced",
@@ -215,17 +215,34 @@ function toToneFromStatus(status: string): AdminTone {
   return "info";
 }
 
-async function safeCount(operation: () => Promise<{ count: number | null; error: { message: string } | null }>): Promise<number | null> {
+function logAdminDataFallback(scope: string, error: unknown) {
+  logger.warn(`${scope} falling back to safe admin defaults`, {
+    category: "error",
+    service: "supabase",
+    error: { message: error instanceof Error ? error.message : String(error), name: "AdminDataFallbackWarning" },
+  });
+}
+
+async function withAdminFallback<T>(scope: string, fallback: T, operation: () => Promise<T>): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    logAdminDataFallback(scope, error);
+    return fallback;
+  }
+}
+
+async function safeCount(operation: () => Promise<{ count: number | null; error: { message: string } | null }>): Promise<number> {
   try {
     const { count, error } = await operation();
 
     if (error) {
-      return null;
+      return 0;
     }
 
     return count ?? 0;
   } catch {
-    return null;
+    return 0;
   }
 }
 
@@ -244,9 +261,8 @@ async function safeRows<T>(operation: () => Promise<{ data: T[] | null; error: {
 }
 
 async function listAuthUsers(limit = 100): Promise<User[]> {
-  const supabase = getSupabaseServiceClient();
-
-  try {
+  return withAdminFallback("listAuthUsers", [], async () => {
+    const supabase = getSupabaseServiceClient();
     const { data, error } = await supabase.auth.admin.listUsers({ page: 1, perPage: limit });
 
     if (error) {
@@ -254,17 +270,16 @@ async function listAuthUsers(limit = 100): Promise<User[]> {
     }
 
     return data.users ?? [];
-  } catch {
-    return [];
-  }
+  });
 }
 
 async function listProfileRows(limit = 100): Promise<ProfileRow[]> {
-  const supabase = getSupabaseServiceClient();
-
-  return safeRows(async () =>
-    await supabase.from("profiles").select("id, email, role, created_at").order("created_at", { ascending: false }).limit(limit),
-  );
+  return withAdminFallback("listProfileRows", [], async () => {
+    const supabase = getSupabaseServiceClient();
+    return safeRows(async () =>
+      await supabase.from("profiles").select("id, email, role, created_at").order("created_at", { ascending: false }).limit(limit),
+    );
+  });
 }
 
 async function getEmailMap(userIds: string[]): Promise<Map<string, string>> {
@@ -272,120 +287,118 @@ async function getEmailMap(userIds: string[]): Promise<Map<string, string>> {
     return new Map();
   }
 
-  const supabase = getSupabaseServiceClient();
-  const profiles = await safeRows<{ id: string; email: string }>(async () =>
-    await supabase.from("profiles").select("id, email").in("id", userIds),
-  );
+  return withAdminFallback("getEmailMap", new Map<string, string>(), async () => {
+    const supabase = getSupabaseServiceClient();
+    const profiles = await safeRows<{ id: string; email: string }>(async () =>
+      await supabase.from("profiles").select("id, email").in("id", userIds),
+    );
 
-  return new Map(profiles.map((profile) => [profile.id, profile.email]));
+    return new Map(profiles.map((profile) => [profile.id, profile.email]));
+  });
 }
 
 async function listRecentWebsiteRows(limit = 12): Promise<WebsiteRow[]> {
-  const supabase = getSupabaseServiceClient();
+  return withAdminFallback("listRecentWebsiteRows", [], async () => {
+    const supabase = getSupabaseServiceClient();
 
-  return safeRows(async () =>
-    await supabase
-      .from("website_structures")
-      .select("id, user_id, site_title, website_type, status, generated_at, updated_at")
-      .is("deleted_at", null)
-      .order("generated_at", { ascending: false })
-      .limit(limit),
-  );
+    return safeRows(async () =>
+      await supabase
+        .from("website_structures")
+        .select("id, user_id, site_title, website_type, status, generated_at, updated_at")
+        .is("deleted_at", null)
+        .order("generated_at", { ascending: false })
+        .limit(limit),
+    );
+  });
 }
 
 async function listRecentPublishJobs(limit = 6): Promise<PublishJobRow[]> {
-  const supabase = getSupabaseServiceClient();
+  return withAdminFallback("listRecentPublishJobs", [], async () => {
+    const supabase = getSupabaseServiceClient();
 
-  return safeRows(async () =>
-    await supabase
-      .from("social_publish_jobs")
-      .select("id, platform, status, updated_at, published_at, last_error")
-      .order("updated_at", { ascending: false })
-      .limit(limit),
-  );
+    return safeRows(async () =>
+      await supabase
+        .from("social_publish_jobs")
+        .select("id, platform, status, updated_at, published_at, last_error")
+        .order("updated_at", { ascending: false })
+        .limit(limit),
+    );
+  });
 }
 
 async function listRecentScheduleRuns(limit = 6): Promise<ScheduleRunRow[]> {
-  const supabase = getSupabaseServiceClient();
+  return withAdminFallback("listRecentScheduleRuns", [], async () => {
+    const supabase = getSupabaseServiceClient();
 
-  return safeRows(async () =>
-    await supabase
-      .from("content_schedule_runs")
-      .select("id, status, updated_at, completed_at, error")
-      .order("updated_at", { ascending: false })
-      .limit(limit),
-  );
+    return safeRows(async () =>
+      await supabase
+        .from("content_schedule_runs")
+        .select("id, status, updated_at, completed_at, error")
+        .order("updated_at", { ascending: false })
+        .limit(limit),
+    );
+  });
 }
 
 async function getWebsiteCounts() {
-  const supabase = getSupabaseServiceClient();
+  return withAdminFallback("getWebsiteCounts", { total: 0, published: 0, drafts: 0 }, async () => {
+    const supabase = getSupabaseServiceClient();
 
-  const [total, published, drafts] = await Promise.all([
-    safeCount(async () => await supabase.from("website_structures").select("id", { count: "exact", head: true }).is("deleted_at", null)),
-    safeCount(async () =>
-      await supabase
-        .from("website_structures")
-        .select("id", { count: "exact", head: true })
-        .is("deleted_at", null)
-        .eq("status", "published"),
-    ),
-    safeCount(async () =>
-      await supabase.from("website_structures").select("id", { count: "exact", head: true }).is("deleted_at", null).eq("status", "draft"),
-    ),
-  ]);
+    const [total, published, drafts] = await Promise.all([
+      safeCount(async () => await supabase.from("website_structures").select("id", { count: "exact", head: true }).is("deleted_at", null)),
+      safeCount(async () =>
+        await supabase
+          .from("website_structures")
+          .select("id", { count: "exact", head: true })
+          .is("deleted_at", null)
+          .eq("status", "published"),
+      ),
+      safeCount(async () =>
+        await supabase.from("website_structures").select("id", { count: "exact", head: true }).is("deleted_at", null).eq("status", "draft"),
+      ),
+    ]);
 
-  return { total, published, drafts };
+    return { total, published, drafts };
+  });
 }
 
 async function getUserCounts() {
-  const supabase = getSupabaseServiceClient();
+  return withAdminFallback("getUserCounts", { total: 0, admins: 0 }, async () => {
+    const supabase = getSupabaseServiceClient();
 
-  const [total, admins] = await Promise.all([
-    safeCount(async () => await supabase.from("profiles").select("id", { count: "exact", head: true })),
-    safeCount(async () => await supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "admin")),
-  ]);
+    const [total, admins] = await Promise.all([
+      safeCount(async () => await supabase.from("profiles").select("id", { count: "exact", head: true })),
+      safeCount(async () => await supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "admin")),
+    ]);
 
-  return { total, admins };
+    return { total, admins };
+  });
 }
 
 async function getMonitoringCounts() {
-  const supabase = getSupabaseServiceClient();
+  return withAdminFallback("getMonitoringCounts", { failedPublishJobs: 0, failedScheduleRuns: 0, totalFailed: 0 }, async () => {
+    const supabase = getSupabaseServiceClient();
 
-  const [failedPublishJobs, failedScheduleRuns] = await Promise.all([
-    safeCount(async () =>
-      await supabase.from("social_publish_jobs").select("id", { count: "exact", head: true }).in("status", ["failed", "retry_pending"]),
-    ),
-    safeCount(async () => await supabase.from("content_schedule_runs").select("id", { count: "exact", head: true }).eq("status", "failed")),
-  ]);
+    const [failedPublishJobs, failedScheduleRuns] = await Promise.all([
+      safeCount(async () =>
+        await supabase.from("social_publish_jobs").select("id", { count: "exact", head: true }).in("status", ["failed", "retry_pending"]),
+      ),
+      safeCount(async () => await supabase.from("content_schedule_runs").select("id", { count: "exact", head: true }).eq("status", "failed")),
+    ]);
 
-  const totalFailed =
-    failedPublishJobs === null && failedScheduleRuns === null
-      ? null
-      : (failedPublishJobs ?? 0) + (failedScheduleRuns ?? 0);
-
-  return { failedPublishJobs, failedScheduleRuns, totalFailed };
+    return {
+      failedPublishJobs,
+      failedScheduleRuns,
+      totalFailed: failedPublishJobs + failedScheduleRuns,
+    };
+  });
 }
 
 function buildAlerts(
-  failedPublishJobs: number | null,
-  failedScheduleRuns: number | null,
-  totalFailed: number | null,
+  failedPublishJobs: number,
+  failedScheduleRuns: number,
+  totalFailed: number,
 ): { alerts: AdminAlertItem[]; systemStatus: string; systemTone: AdminTone } {
-  if (totalFailed === null) {
-    return {
-      systemStatus: "Monitoring limited",
-      systemTone: "warning",
-      alerts: [
-        {
-          id: "monitoring-unavailable",
-          title: "Monitoring data unavailable",
-          detail: "No monitoring tables responded yet. The admin dashboard is showing a stable placeholder state.",
-          tone: "warning",
-        },
-      ],
-    };
-  }
-
   if (totalFailed === 0) {
     return {
       systemStatus: "Healthy",
@@ -403,40 +416,48 @@ function buildAlerts(
 
   const alerts: AdminAlertItem[] = [];
 
-  const publishJobCount = failedPublishJobs ?? 0;
-  if (publishJobCount > 0) {
+  if (failedPublishJobs > 0) {
     alerts.push({
       id: "failed-publish-jobs",
       title: "Publishing jobs need attention",
-      detail: `${publishJobCount} publish job${publishJobCount === 1 ? "" : "s"} are failed or waiting for retry.`,
+      detail: `${failedPublishJobs} publish job${failedPublishJobs === 1 ? "" : "s"} are failed or waiting for retry.`,
       tone: "error",
     });
   }
 
-  const scheduleRunCount = failedScheduleRuns ?? 0;
-  if (scheduleRunCount > 0) {
+  if (failedScheduleRuns > 0) {
     alerts.push({
       id: "failed-schedule-runs",
       title: "Schedule runs failed",
-      detail: `${scheduleRunCount} content schedule run${scheduleRunCount === 1 ? "" : "s"} reported an error.`,
+      detail: `${failedScheduleRuns} content schedule run${failedScheduleRuns === 1 ? "" : "s"} reported an error.`,
       tone: "warning",
     });
   }
 
   return {
-    systemStatus: "Needs attention",
+    systemStatus: alerts.length > 0 ? "Needs attention" : "Unavailable",
     systemTone: "warning",
-    alerts,
+    alerts:
+      alerts.length > 0
+        ? alerts
+        : [
+            {
+              id: "monitoring-unavailable",
+              title: "Monitoring data unavailable",
+              detail: "Monitoring data is unavailable, so safe fallback values are being shown.",
+              tone: "warning",
+            },
+          ],
   };
 }
 
 function mapWebsites(rows: WebsiteRow[], emailMap: Map<string, string>): AdminWebsiteRecord[] {
   return rows.map((row) => ({
     id: row.id,
-    title: row.site_title,
-    ownerEmail: emailMap.get(row.user_id) ?? "Unknown owner",
-    status: row.status,
-    websiteType: row.website_type,
+    title: row.site_title || "Unavailable",
+    ownerEmail: emailMap.get(row.user_id) ?? "Unavailable",
+    status: row.status || "Unavailable",
+    websiteType: row.website_type || "Unavailable",
     createdAt: row.generated_at,
     updatedAt: row.updated_at,
   }));
@@ -457,7 +478,7 @@ function buildRecentActivity(
 
   const publishActivity: AdminActivityItem[] = publishJobs.map((job) => ({
     id: `publish-${job.id}`,
-    title: `${job.platform} publish job ${job.status}`,
+    title: `${job.platform || "Unavailable"} publish job ${job.status || "Unavailable"}`,
     detail: job.last_error ? job.last_error : "Publishing workflow updated recently.",
     timestamp: job.updated_at ?? job.published_at,
     tone: toToneFromStatus(job.status),
@@ -465,7 +486,7 @@ function buildRecentActivity(
 
   const scheduleActivity: AdminActivityItem[] = scheduleRuns.map((run) => ({
     id: `schedule-${run.id}`,
-    title: `Content schedule run ${run.status}`,
+    title: `Content schedule run ${run.status || "Unavailable"}`,
     detail: run.error ? run.error : "Content scheduling workflow updated recently.",
     timestamp: run.updated_at ?? run.completed_at,
     tone: run.status === "failed" ? "error" : "info",
@@ -477,36 +498,22 @@ function buildRecentActivity(
 }
 
 export async function listAdminUsers(limit = 25): Promise<AdminUserRecord[]> {
-  try {
+  return withAdminFallback("listAdminUsers", [], async () => {
     const [authUsers, profiles] = await Promise.all([listAuthUsers(Math.max(limit, 100)), listProfileRows(Math.max(limit, 100))]);
     return mergeUsers(authUsers, profiles).slice(0, limit);
-  } catch (error) {
-    logger.warn("listAdminUsers falling back to empty state", {
-      category: "error",
-      service: "supabase",
-      error: { message: error instanceof Error ? error.message : String(error), name: "AdminDataFallbackWarning" },
-    });
-    return [];
-  }
+  });
 }
 
 export async function listAdminWebsites(limit = 25): Promise<AdminWebsiteRecord[]> {
-  try {
+  return withAdminFallback("listAdminWebsites", [], async () => {
     const websiteRows = await listRecentWebsiteRows(limit);
     const emailMap = await getEmailMap([...new Set(websiteRows.map((row) => row.user_id))]);
     return mapWebsites(websiteRows, emailMap).slice(0, limit);
-  } catch (error) {
-    logger.warn("listAdminWebsites falling back to empty state", {
-      category: "error",
-      service: "supabase",
-      error: { message: error instanceof Error ? error.message : String(error), name: "AdminDataFallbackWarning" },
-    });
-    return [];
-  }
+  });
 }
 
 export async function getAdminDashboardData(): Promise<AdminDashboardData> {
-  try {
+  return withAdminFallback("getAdminDashboardData", createEmptyAdminDashboardData(), async () => {
     const [allUsers, userCounts, websiteCounts, websiteRows, monitoringCounts, publishJobs, scheduleRuns] = await Promise.all([
       listAdminUsers(100),
       getUserCounts(),
@@ -557,14 +564,7 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
         userGrowth,
       },
     };
-  } catch (error) {
-    logger.warn("getAdminDashboardData falling back to empty state", {
-      category: "error",
-      service: "supabase",
-      error: { message: error instanceof Error ? error.message : String(error), name: "AdminDataFallbackWarning" },
-    });
-    return createEmptyAdminDashboardData();
-  }
+  });
 }
 
 export function formatAdminDate(value: string | null | undefined): string {

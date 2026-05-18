@@ -7,10 +7,10 @@ export const dynamic = "force-dynamic";
 
 async function loadAdminIndexPage() {
   try {
-    const { user, isAdmin } = await requireAdminUser(routes.adminDashboard);
+    const { user, isAdmin } = await requireAdminUser();
 
     return {
-      userEmail: user.email,
+      userEmail: user?.email,
       retryHref: isAdmin ? routes.adminDashboard : routes.admin,
       description: isAdmin
         ? "Open the admin dashboard manually from here to keep the main dashboard route stable."

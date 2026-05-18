@@ -24,12 +24,12 @@ function renderAdminAccountLabel(count: number | null): string {
 
 async function loadAdminUsersPage() {
   try {
-    const { user, isAdmin } = await requireAdminUser(routes.adminUsers);
+    const { user, isAdmin } = await requireAdminUser();
 
-    if (!isAdmin) {
+    if (!user || !isAdmin) {
       return {
         ok: false as const,
-        userEmail: user.email,
+        userEmail: user?.email,
         retryHref: routes.adminUsers,
         description: "Admin user data is temporarily unavailable, so the safe fallback view is being shown.",
       };

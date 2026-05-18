@@ -118,7 +118,7 @@ function renderStandardDashboard(userEmail?: string | null, isAdmin = false) {
 
           <div className="dashboard-quick-actions-grid">
             {adminActions.map((action) => (
-              <Link key={action.href} href={action.href} className="dashboard-quick-action">
+              <Link key={action.href} href={action.href} prefetch={false} className="dashboard-quick-action">
                 <span className="dashboard-quick-action-kicker">{action.kicker}</span>
                 <strong>{action.label}</strong>
                 <span className="dashboard-quick-action-description">{action.description}</span>

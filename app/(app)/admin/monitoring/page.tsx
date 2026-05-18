@@ -12,12 +12,12 @@ function renderMetric(value: number | null, emptyLabel = "No data yet"): string 
 
 async function loadAdminMonitoringPage() {
   try {
-    const { user, isAdmin } = await requireAdminUser(routes.adminMonitoring);
+    const { user, isAdmin } = await requireAdminUser();
 
-    if (!isAdmin) {
+    if (!user || !isAdmin) {
       return {
         ok: false as const,
-        userEmail: user.email,
+        userEmail: user?.email,
         retryHref: routes.adminMonitoring,
         description: "Admin monitoring is temporarily unavailable, so the safe fallback view is being shown.",
       };

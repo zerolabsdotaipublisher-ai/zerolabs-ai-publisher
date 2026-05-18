@@ -13,12 +13,12 @@ function renderMetric(value: number | null, emptyLabel = "No data yet"): string 
 
 async function loadAdminDashboardPage() {
   try {
-    const { user, isAdmin } = await requireAdminUser(routes.adminDashboard);
+    const { user, isAdmin } = await requireAdminUser();
 
-    if (!isAdmin) {
+    if (!user || !isAdmin) {
       return {
         ok: false as const,
-        userEmail: user.email,
+        userEmail: user?.email,
         retryHref: routes.adminDashboard,
         description: "Admin access could not be confirmed on the server, so the stable fallback view is being shown.",
       };
@@ -138,7 +138,7 @@ export default async function AdminDashboardPage() {
               <h2>Users</h2>
               <p>Review total users, recent signups, and role assignments.</p>
             </div>
-            <Link href={routes.adminUsers} className="dashboard-inline-link">
+            <Link href={routes.adminUsers} prefetch={false} className="dashboard-inline-link">
               Manage users
             </Link>
           </header>
@@ -179,7 +179,7 @@ export default async function AdminDashboardPage() {
               <h2>Websites</h2>
               <p>Watch created websites, published output, and draft inventory.</p>
             </div>
-            <Link href={routes.adminWebsites} className="dashboard-inline-link">
+            <Link href={routes.adminWebsites} prefetch={false} className="dashboard-inline-link">
               Manage websites
             </Link>
           </header>
@@ -222,7 +222,7 @@ export default async function AdminDashboardPage() {
               <h2>Activity &amp; monitoring</h2>
               <p>Track recent operational events, failed jobs, and monitoring alerts.</p>
             </div>
-            <Link href={routes.adminMonitoring} className="dashboard-inline-link">
+            <Link href={routes.adminMonitoring} prefetch={false} className="dashboard-inline-link">
               Open monitoring
             </Link>
           </header>
@@ -267,7 +267,7 @@ export default async function AdminDashboardPage() {
               <h2>Analytics</h2>
               <p>Use stable stat cards now and expand into deeper reporting when more datasets become available.</p>
             </div>
-            <Link href={routes.adminAnalytics} className="dashboard-inline-link">
+            <Link href={routes.adminAnalytics} prefetch={false} className="dashboard-inline-link">
               Open analytics
             </Link>
           </header>
@@ -302,7 +302,7 @@ export default async function AdminDashboardPage() {
 
         <div className="dashboard-quick-actions-grid">
           {tools.map((tool) => (
-            <Link key={tool.href} href={tool.href} className="dashboard-quick-action">
+            <Link key={tool.href} href={tool.href} prefetch={false} className="dashboard-quick-action">
               <span className="dashboard-quick-action-kicker">{tool.kicker}</span>
               <strong>{tool.label}</strong>
               <span className="dashboard-quick-action-description">{tool.description}</span>

@@ -42,14 +42,14 @@ export function AdminFallback({
         </header>
 
         <div className="dashboard-quick-actions-grid">
-          <Link href={retryHref} className="dashboard-quick-action">
+          <Link href={retryHref} prefetch={false} className="dashboard-quick-action">
             <span className="dashboard-quick-action-kicker">Retry</span>
             <strong>Retry admin page</strong>
             <span className="dashboard-quick-action-description">Try loading this admin page again without leaving your session.</span>
             <span className="dashboard-quick-action-arrow">Open →</span>
           </Link>
 
-          <Link href={routes.dashboard} className="dashboard-quick-action">
+          <Link href={routes.dashboard} prefetch={false} className="dashboard-quick-action">
             <span className="dashboard-quick-action-kicker">Fallback</span>
             <strong>Back to dashboard</strong>
             <span className="dashboard-quick-action-description">Return to the stable main dashboard route.</span>

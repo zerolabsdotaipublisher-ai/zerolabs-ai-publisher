@@ -1,3 +1,4 @@
+import type { Profile } from "./profile";
 import { redirect } from "next/navigation";
 import { routes } from "@/config/routes";
 import { logger } from "@/lib/observability";
@@ -33,10 +34,33 @@ export async function requireUserProfile(redirectPath?: string) {
   return { user, profile };
 }
 
-export async function requireAdminUser(redirectPath?: string) {
-  const auth = await requireUserProfile(redirectPath);
+export async function requireAdminUser() {
+  const user = await getServerUser();
+
+  if (!user) {
+    return {
+      user: null,
+      profile: null as Profile | null,
+      isAdmin: false,
+    };
+  }
+
+  let profile = createFallbackProfile(user);
+
+  try {
+    profile = await getSafeProfile(user);
+  } catch (error) {
+    logger.error("requireAdminUser fell back to regular user profile", {
+      category: "error",
+      service: "supabase",
+      userId: user.id,
+      error: { message: error instanceof Error ? error.message : String(error), name: "SupabaseProfileError" },
+    });
+  }
+
   return {
-    ...auth,
-    isAdmin: auth.profile.role === "admin",
+    user,
+    profile,
+    isAdmin: profile.role === "admin",
   };
 }
