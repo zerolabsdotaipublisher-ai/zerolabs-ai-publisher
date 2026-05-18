@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { logger } from "@/lib/observability";
 
 export type SessionUpdateResult = {
   response: NextResponse;
@@ -61,7 +62,12 @@ export async function updateSession(request: NextRequest): Promise<SessionUpdate
       response,
       hasSession: Boolean(user),
     };
-  } catch {
+  } catch (error) {
+    logger.warn("updateSession failed; falling back to existing session cookie state", {
+      category: "error",
+      service: "supabase",
+      error: { message: error instanceof Error ? error.message : String(error), name: "SupabaseSessionRefreshWarning" },
+    });
     return {
       response,
       hasSession: hasSessionCookie,
