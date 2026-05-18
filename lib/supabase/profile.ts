@@ -291,7 +291,8 @@ export async function syncProfileFromAuthUser(user: User): Promise<void> {
         error: { message: error.message, name: "SupabaseProfileSchemaWarning" },
       });
 
-      const { role: _ignoredRole, ...fallbackProfileRow } = profileRow;
+      const fallbackProfileRow = { ...profileRow };
+      delete fallbackProfileRow.role;
       const { error: fallbackError } = await supabase.from("profiles").upsert(fallbackProfileRow, { onConflict: "id" });
 
       if (!fallbackError) {
