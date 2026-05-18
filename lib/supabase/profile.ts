@@ -56,6 +56,10 @@ type AuthUserMetadata = {
 
 const ADMIN_PROFILE_EMAILS = new Set(["zerolabsaipublisher@gmail.com"]);
 
+function getCurrentIsoTimestamp(): string {
+  return new Date().toISOString();
+}
+
 function extractUserMetadataFromAuth(user: User): AuthUserMetadata {
   const raw = user.user_metadata;
 
@@ -124,7 +128,7 @@ function normalizeProfileRole(role: unknown): ProfileRole {
 }
 
 function buildFallbackProfile(user: User): Profile {
-  const timestamp = user.created_at ?? new Date().toISOString();
+  const timestamp = user.created_at ?? getCurrentIsoTimestamp();
 
   return {
     id: user.id,
@@ -140,7 +144,7 @@ function buildFallbackProfile(user: User): Profile {
 }
 
 function normalizeProfileRow(data: Partial<Profile>): Profile {
-  const timestamp = typeof data.created_at === "string" ? data.created_at : new Date().toISOString();
+  const timestamp = typeof data.created_at === "string" ? data.created_at : getCurrentIsoTimestamp();
 
   return {
     id: typeof data.id === "string" ? data.id : "",
@@ -295,8 +299,12 @@ export async function syncProfileFromAuthUser(user: User): Promise<void> {
         error: { message: error.message, name: "SupabaseProfileSchemaWarning" },
       });
 
-      const { role, ...fallbackProfileRow } = profileRow;
-      void role;
+      const fallbackProfileRow = {
+        id: profileRow.id,
+        email: profileRow.email,
+        full_name: profileRow.full_name,
+        avatar_url: profileRow.avatar_url,
+      };
       const { error: fallbackError } = await supabase.from("profiles").upsert(fallbackProfileRow, { onConflict: "id" });
 
       if (!fallbackError) {
