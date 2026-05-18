@@ -6,23 +6,15 @@ import { requireAdminUser } from "@/lib/supabase/auth";
 
 export const dynamic = "force-dynamic";
 
-function renderMetric(value: number | null, emptyLabel = "No data yet"): string {
-  return value === null ? emptyLabel : String(value);
+function renderMetric(value: number): string {
+  return String(value);
 }
 
-function renderAdminAccountLabel(count: number | null): string {
-  if (count === 1) {
-    return "admin account";
-  }
-
-  if (count === null) {
-    return "admin account(s)";
-  }
-
-  return "admin accounts";
+function renderAdminAccountLabel(count: number): string {
+  return count === 1 ? "admin account" : "admin accounts";
 }
 
-async function loadAdminUsersPage() {
+async function loadAdminUsersView() {
   try {
     const { user, isAdmin } = await requireAdminUser();
 
@@ -30,8 +22,9 @@ async function loadAdminUsersPage() {
       return {
         ok: false as const,
         userEmail: user?.email,
+        title: "Admin access unavailable",
+        description: "Admin access could not be confirmed for the users page, so a fallback view is being shown.",
         retryHref: routes.adminUsers,
-        description: "Admin user data is temporarily unavailable, so the safe fallback view is being shown.",
       };
     }
 
@@ -43,7 +36,7 @@ async function loadAdminUsersPage() {
       users,
     };
   } catch (error) {
-    logger.error("AdminUsersPage fell back to admin fallback UI", {
+    logger.error("AdminUsersPage fell back to AdminFallback", {
       category: "error",
       service: "dashboard",
       error: { message: error instanceof Error ? error.message : String(error), name: "AdminUsersRenderError" },
@@ -51,19 +44,28 @@ async function loadAdminUsersPage() {
 
     return {
       ok: false as const,
+      title: "Admin users temporarily limited",
+      description: "Admin user data could not be loaded safely, so a fallback view is being shown.",
       retryHref: routes.adminUsers,
     };
   }
 }
 
 export default async function AdminUsersPage() {
-  const result = await loadAdminUsersPage();
+  const view = await loadAdminUsersView();
 
-  if (!result.ok) {
-    return <AdminFallback userEmail={result.userEmail} retryHref={result.retryHref} description={result.description} />;
+  if (!view.ok) {
+    return (
+      <AdminFallback
+        userEmail={view.userEmail}
+        title={view.title}
+        description={view.description}
+        retryHref={view.retryHref}
+      />
+    );
   }
 
-  const { dashboard, users } = result;
+  const { dashboard, users } = view;
 
   return (
     <section className="dashboard-home-shell" aria-label="Admin users page">
@@ -71,13 +73,15 @@ export default async function AdminUsersPage() {
         <div className="dashboard-hero-panel">
           <span className="dashboard-eyebrow">Zero Labs operations</span>
           <h1>Admin Users</h1>
-          <p>Review account email addresses, server-authoritative roles, signup dates, and basic auth status without exposing browser-side admin privileges.</p>
+          <p>Review account email addresses, roles, signup dates, and basic auth status without any server-side redirects.</p>
         </div>
 
         <aside className="dashboard-welcome-card" aria-label="Admin users summary">
           <span className="dashboard-welcome-label">User summary</span>
           <strong>{renderMetric(dashboard.users.total)} total users</strong>
-          <p>{renderMetric(dashboard.users.admins)} {renderAdminAccountLabel(dashboard.users.admins)} · {renderMetric(dashboard.users.recentSignups)} recent signups</p>
+          <p>
+            {renderMetric(dashboard.users.admins)} {renderAdminAccountLabel(dashboard.users.admins)} · {renderMetric(dashboard.users.recentSignups)} recent signups
+          </p>
         </aside>
       </header>
 
@@ -85,7 +89,7 @@ export default async function AdminUsersPage() {
         <header className="dashboard-section-heading">
           <div>
             <h2>User directory</h2>
-            <p>Stable admin listing with profile role data and basic auth state. Empty states are safe when no user data is available yet.</p>
+            <p>Stable admin listing with safe fallbacks when user data is unavailable.</p>
           </div>
         </header>
 
@@ -100,7 +104,7 @@ export default async function AdminUsersPage() {
             ))}
           </ul>
         ) : (
-          <p className="dashboard-empty-note">No user records yet.</p>
+          <p className="dashboard-empty-note">No user records available.</p>
         )}
       </section>
     </section>

@@ -6,11 +6,11 @@ import { requireAdminUser } from "@/lib/supabase/auth";
 
 export const dynamic = "force-dynamic";
 
-function renderMetric(value: number | null, emptyLabel = "No data yet"): string {
-  return value === null ? emptyLabel : String(value);
+function renderMetric(value: number): string {
+  return String(value);
 }
 
-async function loadAdminMonitoringPage() {
+async function loadAdminMonitoringView() {
   try {
     const { user, isAdmin } = await requireAdminUser();
 
@@ -18,17 +18,20 @@ async function loadAdminMonitoringPage() {
       return {
         ok: false as const,
         userEmail: user?.email,
+        title: "Admin access unavailable",
+        description: "Admin access could not be confirmed for the monitoring page, so a fallback view is being shown.",
         retryHref: routes.adminMonitoring,
-        description: "Admin monitoring is temporarily unavailable, so the safe fallback view is being shown.",
       };
     }
 
+    const dashboard = await getAdminDashboardData();
+
     return {
       ok: true as const,
-      dashboard: await getAdminDashboardData(),
+      dashboard,
     };
   } catch (error) {
-    logger.error("AdminMonitoringPage fell back to admin fallback UI", {
+    logger.error("AdminMonitoringPage fell back to AdminFallback", {
       category: "error",
       service: "dashboard",
       error: { message: error instanceof Error ? error.message : String(error), name: "AdminMonitoringRenderError" },
@@ -36,19 +39,28 @@ async function loadAdminMonitoringPage() {
 
     return {
       ok: false as const,
+      title: "Admin monitoring temporarily limited",
+      description: "Admin monitoring data could not be loaded safely, so a fallback view is being shown.",
       retryHref: routes.adminMonitoring,
     };
   }
 }
 
 export default async function AdminMonitoringPage() {
-  const result = await loadAdminMonitoringPage();
+  const view = await loadAdminMonitoringView();
 
-  if (!result.ok) {
-    return <AdminFallback userEmail={result.userEmail} retryHref={result.retryHref} description={result.description} />;
+  if (!view.ok) {
+    return (
+      <AdminFallback
+        userEmail={view.userEmail}
+        title={view.title}
+        description={view.description}
+        retryHref={view.retryHref}
+      />
+    );
   }
 
-  const { dashboard } = result;
+  const { dashboard } = view;
 
   return (
     <section className="dashboard-home-shell" aria-label="Admin monitoring page">
@@ -56,7 +68,7 @@ export default async function AdminMonitoringPage() {
         <div className="dashboard-hero-panel">
           <span className="dashboard-eyebrow">Zero Labs operations</span>
           <h1>Admin Monitoring</h1>
-          <p>Review recent activity, failed jobs, and stable monitoring alerts without exposing client-side admin logic.</p>
+          <p>Review recent activity, failed jobs, and stable monitoring alerts without exposing client-side admin routing logic.</p>
         </div>
 
         <aside className="dashboard-welcome-card" aria-label="Admin monitoring summary">
@@ -114,7 +126,7 @@ export default async function AdminMonitoringPage() {
               ))}
             </ul>
           ) : (
-            <p className="dashboard-empty-note">No recent monitoring activity yet.</p>
+            <p className="dashboard-empty-note">No recent monitoring activity available.</p>
           )}
         </section>
       </div>

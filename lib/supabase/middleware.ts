@@ -10,8 +10,6 @@ export type SessionUpdateResult = {
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-// Supabase's default auth storage key is `sb-<project-ref>-auth-token`; the
-// SSR helpers use the same convention unless a custom cookie name is supplied.
 const supabaseSessionCookieName =
   supabaseUrl && URL.canParse(supabaseUrl)
     ? `sb-${new URL(supabaseUrl).hostname.split(".")[0]}-auth-token`
@@ -28,11 +26,9 @@ function hasSupabaseSessionCookie(request: NextRequest): boolean {
 }
 
 export async function updateSession(request: NextRequest): Promise<SessionUpdateResult> {
-  let response = NextResponse.next({ request });
   const hasSessionCookie = hasSupabaseSessionCookie(request);
+  let response = NextResponse.next({ request });
 
-  // Skip Supabase auth refresh entirely when the request has no session cookie
-  // or the edge runtime does not have the public client config available.
   if (!hasSessionCookie || !supabaseUrl || !supabaseAnonKey) {
     return {
       response,
@@ -63,11 +59,12 @@ export async function updateSession(request: NextRequest): Promise<SessionUpdate
       hasSession: Boolean(user),
     };
   } catch (error) {
-    logger.warn("updateSession failed; falling back to existing session cookie state", {
+    logger.warn("updateSession failed; using the existing session cookie state", {
       category: "error",
       service: "supabase",
       error: { message: error instanceof Error ? error.message : String(error), name: "SupabaseSessionRefreshWarning" },
     });
+
     return {
       response,
       hasSession: hasSessionCookie,
