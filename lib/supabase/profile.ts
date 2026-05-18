@@ -54,11 +54,6 @@ type AuthUserMetadata = {
   avatar_url?: string;
 };
 
-type SupabaseProfileErrorLike = {
-  code?: string;
-  message?: string;
-};
-
 const ADMIN_PROFILE_EMAILS = new Set(["zerolabsaipublisher@gmail.com"]);
 
 function extractUserMetadataFromAuth(user: User): AuthUserMetadata {
@@ -93,21 +88,29 @@ function getErrorMessage(error: unknown): string {
   return error.message;
 }
 
+function getErrorCode(error: unknown): string | undefined {
+  if (!error || typeof error !== "object" || !("code" in error) || typeof error.code !== "string") {
+    return undefined;
+  }
+
+  return error.code;
+}
+
 function isMissingProfilesTableError(error: unknown): boolean {
-  const code = typeof error === "object" && error && "code" in error ? (error as SupabaseProfileErrorLike).code : undefined;
+  const code = getErrorCode(error);
   const message = getErrorMessage(error).toLowerCase();
 
   return code === "42P01" || message.includes("relation \"public.profiles\" does not exist");
 }
 
 function isMissingProfileRoleColumnError(error: unknown): boolean {
-  const code = typeof error === "object" && error && "code" in error ? (error as SupabaseProfileErrorLike).code : undefined;
+  const code = getErrorCode(error);
   const message = getErrorMessage(error).toLowerCase();
 
   return (
     code === "42703" ||
     message.includes("could not find the 'role' column of 'profiles'") ||
-    (message.includes("profiles") && message.includes("role") && message.includes("column"))
+    (message.includes("profiles") && message.includes("role") && message.includes("column") && message.includes("does not exist"))
   );
 }
 

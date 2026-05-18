@@ -2,6 +2,7 @@ import "server-only";
 
 import type { User } from "@supabase/supabase-js";
 import type { ProfileRole } from "@/lib/supabase/profile";
+import { logger } from "@/lib/observability";
 import { getSupabaseServiceClient } from "@/lib/supabase/server";
 
 type ProfileRow = {
@@ -479,7 +480,12 @@ export async function listAdminUsers(limit = 25): Promise<AdminUserRecord[]> {
   try {
     const [authUsers, profiles] = await Promise.all([listAuthUsers(Math.max(limit, 100)), listProfileRows(Math.max(limit, 100))]);
     return mergeUsers(authUsers, profiles).slice(0, limit);
-  } catch {
+  } catch (error) {
+    logger.warn("listAdminUsers falling back to empty state", {
+      category: "error",
+      service: "supabase",
+      error: { message: error instanceof Error ? error.message : String(error), name: "AdminDataFallbackWarning" },
+    });
     return [];
   }
 }
@@ -489,7 +495,12 @@ export async function listAdminWebsites(limit = 25): Promise<AdminWebsiteRecord[
     const websiteRows = await listRecentWebsiteRows(limit);
     const emailMap = await getEmailMap([...new Set(websiteRows.map((row) => row.user_id))]);
     return mapWebsites(websiteRows, emailMap).slice(0, limit);
-  } catch {
+  } catch (error) {
+    logger.warn("listAdminWebsites falling back to empty state", {
+      category: "error",
+      service: "supabase",
+      error: { message: error instanceof Error ? error.message : String(error), name: "AdminDataFallbackWarning" },
+    });
     return [];
   }
 }
@@ -546,7 +557,12 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
         userGrowth,
       },
     };
-  } catch {
+  } catch (error) {
+    logger.warn("getAdminDashboardData falling back to empty state", {
+      category: "error",
+      service: "supabase",
+      error: { message: error instanceof Error ? error.message : String(error), name: "AdminDataFallbackWarning" },
+    });
     return createEmptyAdminDashboardData();
   }
 }
