@@ -95,7 +95,7 @@ function renderStandardDashboard(userEmail?: string | null, isAdmin = false) {
         <div className="dashboard-hero-panel">
           <span className="dashboard-eyebrow">Zero Labs workspace</span>
           <h1>Dashboard</h1>
-          <p>Welcome back to Zero Labs AI Publisher. Your stable customer dashboard loads first for every authenticated user.</p>
+          <p>Welcome back to Zero Labs AI Publisher. Your customer dashboard loads first as the stable entry point for authenticated users.</p>
         </div>
 
         <aside className="dashboard-welcome-card" aria-label="Account overview">

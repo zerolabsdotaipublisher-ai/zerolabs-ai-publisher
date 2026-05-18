@@ -28,7 +28,7 @@ type AuthUserMetadata = {
 
 const ADMIN_PROFILE_EMAILS = new Set(["zerolabsaipublisher@gmail.com"]);
 
-function getCurrentIsoTimestamp(): string {
+function getCurrentTimestamp(): string {
   return new Date().toISOString();
 }
 
@@ -41,6 +41,7 @@ function getErrorField(error: unknown, field: "code" | "message"): string | unde
   return typeof record[field] === "string" ? record[field] : undefined;
 }
 
+// 42P01 = undefined_table, 42703 = undefined_column.
 function isRecoverableProfileSchemaError(error: unknown): boolean {
   const code = getErrorField(error, "code");
   const message = (getErrorField(error, "message") ?? "").toLowerCase();
@@ -59,7 +60,7 @@ function normalizeProfileRole(role: unknown): ProfileRole {
 }
 
 function createFallbackProfileRecord(id: string, email: string, createdAt?: string | null): Profile {
-  const timestamp = createdAt ?? getCurrentIsoTimestamp();
+  const timestamp = createdAt ?? getCurrentTimestamp();
 
   return {
     id,
@@ -75,7 +76,7 @@ function createFallbackProfileRecord(id: string, email: string, createdAt?: stri
 }
 
 function normalizeProfileRow(data: Partial<Profile>): Profile {
-  const timestamp = typeof data.created_at === "string" ? data.created_at : getCurrentIsoTimestamp();
+  const timestamp = typeof data.created_at === "string" ? data.created_at : getCurrentTimestamp();
 
   return {
     id: typeof data.id === "string" ? data.id : "",
@@ -108,7 +109,7 @@ function resolveSeededProfileRole(email: string): ProfileRole | null {
 }
 
 export function createFallbackProfile(user: User): Profile {
-  return createFallbackProfileRecord(user.id, user.email ?? "", user.created_at ?? getCurrentIsoTimestamp());
+  return createFallbackProfileRecord(user.id, user.email ?? "", user.created_at ?? getCurrentTimestamp());
 }
 
 export async function getProfile(userId: string): Promise<Profile | null> {

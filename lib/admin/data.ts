@@ -5,7 +5,8 @@ import type { ProfileRole } from "@/lib/supabase/profile";
 import { logger } from "@/lib/observability";
 import { getSupabaseServiceClient } from "@/lib/supabase/server";
 
-const UNAVAILABLE_LABEL = "Unavailable";
+const FALLBACK_UNAVAILABLE_LABEL = "Unavailable";
+const DEFAULT_RECENT_RECORD_LIMIT = 12;
 
 type ProfileRow = {
   id: string;
@@ -131,7 +132,7 @@ function createEmptyAdminDashboardData(): AdminDashboardData {
     },
     monitoring: {
       failedJobs: 0,
-      systemStatus: UNAVAILABLE_LABEL,
+      systemStatus: FALLBACK_UNAVAILABLE_LABEL,
       systemTone: "warning",
       alerts: [
         {
@@ -188,7 +189,7 @@ function countItemsSince(values: Array<{ createdAt: string | null }>, days: numb
 
 function summarizeUserStatus(user?: User): string {
   if (!user) {
-    return UNAVAILABLE_LABEL;
+    return FALLBACK_UNAVAILABLE_LABEL;
   }
 
   if (user.banned_until && parseTimestamp(user.banned_until) > Date.now()) {
@@ -258,9 +259,8 @@ async function listAuthUsers(limit = 100): Promise<User[]> {
 }
 
 async function listProfileRows(limit = 100): Promise<ProfileRow[]> {
-  const supabase = getSupabaseServiceClient();
-
   return safeRows("listProfileRows", async () => {
+    const supabase = getSupabaseServiceClient();
     return await supabase.from("profiles").select("id, email, role, created_at").order("created_at", { ascending: false }).limit(limit);
   });
 }
@@ -270,18 +270,17 @@ async function getEmailMap(userIds: string[]): Promise<Map<string, string>> {
     return new Map();
   }
 
-  const supabase = getSupabaseServiceClient();
   const profiles = await safeRows<{ id: string; email: string }>("getEmailMap", async () => {
+    const supabase = getSupabaseServiceClient();
     return await supabase.from("profiles").select("id, email").in("id", userIds);
   });
 
   return new Map(profiles.map((profile) => [profile.id, profile.email]));
 }
 
-async function listRecentWebsiteRows(limit = 24): Promise<WebsiteRow[]> {
-  const supabase = getSupabaseServiceClient();
-
+async function listRecentWebsiteRows(limit = DEFAULT_RECENT_RECORD_LIMIT): Promise<WebsiteRow[]> {
   return safeRows("listRecentWebsiteRows", async () => {
+    const supabase = getSupabaseServiceClient();
     return await supabase
       .from("website_structures")
       .select("id, user_id, site_title, website_type, status, generated_at, updated_at")
@@ -292,9 +291,8 @@ async function listRecentWebsiteRows(limit = 24): Promise<WebsiteRow[]> {
 }
 
 async function listRecentPublishJobs(limit = 6): Promise<PublishJobRow[]> {
-  const supabase = getSupabaseServiceClient();
-
   return safeRows("listRecentPublishJobs", async () => {
+    const supabase = getSupabaseServiceClient();
     return await supabase
       .from("social_publish_jobs")
       .select("id, platform, status, updated_at, published_at, last_error")
@@ -304,9 +302,8 @@ async function listRecentPublishJobs(limit = 6): Promise<PublishJobRow[]> {
 }
 
 async function listRecentScheduleRuns(limit = 6): Promise<ScheduleRunRow[]> {
-  const supabase = getSupabaseServiceClient();
-
   return safeRows("listRecentScheduleRuns", async () => {
+    const supabase = getSupabaseServiceClient();
     return await supabase
       .from("content_schedule_runs")
       .select("id, status, updated_at, completed_at, error")
@@ -316,10 +313,15 @@ async function listRecentScheduleRuns(limit = 6): Promise<ScheduleRunRow[]> {
 }
 
 async function getUserCounts(): Promise<{ total: number; admins: number }> {
-  const supabase = getSupabaseServiceClient();
   const [total, admins] = await Promise.all([
-    safeCount("getUserCounts.total", async () => await supabase.from("profiles").select("id", { count: "exact", head: true })),
-    safeCount("getUserCounts.admins", async () => await supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "admin")),
+    safeCount("getUserCounts.total", async () => {
+      const supabase = getSupabaseServiceClient();
+      return await supabase.from("profiles").select("id", { count: "exact", head: true });
+    }),
+    safeCount("getUserCounts.admins", async () => {
+      const supabase = getSupabaseServiceClient();
+      return await supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "admin");
+    }),
   ]);
 
   return {
@@ -329,17 +331,19 @@ async function getUserCounts(): Promise<{ total: number; admins: number }> {
 }
 
 async function getWebsiteCounts(): Promise<{ total: number; published: number; drafts: number }> {
-  const supabase = getSupabaseServiceClient();
   const [total, published, drafts] = await Promise.all([
-    safeCount("getWebsiteCounts.total", async () =>
-      await supabase.from("website_structures").select("id", { count: "exact", head: true }).is("deleted_at", null),
-    ),
-    safeCount("getWebsiteCounts.published", async () =>
-      await supabase.from("website_structures").select("id", { count: "exact", head: true }).is("deleted_at", null).eq("status", "published"),
-    ),
-    safeCount("getWebsiteCounts.drafts", async () =>
-      await supabase.from("website_structures").select("id", { count: "exact", head: true }).is("deleted_at", null).eq("status", "draft"),
-    ),
+    safeCount("getWebsiteCounts.total", async () => {
+      const supabase = getSupabaseServiceClient();
+      return await supabase.from("website_structures").select("id", { count: "exact", head: true }).is("deleted_at", null);
+    }),
+    safeCount("getWebsiteCounts.published", async () => {
+      const supabase = getSupabaseServiceClient();
+      return await supabase.from("website_structures").select("id", { count: "exact", head: true }).is("deleted_at", null).eq("status", "published");
+    }),
+    safeCount("getWebsiteCounts.drafts", async () => {
+      const supabase = getSupabaseServiceClient();
+      return await supabase.from("website_structures").select("id", { count: "exact", head: true }).is("deleted_at", null).eq("status", "draft");
+    }),
   ]);
 
   return {
@@ -350,14 +354,15 @@ async function getWebsiteCounts(): Promise<{ total: number; published: number; d
 }
 
 async function getMonitoringCounts(): Promise<MonitoringCounts> {
-  const supabase = getSupabaseServiceClient();
   const [failedPublishJobs, failedScheduleRuns] = await Promise.all([
-    safeCount("getMonitoringCounts.failedPublishJobs", async () =>
-      await supabase.from("social_publish_jobs").select("id", { count: "exact", head: true }).in("status", ["failed", "retry_pending"]),
-    ),
-    safeCount("getMonitoringCounts.failedScheduleRuns", async () =>
-      await supabase.from("content_schedule_runs").select("id", { count: "exact", head: true }).eq("status", "failed"),
-    ),
+    safeCount("getMonitoringCounts.failedPublishJobs", async () => {
+      const supabase = getSupabaseServiceClient();
+      return await supabase.from("social_publish_jobs").select("id", { count: "exact", head: true }).in("status", ["failed", "retry_pending"]);
+    }),
+    safeCount("getMonitoringCounts.failedScheduleRuns", async () => {
+      const supabase = getSupabaseServiceClient();
+      return await supabase.from("content_schedule_runs").select("id", { count: "exact", head: true }).eq("status", "failed");
+    }),
   ]);
 
   return {
@@ -375,7 +380,7 @@ function mergeUsers(authUsers: User[], profiles: ProfileRow[]): AdminUserRecord[
 
     return {
       id: authUser.id,
-      email: authUser.email ?? profile?.email ?? UNAVAILABLE_LABEL,
+      email: authUser.email ?? profile?.email ?? FALLBACK_UNAVAILABLE_LABEL,
       role: profile?.role ?? "user",
       createdAt: authUser.created_at ?? profile?.created_at ?? null,
       status: summarizeUserStatus(authUser),
@@ -390,10 +395,10 @@ function mergeUsers(authUsers: User[], profiles: ProfileRow[]): AdminUserRecord[
 
     mergedUsers.push({
       id: profile.id,
-      email: profile.email || UNAVAILABLE_LABEL,
+      email: profile.email || FALLBACK_UNAVAILABLE_LABEL,
       role: profile.role,
       createdAt: profile.created_at,
-      status: UNAVAILABLE_LABEL,
+      status: FALLBACK_UNAVAILABLE_LABEL,
     });
   }
 
@@ -403,10 +408,10 @@ function mergeUsers(authUsers: User[], profiles: ProfileRow[]): AdminUserRecord[
 function mapWebsites(rows: WebsiteRow[], emailMap: Map<string, string>): AdminWebsiteRecord[] {
   return rows.map((row) => ({
     id: row.id,
-    title: row.site_title ?? UNAVAILABLE_LABEL,
-    ownerEmail: emailMap.get(row.user_id) ?? UNAVAILABLE_LABEL,
-    status: row.status ?? UNAVAILABLE_LABEL,
-    websiteType: row.website_type ?? UNAVAILABLE_LABEL,
+    title: row.site_title ?? FALLBACK_UNAVAILABLE_LABEL,
+    ownerEmail: emailMap.get(row.user_id) ?? FALLBACK_UNAVAILABLE_LABEL,
+    status: row.status ?? FALLBACK_UNAVAILABLE_LABEL,
+    websiteType: row.website_type ?? FALLBACK_UNAVAILABLE_LABEL,
     createdAt: row.generated_at,
     updatedAt: row.updated_at,
   }));
@@ -415,7 +420,7 @@ function mapWebsites(rows: WebsiteRow[], emailMap: Map<string, string>): AdminWe
 function buildAlerts(monitoringCounts: MonitoringCounts): { alerts: AdminAlertItem[]; systemStatus: string; systemTone: AdminTone } {
   if (!monitoringCounts.isAvailable) {
     return {
-      systemStatus: UNAVAILABLE_LABEL,
+      systemStatus: FALLBACK_UNAVAILABLE_LABEL,
       systemTone: "warning",
       alerts: [
         {
@@ -485,7 +490,7 @@ function buildRecentActivity(
 
   const publishActivity: AdminActivityItem[] = publishJobs.map((job) => ({
     id: `publish-${job.id}`,
-    title: `${job.platform ?? UNAVAILABLE_LABEL} publish job ${job.status ?? UNAVAILABLE_LABEL}`,
+    title: `${job.platform ?? FALLBACK_UNAVAILABLE_LABEL} publish job ${job.status ?? FALLBACK_UNAVAILABLE_LABEL}`,
     detail: job.last_error ?? "Publishing workflow updated recently.",
     timestamp: job.updated_at ?? job.published_at,
     tone: toToneFromStatus(job.status),
@@ -493,7 +498,7 @@ function buildRecentActivity(
 
   const scheduleActivity: AdminActivityItem[] = scheduleRuns.map((run) => ({
     id: `schedule-${run.id}`,
-    title: `Content schedule run ${run.status ?? UNAVAILABLE_LABEL}`,
+    title: `Content schedule run ${run.status ?? FALLBACK_UNAVAILABLE_LABEL}`,
     detail: run.error ?? "Content scheduling workflow updated recently.",
     timestamp: run.updated_at ?? run.completed_at,
     tone: run.status === "failed" ? "error" : "info",
@@ -513,7 +518,7 @@ export async function listAdminUsers(limit = 25): Promise<AdminUserRecord[]> {
 
 export async function listAdminWebsites(limit = 25): Promise<AdminWebsiteRecord[]> {
   return withAdminFallback("listAdminWebsites", [], async () => {
-    const websiteRows = await listRecentWebsiteRows(Math.max(limit, 24));
+    const websiteRows = await listRecentWebsiteRows(Math.max(limit, DEFAULT_RECENT_RECORD_LIMIT));
     const emailMap = await getEmailMap([...new Set(websiteRows.map((row) => row.user_id))]);
     return mapWebsites(websiteRows, emailMap).slice(0, limit);
   });
@@ -566,12 +571,12 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
 
 export function formatAdminDate(value: string | null | undefined): string {
   if (!value) {
-    return UNAVAILABLE_LABEL;
+    return FALLBACK_UNAVAILABLE_LABEL;
   }
 
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
-    return UNAVAILABLE_LABEL;
+    return FALLBACK_UNAVAILABLE_LABEL;
   }
 
   return new Intl.DateTimeFormat("en-US", {
