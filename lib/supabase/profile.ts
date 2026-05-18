@@ -81,19 +81,20 @@ function resolveSeededProfileRole(email: string): ProfileRole | null {
 }
 
 function getErrorMessage(error: unknown): string {
-  if (!error || typeof error !== "object" || !("message" in error) || typeof error.message !== "string") {
-    return "";
-  }
-
-  return error.message;
+  return getErrorStringField(error, "message") ?? "";
 }
 
 function getErrorCode(error: unknown): string | undefined {
-  if (!error || typeof error !== "object" || !("code" in error) || typeof error.code !== "string") {
+  return getErrorStringField(error, "code");
+}
+
+function getErrorStringField(error: unknown, field: "code" | "message"): string | undefined {
+  if (!error || typeof error !== "object") {
     return undefined;
   }
 
-  return error.code;
+  const record = error as Record<string, unknown>;
+  return typeof record[field] === "string" ? record[field] : undefined;
 }
 
 function isMissingProfilesTableError(error: unknown): boolean {
@@ -110,7 +111,7 @@ function isMissingProfileRoleColumnError(error: unknown): boolean {
   return (
     code === "42703" ||
     message.includes("could not find the 'role' column of 'profiles'") ||
-    (message.includes("profiles") && message.includes("role") && message.includes("column") && message.includes("does not exist"))
+    message.includes("column \"role\" of relation \"profiles\" does not exist")
   );
 }
 
@@ -294,8 +295,8 @@ export async function syncProfileFromAuthUser(user: User): Promise<void> {
         error: { message: error.message, name: "SupabaseProfileSchemaWarning" },
       });
 
-      const fallbackProfileRow = { ...profileRow };
-      delete fallbackProfileRow.role;
+      const { role, ...fallbackProfileRow } = profileRow;
+      void role;
       const { error: fallbackError } = await supabase.from("profiles").upsert(fallbackProfileRow, { onConflict: "id" });
 
       if (!fallbackError) {
