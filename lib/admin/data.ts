@@ -100,6 +100,42 @@ export interface AdminDashboardData {
   };
 }
 
+function createEmptyAdminDashboardData(): AdminDashboardData {
+  return {
+    users: {
+      total: null,
+      admins: null,
+      recentSignups: null,
+      records: [],
+    },
+    websites: {
+      total: null,
+      published: null,
+      drafts: null,
+      records: [],
+    },
+    monitoring: {
+      failedJobs: null,
+      systemStatus: "Monitoring limited",
+      systemTone: "warning",
+      alerts: [
+        {
+          id: "admin-data-unavailable",
+          title: "Admin data unavailable",
+          detail: "Admin metrics are temporarily unavailable. Empty states are being shown instead of failing the page.",
+          tone: "warning",
+        },
+      ],
+      recentActivity: [],
+    },
+    analytics: {
+      websiteGenerationVolume: null,
+      publishingActivity: null,
+      userGrowth: null,
+    },
+  };
+}
+
 function parseTimestamp(value: string | null | undefined): number {
   if (!value) {
     return 0;
@@ -440,67 +476,79 @@ function buildRecentActivity(
 }
 
 export async function listAdminUsers(limit = 25): Promise<AdminUserRecord[]> {
-  const [authUsers, profiles] = await Promise.all([listAuthUsers(Math.max(limit, 100)), listProfileRows(Math.max(limit, 100))]);
-  return mergeUsers(authUsers, profiles).slice(0, limit);
+  try {
+    const [authUsers, profiles] = await Promise.all([listAuthUsers(Math.max(limit, 100)), listProfileRows(Math.max(limit, 100))]);
+    return mergeUsers(authUsers, profiles).slice(0, limit);
+  } catch {
+    return [];
+  }
 }
 
 export async function listAdminWebsites(limit = 25): Promise<AdminWebsiteRecord[]> {
-  const websiteRows = await listRecentWebsiteRows(limit);
-  const emailMap = await getEmailMap([...new Set(websiteRows.map((row) => row.user_id))]);
-  return mapWebsites(websiteRows, emailMap).slice(0, limit);
+  try {
+    const websiteRows = await listRecentWebsiteRows(limit);
+    const emailMap = await getEmailMap([...new Set(websiteRows.map((row) => row.user_id))]);
+    return mapWebsites(websiteRows, emailMap).slice(0, limit);
+  } catch {
+    return [];
+  }
 }
 
 export async function getAdminDashboardData(): Promise<AdminDashboardData> {
-  const [allUsers, userCounts, websiteCounts, websiteRows, monitoringCounts, publishJobs, scheduleRuns] = await Promise.all([
-    listAdminUsers(100),
-    getUserCounts(),
-    getWebsiteCounts(),
-    listRecentWebsiteRows(100),
-    getMonitoringCounts(),
-    listRecentPublishJobs(4),
-    listRecentScheduleRuns(4),
-  ]);
+  try {
+    const [allUsers, userCounts, websiteCounts, websiteRows, monitoringCounts, publishJobs, scheduleRuns] = await Promise.all([
+      listAdminUsers(100),
+      getUserCounts(),
+      getWebsiteCounts(),
+      listRecentWebsiteRows(100),
+      getMonitoringCounts(),
+      listRecentPublishJobs(4),
+      listRecentScheduleRuns(4),
+    ]);
 
-  const emailMap = await getEmailMap([...new Set(websiteRows.map((row) => row.user_id))]);
-  const websites = mapWebsites(websiteRows, emailMap);
-  const recentSignups = countItemsSince(allUsers, 7);
-  const userGrowth = countItemsSince(allUsers, 30);
-  const websiteGenerationVolume = countItemsSince(
-    websites.map((website) => ({ createdAt: website.createdAt })),
-    30,
-  );
-  const alertsSummary = buildAlerts(
-    monitoringCounts.failedPublishJobs,
-    monitoringCounts.failedScheduleRuns,
-    monitoringCounts.totalFailed,
-  );
+    const emailMap = await getEmailMap([...new Set(websiteRows.map((row) => row.user_id))]);
+    const websites = mapWebsites(websiteRows, emailMap);
+    const recentSignups = countItemsSince(allUsers, 7);
+    const userGrowth = countItemsSince(allUsers, 30);
+    const websiteGenerationVolume = countItemsSince(
+      websites.map((website) => ({ createdAt: website.createdAt })),
+      30,
+    );
+    const alertsSummary = buildAlerts(
+      monitoringCounts.failedPublishJobs,
+      monitoringCounts.failedScheduleRuns,
+      monitoringCounts.totalFailed,
+    );
 
-  return {
-    users: {
-      total: userCounts.total,
-      admins: userCounts.admins,
-      recentSignups,
-      records: allUsers.slice(0, 6),
-    },
-    websites: {
-      total: websiteCounts.total,
-      published: websiteCounts.published,
-      drafts: websiteCounts.drafts,
-      records: websites.slice(0, 8),
-    },
-    monitoring: {
-      failedJobs: monitoringCounts.totalFailed,
-      systemStatus: alertsSummary.systemStatus,
-      systemTone: alertsSummary.systemTone,
-      alerts: alertsSummary.alerts,
-      recentActivity: buildRecentActivity(websites, publishJobs, scheduleRuns),
-    },
-    analytics: {
-      websiteGenerationVolume,
-      publishingActivity: websiteCounts.published,
-      userGrowth,
-    },
-  };
+    return {
+      users: {
+        total: userCounts.total,
+        admins: userCounts.admins,
+        recentSignups,
+        records: allUsers.slice(0, 6),
+      },
+      websites: {
+        total: websiteCounts.total,
+        published: websiteCounts.published,
+        drafts: websiteCounts.drafts,
+        records: websites.slice(0, 8),
+      },
+      monitoring: {
+        failedJobs: monitoringCounts.totalFailed,
+        systemStatus: alertsSummary.systemStatus,
+        systemTone: alertsSummary.systemTone,
+        alerts: alertsSummary.alerts,
+        recentActivity: buildRecentActivity(websites, publishJobs, scheduleRuns),
+      },
+      analytics: {
+        websiteGenerationVolume,
+        publishingActivity: websiteCounts.published,
+        userGrowth,
+      },
+    };
+  } catch {
+    return createEmptyAdminDashboardData();
+  }
 }
 
 export function formatAdminDate(value: string | null | undefined): string {

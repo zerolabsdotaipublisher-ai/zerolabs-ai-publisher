@@ -54,6 +54,11 @@ type AuthUserMetadata = {
   avatar_url?: string;
 };
 
+type SupabaseProfileErrorLike = {
+  code?: string;
+  message?: string;
+};
+
 const ADMIN_PROFILE_EMAILS = new Set(["zerolabsaipublisher@gmail.com"]);
 
 function extractUserMetadataFromAuth(user: User): AuthUserMetadata {
@@ -80,6 +85,72 @@ function resolveSeededProfileRole(email: string): ProfileRole | null {
   return ADMIN_PROFILE_EMAILS.has(email.trim().toLowerCase()) ? "admin" : null;
 }
 
+function getErrorMessage(error: unknown): string {
+  if (!error || typeof error !== "object" || !("message" in error) || typeof error.message !== "string") {
+    return "";
+  }
+
+  return error.message;
+}
+
+function isMissingProfilesTableError(error: unknown): boolean {
+  const code = typeof error === "object" && error && "code" in error ? (error as SupabaseProfileErrorLike).code : undefined;
+  const message = getErrorMessage(error).toLowerCase();
+
+  return code === "42P01" || message.includes("relation \"public.profiles\" does not exist");
+}
+
+function isMissingProfileRoleColumnError(error: unknown): boolean {
+  const code = typeof error === "object" && error && "code" in error ? (error as SupabaseProfileErrorLike).code : undefined;
+  const message = getErrorMessage(error).toLowerCase();
+
+  return (
+    code === "42703" ||
+    message.includes("could not find the 'role' column of 'profiles'") ||
+    (message.includes("profiles") && message.includes("role") && message.includes("column"))
+  );
+}
+
+function isRecoverableProfileSchemaError(error: unknown): boolean {
+  return isMissingProfilesTableError(error) || isMissingProfileRoleColumnError(error);
+}
+
+function normalizeProfileRole(role: unknown): ProfileRole {
+  return role === "admin" ? "admin" : "user";
+}
+
+function buildFallbackProfile(user: User): Profile {
+  const timestamp = user.created_at ?? new Date().toISOString();
+
+  return {
+    id: user.id,
+    email: user.email ?? "",
+    role: "user",
+    full_name: null,
+    avatar_url: null,
+    preferences: null,
+    metadata: null,
+    created_at: timestamp,
+    updated_at: timestamp,
+  };
+}
+
+function normalizeProfileRow(data: Partial<Profile>): Profile {
+  const timestamp = typeof data.created_at === "string" ? data.created_at : new Date().toISOString();
+
+  return {
+    id: typeof data.id === "string" ? data.id : "",
+    email: typeof data.email === "string" ? data.email : "",
+    role: normalizeProfileRole(data.role),
+    full_name: typeof data.full_name === "string" ? data.full_name : null,
+    avatar_url: typeof data.avatar_url === "string" ? data.avatar_url : null,
+    preferences: data.preferences && typeof data.preferences === "object" ? data.preferences : null,
+    metadata: data.metadata && typeof data.metadata === "object" ? data.metadata : null,
+    created_at: timestamp,
+    updated_at: typeof data.updated_at === "string" ? data.updated_at : timestamp,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Service layer
 // ---------------------------------------------------------------------------
@@ -100,6 +171,16 @@ export async function getProfile(userId: string): Promise<Profile | null> {
     // PGRST116 = "no rows returned" — not an error, simply absent
     if (error.code === "PGRST116") return null;
 
+    if (isRecoverableProfileSchemaError(error)) {
+      logger.warn("getProfile fallback due to missing profile schema", {
+        category: "error",
+        service: "supabase",
+        userId,
+        error: { message: error.message, name: "SupabaseProfileSchemaWarning" },
+      });
+      return null;
+    }
+
     logger.error("getProfile failed", {
       category: "error",
       service: "supabase",
@@ -109,7 +190,7 @@ export async function getProfile(userId: string): Promise<Profile | null> {
     throw error;
   }
 
-  return data as Profile;
+  return normalizeProfileRow(data as Partial<Profile>);
 }
 
 /**
@@ -155,10 +236,7 @@ export async function ensureProfile(user: User): Promise<Profile> {
   await syncProfileFromAuthUser(user);
 
   const created = await getProfile(user.id);
-  if (!created) {
-    throw new Error(`Profile not found after sync for user ${user.id}`);
-  }
-  return created;
+  return created ?? buildFallbackProfile(user);
 }
 
 /**
@@ -205,6 +283,42 @@ export async function syncProfileFromAuthUser(user: User): Promise<void> {
   const { error } = await supabase.from("profiles").upsert(profileRow, { onConflict: "id" });
 
   if (error) {
+    if (profileRow.role && isMissingProfileRoleColumnError(error)) {
+      logger.warn("profile sync falling back because role column is unavailable", {
+        category: "error",
+        service: "supabase",
+        userId: user.id,
+        error: { message: error.message, name: "SupabaseProfileSchemaWarning" },
+      });
+
+      const { role: _ignoredRole, ...fallbackProfileRow } = profileRow;
+      const { error: fallbackError } = await supabase.from("profiles").upsert(fallbackProfileRow, { onConflict: "id" });
+
+      if (!fallbackError) {
+        return;
+      }
+
+      if (isRecoverableProfileSchemaError(fallbackError)) {
+        logger.warn("profile sync skipped because profile schema is unavailable", {
+          category: "error",
+          service: "supabase",
+          userId: user.id,
+          error: { message: fallbackError.message, name: "SupabaseProfileSchemaWarning" },
+        });
+        return;
+      }
+    }
+
+    if (isRecoverableProfileSchemaError(error)) {
+      logger.warn("profile sync skipped because profile schema is unavailable", {
+        category: "error",
+        service: "supabase",
+        userId: user.id,
+        error: { message: error.message, name: "SupabaseProfileSchemaWarning" },
+      });
+      return;
+    }
+
     logger.error("profile sync failed", {
       category: "error",
       service: "supabase",
