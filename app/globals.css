@@ -988,7 +988,7 @@ html[data-theme="dark"] .auth-panel-list {
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  flex: 1 1 16rem;
+  flex: 1 1 100%;
 }
 
 .marketing-nav-login {
@@ -1001,7 +1001,7 @@ html[data-theme="dark"] .auth-panel-list {
 
 @media (min-width: 640px) {
   .marketing-nav-search {
-    width: auto;
+    width: clamp(11.75rem, 25vw, 16.75rem);
     min-width: 0;
     flex: 1 1 clamp(11.75rem, 25vw, 16.75rem);
   }
@@ -1039,7 +1039,7 @@ html[data-theme="dark"] .auth-panel-list {
   .marketing-nav-search {
     width: clamp(11rem, 22vw, 17.25rem);
     min-width: 0;
-    flex: 1 1 clamp(12.75rem, 23.5vw, 17.25rem);
+    flex: 1 1 clamp(11rem, 22vw, 17.25rem);
   }
 
   .marketing-nav-login {
@@ -1419,7 +1419,7 @@ html[data-theme="dark"] .auth-panel-list {
   width: 100%;
   min-width: 0;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   flex-wrap: wrap;
   gap: 0.75rem;
   grid-area: actions;
@@ -3035,7 +3035,7 @@ html[data-theme="dark"] .auth-panel-list {
   padding: 0.75rem 0.9rem;
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 0.75rem;
   background: rgba(248, 249, 250, 0.03);
 }
@@ -3814,7 +3814,7 @@ html[data-theme="dark"] .auth-panel-list {
   }
 
   .app-nav-actions {
-    justify-content: space-between;
+    justify-content: flex-start;
   }
 
   .app-nav-signout-group {
