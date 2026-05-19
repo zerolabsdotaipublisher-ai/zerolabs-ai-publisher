@@ -877,7 +877,7 @@ html[data-theme="dark"] .auth-panel-list {
 }
 
 .marketing-shell {
-  width: min(100% - 2rem, 1440px);
+  width: min(calc(100% - 2rem), 1440px);
   margin-inline: auto;
 }
 
@@ -903,7 +903,7 @@ html[data-theme="dark"] .auth-panel-list {
   flex-wrap: wrap;
   align-items: center;
   gap: clamp(0.65rem, 1.4vw, 1rem) clamp(1rem, 2.3vw, 1.75rem);
-  font-size: clamp(0.86rem, 0.75rem + 0.26vw, 0.95rem);
+  font-size: clamp(0.86rem, 0.78rem + 0.17vw, 0.95rem);
 }
 
 .marketing-nav-actions {
@@ -1113,7 +1113,7 @@ html[data-theme="dark"] .auth-panel-list {
   background: transparent;
   color: var(--marketing-search-text);
   font: inherit;
-  font-size: clamp(0.9rem, 0.82rem + 0.22vw, 0.98rem);
+  font-size: clamp(0.9rem, 0.82rem + 0.16vw, 0.98rem);
   font-weight: 500;
   line-height: 1.2;
   padding: clamp(0.62rem, 1vw, 0.78rem) 0;

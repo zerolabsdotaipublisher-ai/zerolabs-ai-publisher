@@ -273,7 +273,7 @@ export function LandingPage() {
                     Sustainable humanistic AI · futuristic nature interface
                   </p>
                   <h1
-                    className={`${headingClass} max-w-[720px] text-[clamp(2.4rem,8vw,6.25rem)] font-semibold tracking-[-0.045em]`}
+                    className={`${headingClass} max-w-[720px] text-[clamp(2.4rem,1.8rem+3vw,6.25rem)] font-semibold tracking-[-0.045em]`}
                     style={{ lineHeight: 0.92 }}
                   >
                     Turn prompts
@@ -288,10 +288,16 @@ export function LandingPage() {
                 </div>
 
                 <div className="flex flex-col gap-[clamp(0.75rem,2vw,1rem)] sm:flex-row sm:flex-wrap" style={{ marginTop: "clamp(36px, 4vw, 52px)" }}>
-                  <Link href={routes.signup} className="marketing-primary-button inline-flex min-h-14 w-full items-center justify-center rounded-full text-sm font-semibold sm:w-auto">
+                  <Link
+                    href={routes.signup}
+                    className="marketing-primary-button inline-flex min-h-14 w-full items-center justify-center rounded-full px-[clamp(1rem,1.8vw,1.5rem)] text-sm font-semibold sm:w-auto"
+                  >
                     Start building
                   </Link>
-                  <Link href="#platform" className="marketing-secondary-button inline-flex min-h-14 w-full items-center justify-center rounded-full text-sm font-semibold sm:w-auto">
+                  <Link
+                    href="#platform"
+                    className="marketing-secondary-button inline-flex min-h-14 w-full items-center justify-center rounded-full px-[clamp(0.95rem,1.7vw,1.4rem)] text-sm font-semibold sm:w-auto"
+                  >
                     Learn more
                   </Link>
                 </div>
