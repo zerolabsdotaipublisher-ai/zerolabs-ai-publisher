@@ -261,9 +261,9 @@ export function LandingPage() {
               style={{ opacity: isDark ? 0.14 : 0.12, filter: "drop-shadow(0 0 36px rgba(31,111,95,0.16)) saturate(1.04)" }}
             />
 
-            <div className="relative z-10 grid min-h-[inherit] gap-[clamp(1.75rem,4vw,3.5rem)] lg:grid-cols-[minmax(0,0.9fr)_minmax(0,0.85fr)] lg:items-center">
+            <div className="relative z-10 grid min-h-[inherit] gap-[clamp(1.5rem,3.5vw,3rem)] lg:grid-cols-[minmax(0,0.9fr)_minmax(0,0.85fr)] lg:items-center">
               <div className="max-w-[min(40rem,100%)] self-center">
-                <div style={{ display: "grid", gap: "clamp(24px, 3vw, 32px)" }}>
+                <div style={{ display: "grid", gap: "clamp(20px, 2.6vw, 28px)" }}>
                   <div className="inline-flex items-center gap-3 text-sm font-semibold tracking-[0.08em] text-current">
                     <Image src={heroAccentLogo} alt="" width={32} height={32} className="h-8 w-8" priority />
                     <span>Zero Labs AI Publisher</span>
@@ -287,7 +287,7 @@ export function LandingPage() {
                   </p>
                 </div>
 
-                <div className="flex flex-col gap-[clamp(0.75rem,2vw,1rem)] sm:flex-row sm:flex-wrap" style={{ marginTop: "clamp(36px, 4vw, 52px)" }}>
+                <div className="flex flex-col gap-[clamp(0.7rem,1.6vw,0.9rem)] sm:flex-row sm:flex-wrap" style={{ marginTop: "clamp(30px, 3.4vw, 44px)" }}>
                   <Link
                     href={routes.signup}
                     className="marketing-primary-button inline-flex min-h-14 w-full items-center justify-center rounded-full px-[clamp(1rem,1.8vw,1.5rem)] text-sm font-semibold sm:w-auto"
@@ -310,7 +310,7 @@ export function LandingPage() {
                   width={820}
                   height={1080}
                   priority
-                  className="pointer-events-none absolute right-[-8%] bottom-[-8%] h-auto max-h-[clamp(400px,54vw,640px)] w-auto max-w-full object-contain xl:right-[-4%]"
+                  className="pointer-events-none absolute right-[-4%] bottom-[-8%] h-auto max-h-[clamp(400px,54vw,640px)] w-auto max-w-full object-contain xl:right-[-2%]"
                   style={{
                     opacity: isDark ? 0.62 : 0.46,
                     filter: "drop-shadow(0 0 56px rgba(31,111,95,0.18)) saturate(1.08) brightness(1.02)",

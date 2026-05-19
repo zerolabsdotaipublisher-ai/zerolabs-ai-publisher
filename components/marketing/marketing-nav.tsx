@@ -23,7 +23,8 @@ const navigationItems: Array<{ label: string; href: string; desktopOnly?: boolea
 
 function buildSurfaceStyle(isDark: boolean): CSSProperties {
   return {
-    padding: "clamp(18px, 2.2vw, 24px) clamp(20px, 3vw, 36px)",
+    ["--marketing-nav-padding-block" as string]: "clamp(18px, 2.2vw, 24px)",
+    ["--marketing-nav-padding-inline" as string]: "clamp(20px, 3vw, 36px)",
     ["--marketing-surface-bg" as string]: isDark ? "rgba(11,36,29,0.74)" : "rgba(248,249,250,0.82)",
     ["--marketing-surface-border" as string]: isDark ? "rgba(173,230,205,0.18)" : "rgba(31,111,95,0.16)",
     ["--marketing-surface-shadow" as string]: isDark
@@ -54,7 +55,7 @@ export function MarketingNav({
   };
 
   const content = (
-    <header className="marketing-panel-surface rounded-[36px] backdrop-blur-2xl" style={buildSurfaceStyle(isDark)}>
+    <header className="marketing-panel-surface marketing-nav-surface rounded-[36px] backdrop-blur-2xl" style={buildSurfaceStyle(isDark)}>
       <div className="marketing-nav-layout">
         <div className="marketing-nav-brand flex items-center justify-between gap-3 lg:justify-start">
           <Link href={routes.home} className="flex min-w-0 items-center gap-3">

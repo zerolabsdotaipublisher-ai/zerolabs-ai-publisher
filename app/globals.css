@@ -888,6 +888,11 @@ html[data-theme="dark"] .auth-panel-list {
   align-items: center;
 }
 
+.marketing-nav-surface {
+  padding-block: var(--marketing-nav-padding-block, clamp(18px, 2.2vw, 24px));
+  padding-inline: var(--marketing-nav-padding-inline, clamp(20px, 3vw, 36px));
+}
+
 .marketing-nav-brand {
   min-width: 0;
   grid-area: brand;
@@ -937,13 +942,17 @@ html[data-theme="dark"] .auth-panel-list {
 }
 
 @media (min-width: 768px) {
+  .marketing-nav-surface {
+    padding-block: clamp(16px, 1.6vw, 20px);
+  }
+
   .marketing-nav-layout {
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
       "brand actions"
       "links links";
     column-gap: clamp(0.9rem, 2.2vw, 1.6rem);
-    row-gap: clamp(0.7rem, 1.5vw, 1.1rem);
+    row-gap: clamp(0.45rem, 1vw, 0.8rem);
   }
 
   .marketing-nav-links-list {
@@ -953,6 +962,12 @@ html[data-theme="dark"] .auth-panel-list {
   .marketing-nav-actions {
     justify-content: flex-end;
     column-gap: clamp(0.7rem, 1.1vw, 0.9rem);
+  }
+}
+
+@media (min-width: 1180px) {
+  .marketing-nav-surface {
+    padding-block: var(--marketing-nav-padding-block, clamp(18px, 2.2vw, 24px));
   }
 }
 
