@@ -249,25 +249,10 @@ export function LandingPage() {
               }}
             />
 
-            <Image
-              src="/images/FULL ROBOT BODY.svg"
-              alt=""
-              width={820}
-              height={1080}
-              priority
-              className={[
-                "marketing-hero-mobile-art pointer-events-none absolute h-auto object-contain lg:hidden",
-                "right-[-18%] bottom-[-18%] w-[clamp(200px,50vw,320px)]",
-                "sm:right-[-16%]",
-                "md:right-[-24%] md:bottom-[-24%] md:w-[clamp(220px,30vw,280px)]",
-              ].join(" ")}
-              style={{ opacity: isDark ? 0.14 : 0.12, filter: "drop-shadow(0 0 36px rgba(31,111,95,0.16)) saturate(1.04)" }}
-            />
-
-            <div className="marketing-hero-layout relative z-10 grid min-h-[inherit] gap-[clamp(1.4rem,2.8vw,2.6rem)] lg:grid-cols-[minmax(0,0.8fr)_minmax(0,0.96fr)] lg:items-center xl:grid-cols-[minmax(0,0.78fr)_minmax(0,1fr)]">
-              <div className="marketing-hero-copy max-w-[min(36.5rem,100%)] self-center lg:justify-self-center xl:justify-self-start">
+            <div className="marketing-hero-layout relative z-10">
+              <div className="marketing-hero-copy">
                 <div style={{ display: "grid", gap: "clamp(17px, 2vw, 24px)" }}>
-                  <div className="inline-flex items-center gap-3 text-sm font-semibold tracking-[0.08em] text-current">
+                  <div className="flex flex-wrap items-center gap-3 text-sm font-semibold tracking-[0.08em] text-current">
                     <Image src={heroAccentLogo} alt="" width={32} height={32} className="h-8 w-8" priority />
                     <span>Zero Labs AI Publisher</span>
                   </div>
@@ -288,39 +273,46 @@ export function LandingPage() {
                   </p>
                 </div>
 
-                <div className="flex flex-col gap-[clamp(0.68rem,1.05vw,0.82rem)] sm:flex-row sm:flex-wrap sm:items-center" style={{ marginTop: "clamp(24px, 2.5vw, 36px)" }}>
+                <div className="flex flex-wrap items-stretch gap-[clamp(0.68rem,1.05vw,0.82rem)]" style={{ marginTop: "clamp(24px, 2.5vw, 36px)" }}>
                   <Link
                     href={routes.signup}
-                    className="marketing-primary-button inline-flex min-h-14 w-full items-center justify-center rounded-full px-[clamp(1rem,1.8vw,1.5rem)] text-sm font-semibold sm:w-auto"
+                    className="marketing-primary-button inline-flex min-h-14 flex-1 items-center justify-center rounded-full px-[clamp(1rem,1.8vw,1.5rem)] text-sm font-semibold sm:flex-none"
                   >
                     Start building
                   </Link>
                   <Link
                     href="#platform"
-                    className="marketing-secondary-button inline-flex min-h-14 w-full items-center justify-center rounded-full px-[clamp(0.95rem,1.7vw,1.4rem)] text-sm font-semibold sm:w-auto"
+                    className="marketing-secondary-button inline-flex min-h-14 flex-1 items-center justify-center rounded-full px-[clamp(0.95rem,1.7vw,1.4rem)] text-sm font-semibold sm:flex-none"
                   >
                     Learn more
                   </Link>
                 </div>
               </div>
 
-              <div className="marketing-hero-visual relative hidden lg:block lg:min-h-[clamp(390px,45vw,600px)]">
-                <Image
-                  src="/images/FULL ROBOT BODY.svg"
-                  alt=""
-                  width={820}
-                  height={1080}
-                  priority
-                  className={[
-                    "pointer-events-none absolute h-auto w-auto max-w-full object-contain",
-                    "bottom-[-5%] right-[2.5%] max-h-[clamp(430px,56vw,690px)]",
-                    "xl:bottom-[-3%] xl:right-[5%] 2xl:right-[6%]",
-                  ].join(" ")}
+              <div className="marketing-hero-visual">
+                <div
+                  className="marketing-hero-visual-shell"
                   style={{
-                    opacity: isDark ? 0.56 : 0.4,
-                    filter: "drop-shadow(0 0 56px rgba(31,111,95,0.18)) saturate(1.08) brightness(1.02)",
+                    borderColor: isDark ? "rgba(173,230,205,0.18)" : "rgba(31,111,95,0.16)",
+                    background: isDark
+                      ? "linear-gradient(180deg, rgba(8,28,22,0.42) 0%, rgba(6,26,20,0.16) 100%)"
+                      : "linear-gradient(180deg, rgba(248,249,250,0.64) 0%, rgba(234,242,239,0.26) 100%)",
+                    boxShadow: isDark ? "0 24px 72px rgba(0,0,0,0.18)" : "0 24px 72px rgba(18,65,112,0.08)",
                   }}
-                />
+                >
+                  <Image
+                    src="/images/FULL ROBOT BODY.svg"
+                    alt=""
+                    width={820}
+                    height={1080}
+                    priority
+                    className="marketing-hero-robot pointer-events-none h-auto w-full object-contain"
+                    style={{
+                      opacity: isDark ? 0.56 : 0.4,
+                      filter: "drop-shadow(0 0 56px rgba(31,111,95,0.18)) saturate(1.08) brightness(1.02)",
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </section>
@@ -335,7 +327,7 @@ export function LandingPage() {
             {featureCards.map((card) => (
               <article
                 key={card.title}
-                className="marketing-glow-card group relative flex min-h-[clamp(290px,40vw,360px)] h-full flex-col overflow-hidden rounded-[36px]"
+                className="marketing-glow-card group relative flex min-h-[clamp(18rem,30vw,22rem)] h-full flex-col overflow-hidden rounded-[36px]"
                 style={buildCardStyle(
                   "clamp(34px, 4vw, 48px)",
                   isDark ? "rgba(11,36,29,0.18)" : "rgba(248,249,250,0.20)",
@@ -395,7 +387,7 @@ export function LandingPage() {
                       {card.description}
                     </p>
                   </div>
-                  <Link href={card.href} className="marketing-secondary-button inline-flex w-fit min-h-12 items-center justify-center rounded-full px-7 text-sm font-semibold">
+                  <Link href={card.href} className="marketing-secondary-button inline-flex min-h-12 w-full items-center justify-center rounded-full px-7 text-sm font-semibold sm:w-fit">
                     {card.ctaLabel}
                   </Link>
                 </div>
@@ -441,19 +433,19 @@ export function LandingPage() {
                   {section.cards.map((card) => (
                     <article
                       key={card.title}
-                        className="marketing-glow-card flex min-h-[clamp(228px,27vw,264px)] h-full flex-col rounded-[32px]"
+                      className="marketing-glow-card flex min-h-[clamp(14rem,22vw,16.5rem)] h-full flex-col rounded-[32px]"
                       style={buildCardStyle(
                         "clamp(28px, 3vw, 36px)",
                         isDark ? "rgba(11,36,29,0.14)" : "rgba(248,249,250,0.16)",
                         isDark ? "0 16px 48px rgba(0, 0, 0, 0.08)" : "0 16px 48px rgba(18, 65, 112, 0.04)"
                       )}
                     >
-                        <div className="flex h-full flex-col justify-between" style={{ gap: "14px" }}>
-                          <h3 className={`${headingClass} text-2xl font-semibold`}>{card.title}</h3>
-                          <p className="marketing-copy-muted text-base" style={{ lineHeight: 1.76 }}>
-                            {card.description}
-                          </p>
-                        </div>
+                      <div className="flex h-full flex-col justify-between" style={{ gap: "14px" }}>
+                        <h3 className={`${headingClass} text-2xl font-semibold`}>{card.title}</h3>
+                        <p className="marketing-copy-muted text-base" style={{ lineHeight: 1.76 }}>
+                          {card.description}
+                        </p>
+                      </div>
                     </article>
                   ))}
                 </div>
@@ -498,7 +490,7 @@ export function LandingPage() {
                 {pricingTiers.map((tier) => (
                   <article
                     key={tier.name}
-                    className="marketing-glow-card flex min-h-[clamp(304px,37vw,344px)] h-full flex-col rounded-[32px]"
+                    className="marketing-glow-card flex min-h-[clamp(18rem,28vw,21.5rem)] h-full flex-col rounded-[32px]"
                     style={buildCardStyle(
                       "clamp(28px, 3vw, 36px)",
                       isDark ? "rgba(11,36,29,0.14)" : "rgba(248,249,250,0.16)",
@@ -521,7 +513,7 @@ export function LandingPage() {
                       ))}
                     </ul>
                     <div className="mt-auto pt-7">
-                      <Link href={routes.signup} className="marketing-primary-button inline-flex min-h-12 items-center justify-center rounded-full px-7 text-sm font-semibold">
+                      <Link href={routes.signup} className="marketing-primary-button inline-flex min-h-12 w-full items-center justify-center rounded-full px-7 text-sm font-semibold sm:w-fit">
                         Choose {tier.name}
                       </Link>
                     </div>
@@ -552,7 +544,7 @@ export function LandingPage() {
                   : "radial-gradient(circle at top right, rgba(31,111,95,0.12), transparent 32%), radial-gradient(circle at 12% 18%, rgba(173,230,205,0.12), transparent 24%)",
               }}
             />
-            <div className="relative grid gap-8 lg:grid-cols-[minmax(0,0.72fr)_minmax(0,1fr)] lg:items-center lg:gap-12">
+            <div className="relative grid grid-cols-[repeat(auto-fit,minmax(min(100%,18rem),1fr))] items-center gap-8 lg:gap-12">
               <div className="max-w-xl space-y-5">
                 <p className="marketing-label-muted text-sm font-semibold tracking-[0.08em]">Visual showcase</p>
                 <h2 id="banner-showcase-title" className={`${headingClass} text-3xl font-semibold leading-tight sm:text-4xl lg:text-5xl`}>

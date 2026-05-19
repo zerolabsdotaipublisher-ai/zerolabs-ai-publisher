@@ -9,6 +9,25 @@ interface MarketingFooterProps {
   theme?: MarketingTheme;
 }
 
+const footerLinkGroups = [
+  {
+    title: "Product",
+    links: [
+      { label: "Platform", href: "/#platform" },
+      { label: "Insights", href: "/#insights" },
+      { label: "Pricing", href: "/#pricing" },
+    ],
+  },
+  {
+    title: "Company",
+    links: [
+      { label: "Blog", href: "/blog" },
+      { label: "Login", href: routes.login },
+      { label: "Create account", href: routes.signup },
+    ],
+  },
+] as const;
+
 function buildFooterSurfaceStyle(isDark: boolean): CSSProperties {
   return {
     padding: "clamp(40px, 5vw, 64px)",
@@ -30,11 +49,14 @@ export function MarketingFooter({ contained = false, theme = "light" }: Marketin
   const isDark = theme === "dark";
   const logoSrc = isDark ? "/images/Zero Labs Logo transparent.svg" : "/images/Zero Labs Logo colored.svg";
 
-    const content = (
+  const content = (
     <footer className="marketing-panel-surface rounded-[40px] backdrop-blur-2xl" style={buildFooterSurfaceStyle(isDark)}>
-      <div className="grid gap-12 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] lg:items-end lg:gap-20">
+      <div
+        className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,15rem),1fr))] items-start"
+        style={{ gap: "clamp(24px, 3vw, 48px)" }}
+      >
         <div className="max-w-2xl space-y-6">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <Image src={logoSrc} alt="" width={180} height={40} className="h-10 w-auto" />
             <span className="font-[family:var(--font-heading)] text-sm font-semibold tracking-[0.1em] text-current sm:text-base">
               Zero Labs AI Publisher
@@ -52,8 +74,25 @@ export function MarketingFooter({ contained = false, theme = "light" }: Marketin
           <p className="marketing-copy-muted text-sm">© 2026 Zero Labs AI Publisher. Built by Zero Labs.</p>
         </div>
 
-        <div className="flex items-start lg:justify-end">
-          <Link href={routes.signup} className="marketing-primary-button inline-flex min-h-11 items-center justify-center rounded-full px-6 text-sm font-semibold">
+        {footerLinkGroups.map((group) => (
+          <div key={group.title} className="grid content-start gap-4">
+            <p className="marketing-label-muted text-xs font-semibold tracking-[0.16em] uppercase">{group.title}</p>
+            <div className="grid gap-3">
+              {group.links.map((link) => (
+                <Link key={link.href} href={link.href} className="marketing-copy-muted text-sm transition-colors duration-300 hover:text-current">
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        ))}
+
+        <div className="grid content-start gap-5">
+          <p className="marketing-label-muted text-xs font-semibold tracking-[0.16em] uppercase">Get started</p>
+          <p className="marketing-copy-muted max-w-sm text-sm leading-7">
+            Move from prompt to launch with a fluid workspace that adapts across every screen width.
+          </p>
+          <Link href={routes.signup} className="marketing-primary-button inline-flex min-h-11 w-full items-center justify-center rounded-full px-6 text-sm font-semibold sm:w-fit">
             Start building
           </Link>
         </div>
