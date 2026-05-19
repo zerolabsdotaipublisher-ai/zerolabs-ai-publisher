@@ -278,7 +278,7 @@ export function LandingPage() {
                     Sustainable humanistic AI · futuristic nature interface
                   </p>
                   <h1
-                    className={`${headingClass} max-w-[11ch] text-[clamp(2.4rem,2.18rem+2vw,6.1rem)] font-semibold tracking-[-0.045em]`}
+                    className={`${headingClass} max-w-[12ch] lg:max-w-[12.5ch] text-[clamp(2.4rem,2.18rem+2vw,6.1rem)] font-semibold tracking-[-0.045em]`}
                     style={{ lineHeight: 0.9 }}
                   >
                     <span className="block">Turn prompts into</span>
