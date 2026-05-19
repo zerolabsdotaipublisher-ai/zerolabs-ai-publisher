@@ -257,8 +257,8 @@ export function LandingPage() {
               width={820}
               height={1080}
               priority
-              className="pointer-events-none absolute right-[-16%] bottom-[-14%] h-auto w-[clamp(220px,54vw,360px)] object-contain sm:right-[-12%] md:right-[-16%] md:bottom-[-18%] md:w-[clamp(250px,38vw,340px)] lg:hidden"
-              style={{ opacity: isDark ? 0.18 : 0.16, filter: "drop-shadow(0 0 36px rgba(31,111,95,0.16)) saturate(1.04)" }}
+              className="pointer-events-none absolute right-[-18%] bottom-[-18%] h-auto w-[clamp(200px,50vw,320px)] object-contain sm:right-[-16%] md:right-[-24%] md:bottom-[-24%] md:w-[clamp(220px,30vw,280px)] lg:hidden"
+              style={{ opacity: isDark ? 0.14 : 0.12, filter: "drop-shadow(0 0 36px rgba(31,111,95,0.16)) saturate(1.04)" }}
             />
 
             <div className="relative z-10 grid min-h-[inherit] gap-[clamp(1.75rem,4vw,3.5rem)] lg:grid-cols-[minmax(0,0.9fr)_minmax(0,0.85fr)] lg:items-center">
