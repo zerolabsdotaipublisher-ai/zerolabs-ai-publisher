@@ -220,7 +220,7 @@ export function LandingPage() {
             className="relative overflow-hidden rounded-[44px] border border-transparent transition-colors duration-300 xl:rounded-[52px]"
             style={{
               padding: "clamp(36px, 6vw, 84px)",
-              minHeight: "clamp(520px, 82vh, 760px)",
+              minHeight: "clamp(480px, 72vh, 760px)",
               borderColor: isDark ? "rgba(173,230,205,0.18)" : "rgba(31,111,95,0.16)",
               background: isDark ? "rgba(11,36,29,0.74)" : "rgba(248,249,250,0.74)",
               boxShadow: isDark ? "0 32px 120px rgba(0, 0, 0, 0.28)" : "0 32px 120px rgba(18, 65, 112, 0.10)",
@@ -257,7 +257,7 @@ export function LandingPage() {
               width={820}
               height={1080}
               priority
-              className="pointer-events-none absolute right-[-16%] bottom-[-14%] h-auto w-[clamp(220px,58vw,380px)] object-contain sm:right-[-12%] md:right-[-20%] md:bottom-[-22%] md:w-[clamp(280px,44vw,420px)] lg:hidden"
+              className="pointer-events-none absolute right-[-16%] bottom-[-14%] h-auto w-[clamp(220px,54vw,360px)] object-contain sm:right-[-12%] md:right-[-16%] md:bottom-[-18%] md:w-[clamp(250px,38vw,340px)] lg:hidden"
               style={{ opacity: isDark ? 0.18 : 0.16, filter: "drop-shadow(0 0 36px rgba(31,111,95,0.16)) saturate(1.04)" }}
             />
 
@@ -312,7 +312,7 @@ export function LandingPage() {
                   priority
                   className="pointer-events-none absolute right-[-8%] bottom-[-8%] h-auto max-h-[clamp(400px,54vw,640px)] w-auto max-w-full object-contain xl:right-[-4%]"
                   style={{
-                    opacity: isDark ? 0.72 : 0.54,
+                    opacity: isDark ? 0.62 : 0.46,
                     filter: "drop-shadow(0 0 56px rgba(31,111,95,0.18)) saturate(1.08) brightness(1.02)",
                   }}
                 />
