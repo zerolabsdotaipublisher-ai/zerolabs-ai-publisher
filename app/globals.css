@@ -1426,7 +1426,7 @@ html[data-theme="dark"] .auth-panel-list {
 }
 
 .app-nav-user {
-  max-width: min(100%, 20rem);
+  max-width: min(20rem, 100%);
   padding: 0.72rem 1rem;
   border: 1px solid rgba(173, 230, 205, 0.16);
   border-radius: 9999px;
@@ -2783,6 +2783,11 @@ html[data-theme="dark"] .auth-panel-list {
 }
 
 .dashboard-home-shell {
+  --dashboard-header-min-width: 19rem;
+  --dashboard-metric-min-width: 12rem;
+  --dashboard-two-column-min-width: 22rem;
+  --dashboard-quick-action-min-width: 13rem;
+  --dashboard-definition-min-width: 10rem;
   width: 100%;
   max-width: 80rem;
   min-width: 0;
@@ -2806,7 +2811,7 @@ html[data-theme="dark"] .auth-panel-list {
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--dashboard-header-min-width)), 1fr));
   gap: 1.25rem;
   align-items: stretch;
 }
@@ -2920,7 +2925,7 @@ html[data-theme="dark"] .auth-panel-list {
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--dashboard-metric-min-width)), 1fr));
   gap: 0.9rem;
 }
 
@@ -2960,7 +2965,7 @@ html[data-theme="dark"] .auth-panel-list {
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--dashboard-two-column-min-width)), 1fr));
   gap: 0.9rem;
 }
 
@@ -2969,7 +2974,7 @@ html[data-theme="dark"] .auth-panel-list {
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--dashboard-quick-action-min-width)), 1fr));
   gap: 0.9rem;
 }
 
@@ -3077,7 +3082,7 @@ html[data-theme="dark"] .auth-panel-list {
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--dashboard-definition-min-width)), 1fr));
   gap: 0.75rem;
 }
 
