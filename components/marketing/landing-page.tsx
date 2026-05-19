@@ -257,7 +257,12 @@ export function LandingPage() {
               width={820}
               height={1080}
               priority
-              className="pointer-events-none absolute right-[-18%] bottom-[-18%] h-auto w-[clamp(200px,50vw,320px)] object-contain sm:right-[-16%] md:right-[-24%] md:bottom-[-24%] md:w-[clamp(220px,30vw,280px)] lg:hidden"
+              className={[
+                "pointer-events-none absolute h-auto object-contain lg:hidden",
+                "right-[-18%] bottom-[-18%] w-[clamp(200px,50vw,320px)]",
+                "sm:right-[-16%]",
+                "md:right-[-24%] md:bottom-[-24%] md:w-[clamp(220px,30vw,280px)]",
+              ].join(" ")}
               style={{ opacity: isDark ? 0.14 : 0.12, filter: "drop-shadow(0 0 36px rgba(31,111,95,0.16)) saturate(1.04)" }}
             />
 
@@ -310,7 +315,11 @@ export function LandingPage() {
                   width={820}
                   height={1080}
                   priority
-                  className="pointer-events-none absolute right-0 bottom-[-8%] h-auto max-h-[clamp(400px,54vw,640px)] w-auto max-w-full object-contain xl:right-[2%]"
+                  className={[
+                    "pointer-events-none absolute bottom-[-8%] h-auto w-auto max-w-full object-contain",
+                    "right-0 max-h-[clamp(400px,54vw,640px)]",
+                    "xl:right-[2%]",
+                  ].join(" ")}
                   style={{
                     opacity: isDark ? 0.58 : 0.42,
                     filter: "drop-shadow(0 0 56px rgba(31,111,95,0.18)) saturate(1.08) brightness(1.02)",
