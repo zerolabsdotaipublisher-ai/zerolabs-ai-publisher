@@ -12,15 +12,17 @@ export function DashboardContentSummarySection({ summary }: DashboardContentSumm
       <header>
         <h2>Content summary</h2>
         <p>Generated and scheduled content state from existing content storage and scheduling systems.</p>
-        <Link className="dashboard-inline-link" href={routes.contentLibrary}>
-          Open content library
-        </Link>
-        <Link className="dashboard-inline-link" href={routes.review}>
-          Open review queue
-        </Link>
-        <Link className="dashboard-inline-link" href={routes.approval}>
-          Open approval queue
-        </Link>
+        <div className="dashboard-panel-actions">
+          <Link className="dashboard-inline-link" href={routes.contentLibrary}>
+            Open content library
+          </Link>
+          <Link className="dashboard-inline-link" href={routes.review}>
+            Open review queue
+          </Link>
+          <Link className="dashboard-inline-link" href={routes.approval}>
+            Open approval queue
+          </Link>
+        </div>
       </header>
       <dl className="dashboard-definition-grid">
         <div>

@@ -13,12 +13,12 @@ interface MarketingNavProps {
   onToggleTheme?: () => void;
 }
 
-const navigationItems: Array<{ label: string; href: string; desktopOnly?: boolean }> = [
+const navigationItems: Array<{ label: string; href: string }> = [
   { label: "Product", href: "#product" },
   { label: "Platform", href: "#platform" },
   { label: "Insights", href: "#insights" },
   { label: "Pricing", href: "#pricing" },
-  { label: "Blog", href: "/blog", desktopOnly: true },
+  { label: "Blog", href: "/blog" },
 ] as const;
 
 function buildSurfaceStyle(isDark: boolean): CSSProperties {
@@ -57,8 +57,8 @@ export function MarketingNav({
   const content = (
     <header className="marketing-panel-surface marketing-nav-surface rounded-[36px] backdrop-blur-2xl" style={buildSurfaceStyle(isDark)}>
       <div className="marketing-nav-layout">
-        <div className="marketing-nav-brand flex items-center justify-between gap-3 lg:justify-start">
-          <Link href={routes.home} className="flex min-w-0 items-center gap-3">
+        <div className="marketing-nav-brand">
+          <Link href={routes.home} className="marketing-nav-brand-link">
             <Image src={logoSrc} alt="" width={180} height={40} priority className="h-10 w-auto shrink-0" />
             <span className="marketing-nav-brand-text min-w-0 font-[family:var(--font-heading)] text-[clamp(0.8rem,0.65rem+0.35vw,1rem)] font-semibold tracking-[0.06em] text-current">
               Zero Labs AI Publisher
@@ -71,18 +71,15 @@ export function MarketingNav({
           className="marketing-nav-links marketing-label-muted"
         >
           <div className="marketing-nav-links-list">
-          {navigationItems.map((item) => (
-            <Link
-              key={item.label}
-              href={resolveHref(item.href)}
-              className={[
-                "transition-colors duration-300 hover:text-current",
-                item.desktopOnly ? "hidden xl:inline-flex" : "inline-flex",
-              ].join(" ")}
-            >
-              {item.label}
-            </Link>
-          ))}
+            {navigationItems.map((item) => (
+              <Link
+                key={item.label}
+                href={resolveHref(item.href)}
+                className="inline-flex transition-colors duration-300 hover:text-current"
+              >
+                {item.label}
+              </Link>
+            ))}
           </div>
         </nav>
 
