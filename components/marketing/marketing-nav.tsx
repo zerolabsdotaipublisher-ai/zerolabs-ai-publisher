@@ -55,11 +55,11 @@ export function MarketingNav({
 
   const content = (
     <header className="marketing-panel-surface rounded-[36px] backdrop-blur-2xl" style={buildSurfaceStyle(isDark)}>
-      <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(220px,auto)_minmax(0,1fr)_auto] lg:items-center lg:gap-6 xl:grid-cols-[minmax(240px,auto)_minmax(0,1fr)_auto] xl:gap-8">
-        <div className="flex items-center justify-between gap-3 lg:justify-start">
+      <div className="marketing-nav-layout">
+        <div className="marketing-nav-brand flex items-center justify-between gap-3 lg:justify-start">
           <Link href={routes.home} className="flex min-w-0 items-center gap-3">
             <Image src={logoSrc} alt="" width={180} height={40} priority className="h-10 w-auto shrink-0" />
-            <span className="min-w-0 font-[family:var(--font-heading)] text-sm font-semibold tracking-[0.06em] text-current sm:text-base">
+            <span className="min-w-0 font-[family:var(--font-heading)] text-[clamp(0.8rem,0.7rem+0.3vw,1rem)] font-semibold tracking-[0.06em] text-current">
               Zero Labs AI Publisher
             </span>
           </Link>
@@ -67,8 +67,9 @@ export function MarketingNav({
 
         <nav
           aria-label="Primary navigation"
-          className="marketing-label-muted flex flex-wrap items-center justify-center gap-x-7 gap-y-3 text-sm font-medium tracking-[0.04em] sm:gap-x-8 lg:flex-nowrap lg:gap-x-6 xl:gap-x-8"
+          className="marketing-nav-links marketing-label-muted"
         >
+          <div className="marketing-nav-links-list">
           {navigationItems.map((item) => (
             <Link
               key={item.label}
@@ -81,12 +82,13 @@ export function MarketingNav({
               {item.label}
             </Link>
           ))}
+          </div>
         </nav>
 
-        <div className="flex flex-wrap items-center justify-end gap-3 lg:min-w-0 lg:flex-nowrap">
+        <div className="marketing-nav-actions">
           <form
             role="search"
-            className="marketing-search-control order-3 w-full min-w-0 sm:order-none sm:w-[220px] lg:w-[240px] xl:w-[280px]"
+            className="marketing-nav-search marketing-search-control"
             onSubmit={(event) => event.preventDefault()}
           >
             <label className="sr-only" htmlFor="marketing-search">
@@ -108,7 +110,7 @@ export function MarketingNav({
           </form>
           <Link
             href={routes.login}
-            className="marketing-primary-button min-w-[156px] px-7 text-sm font-semibold whitespace-nowrap"
+            className="marketing-nav-login marketing-primary-button text-sm font-semibold whitespace-nowrap"
           >
             Login / Sign up
           </Link>

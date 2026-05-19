@@ -220,7 +220,7 @@ export function LandingPage() {
             className="relative overflow-hidden rounded-[44px] border border-transparent transition-colors duration-300 xl:rounded-[52px]"
             style={{
               padding: "clamp(36px, 6vw, 84px)",
-              minHeight: "clamp(620px, 70vw, 780px)",
+              minHeight: "clamp(520px, 82vh, 760px)",
               borderColor: isDark ? "rgba(173,230,205,0.18)" : "rgba(31,111,95,0.16)",
               background: isDark ? "rgba(11,36,29,0.74)" : "rgba(248,249,250,0.74)",
               boxShadow: isDark ? "0 32px 120px rgba(0, 0, 0, 0.28)" : "0 32px 120px rgba(18, 65, 112, 0.10)",
@@ -257,12 +257,12 @@ export function LandingPage() {
               width={820}
               height={1080}
               priority
-              className="pointer-events-none absolute right-[-8%] bottom-[-8%] h-auto w-[72%] max-w-[320px] object-contain sm:max-w-[360px] lg:hidden"
+              className="pointer-events-none absolute right-[-16%] bottom-[-14%] h-auto w-[clamp(220px,58vw,380px)] object-contain sm:right-[-12%] md:right-[-20%] md:bottom-[-22%] md:w-[clamp(280px,44vw,420px)] lg:hidden"
               style={{ opacity: isDark ? 0.18 : 0.16, filter: "drop-shadow(0 0 36px rgba(31,111,95,0.16)) saturate(1.04)" }}
             />
 
-            <div className="relative z-10 grid min-h-[inherit] gap-14 lg:grid-cols-[minmax(0,0.92fr)_minmax(320px,0.78fr)] lg:items-center">
-              <div className="max-w-[640px] self-center">
+            <div className="relative z-10 grid min-h-[inherit] gap-[clamp(1.75rem,4vw,3.5rem)] lg:grid-cols-[minmax(0,0.9fr)_minmax(0,0.85fr)] lg:items-center">
+              <div className="max-w-[min(40rem,100%)] self-center">
                 <div style={{ display: "grid", gap: "clamp(24px, 3vw, 32px)" }}>
                   <div className="inline-flex items-center gap-3 text-sm font-semibold tracking-[0.08em] text-current">
                     <Image src={heroAccentLogo} alt="" width={32} height={32} className="h-8 w-8" priority />
@@ -273,7 +273,7 @@ export function LandingPage() {
                     Sustainable humanistic AI · futuristic nature interface
                   </p>
                   <h1
-                    className={`${headingClass} max-w-[720px] text-[clamp(3.6rem,7vw,6.25rem)] font-semibold tracking-[-0.045em]`}
+                    className={`${headingClass} max-w-[720px] text-[clamp(2.4rem,8vw,6.25rem)] font-semibold tracking-[-0.045em]`}
                     style={{ lineHeight: 0.92 }}
                   >
                     Turn prompts
@@ -282,29 +282,29 @@ export function LandingPage() {
                     <br />
                     AI websites
                   </h1>
-                  <p className="marketing-copy-muted max-w-[34rem] text-base sm:text-lg" style={{ lineHeight: 1.85 }}>
+                  <p className="marketing-copy-muted max-w-[34rem] text-[clamp(1rem,0.92rem+0.35vw,1.125rem)]" style={{ lineHeight: 1.78 }}>
                     Zero Labs AI Publisher transforms a prompt into a polished website and guides the publishing workflow all the way to release.
                   </p>
                 </div>
 
-                <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap" style={{ marginTop: "clamp(36px, 4vw, 52px)" }}>
-                  <Link href={routes.signup} className="marketing-primary-button inline-flex min-h-14 items-center justify-center rounded-full px-8 text-sm font-semibold">
+                <div className="flex flex-col gap-[clamp(0.75rem,2vw,1rem)] sm:flex-row sm:flex-wrap" style={{ marginTop: "clamp(36px, 4vw, 52px)" }}>
+                  <Link href={routes.signup} className="marketing-primary-button inline-flex min-h-14 w-full items-center justify-center rounded-full text-sm font-semibold sm:w-auto">
                     Start building
                   </Link>
-                  <Link href="#platform" className="marketing-secondary-button inline-flex min-h-14 items-center justify-center rounded-full px-8 text-sm font-semibold">
+                  <Link href="#platform" className="marketing-secondary-button inline-flex min-h-14 w-full items-center justify-center rounded-full text-sm font-semibold sm:w-auto">
                     Learn more
                   </Link>
                 </div>
               </div>
 
-              <div className="relative hidden min-h-[540px] lg:block">
+              <div className="relative hidden lg:block lg:min-h-[clamp(360px,44vw,560px)]">
                 <Image
                   src="/images/FULL ROBOT BODY.svg"
                   alt=""
                   width={820}
                   height={1080}
                   priority
-                  className="pointer-events-none absolute right-[-3%] bottom-[-4%] h-auto max-h-[580px] w-auto max-w-[92%] object-contain xl:max-h-[640px]"
+                  className="pointer-events-none absolute right-[-8%] bottom-[-8%] h-auto max-h-[clamp(400px,54vw,640px)] w-auto max-w-full object-contain xl:right-[-4%]"
                   style={{
                     opacity: isDark ? 0.72 : 0.54,
                     filter: "drop-shadow(0 0 56px rgba(31,111,95,0.18)) saturate(1.08) brightness(1.02)",
@@ -316,11 +316,15 @@ export function LandingPage() {
         </div>
 
         <div className="marketing-shell" style={{ marginTop: heroToFeaturesSpacing }}>
-          <section id="platform" className="grid gap-8 lg:grid-cols-2" style={{ gap: "clamp(28px, 3vw, 40px)" }}>
+          <section
+            id="platform"
+            className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,18rem),1fr))]"
+            style={{ gap: "clamp(28px, 3vw, 40px)" }}
+          >
             {featureCards.map((card) => (
               <article
                 key={card.title}
-                className="marketing-glow-card group relative min-h-[360px] overflow-hidden rounded-[36px]"
+                className="marketing-glow-card group relative min-h-[clamp(280px,42vw,360px)] overflow-hidden rounded-[36px]"
                 style={buildCardStyle(
                   "clamp(34px, 4vw, 48px)",
                   isDark ? "rgba(11,36,29,0.18)" : "rgba(248,249,250,0.20)",
@@ -419,11 +423,14 @@ export function LandingPage() {
                   </p>
                 </div>
 
-                <div className="grid gap-6 sm:gap-8 lg:grid-cols-3" style={{ marginTop: "clamp(40px, 4vw, 56px)", gap: "clamp(24px, 2.5vw, 36px)" }}>
+                <div
+                  className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,15rem),1fr))]"
+                  style={{ marginTop: "clamp(40px, 4vw, 56px)", gap: "clamp(24px, 2.5vw, 36px)" }}
+                >
                   {section.cards.map((card) => (
                     <article
                       key={card.title}
-                      className="marketing-glow-card min-h-[240px] rounded-[32px]"
+                      className="marketing-glow-card min-h-[clamp(220px,28vw,260px)] rounded-[32px]"
                       style={buildCardStyle(
                         "clamp(28px, 3vw, 36px)",
                         isDark ? "rgba(11,36,29,0.14)" : "rgba(248,249,250,0.16)",
@@ -473,11 +480,14 @@ export function LandingPage() {
                 </p>
               </div>
 
-              <div className="grid gap-6 sm:gap-8 lg:grid-cols-3" style={{ marginTop: "clamp(40px, 4vw, 56px)", gap: "clamp(24px, 2.5vw, 36px)" }}>
+              <div
+                className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,16.5rem),1fr))]"
+                style={{ marginTop: "clamp(40px, 4vw, 56px)", gap: "clamp(24px, 2.5vw, 36px)" }}
+              >
                 {pricingTiers.map((tier) => (
                   <article
                     key={tier.name}
-                    className="marketing-glow-card flex min-h-[340px] flex-col rounded-[32px]"
+                    className="marketing-glow-card flex min-h-[clamp(300px,38vw,340px)] flex-col rounded-[32px]"
                     style={buildCardStyle(
                       "clamp(28px, 3vw, 36px)",
                       isDark ? "rgba(11,36,29,0.14)" : "rgba(248,249,250,0.16)",
