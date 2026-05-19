@@ -1435,8 +1435,6 @@ html[data-theme="dark"] .auth-panel-list {
   font-size: 0.875rem;
   white-space: normal;
   overflow-wrap: anywhere;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .app-nav-signout-group {
