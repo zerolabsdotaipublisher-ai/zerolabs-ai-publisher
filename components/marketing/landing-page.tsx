@@ -192,9 +192,9 @@ export function LandingPage() {
   const heroChalkGlow = isDark ? "rgba(234,242,239,0.10)" : "rgba(234,242,239,0.10)";
   const heroMintGlow = isDark ? "rgba(173,230,205,0.10)" : "rgba(173,230,205,0.10)";
 
-  return (
+    return (
     <main
-      className="min-h-screen overflow-x-hidden text-[var(--marketing-text)] transition-colors duration-300"
+      className="min-h-screen text-[var(--marketing-text)] transition-colors duration-300"
       style={{ backgroundColor: isDark ? "#061A14" : "#F8F9FA" }}
     >
       <div
@@ -217,7 +217,7 @@ export function LandingPage() {
         <div className="marketing-shell" style={{ marginTop: "clamp(48px, 6vw, 80px)" }}>
           <section
             id="product"
-            className="relative overflow-hidden rounded-[44px] border border-transparent transition-colors duration-300 xl:rounded-[52px]"
+            className="marketing-hero-section relative overflow-hidden rounded-[44px] border border-transparent transition-colors duration-300 xl:rounded-[52px]"
             style={{
               padding: "clamp(36px, 6vw, 84px)",
               minHeight: "clamp(480px, 72vh, 760px)",
@@ -258,7 +258,7 @@ export function LandingPage() {
               height={1080}
               priority
               className={[
-                "pointer-events-none absolute h-auto object-contain lg:hidden",
+                "marketing-hero-mobile-art pointer-events-none absolute h-auto object-contain lg:hidden",
                 "right-[-18%] bottom-[-18%] w-[clamp(200px,50vw,320px)]",
                 "sm:right-[-16%]",
                 "md:right-[-24%] md:bottom-[-24%] md:w-[clamp(220px,30vw,280px)]",
@@ -266,8 +266,8 @@ export function LandingPage() {
               style={{ opacity: isDark ? 0.14 : 0.12, filter: "drop-shadow(0 0 36px rgba(31,111,95,0.16)) saturate(1.04)" }}
             />
 
-            <div className="relative z-10 grid min-h-[inherit] gap-[clamp(1.4rem,2.8vw,2.6rem)] lg:grid-cols-[minmax(0,0.8fr)_minmax(0,0.96fr)] lg:items-center xl:grid-cols-[minmax(0,0.78fr)_minmax(0,1fr)]">
-              <div className="max-w-[min(36.5rem,100%)] self-center lg:justify-self-center xl:justify-self-start">
+            <div className="marketing-hero-layout relative z-10 grid min-h-[inherit] gap-[clamp(1.4rem,2.8vw,2.6rem)] lg:grid-cols-[minmax(0,0.8fr)_minmax(0,0.96fr)] lg:items-center xl:grid-cols-[minmax(0,0.78fr)_minmax(0,1fr)]">
+              <div className="marketing-hero-copy max-w-[min(36.5rem,100%)] self-center lg:justify-self-center xl:justify-self-start">
                 <div style={{ display: "grid", gap: "clamp(17px, 2vw, 24px)" }}>
                   <div className="inline-flex items-center gap-3 text-sm font-semibold tracking-[0.08em] text-current">
                     <Image src={heroAccentLogo} alt="" width={32} height={32} className="h-8 w-8" priority />
@@ -306,7 +306,7 @@ export function LandingPage() {
                 </div>
               </div>
 
-              <div className="relative hidden lg:block lg:min-h-[clamp(390px,45vw,600px)]">
+              <div className="marketing-hero-visual relative hidden lg:block lg:min-h-[clamp(390px,45vw,600px)]">
                 <Image
                   src="/images/FULL ROBOT BODY.svg"
                   alt=""

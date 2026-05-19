@@ -60,7 +60,7 @@ export function MarketingNav({
         <div className="marketing-nav-brand flex items-center justify-between gap-3 lg:justify-start">
           <Link href={routes.home} className="flex min-w-0 items-center gap-3">
             <Image src={logoSrc} alt="" width={180} height={40} priority className="h-10 w-auto shrink-0" />
-            <span className="min-w-0 font-[family:var(--font-heading)] text-[clamp(0.8rem,0.65rem+0.35vw,1rem)] font-semibold tracking-[0.06em] text-current">
+            <span className="marketing-nav-brand-text min-w-0 font-[family:var(--font-heading)] text-[clamp(0.8rem,0.65rem+0.35vw,1rem)] font-semibold tracking-[0.06em] text-current">
               Zero Labs AI Publisher
             </span>
           </Link>
@@ -111,7 +111,7 @@ export function MarketingNav({
           </form>
           <Link
             href={routes.login}
-            className="marketing-nav-login marketing-primary-button text-sm font-semibold whitespace-nowrap"
+            className="marketing-nav-login marketing-primary-button text-sm font-semibold"
           >
             Login / Sign up
           </Link>
