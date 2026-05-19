@@ -30,9 +30,9 @@ export function MarketingFooter({ contained = false, theme = "light" }: Marketin
   const isDark = theme === "dark";
   const logoSrc = isDark ? "/images/Zero Labs Logo transparent.svg" : "/images/Zero Labs Logo colored.svg";
 
-  const content = (
+    const content = (
     <footer className="marketing-panel-surface rounded-[40px] backdrop-blur-2xl" style={buildFooterSurfaceStyle(isDark)}>
-      <div className="grid gap-12 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)] lg:items-end lg:gap-20">
+      <div className="grid gap-12 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] lg:items-end lg:gap-20">
         <div className="max-w-2xl space-y-6">
           <div className="flex items-center gap-3">
             <Image src={logoSrc} alt="" width={180} height={40} className="h-10 w-auto" />
