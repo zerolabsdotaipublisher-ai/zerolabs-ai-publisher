@@ -37,11 +37,11 @@ type PricingTier = {
 
 const THEME_STORAGE_KEY = "zero-labs-ai-publisher-theme";
 const headingClass = "font-[family:var(--font-heading)]";
-const heroToFeaturesSpacing = "clamp(52px, 6.4vw, 76px)";
-const featureToStorySpacing = "clamp(60px, 7.6vw, 88px)";
-const majorSectionSpacing = "clamp(52px, 6.5vw, 84px)";
-const pricingToBannerSpacing = "clamp(56px, 7vw, 84px)";
-const bannerToFooterSpacing = "clamp(64px, 7vw, 88px)";
+const heroToFeaturesSpacing = "clamp(40px, 5.2vw, 64px)";
+const featureToStorySpacing = "clamp(44px, 5.8vw, 72px)";
+const majorSectionSpacing = "clamp(40px, 5.4vw, 68px)";
+const pricingToBannerSpacing = "clamp(42px, 5.5vw, 70px)";
+const bannerToFooterSpacing = "clamp(48px, 5.8vw, 74px)";
 
 const featureCards: FeatureCard[] = [
   {
@@ -251,7 +251,7 @@ export function LandingPage() {
 
             <div className="marketing-hero-layout relative z-10">
               <div className="marketing-hero-copy">
-                <div style={{ display: "grid", gap: "clamp(17px, 2vw, 24px)" }}>
+                <div style={{ display: "grid", gap: "clamp(14px, 1.8vw, 20px)" }}>
                   <div className="flex flex-wrap items-center gap-3 text-sm font-semibold tracking-[0.08em] text-current">
                     <Image src={heroAccentLogo} alt="" width={32} height={32} className="h-8 w-8" priority />
                     <span>Zero Labs AI Publisher</span>
@@ -261,19 +261,19 @@ export function LandingPage() {
                     Sustainable humanistic AI · futuristic nature interface
                   </p>
                   <h1
-                    className={`${headingClass} max-w-[12ch] lg:max-w-[12.5ch] text-[clamp(2.4rem,2.18rem+2vw,6.1rem)] font-semibold tracking-[-0.045em]`}
+                    className={`${headingClass} marketing-hero-title max-w-[12ch] font-semibold tracking-[-0.045em]`}
                     style={{ lineHeight: 0.9 }}
                   >
                     <span className="block">Turn prompts into</span>
                     <span className="block">published AI</span>
                     <span className="block">websites</span>
                   </h1>
-                  <p className="marketing-copy-muted max-w-[29rem] text-[clamp(1rem,0.94rem+0.22vw,1.08rem)]" style={{ lineHeight: 1.76 }}>
+                  <p className="marketing-copy-muted max-w-[28rem] text-[clamp(0.98rem,0.9rem+0.28vw,1.08rem)]" style={{ lineHeight: 1.72 }}>
                     Zero Labs AI Publisher transforms a prompt into a polished website and guides the publishing workflow all the way to release.
                   </p>
                 </div>
 
-                <div className="flex flex-wrap items-stretch gap-[clamp(0.68rem,1.05vw,0.82rem)]" style={{ marginTop: "clamp(24px, 2.5vw, 36px)" }}>
+                <div className="flex flex-wrap items-stretch gap-[clamp(0.62rem,0.9vw,0.82rem)]" style={{ marginTop: "clamp(18px, 2vw, 30px)" }}>
                   <Link
                     href={routes.signup}
                     className="marketing-primary-button inline-flex min-h-14 flex-1 items-center justify-center rounded-full px-[clamp(1rem,1.8vw,1.5rem)] text-sm font-semibold sm:flex-none"
@@ -327,9 +327,9 @@ export function LandingPage() {
             {featureCards.map((card) => (
               <article
                 key={card.title}
-                className="marketing-glow-card group relative flex min-h-[clamp(18rem,30vw,22rem)] h-full flex-col overflow-hidden rounded-[36px]"
+                className="marketing-glow-card group relative flex min-h-[clamp(16rem,24vw,19rem)] h-full flex-col overflow-hidden rounded-[36px]"
                 style={buildCardStyle(
-                  "clamp(34px, 4vw, 48px)",
+                  "clamp(24px, 3vw, 38px)",
                   isDark ? "rgba(11,36,29,0.18)" : "rgba(248,249,250,0.20)",
                   isDark ? "0 18px 60px rgba(0, 0, 0, 0.12)" : "0 18px 60px rgba(18, 65, 112, 0.04)"
                 )}
@@ -382,7 +382,7 @@ export function LandingPage() {
                       </svg>
                     </span>
                     <p className="marketing-label-muted text-sm font-semibold tracking-[0.08em]">{card.eyebrow}</p>
-                    <h2 className={`${headingClass} max-w-[15ch] text-3xl font-semibold leading-tight sm:text-4xl`}>{card.title}</h2>
+                    <h2 className={`${headingClass} marketing-section-card-title max-w-[15ch] font-semibold leading-tight`}>{card.title}</h2>
                     <p className="marketing-copy-muted max-w-xl text-base" style={{ lineHeight: 1.76 }}>
                       {card.description}
                     </p>
@@ -403,7 +403,7 @@ export function LandingPage() {
                 id={section.id}
                 className="marketing-panel-surface relative overflow-hidden rounded-[40px] backdrop-blur-xl"
                 style={buildPanelStyle(
-                  "clamp(36px, 5vw, 56px)",
+                  "clamp(28px, 4vw, 46px)",
                   isDark ? "rgba(11,36,29,0.72)" : "rgba(248,249,250,0.74)",
                   isDark ? "0 20px 80px rgba(0, 0, 0, 0.16)" : "0 20px 80px rgba(18, 65, 112, 0.05)",
                   isDark ? "rgba(173,230,205,0.16)" : "rgba(31,111,95,0.14)",
@@ -420,7 +420,7 @@ export function LandingPage() {
                 />
                 <div className="relative max-w-[760px]" style={{ display: "grid", gap: "22px" }}>
                   <p className="marketing-label-muted text-sm font-semibold tracking-[0.08em]">{section.eyebrow}</p>
-                  <h2 className={`${headingClass} text-3xl font-semibold leading-tight sm:text-4xl lg:text-5xl`}>{section.title}</h2>
+                  <h2 className={`${headingClass} marketing-section-title font-semibold leading-tight`}>{section.title}</h2>
                   <p className="marketing-copy-muted max-w-3xl text-base sm:text-lg" style={{ lineHeight: 1.85 }}>
                     {section.description}
                   </p>
@@ -433,15 +433,15 @@ export function LandingPage() {
                   {section.cards.map((card) => (
                     <article
                       key={card.title}
-                      className="marketing-glow-card flex min-h-[clamp(14rem,22vw,16.5rem)] h-full flex-col rounded-[32px]"
+                      className="marketing-glow-card flex min-h-[clamp(12.5rem,18vw,14.5rem)] h-full flex-col rounded-[32px]"
                       style={buildCardStyle(
-                        "clamp(28px, 3vw, 36px)",
+                        "clamp(22px, 2.6vw, 30px)",
                         isDark ? "rgba(11,36,29,0.14)" : "rgba(248,249,250,0.16)",
                         isDark ? "0 16px 48px rgba(0, 0, 0, 0.08)" : "0 16px 48px rgba(18, 65, 112, 0.04)"
                       )}
                     >
                       <div className="flex h-full flex-col justify-between" style={{ gap: "14px" }}>
-                        <h3 className={`${headingClass} text-2xl font-semibold`}>{card.title}</h3>
+                        <h3 className={`${headingClass} marketing-section-card-title font-semibold`}>{card.title}</h3>
                         <p className="marketing-copy-muted text-base" style={{ lineHeight: 1.76 }}>
                           {card.description}
                         </p>
@@ -458,7 +458,7 @@ export function LandingPage() {
               id="pricing"
               className="marketing-panel-surface relative overflow-hidden rounded-[40px] backdrop-blur-xl"
               style={buildPanelStyle(
-                "clamp(36px, 5vw, 56px)",
+                "clamp(28px, 4vw, 46px)",
                 isDark ? "rgba(11,36,29,0.72)" : "rgba(248,249,250,0.74)",
                 isDark ? "0 20px 80px rgba(0, 0, 0, 0.16)" : "0 20px 80px rgba(18, 65, 112, 0.05)",
                 isDark ? "rgba(173,230,205,0.16)" : "rgba(31,111,95,0.14)",
@@ -475,9 +475,9 @@ export function LandingPage() {
               />
               <div className="relative max-w-[760px]" style={{ display: "grid", gap: "22px" }}>
                 <p className="marketing-label-muted text-sm font-semibold tracking-[0.08em]">Pricing</p>
-                <h2 className={`${headingClass} text-3xl font-semibold leading-tight sm:text-4xl lg:text-5xl`}>
-                  Three pricing paths for teams growing into AI-powered publishing operations.
-                </h2>
+                  <h2 className={`${headingClass} marketing-section-title font-semibold leading-tight`}>
+                    Three pricing paths for teams growing into AI-powered publishing operations.
+                  </h2>
                 <p className="marketing-copy-muted max-w-3xl text-base sm:text-lg" style={{ lineHeight: 1.85 }}>
                   Each tier keeps the homepage public-facing and calm while expanding how much of the publishing workflow Zero Labs AI Publisher can orchestrate.
                 </p>
@@ -490,16 +490,16 @@ export function LandingPage() {
                 {pricingTiers.map((tier) => (
                   <article
                     key={tier.name}
-                    className="marketing-glow-card flex min-h-[clamp(18rem,28vw,21.5rem)] h-full flex-col rounded-[32px]"
+                    className="marketing-glow-card flex min-h-[clamp(16rem,22vw,18.5rem)] h-full flex-col rounded-[32px]"
                     style={buildCardStyle(
-                      "clamp(28px, 3vw, 36px)",
+                      "clamp(22px, 2.6vw, 30px)",
                       isDark ? "rgba(11,36,29,0.14)" : "rgba(248,249,250,0.16)",
                       isDark ? "0 16px 48px rgba(0, 0, 0, 0.08)" : "0 16px 48px rgba(18, 65, 112, 0.04)"
                     )}
                   >
                     <div className="flex-1" style={{ display: "grid", gap: "14px" }}>
                       <p className="marketing-label-muted text-sm font-semibold tracking-[0.08em]">{tier.name}</p>
-                      <h3 className={`${headingClass} text-2xl font-semibold`}>{tier.summary}</h3>
+                      <h3 className={`${headingClass} marketing-section-card-title font-semibold`}>{tier.summary}</h3>
                       <p className="marketing-copy-muted text-base" style={{ lineHeight: 1.76 }}>
                         {tier.detail}
                       </p>
@@ -529,7 +529,7 @@ export function LandingPage() {
             aria-labelledby="banner-showcase-title"
             className="marketing-panel-surface relative overflow-hidden rounded-[40px] backdrop-blur-xl"
             style={buildPanelStyle(
-              "clamp(24px, 4vw, 40px)",
+                "clamp(20px, 3vw, 32px)",
               isDark ? "rgba(11,36,29,0.68)" : "rgba(248,249,250,0.74)",
               isDark ? "0 0 42px rgba(31,111,95,0.18), 0 24px 90px rgba(0,0,0,0.16)" : "0 0 34px rgba(31,111,95,0.12), 0 24px 90px rgba(18,65,112,0.08)",
               isDark ? "rgba(173,230,205,0.22)" : "rgba(31,111,95,0.18)",
@@ -547,7 +547,7 @@ export function LandingPage() {
             <div className="relative grid grid-cols-[repeat(auto-fit,minmax(min(100%,18rem),1fr))] items-center gap-8 lg:gap-12">
               <div className="max-w-xl space-y-5">
                 <p className="marketing-label-muted text-sm font-semibold tracking-[0.08em]">Visual showcase</p>
-                <h2 id="banner-showcase-title" className={`${headingClass} text-3xl font-semibold leading-tight sm:text-4xl lg:text-5xl`}>
+                <h2 id="banner-showcase-title" className={`${headingClass} marketing-section-title font-semibold leading-tight`}>
                   A calmer public surface for AI-powered publishing.
                 </h2>
                 <p className="marketing-copy-muted text-base sm:text-lg" style={{ lineHeight: 1.85 }}>
@@ -556,7 +556,7 @@ export function LandingPage() {
               </div>
 
               <div
-                className="relative rounded-[32px] border p-6 sm:p-8 lg:p-10"
+                className="relative rounded-[32px] border p-[clamp(1rem,2.4vw,2rem)]"
                 style={{
                   borderColor: isDark ? "rgba(173,230,205,0.18)" : "rgba(31,111,95,0.16)",
                   background: isDark ? "rgba(6,26,20,0.36)" : "rgba(248,249,250,0.6)",
