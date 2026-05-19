@@ -124,7 +124,6 @@ body {
 
 * {
   box-sizing: border-box;
-  min-width: 0;
   padding: 0;
   margin: 0;
 }
@@ -880,6 +879,11 @@ html[data-theme="dark"] .auth-panel-list {
 .marketing-shell {
   width: min(calc(100% - 2rem), 1440px);
   margin-inline: auto;
+}
+
+.marketing-shell,
+.marketing-shell * {
+  min-width: 0;
 }
 
 .marketing-nav-layout {
