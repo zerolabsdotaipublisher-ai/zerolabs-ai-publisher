@@ -219,8 +219,6 @@ export function LandingPage() {
             id="product"
             className="marketing-hero-section relative overflow-hidden rounded-[44px] border border-transparent transition-colors duration-300 xl:rounded-[52px]"
             style={{
-              padding: "clamp(36px, 6vw, 84px)",
-              minHeight: "clamp(480px, 72vh, 760px)",
               borderColor: isDark ? "rgba(173,230,205,0.18)" : "rgba(31,111,95,0.16)",
               background: isDark ? "rgba(11,36,29,0.74)" : "rgba(248,249,250,0.74)",
               boxShadow: isDark ? "0 32px 120px rgba(0, 0, 0, 0.28)" : "0 32px 120px rgba(18, 65, 112, 0.10)",

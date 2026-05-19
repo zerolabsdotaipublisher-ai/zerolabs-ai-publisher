@@ -1102,15 +1102,20 @@ html[data-theme="dark"] .auth-panel-list {
   z-index: 1;
 }
 
+.marketing-hero-section {
+  padding: clamp(36px, 6vw, 84px);
+  min-height: clamp(480px, 72vh, 760px);
+}
+
 .marketing-hero-mobile-art {
   max-width: min(58vw, 320px);
 }
 
 @media (max-width: 767px) {
   .marketing-hero-section {
-    min-height: 0 !important;
-    padding-right: clamp(1.2rem, 5vw, 2rem) !important;
-    padding-bottom: clamp(9rem, 28vw, 13rem) !important;
+    min-height: 0;
+    padding-right: clamp(1.2rem, 5vw, 2rem);
+    padding-bottom: clamp(9rem, 28vw, 13rem);
   }
 
   .marketing-hero-layout {
