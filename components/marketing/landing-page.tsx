@@ -261,9 +261,9 @@ export function LandingPage() {
               style={{ opacity: isDark ? 0.14 : 0.12, filter: "drop-shadow(0 0 36px rgba(31,111,95,0.16)) saturate(1.04)" }}
             />
 
-            <div className="relative z-10 grid min-h-[inherit] gap-[clamp(1.5rem,3.5vw,3rem)] lg:grid-cols-[minmax(0,0.9fr)_minmax(0,0.85fr)] lg:items-center">
-              <div className="max-w-[min(40rem,100%)] self-center">
-                <div style={{ display: "grid", gap: "clamp(20px, 2.6vw, 28px)" }}>
+            <div className="relative z-10 grid min-h-[inherit] gap-[clamp(1.35rem,3vw,2.75rem)] lg:grid-cols-[minmax(0,0.88fr)_minmax(0,0.86fr)] lg:items-center">
+              <div className="max-w-[min(38rem,100%)] self-center lg:justify-self-start">
+                <div style={{ display: "grid", gap: "clamp(18px, 2.25vw, 26px)" }}>
                   <div className="inline-flex items-center gap-3 text-sm font-semibold tracking-[0.08em] text-current">
                     <Image src={heroAccentLogo} alt="" width={32} height={32} className="h-8 w-8" priority />
                     <span>Zero Labs AI Publisher</span>
@@ -282,12 +282,12 @@ export function LandingPage() {
                     <br />
                     AI websites
                   </h1>
-                  <p className="marketing-copy-muted max-w-[34rem] text-[clamp(1rem,0.92rem+0.35vw,1.125rem)]" style={{ lineHeight: 1.78 }}>
+                  <p className="marketing-copy-muted max-w-[31rem] text-[clamp(1rem,0.92rem+0.3vw,1.1rem)]" style={{ lineHeight: 1.72 }}>
                     Zero Labs AI Publisher transforms a prompt into a polished website and guides the publishing workflow all the way to release.
                   </p>
                 </div>
 
-                <div className="flex flex-col gap-[clamp(0.7rem,1.6vw,0.9rem)] sm:flex-row sm:flex-wrap" style={{ marginTop: "clamp(30px, 3.4vw, 44px)" }}>
+                <div className="flex flex-col gap-[clamp(0.65rem,1.3vw,0.85rem)] sm:flex-row sm:flex-wrap" style={{ marginTop: "clamp(26px, 3vw, 40px)" }}>
                   <Link
                     href={routes.signup}
                     className="marketing-primary-button inline-flex min-h-14 w-full items-center justify-center rounded-full px-[clamp(1rem,1.8vw,1.5rem)] text-sm font-semibold sm:w-auto"
@@ -310,9 +310,9 @@ export function LandingPage() {
                   width={820}
                   height={1080}
                   priority
-                  className="pointer-events-none absolute right-[-4%] bottom-[-8%] h-auto max-h-[clamp(400px,54vw,640px)] w-auto max-w-full object-contain xl:right-[-2%]"
+                  className="pointer-events-none absolute right-0 bottom-[-8%] h-auto max-h-[clamp(400px,54vw,640px)] w-auto max-w-full object-contain xl:right-[2%]"
                   style={{
-                    opacity: isDark ? 0.62 : 0.46,
+                    opacity: isDark ? 0.58 : 0.42,
                     filter: "drop-shadow(0 0 56px rgba(31,111,95,0.18)) saturate(1.08) brightness(1.02)",
                   }}
                 />
@@ -330,7 +330,7 @@ export function LandingPage() {
             {featureCards.map((card) => (
               <article
                 key={card.title}
-                className="marketing-glow-card group relative min-h-[clamp(280px,42vw,360px)] overflow-hidden rounded-[36px]"
+                className="marketing-glow-card group relative flex min-h-[clamp(280px,42vw,360px)] h-full flex-col overflow-hidden rounded-[36px]"
                 style={buildCardStyle(
                   "clamp(34px, 4vw, 48px)",
                   isDark ? "rgba(11,36,29,0.18)" : "rgba(248,249,250,0.20)",
@@ -345,8 +345,8 @@ export function LandingPage() {
                       : "radial-gradient(circle at top right, rgba(173,230,205,0.22), transparent 40%)",
                   }}
                 />
-                <div className="relative flex h-full flex-col justify-between" style={{ gap: "clamp(24px, 3vw, 42px)" }}>
-                  <div style={{ display: "grid", gap: "22px" }}>
+                <div className="relative flex h-full flex-col justify-between" style={{ gap: "clamp(22px, 2.7vw, 34px)" }}>
+                  <div className="flex-1" style={{ display: "grid", gap: "18px" }}>
                     <span
                       aria-hidden="true"
                       className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border"
@@ -386,7 +386,7 @@ export function LandingPage() {
                     </span>
                     <p className="marketing-label-muted text-sm font-semibold tracking-[0.08em]">{card.eyebrow}</p>
                     <h2 className={`${headingClass} max-w-[16ch] text-3xl font-semibold leading-tight sm:text-4xl`}>{card.title}</h2>
-                    <p className="marketing-copy-muted max-w-xl text-base" style={{ lineHeight: 1.8 }}>
+                    <p className="marketing-copy-muted max-w-xl text-base" style={{ lineHeight: 1.72 }}>
                       {card.description}
                     </p>
                   </div>
@@ -436,16 +436,16 @@ export function LandingPage() {
                   {section.cards.map((card) => (
                     <article
                       key={card.title}
-                      className="marketing-glow-card min-h-[clamp(220px,28vw,260px)] rounded-[32px]"
+                      className="marketing-glow-card flex min-h-[clamp(220px,28vw,260px)] h-full flex-col rounded-[32px]"
                       style={buildCardStyle(
                         "clamp(28px, 3vw, 36px)",
                         isDark ? "rgba(11,36,29,0.14)" : "rgba(248,249,250,0.16)",
                         isDark ? "0 16px 48px rgba(0, 0, 0, 0.08)" : "0 16px 48px rgba(18, 65, 112, 0.04)"
                       )}
                     >
-                      <div style={{ display: "grid", gap: "18px" }}>
+                      <div className="flex h-full flex-col justify-between" style={{ gap: "16px" }}>
                         <h3 className={`${headingClass} text-2xl font-semibold`}>{card.title}</h3>
-                        <p className="marketing-copy-muted text-base" style={{ lineHeight: 1.8 }}>
+                        <p className="marketing-copy-muted text-base" style={{ lineHeight: 1.72 }}>
                           {card.description}
                         </p>
                       </div>
@@ -493,21 +493,21 @@ export function LandingPage() {
                 {pricingTiers.map((tier) => (
                   <article
                     key={tier.name}
-                    className="marketing-glow-card flex min-h-[clamp(300px,38vw,340px)] flex-col rounded-[32px]"
+                    className="marketing-glow-card flex min-h-[clamp(300px,38vw,340px)] h-full flex-col rounded-[32px]"
                     style={buildCardStyle(
                       "clamp(28px, 3vw, 36px)",
                       isDark ? "rgba(11,36,29,0.14)" : "rgba(248,249,250,0.16)",
                       isDark ? "0 16px 48px rgba(0, 0, 0, 0.08)" : "0 16px 48px rgba(18, 65, 112, 0.04)"
                     )}
                   >
-                    <div style={{ display: "grid", gap: "18px" }}>
+                    <div className="flex-1" style={{ display: "grid", gap: "16px" }}>
                       <p className="marketing-label-muted text-sm font-semibold tracking-[0.08em]">{tier.name}</p>
                       <h3 className={`${headingClass} text-2xl font-semibold`}>{tier.summary}</h3>
-                      <p className="marketing-copy-muted text-base" style={{ lineHeight: 1.8 }}>
+                      <p className="marketing-copy-muted text-base" style={{ lineHeight: 1.72 }}>
                         {tier.detail}
                       </p>
                     </div>
-                    <ul className="mt-6 space-y-[16px] text-sm leading-6 sm:text-base">
+                    <ul className="mt-5 space-y-[14px] text-sm leading-6 sm:text-base">
                       {tier.features.map((feature) => (
                         <li key={feature} className="flex items-start gap-3">
                           <span className="mt-2 h-2.5 w-2.5 shrink-0 rounded-full bg-[#1F6F5F]" />
