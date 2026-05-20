@@ -3993,7 +3993,7 @@ html[data-theme="dark"] .auth-panel-list {
   margin-top: 1rem;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .app-page {
     padding: 1rem;
   }
