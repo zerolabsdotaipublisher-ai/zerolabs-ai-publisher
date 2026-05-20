@@ -4240,7 +4240,7 @@ html[data-theme="dark"] .auth-panel-list {
   }
 
   .app-nav-link {
-    padding-inline: clamp(0.18rem, 0.4vw, 0.36rem);
+    padding-inline: clamp(0.25rem, 0.45vw, 0.45rem);
   }
 
   .app-nav-actions {
