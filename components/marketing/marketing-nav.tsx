@@ -55,12 +55,12 @@ export function MarketingNav({
   };
 
   const content = (
-    <header className="marketing-panel-surface marketing-nav-surface rounded-[36px] backdrop-blur-2xl" style={buildSurfaceStyle(isDark)}>
+    <header className="marketing-panel-surface marketing-nav-surface" style={buildSurfaceStyle(isDark)}>
       <div className="marketing-nav-layout">
         <div className="marketing-nav-brand">
           <Link href={routes.home} className="marketing-nav-brand-link">
-            <Image src={logoSrc} alt="" width={180} height={40} priority className="marketing-nav-brand-logo h-auto w-auto shrink-0" />
-            <span className="marketing-nav-brand-text min-w-0 font-[family:var(--font-heading)] text-[clamp(0.8rem,0.65rem+0.35vw,1rem)] font-semibold tracking-[0.06em] text-current">
+            <Image src={logoSrc} alt="" width={180} height={40} priority className="marketing-nav-brand-logo" />
+            <span className="marketing-nav-brand-text">
               Zero Labs AI Publisher
             </span>
           </Link>
@@ -75,7 +75,7 @@ export function MarketingNav({
               <Link
                 key={item.label}
                 href={resolveHref(item.href)}
-                className="marketing-nav-link-item inline-flex transition-colors duration-300 hover:text-current"
+                className="marketing-nav-link-item"
               >
                 {item.label}
               </Link>
@@ -108,7 +108,7 @@ export function MarketingNav({
           </form>
           <Link
             href={routes.login}
-            className="marketing-nav-login marketing-primary-button font-semibold"
+            className="marketing-nav-login marketing-primary-button"
           >
             Login / Sign up
           </Link>
