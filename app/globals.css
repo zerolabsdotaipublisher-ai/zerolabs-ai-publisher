@@ -935,7 +935,6 @@ html[data-theme="dark"] .auth-panel-list {
   padding-block: var(--marketing-nav-padding-block, clamp(14px, 1.5vw, 20px));
   padding-inline: var(--marketing-nav-padding-inline, clamp(16px, 2vw, 28px));
   border-radius: var(--marketing-nav-border-radius, 36px);
-  -webkit-backdrop-filter: blur(var(--marketing-nav-blur, 24px));
   backdrop-filter: blur(var(--marketing-nav-blur, 24px));
 }
 
@@ -1019,7 +1018,6 @@ html[data-theme="dark"] .auth-panel-list {
 
 .marketing-nav-search {
   flex: 0 1 clamp(6.5rem, 11vw, 9rem);
-  inline-size: clamp(6.5rem, 11vw, 9rem);
 }
 
 .marketing-nav-login {
@@ -1331,6 +1329,7 @@ html[data-theme="dark"] .auth-panel-list {
   grid-template-columns: max-content minmax(0, 1fr) max-content;
   grid-template-areas: "brand links actions";
   align-items: center;
+  --app-nav-transition-duration: 200ms;
   column-gap: clamp(0.5rem, 0.9vw, 1rem);
   width: 100%;
   min-width: 0;
@@ -1415,11 +1414,11 @@ html[data-theme="dark"] .auth-panel-list {
   white-space: nowrap;
   text-overflow: ellipsis;
   transition:
-    color 200ms ease,
-    border-color 200ms ease,
-    background-color 200ms ease,
-    box-shadow 200ms ease,
-    transform 200ms ease;
+    color var(--app-nav-transition-duration, 200ms) ease,
+    border-color var(--app-nav-transition-duration, 200ms) ease,
+    background-color var(--app-nav-transition-duration, 200ms) ease,
+    box-shadow var(--app-nav-transition-duration, 200ms) ease,
+    transform var(--app-nav-transition-duration, 200ms) ease;
 }
 
 .app-nav-link:hover,
@@ -1504,11 +1503,11 @@ html[data-theme="dark"] .auth-panel-list {
   cursor: pointer;
   box-shadow: 0 0 26px rgba(31, 111, 95, 0.12);
   transition:
-    background-color 200ms ease,
-    border-color 200ms ease,
-    box-shadow 200ms ease,
-    transform 200ms ease,
-    opacity 200ms ease;
+    background-color var(--app-nav-transition-duration, 200ms) ease,
+    border-color var(--app-nav-transition-duration, 200ms) ease,
+    box-shadow var(--app-nav-transition-duration, 200ms) ease,
+    transform var(--app-nav-transition-duration, 200ms) ease,
+    opacity var(--app-nav-transition-duration, 200ms) ease;
 }
 
 .app-nav-signout:hover,
