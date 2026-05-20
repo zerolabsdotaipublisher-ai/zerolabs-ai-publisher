@@ -934,9 +934,9 @@ html[data-theme="dark"] .auth-panel-list {
 .marketing-nav-surface {
   padding-block: var(--marketing-nav-padding-block, clamp(14px, 1.5vw, 20px));
   padding-inline: var(--marketing-nav-padding-inline, clamp(16px, 2vw, 28px));
-  border-radius: 36px;
-  -webkit-backdrop-filter: blur(24px);
-  backdrop-filter: blur(24px);
+  border-radius: var(--marketing-nav-border-radius, 36px);
+  -webkit-backdrop-filter: blur(var(--marketing-nav-blur, 24px));
+  backdrop-filter: blur(var(--marketing-nav-blur, 24px));
 }
 
 .marketing-nav-brand {
@@ -1006,7 +1006,7 @@ html[data-theme="dark"] .auth-panel-list {
   text-align: center;
   overflow: hidden;
   text-overflow: ellipsis;
-  transition: color 200ms ease;
+  transition: color var(--marketing-nav-transition-duration, 200ms) ease;
 }
 
 .marketing-nav-actions {

@@ -25,6 +25,9 @@ function buildSurfaceStyle(isDark: boolean): CSSProperties {
   return {
     ["--marketing-nav-padding-block" as string]: "clamp(17px, 2vw, 22px)",
     ["--marketing-nav-padding-inline" as string]: "clamp(20px, 2.8vw, 34px)",
+    ["--marketing-nav-border-radius" as string]: "36px",
+    ["--marketing-nav-blur" as string]: "24px",
+    ["--marketing-nav-transition-duration" as string]: "200ms",
     ["--marketing-surface-bg" as string]: isDark ? "rgba(11,36,29,0.74)" : "rgba(248,249,250,0.82)",
     ["--marketing-surface-border" as string]: isDark ? "rgba(173,230,205,0.18)" : "rgba(31,111,95,0.16)",
     ["--marketing-surface-shadow" as string]: isDark
