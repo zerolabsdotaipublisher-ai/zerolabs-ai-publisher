@@ -25,6 +25,9 @@ function buildSurfaceStyle(isDark: boolean): CSSProperties {
   return {
     ["--marketing-nav-padding-block" as string]: "clamp(17px, 2vw, 22px)",
     ["--marketing-nav-padding-inline" as string]: "clamp(20px, 2.8vw, 34px)",
+    ["--marketing-nav-border-radius" as string]: "36px",
+    ["--marketing-nav-blur" as string]: "24px",
+    ["--marketing-nav-transition-duration" as string]: "200ms",
     ["--marketing-surface-bg" as string]: isDark ? "rgba(11,36,29,0.74)" : "rgba(248,249,250,0.82)",
     ["--marketing-surface-border" as string]: isDark ? "rgba(173,230,205,0.18)" : "rgba(31,111,95,0.16)",
     ["--marketing-surface-shadow" as string]: isDark
@@ -55,12 +58,12 @@ export function MarketingNav({
   };
 
   const content = (
-    <header className="marketing-panel-surface marketing-nav-surface rounded-[36px] backdrop-blur-2xl" style={buildSurfaceStyle(isDark)}>
+    <header className="marketing-panel-surface marketing-nav-surface" style={buildSurfaceStyle(isDark)}>
       <div className="marketing-nav-layout">
         <div className="marketing-nav-brand">
           <Link href={routes.home} className="marketing-nav-brand-link">
-            <Image src={logoSrc} alt="" width={180} height={40} priority className="h-10 w-auto shrink-0" />
-            <span className="marketing-nav-brand-text min-w-0 font-[family:var(--font-heading)] text-[clamp(0.8rem,0.65rem+0.35vw,1rem)] font-semibold tracking-[0.06em] text-current">
+            <Image src={logoSrc} alt="" width={180} height={40} priority className="marketing-nav-brand-logo" />
+            <span className="marketing-nav-brand-text">
               Zero Labs AI Publisher
             </span>
           </Link>
@@ -75,7 +78,7 @@ export function MarketingNav({
               <Link
                 key={item.label}
                 href={resolveHref(item.href)}
-                className="inline-flex transition-colors duration-300 hover:text-current"
+                className="marketing-nav-link-item"
               >
                 {item.label}
               </Link>
@@ -108,7 +111,7 @@ export function MarketingNav({
           </form>
           <Link
             href={routes.login}
-            className="marketing-nav-login marketing-primary-button text-sm font-semibold"
+            className="marketing-nav-login marketing-primary-button"
           >
             Login / Sign up
           </Link>
@@ -127,7 +130,7 @@ export function MarketingNav({
   }
 
   return (
-    <div className="marketing-shell pt-[24px] md:pt-[32px]" style={{ paddingTop: "clamp(32px, 5vw, 56px)" }}>
+    <div className="marketing-shell" style={{ paddingTop: "clamp(32px, 5vw, 56px)" }}>
       {content}
     </div>
   );
