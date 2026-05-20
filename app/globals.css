@@ -925,12 +925,12 @@ html[data-theme="dark"] .auth-panel-list {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   grid-template-areas: "brand links actions";
+  align-items: center;
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  gap: clamp(0.75rem, 1.2vw, 1.5rem);
-  align-items: center;
   overflow: hidden;
+  gap: clamp(0.75rem, 1.2vw, 1.5rem);
 }
 
 .marketing-nav-surface {
@@ -940,11 +940,11 @@ html[data-theme="dark"] .auth-panel-list {
 
 .marketing-nav-brand {
   grid-area: brand;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   min-width: 0;
   max-width: min(100%, clamp(11rem, 21vw, 18rem));
-  flex-shrink: 0;
+  flex-shrink: 1;
   overflow: hidden;
 }
 
@@ -973,27 +973,28 @@ html[data-theme="dark"] .auth-panel-list {
 .marketing-nav-links {
   grid-area: links;
   display: flex;
+  align-items: center;
+  justify-content: center;
   flex-wrap: nowrap;
   min-width: 0;
   max-width: 100%;
-  align-items: center;
-  justify-content: center;
   overflow: hidden;
 }
 
 .marketing-nav-links-list {
   display: flex;
-  flex: 0 1 auto;
-  max-width: 100%;
-  min-width: 0;
   align-items: center;
   justify-content: center;
+  flex: 0 1 auto;
   flex-wrap: nowrap;
+  min-width: 0;
+  max-width: 100%;
   gap: clamp(0.75rem, 1.2vw, 2rem);
   line-height: 1.1;
   overflow: hidden;
 }
 
+.marketing-nav-link-item,
 .marketing-nav-links-list a {
   display: inline-flex;
   align-items: center;
@@ -1014,15 +1015,14 @@ html[data-theme="dark"] .auth-panel-list {
 .marketing-nav-actions {
   grid-area: actions;
   display: flex;
-  flex-wrap: nowrap;
-  max-width: 100%;
   align-items: center;
-  align-self: center;
   justify-content: flex-end;
   justify-self: end;
-  gap: clamp(0.45rem, 0.9vw, 1rem);
+  flex-wrap: nowrap;
   min-width: 0;
+  max-width: 100%;
   overflow: hidden;
+  gap: clamp(0.45rem, 0.9vw, 1rem);
 }
 
 .marketing-nav-actions > * {
@@ -1083,13 +1083,12 @@ html[data-theme="dark"] .auth-panel-list {
   }
 
   .marketing-nav-links-list {
-    justify-content: center;
     flex-wrap: wrap;
     gap: clamp(0.6rem, 2.5vw, 1rem);
   }
 
+  .marketing-nav-link-item,
   .marketing-nav-links-list a {
-    flex: 0 1 auto;
     padding-inline: clamp(0.24rem, 1vw, 0.45rem);
   }
 
@@ -1132,10 +1131,10 @@ html[data-theme="dark"] .auth-panel-list {
   }
 
   .marketing-nav-links-list {
-    justify-content: center;
     gap: clamp(0.35rem, 0.7vw, 0.7rem);
   }
 
+  .marketing-nav-link-item,
   .marketing-nav-links-list a {
     padding-inline: clamp(0.24rem, 0.35vw, 0.32rem);
     font-size: clamp(0.68rem, 0.62rem + 0.12vw, 0.8rem);
@@ -1168,6 +1167,7 @@ html[data-theme="dark"] .auth-panel-list {
     gap: clamp(0.5rem, 0.85vw, 0.95rem);
   }
 
+  .marketing-nav-link-item,
   .marketing-nav-links-list a {
     font-size: clamp(0.7rem, 0.64rem + 0.14vw, 0.84rem);
     padding-inline: clamp(0.24rem, 0.45vw, 0.4rem);
@@ -1198,10 +1198,10 @@ html[data-theme="dark"] .auth-panel-list {
   }
 
   .marketing-nav-links-list {
-    justify-content: center;
     gap: clamp(0.7rem, 1vw, 1.4rem);
   }
 
+  .marketing-nav-link-item,
   .marketing-nav-links-list a {
     font-size: clamp(0.76rem, 0.72rem + 0.14vw, 0.88rem);
   }
@@ -1498,17 +1498,17 @@ html[data-theme="dark"] .auth-panel-list {
 }
 
 .app-nav {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas: "brand links actions";
+  align-items: center;
   width: 100%;
   max-width: 100%;
   min-width: 0;
   margin: 0 auto;
   padding: 1rem 1.25rem;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  grid-template-areas: "brand links actions";
-  align-items: center;
-  gap: clamp(0.5rem, 1vw, 1.25rem);
   overflow: hidden;
+  gap: clamp(0.5rem, 1vw, 1.25rem);
   border: 1px solid rgba(173, 230, 205, 0.18);
   border-radius: 1.5rem;
   background: rgba(6, 26, 20, 0.82);
@@ -1521,11 +1521,11 @@ html[data-theme="dark"] .auth-panel-list {
   grid-area: brand;
   display: inline-flex;
   align-items: center;
-  gap: clamp(0.45rem, 0.8vw, 0.75rem);
   min-width: 0;
   max-width: clamp(7rem, 18vw, 15rem);
-  flex-shrink: 1;
   overflow: hidden;
+  flex-shrink: 1;
+  gap: clamp(0.45rem, 0.8vw, 0.75rem);
 }
 
 .app-nav-brand-logo {
@@ -1570,8 +1570,8 @@ html[data-theme="dark"] .auth-panel-list {
   flex-wrap: nowrap;
   min-width: 0;
   max-width: 100%;
-  gap: clamp(0.35rem, 0.85vw, 1.15rem);
   overflow: hidden;
+  gap: clamp(0.35rem, 0.85vw, 1.15rem);
 }
 
 .app-nav-link {
@@ -1630,12 +1630,12 @@ html[data-theme="dark"] .auth-panel-list {
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  justify-self: end;
   flex-wrap: nowrap;
   min-width: 0;
   max-width: 100%;
-  justify-self: end;
-  gap: clamp(0.4rem, 0.8vw, 1rem);
   overflow: hidden;
+  gap: clamp(0.4rem, 0.8vw, 1rem);
 }
 
 .app-nav-actions > * {
@@ -4136,12 +4136,8 @@ html[data-theme="dark"] .auth-panel-list {
   }
 
   .app-nav-links {
-    flex-wrap: wrap;
     justify-content: center;
-  }
-
-  .app-nav-link {
-    flex: 0 1 auto;
+    flex-wrap: wrap;
   }
 
   .app-nav-actions {
