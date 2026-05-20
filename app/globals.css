@@ -1558,7 +1558,7 @@ html[data-theme="dark"] .auth-panel-list {
       "brand"
       "links"
       "actions";
-    gap: 0.9rem;
+    gap: clamp(0.75rem, 2vw, 0.9rem);
   }
 
   .app-nav {
@@ -1587,7 +1587,7 @@ html[data-theme="dark"] .auth-panel-list {
   }
 
   .marketing-nav-links-list {
-    gap: clamp(0.6rem, 2.5vw, 1rem);
+    gap: clamp(0.6rem, 1.8vw, 0.9rem);
   }
 
   .marketing-nav-actions,
@@ -1647,7 +1647,18 @@ html[data-theme="dark"] .auth-panel-list {
     width: clamp(5.5rem, 8vw, 7.25rem);
   }
 
-  .marketing-nav-brand-text,
+  .marketing-nav-brand-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
   .marketing-nav-search {
     display: none;
   }
@@ -1684,7 +1695,7 @@ html[data-theme="dark"] .auth-panel-list {
 
   .app-nav-link {
     padding-inline: clamp(0.2rem, 0.4vw, 0.45rem);
-    font-size: clamp(0.7rem, 0.76vw, 0.82rem);
+    font-size: clamp(0.7rem, 0.68rem + 0.12vw, 0.82rem);
   }
 
   .app-nav-actions {
