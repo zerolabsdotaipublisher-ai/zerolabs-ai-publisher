@@ -106,7 +106,6 @@ export function MarketingNav({
               placeholder="Search"
               aria-label="Search Zero Labs AI Publisher"
               autoComplete="off"
-              className="min-w-0 flex-1"
             />
           </form>
           <Link
@@ -130,7 +129,7 @@ export function MarketingNav({
   }
 
   return (
-    <div className="marketing-shell pt-[24px] md:pt-[32px]" style={{ paddingTop: "clamp(32px, 5vw, 56px)" }}>
+    <div className="marketing-shell" style={{ paddingTop: "clamp(32px, 5vw, 56px)" }}>
       {content}
     </div>
   );

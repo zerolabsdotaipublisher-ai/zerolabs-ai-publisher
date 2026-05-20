@@ -923,7 +923,7 @@ html[data-theme="dark"] .auth-panel-list {
 
 .marketing-nav-layout {
   display: grid;
-  grid-template-columns: auto minmax(8rem, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   grid-template-areas: "brand links actions";
   align-items: center;
   width: 100%;
@@ -950,25 +950,25 @@ html[data-theme="dark"] .auth-panel-list {
 .marketing-nav-brand-link {
   display: flex;
   align-items: center;
-  gap: clamp(0.45rem, 0.8vw, 0.75rem);
   min-width: 0;
+  gap: clamp(0.45rem, 0.8vw, 0.75rem);
   color: inherit;
 }
 
 .marketing-nav-brand-logo {
+  flex: 0 0 auto;
   width: clamp(6.5rem, 10vw, 11.25rem);
   height: auto;
-  flex: 0 0 auto;
 }
 
 .marketing-nav-brand-text {
   min-width: 0;
+  overflow: hidden;
   font-family: var(--font-heading);
   font-size: clamp(0.8rem, 0.65rem + 0.35vw, 1rem);
   font-weight: 600;
   letter-spacing: 0.06em;
   white-space: nowrap;
-  overflow: hidden;
   text-overflow: ellipsis;
 }
 
@@ -987,24 +987,21 @@ html[data-theme="dark"] .auth-panel-list {
   justify-content: center;
   min-width: 0;
   max-width: 100%;
-  gap: clamp(0.75rem, 1.2vw, 2rem);
-  line-height: 1.1;
+  gap: clamp(0.75rem, 1.2vw, 1.8rem);
   overflow: hidden;
 }
 
-.marketing-nav-link-item,
-.marketing-nav-links-list a {
+.marketing-nav-link-item {
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 0 1 auto;
   min-width: 0;
   padding-block: clamp(0.28rem, 0.55vw, 0.48rem);
   padding-inline: clamp(0.24rem, 0.5vw, 0.56rem);
-  font-size: clamp(0.72rem, 0.64rem + 0.18vw, 0.92rem);
-  white-space: nowrap;
-  text-align: center;
   overflow: hidden;
+  font-size: clamp(0.72rem, 0.64rem + 0.18vw, 0.92rem);
+  text-align: center;
+  white-space: nowrap;
   text-overflow: ellipsis;
   transition: color var(--marketing-nav-transition-duration, 200ms) ease;
 }
@@ -1016,14 +1013,12 @@ html[data-theme="dark"] .auth-panel-list {
   justify-content: flex-end;
   justify-self: end;
   min-width: 0;
-  overflow: hidden;
   gap: clamp(0.45rem, 0.9vw, 1rem);
 }
 
 .marketing-nav-actions > * {
-  flex: 0 1 auto;
   min-width: 0;
-  box-sizing: border-box;
+  flex: 0 1 auto;
 }
 
 .marketing-nav-search {
@@ -1033,26 +1028,26 @@ html[data-theme="dark"] .auth-panel-list {
 }
 
 .marketing-nav-login {
+  min-width: 0;
   flex: 0 1 auto;
   padding-inline: clamp(0.8rem, 1.2vw, 1.3rem);
+  overflow: hidden;
   font-size: clamp(0.72rem, 0.64rem + 0.12vw, 0.88rem);
   font-weight: 600;
   text-align: center;
   white-space: nowrap;
-  overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.marketing-nav-actions .theme-toggle,
 .marketing-theme-toggle {
   display: flex;
+  align-items: center;
   flex: 0 0 auto;
-  white-space: nowrap;
 }
 
 @media (max-width: 767px) {
   .marketing-nav-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
       "brand"
       "links"
@@ -1066,15 +1061,10 @@ html[data-theme="dark"] .auth-panel-list {
     width: 100%;
   }
 
-  .marketing-nav-brand {
-    justify-content: center;
-  }
-
-  .marketing-nav-brand-link {
-    justify-content: center;
-  }
-
-  .marketing-nav-links {
+  .marketing-nav-brand,
+  .marketing-nav-brand-link,
+  .marketing-nav-links,
+  .marketing-nav-actions {
     justify-content: center;
   }
 
@@ -1083,26 +1073,19 @@ html[data-theme="dark"] .auth-panel-list {
     gap: clamp(0.6rem, 2.5vw, 1rem);
   }
 
-  .marketing-nav-link-item,
-  .marketing-nav-links-list a {
+  .marketing-nav-link-item {
     padding-inline: clamp(0.24rem, 1vw, 0.45rem);
   }
 
   .marketing-nav-actions {
-    justify-content: center;
     flex-direction: column;
-    gap: clamp(0.6rem, 2.4vw, 0.9rem);
   }
 
-  .marketing-nav-search {
-    flex: 1 1 auto;
-    width: 100%;
-    max-width: 100%;
-  }
-
+  .marketing-nav-search,
   .marketing-nav-login,
   .marketing-theme-toggle {
     width: 100%;
+    max-width: 100%;
   }
 }
 
@@ -1119,15 +1102,19 @@ html[data-theme="dark"] .auth-panel-list {
     max-width: clamp(5.5rem, 9vw, 7.5rem);
   }
 
-  .marketing-nav-brand-logo {
-    width: clamp(5.5rem, 8vw, 7.25rem);
-  }
-
   .marketing-nav-brand-link {
     gap: 0;
   }
 
+  .marketing-nav-brand-logo {
+    width: clamp(5.5rem, 8vw, 7.25rem);
+  }
+
   .marketing-nav-brand-text {
+    display: none;
+  }
+
+  .marketing-nav-search.marketing-search-control {
     display: none;
   }
 
@@ -1135,18 +1122,13 @@ html[data-theme="dark"] .auth-panel-list {
     gap: clamp(0.35rem, 0.7vw, 0.7rem);
   }
 
-  .marketing-nav-link-item,
-  .marketing-nav-links-list a {
+  .marketing-nav-link-item {
     padding-inline: clamp(0.16rem, 0.35vw, 0.32rem);
     font-size: clamp(0.68rem, 0.62rem + 0.12vw, 0.8rem);
   }
 
   .marketing-nav-actions {
     gap: clamp(0.35rem, 0.6vw, 0.6rem);
-  }
-
-  .marketing-nav-search.marketing-search-control {
-    display: none;
   }
 
   .marketing-nav-login {
@@ -1168,10 +1150,9 @@ html[data-theme="dark"] .auth-panel-list {
     gap: clamp(0.5rem, 0.85vw, 0.95rem);
   }
 
-  .marketing-nav-link-item,
-  .marketing-nav-links-list a {
-    font-size: clamp(0.7rem, 0.64rem + 0.14vw, 0.84rem);
+  .marketing-nav-link-item {
     padding-inline: clamp(0.24rem, 0.45vw, 0.4rem);
+    font-size: clamp(0.7rem, 0.64rem + 0.14vw, 0.84rem);
   }
 
   .marketing-nav-actions {
@@ -1201,8 +1182,7 @@ html[data-theme="dark"] .auth-panel-list {
     gap: clamp(0.7rem, 1vw, 1.4rem);
   }
 
-  .marketing-nav-link-item,
-  .marketing-nav-links-list a {
+  .marketing-nav-link-item {
     font-size: clamp(0.76rem, 0.72rem + 0.14vw, 0.88rem);
   }
 
@@ -1499,7 +1479,7 @@ html[data-theme="dark"] .auth-panel-list {
 
 .app-nav {
   display: grid;
-  grid-template-columns: auto minmax(8rem, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   grid-template-areas: "brand links actions";
   align-items: center;
   width: 100%;
@@ -1525,36 +1505,36 @@ html[data-theme="dark"] .auth-panel-list {
 }
 
 .app-nav-brand-logo {
+  flex: 0 0 auto;
   width: clamp(5.75rem, 8vw, 10.5rem);
   height: auto;
-  flex-shrink: 0;
 }
 
 .app-nav-brand-copy {
   display: flex;
   flex-direction: column;
-  gap: 0.1rem;
   min-width: 0;
+  gap: 0.1rem;
   overflow: hidden;
 }
 
 .app-nav-brand-title {
+  overflow: hidden;
+  color: #ade6cd;
   font-size: clamp(0.62rem, 0.58rem + 0.18vw, 0.72rem);
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: #ade6cd;
   white-space: nowrap;
-  overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .app-nav-brand-subtitle {
+  overflow: hidden;
+  color: #f8f9fa;
   font-size: clamp(0.84rem, 0.72rem + 0.24vw, 1rem);
   font-weight: 700;
-  color: #f8f9fa;
   white-space: nowrap;
-  overflow: hidden;
   text-overflow: ellipsis;
 }
 
@@ -1564,30 +1544,34 @@ html[data-theme="dark"] .auth-panel-list {
   align-items: center;
   justify-content: center;
   min-width: 0;
-  overflow: hidden;
   gap: clamp(0.35rem, 0.85vw, 1.15rem);
+  overflow: hidden;
 }
 
 .app-nav-link {
   position: relative;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
-  flex: 0 1 auto;
-  padding-block: clamp(0.58rem, 0.72vw, 0.72rem);
-  padding-inline: clamp(0.2rem, 0.65vw, 0.75rem);
-  border: 1px solid transparent;
-  border-radius: 9999px;
   min-width: 0;
   max-width: 100%;
+  padding-block: clamp(0.58rem, 0.72vw, 0.72rem);
+  padding-inline: clamp(0.2rem, 0.65vw, 0.75rem);
+  overflow: hidden;
+  border: 1px solid transparent;
+  border-radius: 9999px;
   color: rgba(248, 249, 250, 0.8);
   font-size: clamp(0.72rem, 0.85vw, 0.95rem);
   font-weight: 600;
   text-align: center;
   white-space: nowrap;
-  overflow: hidden;
   text-overflow: ellipsis;
-  transition: color 200ms ease, border-color 200ms ease, background-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+  transition:
+    color 200ms ease,
+    border-color 200ms ease,
+    background-color 200ms ease,
+    box-shadow 200ms ease,
+    transform 200ms ease;
 }
 
 .app-nav-link:hover,
@@ -1610,9 +1594,9 @@ html[data-theme="dark"] .auth-panel-list {
 .app-nav-link-active::after {
   content: "";
   position: absolute;
-  left: clamp(0.4rem, 0.9vw, 0.95rem);
   right: clamp(0.4rem, 0.9vw, 0.95rem);
   bottom: 0.38rem;
+  left: clamp(0.4rem, 0.9vw, 0.95rem);
   height: 2px;
   border-radius: 9999px;
   background: #ade6cd;
@@ -1625,44 +1609,41 @@ html[data-theme="dark"] .auth-panel-list {
   justify-content: flex-end;
   justify-self: end;
   min-width: 0;
-  overflow: hidden;
   gap: clamp(0.4rem, 0.8vw, 1rem);
 }
 
 .app-nav-actions > * {
-  flex: 0 1 auto;
   min-width: 0;
-  box-sizing: border-box;
+  flex: 0 1 auto;
 }
 
 .app-nav-user {
-  max-width: clamp(7rem, 16vw, 18rem);
   min-width: 0;
+  max-width: clamp(7rem, 16vw, 18rem);
   padding: clamp(0.58rem, 0.72vw, 0.72rem) clamp(0.7rem, 1vw, 1rem);
+  overflow: hidden;
   border: 1px solid rgba(173, 230, 205, 0.16);
   border-radius: 9999px;
   background: rgba(248, 249, 250, 0.04);
   color: rgba(248, 249, 250, 0.86);
   font-size: clamp(0.78rem, 0.84vw, 0.92rem);
   white-space: nowrap;
-  overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .app-nav-signout-group {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
   align-items: flex-end;
   min-width: 0;
-  flex-shrink: 0;
+  gap: 0.4rem;
+  flex: 0 0 auto;
 }
 
 .app-nav-signout {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
-  flex: 0 0 auto;
   min-height: 2.85rem;
   padding-block: clamp(0.62rem, 0.72vw, 0.72rem);
   padding-inline: clamp(0.65rem, 0.85vw, 1rem);
@@ -1675,7 +1656,12 @@ html[data-theme="dark"] .auth-panel-list {
   white-space: nowrap;
   cursor: pointer;
   box-shadow: 0 0 26px rgba(31, 111, 95, 0.12);
-  transition: background-color 200ms ease, border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease, opacity 200ms ease;
+  transition:
+    background-color 200ms ease,
+    border-color 200ms ease,
+    box-shadow 200ms ease,
+    transform 200ms ease,
+    opacity 200ms ease;
 }
 
 .app-nav-signout:hover,
@@ -4106,7 +4092,7 @@ html[data-theme="dark"] .auth-panel-list {
 
   .app-nav {
     padding: 0.95rem 1rem;
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
       "brand"
       "links"
@@ -4132,6 +4118,7 @@ html[data-theme="dark"] .auth-panel-list {
   .app-nav-actions {
     justify-content: center;
     flex-direction: column;
+    gap: 0.75rem;
   }
 
   .app-nav-signout-group {
