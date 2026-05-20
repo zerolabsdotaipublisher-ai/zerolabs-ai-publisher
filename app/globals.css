@@ -1008,7 +1008,6 @@ html[data-theme="dark"] .auth-panel-list {
   justify-content: flex-end;
   gap: clamp(0.45rem, 0.8vw, 0.9rem);
   min-width: 0;
-  justify-self: end;
 }
 
 .marketing-nav-actions > * {
@@ -1456,7 +1455,6 @@ html[data-theme="dark"] .auth-panel-list {
   justify-content: flex-end;
   gap: clamp(0.35rem, 0.7vw, 0.75rem);
   min-width: 0;
-  justify-self: end;
 }
 
 .app-nav-actions > * {
