@@ -923,16 +923,14 @@ html[data-theme="dark"] .auth-panel-list {
 
 .marketing-nav-layout {
   display: grid;
-  grid-template-columns: 1fr;
-  grid-template-areas:
-    "brand"
-    "actions"
-    "links";
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas: "brand links actions";
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  gap: clamp(0.75rem, 1.4vw, 1.5rem);
+  gap: clamp(0.75rem, 1.2vw, 1.5rem);
   align-items: center;
+  overflow: hidden;
 }
 
 .marketing-nav-surface {
@@ -945,8 +943,10 @@ html[data-theme="dark"] .auth-panel-list {
   display: flex;
   align-items: center;
   min-width: 0;
-  width: 100%;
-  max-width: 100%;
+  width: auto;
+  max-width: min(100%, clamp(11rem, 21vw, 18rem));
+  flex-shrink: 0;
+  overflow: hidden;
 }
 
 .marketing-nav-brand-link {
@@ -955,6 +955,14 @@ html[data-theme="dark"] .auth-panel-list {
   gap: clamp(0.45rem, 0.8vw, 0.75rem);
   min-width: 0;
   max-width: 100%;
+  overflow: hidden;
+}
+
+.marketing-nav-brand-logo {
+  width: clamp(6.5rem, 10vw, 11.25rem);
+  max-width: 100%;
+  height: auto;
+  flex-shrink: 0;
 }
 
 .marketing-nav-brand-text {
@@ -965,68 +973,93 @@ html[data-theme="dark"] .auth-panel-list {
 
 .marketing-nav-links {
   grid-area: links;
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
   min-width: 0;
   width: 100%;
   max-width: 100%;
-  display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
 }
 
 .marketing-nav-links-list {
   display: flex;
+  flex: 1 1 auto;
   width: 100%;
   max-width: 100%;
   min-width: 0;
   align-items: center;
   justify-content: center;
-  flex-wrap: wrap;
-  gap: clamp(0.6rem, 1vw, 1.25rem);
-  font-size: clamp(0.78rem, 0.72rem + 0.2vw, 0.9rem);
+  flex-wrap: nowrap;
+  gap: clamp(0.75rem, 1.2vw, 2rem);
   line-height: 1.1;
+  overflow: hidden;
+}
+
+.marketing-nav-link-item,
+.marketing-nav-links-list a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 auto;
+  flex-shrink: 1;
+  min-width: 0;
+  max-width: 100%;
+  padding-block: clamp(0.28rem, 0.55vw, 0.48rem);
+  padding-inline: clamp(0.2rem, 0.45vw, 0.5rem);
+  font-size: clamp(0.72rem, 0.64rem + 0.18vw, 0.92rem);
+  white-space: nowrap;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .marketing-nav-links-list a {
-  padding-block: 0.18rem;
   min-width: 0;
-  max-width: 100%;
-  text-align: center;
-  overflow-wrap: anywhere;
 }
 
 .marketing-nav-actions {
   grid-area: actions;
   display: flex;
-  flex-wrap: wrap;
-  width: 100%;
+  flex: 0 1 auto;
+  flex-wrap: nowrap;
+  width: auto;
   max-width: 100%;
   align-items: center;
   align-self: center;
   justify-content: flex-end;
-  gap: clamp(0.5rem, 0.8vw, 0.75rem);
+  justify-self: end;
+  gap: clamp(0.45rem, 0.9vw, 1rem);
   min-width: 0;
+  overflow: hidden;
 }
 
 .marketing-nav-actions > * {
+  flex-shrink: 1;
   min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
 }
 
 .marketing-nav-search {
-  width: auto;
-  flex: 1 1 180px;
-  min-width: 140px;
-  max-width: 260px;
+  width: 100%;
+  flex: 1 1 clamp(6rem, 11vw, 10rem);
+  min-width: 0;
+  max-width: clamp(7rem, 15vw, 12rem);
 }
 
 .marketing-nav-login {
-  width: auto;
+  width: 100%;
   max-width: 100%;
-  flex: 0 0 auto;
-  padding-inline: clamp(0.8rem, 1vw, 1rem);
+  flex: 0 1 auto;
+  padding-inline: clamp(0.8rem, 1.2vw, 1.3rem);
+  font-size: clamp(0.72rem, 0.64rem + 0.12vw, 0.88rem);
   text-align: center;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .marketing-nav-actions .theme-toggle,
@@ -1037,10 +1070,46 @@ html[data-theme="dark"] .auth-panel-list {
 }
 
 @media (max-width: 767px) {
+  .marketing-nav-layout {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "brand"
+      "links"
+      "actions";
+  }
+
+  .marketing-nav-brand,
+  .marketing-nav-links,
   .marketing-nav-actions {
     width: 100%;
+    max-width: 100%;
+  }
+
+  .marketing-nav-brand {
+    justify-content: center;
+    max-width: 100%;
+  }
+
+  .marketing-nav-brand-link {
+    justify-content: center;
+  }
+
+  .marketing-nav-links-list {
     justify-content: center;
     flex-wrap: wrap;
+    gap: clamp(0.6rem, 2.5vw, 1rem);
+  }
+
+  .marketing-nav-link-item,
+  .marketing-nav-links-list a {
+    flex: 0 1 auto;
+    padding-inline: clamp(0.2rem, 1vw, 0.4rem);
+  }
+
+  .marketing-nav-actions {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: clamp(0.6rem, 2.4vw, 0.9rem);
   }
 
   .marketing-nav-search {
@@ -1051,41 +1120,49 @@ html[data-theme="dark"] .auth-panel-list {
 }
 
 @media (min-width: 768px) and (max-width: 1199px) {
-  .marketing-nav-layout {
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas:
-      "brand actions"
-      "links links";
-  }
-
   .marketing-nav-surface {
     padding-block: clamp(12px, 1vw, 16px);
   }
 
-  .marketing-nav-actions {
-    width: auto;
-    justify-content: flex-end;
-    flex-wrap: nowrap;
+  .marketing-nav-layout {
+    gap: clamp(0.6rem, 1vw, 1rem);
+  }
+
+  .marketing-nav-brand {
+    max-width: min(100%, clamp(9.5rem, 20vw, 14rem));
+  }
+
+  .marketing-nav-brand-logo {
+    width: clamp(5.75rem, 9vw, 8.5rem);
   }
 
   .marketing-nav-links-list {
     justify-content: center;
-    flex-wrap: wrap;
-    gap: clamp(0.6rem, 1vw, 1.2rem);
-    font-size: clamp(0.74rem, 0.7rem + 0.12vw, 0.84rem);
+    gap: clamp(0.45rem, 0.85vw, 0.85rem);
   }
 
+  .marketing-nav-link-item,
   .marketing-nav-links-list a {
-    white-space: nowrap;
+    padding-inline: clamp(0.12rem, 0.3vw, 0.3rem);
+    font-size: clamp(0.66rem, 0.61rem + 0.14vw, 0.8rem);
+  }
+
+  .marketing-nav-actions {
+    gap: clamp(0.35rem, 0.7vw, 0.75rem);
+  }
+
+  .marketing-nav-search {
+    flex-basis: clamp(5rem, 10vw, 8rem);
+    max-width: clamp(5.5rem, 12vw, 8.5rem);
+  }
+
+  .marketing-nav-login {
+    padding-inline: clamp(0.65rem, 0.9vw, 0.95rem);
+    font-size: clamp(0.68rem, 0.63rem + 0.1vw, 0.78rem);
   }
 }
 
 @media (min-width: 1200px) {
-  .marketing-nav-layout {
-    grid-template-columns: minmax(180px, auto) minmax(0, 1fr) auto;
-    grid-template-areas: "brand links actions";
-  }
-
   .marketing-nav-surface {
     padding-block: var(--marketing-nav-padding-block, clamp(14px, 1.2vw, 18px));
   }
@@ -1096,19 +1173,8 @@ html[data-theme="dark"] .auth-panel-list {
     min-width: 0;
   }
 
-  .marketing-nav-links-list,
-  .marketing-nav-actions {
-    flex-wrap: nowrap;
-    align-items: center;
-  }
-
-  .marketing-nav-links-list a {
-    white-space: nowrap;
-  }
-
-  .marketing-nav-actions {
-    justify-content: flex-end;
-    width: auto;
+  .marketing-nav-brand {
+    max-width: min(100%, clamp(12rem, 18vw, 18rem));
   }
 }
 

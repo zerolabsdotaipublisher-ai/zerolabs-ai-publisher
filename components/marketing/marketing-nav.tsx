@@ -59,7 +59,7 @@ export function MarketingNav({
       <div className="marketing-nav-layout">
         <div className="marketing-nav-brand">
           <Link href={routes.home} className="marketing-nav-brand-link">
-            <Image src={logoSrc} alt="" width={180} height={40} priority className="h-10 w-auto shrink-0" />
+            <Image src={logoSrc} alt="" width={180} height={40} priority className="marketing-nav-brand-logo h-auto w-auto shrink-0" />
             <span className="marketing-nav-brand-text min-w-0 font-[family:var(--font-heading)] text-[clamp(0.8rem,0.65rem+0.35vw,1rem)] font-semibold tracking-[0.06em] text-current">
               Zero Labs AI Publisher
             </span>
@@ -75,7 +75,7 @@ export function MarketingNav({
               <Link
                 key={item.label}
                 href={resolveHref(item.href)}
-                className="inline-flex transition-colors duration-300 hover:text-current"
+                className="marketing-nav-link-item inline-flex transition-colors duration-300 hover:text-current"
               >
                 {item.label}
               </Link>
@@ -108,7 +108,7 @@ export function MarketingNav({
           </form>
           <Link
             href={routes.login}
-            className="marketing-nav-login marketing-primary-button text-sm font-semibold"
+            className="marketing-nav-login marketing-primary-button font-semibold"
           >
             Login / Sign up
           </Link>
