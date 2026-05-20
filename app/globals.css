@@ -1519,11 +1519,12 @@ html[data-theme="dark"] .auth-panel-list {
   min-width: 0;
   margin: 0 auto;
   padding: 1rem 1.25rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: clamp(0.85rem, 1.8vw, 1.25rem);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas: "brand links actions";
   align-items: center;
-  justify-content: space-between;
+  gap: clamp(0.75rem, 1vw, 2rem);
+  overflow: hidden;
   border: 1px solid rgba(173, 230, 205, 0.18);
   border-radius: 1.5rem;
   background: rgba(6, 26, 20, 0.82);
@@ -1533,18 +1534,20 @@ html[data-theme="dark"] .auth-panel-list {
 }
 
 .app-nav-brand {
+  grid-area: brand;
   display: inline-flex;
   align-items: center;
-  gap: 0.85rem;
+  gap: clamp(0.55rem, 0.9vw, 0.85rem);
   min-width: 0;
-  width: 100%;
-  max-width: 100%;
-  flex: 1 1 clamp(14rem, 28vw, 20rem);
+  max-width: min(100%, clamp(6.5rem, 18vw, 14rem));
+  flex-shrink: 0;
+  overflow: hidden;
 }
 
 .app-nav-brand-logo {
-  width: auto;
-  height: 2.35rem;
+  width: clamp(5.75rem, 8vw, 10.5rem);
+  height: auto;
+  flex-shrink: 0;
 }
 
 .app-nav-brand-copy {
@@ -1552,31 +1555,39 @@ html[data-theme="dark"] .auth-panel-list {
   flex-direction: column;
   gap: 0.1rem;
   min-width: 0;
+  overflow: hidden;
 }
 
 .app-nav-brand-title {
-  font-size: 0.72rem;
+  font-size: clamp(0.62rem, 0.58rem + 0.18vw, 0.72rem);
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: #ade6cd;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .app-nav-brand-subtitle {
-  font-size: 1rem;
+  font-size: clamp(0.84rem, 0.72rem + 0.24vw, 1rem);
   font-weight: 700;
   color: #f8f9fa;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .app-nav-links {
+  grid-area: links;
   display: flex;
-  flex-wrap: wrap;
-  width: 100%;
-  max-width: 100%;
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
   min-width: 0;
-  justify-content: flex-start;
-  gap: 0.5rem;
-  flex: 999 1 18rem;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.5rem, 1vw, 1.5rem);
+  overflow: hidden;
 }
 
 .app-nav-link {
@@ -1584,17 +1595,21 @@ html[data-theme="dark"] .auth-panel-list {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.72rem 0.95rem;
+  flex: 1 1 0;
+  flex-shrink: 1;
+  padding-block: clamp(0.58rem, 0.72vw, 0.72rem);
+  padding-inline: clamp(0.25rem, 0.8vw, 0.75rem);
   border: 1px solid transparent;
   border-radius: 9999px;
   min-width: 0;
   max-width: 100%;
   color: rgba(248, 249, 250, 0.8);
-  font-size: 0.93rem;
+  font-size: clamp(0.82rem, 0.9vw, 1rem);
   font-weight: 600;
   text-align: center;
-  white-space: normal;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   transition: color 200ms ease, border-color 200ms ease, background-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
 }
 
@@ -1618,8 +1633,8 @@ html[data-theme="dark"] .auth-panel-list {
 .app-nav-link-active::after {
   content: "";
   position: absolute;
-  left: 0.95rem;
-  right: 0.95rem;
+  left: clamp(0.4rem, 0.9vw, 0.95rem);
+  right: clamp(0.4rem, 0.9vw, 0.95rem);
   bottom: 0.38rem;
   height: 2px;
   border-radius: 9999px;
@@ -1627,40 +1642,47 @@ html[data-theme="dark"] .auth-panel-list {
 }
 
 .app-nav-actions {
+  grid-area: actions;
   display: flex;
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
   align-items: center;
-  justify-content: flex-start;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  flex: 1 1 100%;
+  justify-content: flex-end;
+  justify-self: end;
+  flex-wrap: nowrap;
+  gap: clamp(0.5rem, 1vw, 1rem);
+  flex-shrink: 1;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .app-nav-actions > * {
+  flex-shrink: 1;
   min-width: 0;
   max-width: 100%;
   box-sizing: border-box;
 }
 
 .app-nav-user {
-  max-width: min(20rem, 100%);
-  padding: 0.72rem 1rem;
+  max-width: clamp(140px, 18vw, 260px);
+  min-width: 0;
+  padding: clamp(0.58rem, 0.72vw, 0.72rem) clamp(0.7rem, 1vw, 1rem);
   border: 1px solid rgba(173, 230, 205, 0.16);
   border-radius: 9999px;
   background: rgba(248, 249, 250, 0.04);
   color: rgba(248, 249, 250, 0.86);
-  font-size: 0.875rem;
-  white-space: normal;
-  overflow-wrap: anywhere;
+  font-size: clamp(0.78rem, 0.84vw, 0.92rem);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .app-nav-signout-group {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
-  align-items: stretch;
+  align-items: flex-end;
+  min-width: 0;
+  flex-shrink: 0;
 }
 
 .app-nav-signout {
@@ -1668,13 +1690,15 @@ html[data-theme="dark"] .auth-panel-list {
   align-items: center;
   justify-content: center;
   min-height: 2.85rem;
-  padding: 0.7rem 1.05rem;
+  padding-block: clamp(0.62rem, 0.72vw, 0.72rem);
+  padding-inline: clamp(0.78rem, 1vw, 1.1rem);
   border: 1px solid rgba(173, 230, 205, 0.22);
   border-radius: 9999px;
   background: rgba(31, 111, 95, 0.16);
   color: #f8f9fa;
   font: inherit;
   font-weight: 700;
+  white-space: nowrap;
   cursor: pointer;
   box-shadow: 0 0 26px rgba(31, 111, 95, 0.12);
   transition: background-color 200ms ease, border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease, opacity 200ms ease;
@@ -4108,10 +4132,37 @@ html[data-theme="dark"] .auth-panel-list {
 
   .app-nav {
     padding: 0.95rem 1rem;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "brand"
+      "links"
+      "actions";
+  }
+
+  .app-nav-brand,
+  .app-nav-links,
+  .app-nav-actions {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .app-nav-brand {
+    justify-content: center;
+    max-width: 100%;
+  }
+
+  .app-nav-links {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .app-nav-link {
+    flex: 0 1 auto;
   }
 
   .app-nav-actions {
-    justify-content: flex-start;
+    justify-content: center;
+    flex-wrap: wrap;
   }
 
   .app-nav-signout-group {
@@ -4155,18 +4206,54 @@ html[data-theme="dark"] .auth-panel-list {
 }
 
 @media (min-width: 768px) {
+  .app-nav {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: "brand links actions";
+  }
+
   .app-nav-links {
     justify-content: center;
+    flex-wrap: nowrap;
   }
 
   .app-nav-actions {
-    flex: 0 1 auto;
-    margin-inline-start: auto;
     justify-content: flex-end;
+    flex-wrap: nowrap;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1099px) {
+  .app-nav {
+    gap: clamp(0.55rem, 0.8vw, 0.85rem);
   }
 
-  .app-nav-signout-group {
-    align-items: flex-end;
+  .app-nav-brand {
+    max-width: clamp(5.75rem, 8vw, 7.5rem);
+  }
+
+  .app-nav-brand-copy {
+    display: none;
+  }
+
+  .app-nav-links {
+    gap: clamp(0.35rem, 0.7vw, 0.75rem);
+  }
+
+  .app-nav-link {
+    padding-inline: clamp(0.18rem, 0.4vw, 0.36rem);
+  }
+
+  .app-nav-actions {
+    gap: clamp(0.4rem, 0.8vw, 0.72rem);
+  }
+
+  .app-nav-user {
+    max-width: clamp(140px, 16vw, 190px);
+    font-size: clamp(0.72rem, 0.78vw, 0.84rem);
+  }
+
+  .app-nav-signout {
+    padding-inline: clamp(0.72rem, 0.9vw, 0.95rem);
   }
 }
 
