@@ -1515,7 +1515,7 @@ html[data-theme="dark"] .auth-panel-list {
 
 .app-nav {
   width: 100%;
-  max-width: 80rem;
+  max-width: 100%;
   min-width: 0;
   margin: 0 auto;
   padding: 1rem 1.25rem;
@@ -1595,7 +1595,7 @@ html[data-theme="dark"] .auth-panel-list {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex: 1 1 0;
+  flex: 0 1 auto;
   flex-shrink: 1;
   padding-block: clamp(0.58rem, 0.72vw, 0.72rem);
   padding-inline: clamp(0.25rem, 0.8vw, 0.75rem);
