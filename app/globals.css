@@ -922,14 +922,17 @@ html[data-theme="dark"] .auth-panel-list {
 }
 
 .marketing-nav-layout {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-areas:
+    "brand"
+    "actions"
+    "links";
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  gap: clamp(0.55rem, 1.1vw, 1rem);
+  gap: clamp(0.75rem, 1.4vw, 1.5rem);
   align-items: center;
-  justify-content: space-between;
 }
 
 .marketing-nav-surface {
@@ -938,44 +941,47 @@ html[data-theme="dark"] .auth-panel-list {
 }
 
 .marketing-nav-brand {
+  grid-area: brand;
+  display: flex;
+  align-items: center;
   min-width: 0;
   width: 100%;
   max-width: 100%;
-  flex: 1 1 clamp(12rem, 20vw, 16rem);
 }
 
 .marketing-nav-brand-link {
-  display: flex;
-  flex-wrap: wrap;
+  display: inline-flex;
   align-items: center;
   gap: clamp(0.45rem, 0.8vw, 0.75rem);
-  width: 100%;
-  max-width: 100%;
   min-width: 0;
+  max-width: 100%;
 }
 
 .marketing-nav-brand-text {
-  overflow-wrap: anywhere;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .marketing-nav-links {
+  grid-area: links;
   min-width: 0;
   width: 100%;
   max-width: 100%;
-  flex: 999 1 15rem;
   display: flex;
   align-items: center;
+  justify-content: center;
 }
 
 .marketing-nav-links-list {
   display: flex;
-  flex-wrap: wrap;
   width: 100%;
   max-width: 100%;
   min-width: 0;
   align-items: center;
-  justify-content: flex-start;
-  gap: clamp(0.35rem, 0.8vw, 0.65rem) clamp(0.7rem, 1.2vw, 1rem);
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: clamp(0.6rem, 1vw, 1.25rem);
   font-size: clamp(0.78rem, 0.72rem + 0.2vw, 0.9rem);
   line-height: 1.1;
 }
@@ -984,20 +990,21 @@ html[data-theme="dark"] .auth-panel-list {
   padding-block: 0.18rem;
   min-width: 0;
   max-width: 100%;
+  text-align: center;
   overflow-wrap: anywhere;
 }
 
 .marketing-nav-actions {
+  grid-area: actions;
   display: flex;
   flex-wrap: wrap;
   width: 100%;
   max-width: 100%;
   align-items: center;
   align-self: center;
-  justify-content: flex-start;
-  gap: clamp(0.35rem, 0.6vw, 0.55rem);
+  justify-content: flex-end;
+  gap: clamp(0.5rem, 0.8vw, 0.75rem);
   min-width: 0;
-  flex: 1 1 100%;
 }
 
 .marketing-nav-actions > * {
@@ -1008,70 +1015,112 @@ html[data-theme="dark"] .auth-panel-list {
 
 .marketing-nav-search {
   width: auto;
-  max-width: 100%;
-  min-width: 0;
-  flex: 999 1 clamp(8.75rem, 15vw, 12.5rem);
+  flex: 1 1 180px;
+  min-width: 140px;
+  max-width: 260px;
 }
 
 .marketing-nav-login {
-  min-width: 0;
   width: auto;
   max-width: 100%;
-  flex: 0 1 auto;
+  flex: 0 0 auto;
   padding-inline: clamp(0.8rem, 1vw, 1rem);
   text-align: center;
-  white-space: normal;
+  white-space: nowrap;
 }
 
-@media (min-width: 640px) {
+.marketing-nav-actions .theme-toggle,
+.marketing-theme-toggle {
+  display: flex;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+@media (max-width: 767px) {
+  .marketing-nav-actions {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
   .marketing-nav-search {
-    flex-basis: clamp(9rem, 17vw, 12.75rem);
+    flex: 1 1 100%;
+    width: 100%;
+    max-width: 100%;
   }
 }
 
-@media (min-width: 768px) {
+@media (min-width: 768px) and (max-width: 1199px) {
+  .marketing-nav-layout {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "brand actions"
+      "links links";
+  }
+
   .marketing-nav-surface {
     padding-block: clamp(12px, 1vw, 16px);
   }
 
+  .marketing-nav-actions {
+    width: auto;
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+  }
+
   .marketing-nav-links-list {
-    justify-content: flex-start;
-    gap: clamp(0.28rem, 0.45vw, 0.48rem) clamp(0.62rem, 1vw, 0.95rem);
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: clamp(0.6rem, 1vw, 1.2rem);
     font-size: clamp(0.74rem, 0.7rem + 0.12vw, 0.84rem);
+  }
+
+  .marketing-nav-links-list a {
+    white-space: nowrap;
+  }
+}
+
+@media (min-width: 1200px) {
+  .marketing-nav-layout {
+    grid-template-columns: minmax(180px, auto) minmax(0, 1fr) auto;
+    grid-template-areas: "brand links actions";
+  }
+
+  .marketing-nav-surface {
+    padding-block: var(--marketing-nav-padding-block, clamp(14px, 1.2vw, 18px));
+  }
+
+  .marketing-nav-brand,
+  .marketing-nav-links,
+  .marketing-nav-actions {
+    min-width: 0;
+  }
+
+  .marketing-nav-links-list,
+  .marketing-nav-actions {
+    flex-wrap: nowrap;
+    align-items: center;
+  }
+
+  .marketing-nav-links-list a {
+    white-space: nowrap;
   }
 
   .marketing-nav-actions {
     justify-content: flex-end;
-    flex: 1 1 clamp(14rem, 23vw, 18rem);
-    margin-inline-start: auto;
-    gap: clamp(0.3rem, 0.45vw, 0.5rem);
-  }
-
-  .marketing-nav-search {
-    flex-basis: clamp(8.75rem, 13vw, 11.25rem);
-  }
-
-  .marketing-nav-login {
-    min-width: 0;
-    padding-inline: clamp(0.75rem, 0.95vw, 0.95rem);
-  }
-}
-
-@media (min-width: 1180px) {
-  .marketing-nav-surface {
-    padding-block: var(--marketing-nav-padding-block, clamp(14px, 1.2vw, 18px));
+    width: auto;
   }
 }
 
 @media (min-width: 1280px) {
   .marketing-nav-links-list {
     justify-content: center;
-    gap: clamp(0.35rem, 0.7vw, 0.55rem) clamp(0.78rem, 1.15vw, 1.05rem);
+    gap: clamp(0.7rem, 1vw, 1.4rem);
     font-size: clamp(0.76rem, 0.72rem + 0.14vw, 0.88rem);
   }
 
   .marketing-nav-actions {
-    gap: clamp(0.32rem, 0.55vw, 0.52rem);
+    gap: clamp(0.5rem, 0.8vw, 0.9rem);
   }
 }
 
@@ -3116,26 +3165,6 @@ html[data-theme="dark"] .auth-panel-list {
 @media (min-width: 700px) and (max-width: 1200px) {
   .marketing-shell {
     padding-inline: clamp(0.95rem, 1.8vw, 1.25rem);
-  }
-
-  .marketing-nav-layout {
-    gap: 0.6rem 0.75rem;
-  }
-
-  .marketing-nav-brand {
-    flex-basis: clamp(11.5rem, 18vw, 14rem);
-  }
-
-  .marketing-nav-links {
-    flex-basis: 14rem;
-  }
-
-  .marketing-nav-links-list {
-    justify-content: flex-start;
-  }
-
-  .marketing-nav-actions {
-    flex-basis: clamp(13rem, 21vw, 16rem);
   }
 
   .marketing-hero-section {

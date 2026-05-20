@@ -112,7 +112,11 @@ export function MarketingNav({
           >
             Login / Sign up
           </Link>
-          {onToggleTheme ? <ThemeToggle theme={theme} onToggle={onToggleTheme} /> : null}
+          {onToggleTheme ? (
+            <div className="marketing-theme-toggle">
+              <ThemeToggle theme={theme} onToggle={onToggleTheme} />
+            </div>
+          ) : null}
         </div>
       </div>
     </header>
