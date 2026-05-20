@@ -1014,8 +1014,6 @@ html[data-theme="dark"] .auth-panel-list {
 
 .marketing-nav-search {
   width: 100%;
-  max-width: 100%;
-  min-width: 0;
   flex: 1 1 180px;
   min-width: 140px;
   max-width: 260px;
@@ -1082,6 +1080,10 @@ html[data-theme="dark"] .auth-panel-list {
     grid-template-areas: "brand links actions";
   }
 
+  .marketing-nav-surface {
+    padding-block: var(--marketing-nav-padding-block, clamp(14px, 1.2vw, 18px));
+  }
+
   .marketing-nav-brand,
   .marketing-nav-links,
   .marketing-nav-actions {
@@ -1097,12 +1099,6 @@ html[data-theme="dark"] .auth-panel-list {
   .marketing-nav-actions {
     justify-content: flex-end;
     width: auto;
-  }
-}
-
-@media (min-width: 1200px) {
-  .marketing-nav-surface {
-    padding-block: var(--marketing-nav-padding-block, clamp(14px, 1.2vw, 18px));
   }
 }
 
