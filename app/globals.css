@@ -1025,7 +1025,7 @@ html[data-theme="dark"] .auth-panel-list {
 .marketing-nav-search {
   flex: 0 1 clamp(6rem, 10vw, 9rem);
   min-width: 0;
-  max-width: clamp(6.5rem, 12vw, 10rem);
+  max-width: clamp(6rem, 10vw, 9rem);
 }
 
 .marketing-nav-login {

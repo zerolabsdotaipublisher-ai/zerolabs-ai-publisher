@@ -106,6 +106,7 @@ export function MarketingNav({
               placeholder="Search"
               aria-label="Search Zero Labs AI Publisher"
               autoComplete="off"
+              className="min-w-0 flex-1"
             />
           </form>
           <Link
