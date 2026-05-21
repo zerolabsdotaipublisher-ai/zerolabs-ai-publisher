@@ -958,17 +958,6 @@ html[data-theme="dark"] .auth-panel-list {
   height: auto;
 }
 
-.marketing-nav-brand-text {
-  min-width: 0;
-  overflow: hidden;
-  font-family: var(--font-heading);
-  font-size: clamp(0.8rem, 0.65rem + 0.35vw, 1rem);
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
 .marketing-nav-links {
   grid-area: links;
   display: flex;
@@ -1363,34 +1352,6 @@ html[data-theme="dark"] .auth-panel-list {
   height: auto;
 }
 
-.app-nav-brand-copy {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  min-width: 0;
-  overflow: hidden;
-}
-
-.app-nav-brand-title {
-  overflow: hidden;
-  color: #ade6cd;
-  font-size: clamp(0.62rem, 0.58rem + 0.18vw, 0.72rem);
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.app-nav-brand-subtitle {
-  overflow: hidden;
-  color: #f8f9fa;
-  font-size: clamp(0.82rem, 0.72rem + 0.24vw, 0.96rem);
-  font-weight: 700;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
 .app-nav-links {
   grid-area: links;
   display: flex;
@@ -1653,9 +1614,7 @@ html[data-theme="dark"] .auth-panel-list {
     width: clamp(2.125rem, 4vw, 2.625rem);
   }
 
-  .marketing-nav-brand-text,
-  .marketing-nav-search,
-  .app-nav-brand-copy {
+  .marketing-nav-search {
     position: absolute;
     width: 1px;
     height: 1px;
