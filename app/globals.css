@@ -1085,7 +1085,7 @@ html[data-theme="dark"] .auth-panel-list {
   justify-content: center;
   width: min(100%, 29rem);
   min-height: clamp(12rem, 22vw, 19rem);
-  transition: transform 220ms ease, filter 220ms ease, opacity 220ms ease;
+  transition: transform 220ms ease, filter 220ms ease;
   will-change: transform, filter;
 }
 
@@ -1614,7 +1614,7 @@ html[data-theme="dark"] .auth-panel-list {
     width: clamp(2.125rem, 4vw, 2.625rem);
   }
 
-  .marketing-nav-search {
+  .marketing-nav-actions .marketing-nav-search {
     position: absolute;
     width: 1px;
     height: 1px;
