@@ -47,7 +47,7 @@ export function MarketingNav({
   onToggleTheme,
 }: MarketingNavProps) {
   const isDark = theme === "dark";
-  const logoSrc = isDark ? "/images/Zero Labs Logo transparent.svg" : "/images/Zero Labs Logo colored.svg";
+  const logoSrc = isDark ? "/images/AI robot logo light.svg" : "/images/AI robot logo dark.svg";
 
   const resolveHref = (href: string) => {
     if (!href.startsWith("#")) {
@@ -61,11 +61,8 @@ export function MarketingNav({
     <header className="marketing-panel-surface marketing-nav-surface" style={buildSurfaceStyle(isDark)}>
       <div className="marketing-nav-layout">
         <div className="marketing-nav-brand">
-          <Link href={routes.home} className="marketing-nav-brand-link">
-            <Image src={logoSrc} alt="" width={180} height={40} priority className="marketing-nav-brand-logo" />
-            <span className="marketing-nav-brand-text">
-              Zero Labs AI Publisher
-            </span>
+          <Link href={routes.home} className="marketing-nav-brand-link" aria-label="Open Zero Labs AI Publisher home">
+            <Image src={logoSrc} alt="" width={44} height={29} priority className="marketing-nav-brand-logo" />
           </Link>
         </div>
 

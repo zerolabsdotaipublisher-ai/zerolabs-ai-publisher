@@ -48,11 +48,7 @@ export function AppNavigation({ userEmail, userRole }: AppNavigationProps) {
     <header className="app-header">
       <nav className="app-nav" aria-label="Primary">
         <Link href={dashboardHref} className="app-nav-brand" aria-label="Open Zero Labs AI Publisher dashboard">
-          <Image src="/images/Zero Labs Logo transparent.svg" alt="" aria-hidden="true" width={168} height={40} priority className="app-nav-brand-logo" />
-          <span className="app-nav-brand-copy">
-            <span className="app-nav-brand-title">Zero Labs</span>
-            <span className="app-nav-brand-subtitle">AI Publisher</span>
-          </span>
+          <Image src="/images/AI robot logo light.svg" alt="" aria-hidden="true" width={44} height={29} priority className="app-nav-brand-logo" />
         </Link>
 
         <div className="app-nav-links">

@@ -290,16 +290,7 @@ export function LandingPage() {
               </div>
 
               <div className="marketing-hero-visual">
-                <div
-                  className="marketing-hero-visual-shell"
-                  style={{
-                    borderColor: isDark ? "rgba(173,230,205,0.18)" : "rgba(31,111,95,0.16)",
-                    background: isDark
-                      ? "linear-gradient(180deg, rgba(8,28,22,0.42) 0%, rgba(6,26,20,0.16) 100%)"
-                      : "linear-gradient(180deg, rgba(248,249,250,0.64) 0%, rgba(234,242,239,0.26) 100%)",
-                    boxShadow: isDark ? "0 24px 72px rgba(0,0,0,0.18)" : "0 24px 72px rgba(18,65,112,0.08)",
-                  }}
-                >
+                <div className="marketing-hero-visual-shell">
                   <Image
                     src="/images/FULL ROBOT BODY.svg"
                     alt=""
