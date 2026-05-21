@@ -1580,11 +1580,6 @@ html[data-theme="dark"] .auth-panel-list {
     gap: clamp(0.55rem, 2.5vw, 0.8rem);
   }
 
-  .app-nav-signout-group {
-    align-items: stretch;
-    gap: clamp(0.55rem, 2.5vw, 0.8rem);
-  }
-
   .app-nav-user,
   .app-nav-signout,
   .app-nav-error {
