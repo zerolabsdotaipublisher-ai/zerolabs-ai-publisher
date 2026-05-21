@@ -1527,11 +1527,15 @@ html[data-theme="dark"] .auth-panel-list {
     height: auto;
   }
 
+  .app-page {
+    padding-inline: clamp(1rem, 4vw, 1.5rem);
+    padding-block: clamp(1rem, 4vw, 2rem);
+  }
+
   .app-header {
     padding: 0.75rem 0.75rem 0;
   }
 
-  .marketing-nav-layout,
   .app-nav {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
@@ -1545,57 +1549,38 @@ html[data-theme="dark"] .auth-panel-list {
     padding: 0.85rem 0.95rem;
   }
 
-  .marketing-nav-brand,
-  .marketing-nav-links,
-  .marketing-nav-actions,
   .app-nav-brand,
   .app-nav-links,
   .app-nav-actions {
     width: 100%;
   }
 
-  .marketing-nav-brand-link,
   .app-nav-brand {
     justify-content: center;
   }
 
-  .marketing-nav-brand {
-    max-width: clamp(2.125rem, 10vw, 2.625rem);
-  }
-
-  .marketing-nav-brand-logo,
   .app-nav-brand-logo {
     width: clamp(2.125rem, 10vw, 2.625rem);
   }
 
-  .marketing-nav-links-list,
   .app-nav-links {
     flex-direction: column;
     align-items: stretch;
     gap: clamp(0.55rem, 2.5vw, 0.8rem);
   }
 
-  .marketing-nav-link-item,
   .app-nav-link,
-  .marketing-nav-search,
-  .marketing-nav-login,
   .app-nav-user,
   .app-nav-signout,
   .app-nav-error {
     width: 100%;
   }
 
-  .marketing-nav-actions,
   .app-nav-actions {
     flex-direction: column;
     align-items: stretch;
     justify-self: stretch;
     gap: clamp(0.55rem, 2.5vw, 0.8rem);
-  }
-
-  .marketing-theme-toggle {
-    width: 100%;
-    justify-content: center;
   }
 
   .app-nav-signout-group {
@@ -3981,10 +3966,6 @@ html[data-theme="dark"] .auth-panel-list {
 }
 
 @media (max-width: 767px) {
-  .app-page {
-    padding: 0.875rem 1rem 1.25rem;
-  }
-
   .wizard-shell {
     padding: 0.75rem;
   }
