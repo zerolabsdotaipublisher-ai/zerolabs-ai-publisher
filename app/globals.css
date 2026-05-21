@@ -1543,9 +1543,6 @@ html[data-theme="dark"] .auth-panel-list {
       "links"
       "actions";
     row-gap: 0.75rem;
-  }
-
-  .app-nav {
     padding: 0.85rem 0.95rem;
   }
 
