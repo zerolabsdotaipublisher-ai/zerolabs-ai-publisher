@@ -1662,8 +1662,7 @@ html[data-theme="dark"] .auth-panel-list {
     gap: clamp(0.45rem, 2vw, 0.7rem);
   }
 
-  .app-nav-user,
-  .app-nav-signout {
+  .app-nav-user {
     max-width: 100%;
   }
 
