@@ -1650,7 +1650,6 @@ html[data-theme="dark"] .auth-panel-list {
 
   .app-nav-actions {
     flex-wrap: wrap;
-    flex-direction: row;
     align-items: center;
     justify-content: center;
     justify-self: stretch;
@@ -1674,7 +1673,7 @@ html[data-theme="dark"] .auth-panel-list {
   .app-nav-user {
     padding: 0.55rem 0.8rem;
     white-space: normal;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
   }
 
   .app-nav-signout-group {
