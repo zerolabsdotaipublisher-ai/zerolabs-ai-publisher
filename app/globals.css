@@ -1436,11 +1436,6 @@ html[data-theme="dark"] .auth-panel-list {
   max-width: clamp(2.75rem, 5vw, 3rem);
 }
 
-.app-nav-mobile-trigger,
-.app-nav-mobile-menu {
-  display: none;
-}
-
 .app-nav-mobile-trigger {
   border: 0;
   background: transparent;
@@ -1643,13 +1638,9 @@ html[data-theme="dark"] .auth-panel-list {
     position: relative;
   }
 
-  .app-nav-brand {
-    width: auto;
-    max-width: none;
-    justify-content: flex-start;
-  }
-
-  .app-nav-brand-link {
+  .app-nav-brand-link,
+  .app-nav-links,
+  .app-nav-actions {
     display: none;
   }
 
@@ -1657,18 +1648,15 @@ html[data-theme="dark"] .auth-panel-list {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-  }
-
-  .app-nav-links {
-    display: none;
-  }
-
-  .app-nav-actions {
-    display: none;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
   }
 
   .app-nav-brand-logo {
     width: clamp(2rem, 9vw, 2.35rem);
+    height: auto;
   }
 
   .app-nav-mobile-menu {
@@ -1680,9 +1668,8 @@ html[data-theme="dark"] .auth-panel-list {
     display: grid;
     gap: 0.55rem;
     padding: 0.85rem;
-    overflow-x: hidden;
-    overflow-y: auto;
     max-height: min(70vh, calc(100dvh - 5rem));
+    overflow-y: auto;
     border: 1px solid rgba(173, 230, 205, 0.16);
     border-radius: 1.25rem;
     background: rgba(6, 26, 20, 0.96);
@@ -1703,14 +1690,7 @@ html[data-theme="dark"] .auth-panel-list {
     text-align: center;
   }
 
-  .app-nav-mobile-menu .app-nav-link {
-    padding-block: 0.5rem;
-    padding-inline: 0.75rem;
-    white-space: normal;
-  }
-
   .app-nav-mobile-menu .app-nav-user {
-    padding: 0.55rem 0.8rem;
     white-space: normal;
     overflow-wrap: break-word;
   }
@@ -1719,19 +1699,17 @@ html[data-theme="dark"] .auth-panel-list {
     align-items: stretch;
   }
 
-  .app-nav-mobile-menu .app-nav-signout {
-    min-height: 2.5rem;
-    padding-inline: 0.85rem;
-  }
-
-  .app-nav-mobile-menu .app-nav-error {
-    width: 100%;
-  }
-
   .dashboard-home-shell {
     width: min(100%, 42rem);
     margin-inline: auto;
     gap: clamp(0.75rem, 3vw, 1rem);
+  }
+}
+
+@media (min-width: 768px) {
+  .app-nav-mobile-trigger,
+  .app-nav-mobile-menu {
+    display: none;
   }
 }
 
