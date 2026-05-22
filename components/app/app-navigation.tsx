@@ -50,6 +50,20 @@ export function AppNavigation({ userEmail, userRole }: AppNavigationProps) {
   const renderBrandLogo = () => (
     <Image src="/images/AI robot logo light.svg" alt="" aria-hidden="true" width={44} height={29} priority className="app-nav-brand-logo" />
   );
+  const renderUserActions = () => (
+    <>
+      {userEmail ? (
+        <span className="app-nav-user" title={userEmail}>
+          {userEmail}
+        </span>
+      ) : null}
+      <SignOutButton
+        containerClassName="app-nav-signout-group"
+        className="app-nav-signout"
+        errorClassName="app-nav-error"
+      />
+    </>
+  );
   const renderNavLink = (link: (typeof navLinks)[number], keyPrefix?: string, onClick?: () => void) => {
     const isActive = isActivePath(pathname, link.href);
 
@@ -89,32 +103,12 @@ export function AppNavigation({ userEmail, userRole }: AppNavigationProps) {
         </div>
 
         <div className="app-nav-actions">
-          {userEmail ? (
-            <span className="app-nav-user" title={userEmail}>
-              {userEmail}
-            </span>
-          ) : null}
-          <SignOutButton
-            containerClassName="app-nav-signout-group"
-            className="app-nav-signout"
-            errorClassName="app-nav-error"
-          />
+          {renderUserActions()}
         </div>
 
         <div id={mobileMenuId} className="app-nav-mobile-menu" role="region" aria-label="Dashboard menu" hidden={!isMobileMenuOpen}>
           {navLinks.map((link) => renderNavLink(link, "mobile", () => setIsMobileMenuOpen(false)))}
-
-          {userEmail ? (
-            <span className="app-nav-user" title={userEmail}>
-              {userEmail}
-            </span>
-          ) : null}
-
-          <SignOutButton
-            containerClassName="app-nav-signout-group"
-            className="app-nav-signout"
-            errorClassName="app-nav-error"
-          />
+          {renderUserActions()}
         </div>
       </nav>
     </header>
