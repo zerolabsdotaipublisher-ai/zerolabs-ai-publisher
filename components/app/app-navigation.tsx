@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useId, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -46,10 +46,6 @@ export function AppNavigation({ userEmail, userRole }: AppNavigationProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navLinks = userRole === "admin" ? adminNavLinks : customerNavLinks;
   const dashboardHref = userRole === "admin" ? routes.adminDashboard : routes.dashboard;
-
-  useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [pathname]);
 
   const mobileMenuLabel = isMobileMenuOpen ? "Close dashboard menu" : "Open dashboard menu";
 
