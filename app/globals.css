@@ -1453,6 +1453,12 @@ html[data-theme="dark"] .auth-panel-list {
   outline-offset: 0.3rem;
 }
 
+.app-nav-mobile-trigger[aria-expanded="true"] {
+  border-radius: 0.9rem;
+  background: rgba(31, 111, 95, 0.16);
+  box-shadow: 0 0 24px rgba(31, 111, 95, 0.16);
+}
+
 .app-nav-brand-logo {
   flex: 0 0 auto;
   width: clamp(2.5rem, 3vw, 3rem);
