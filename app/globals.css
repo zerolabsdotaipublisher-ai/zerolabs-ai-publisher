@@ -1133,6 +1133,83 @@ html[data-theme="dark"] .auth-panel-list {
 }
 
 @media (max-width: 767px) {
+  .marketing-nav-surface {
+    padding-block: clamp(0.8rem, 3.5vw, 1rem);
+    padding-inline: clamp(0.9rem, 4vw, 1.1rem);
+    border-radius: 1.5rem;
+  }
+
+  .marketing-nav-layout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "brand"
+      "links"
+      "actions";
+    row-gap: clamp(0.75rem, 3vw, 1rem);
+  }
+
+  .marketing-nav-brand,
+  .marketing-nav-links,
+  .marketing-nav-actions {
+    width: 100%;
+  }
+
+  .marketing-nav-brand-link {
+    justify-content: center;
+  }
+
+  .marketing-nav-brand-logo {
+    width: clamp(2rem, 9vw, 2.35rem);
+  }
+
+  .marketing-nav-links {
+    overflow: visible;
+  }
+
+  .marketing-nav-links-list {
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    gap: clamp(0.5rem, 2.5vw, 0.75rem);
+    overflow: visible;
+  }
+
+  .marketing-nav-link-item {
+    width: 100%;
+    padding-block: 0.55rem;
+    padding-inline: 0.85rem;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+
+  .marketing-nav-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(0.65rem, 3vw, 0.9rem);
+    align-items: stretch;
+    justify-items: stretch;
+  }
+
+  .marketing-nav-search,
+  .marketing-nav-login,
+  .marketing-theme-toggle {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .marketing-theme-toggle {
+    justify-content: center;
+  }
+
+  .marketing-theme-toggle > * {
+    width: 100%;
+  }
+
+  .marketing-nav-login {
+    min-height: 2.75rem;
+  }
+
   .marketing-hero-section {
     padding: clamp(1.4rem, 5vw, 2rem);
   }
@@ -1533,7 +1610,7 @@ html[data-theme="dark"] .auth-panel-list {
   }
 
   .app-header {
-    padding: 0.75rem 0.75rem 0;
+    padding: 0.5rem 0.5rem 0;
   }
 
   .app-nav {
@@ -1542,8 +1619,9 @@ html[data-theme="dark"] .auth-panel-list {
       "brand"
       "links"
       "actions";
-    row-gap: 0.75rem;
-    padding: 0.85rem 0.95rem;
+    row-gap: 0.6rem;
+    padding: 0.75rem 0.85rem;
+    border-radius: 1.25rem;
   }
 
   .app-nav-brand,
@@ -1557,34 +1635,63 @@ html[data-theme="dark"] .auth-panel-list {
   }
 
   .app-nav-brand-logo {
-    width: clamp(2.125rem, 10vw, 2.625rem);
+    width: clamp(2rem, 9vw, 2.35rem);
   }
 
   .app-nav-links {
-    flex-direction: column;
-    align-items: stretch;
-    gap: clamp(0.55rem, 2.5vw, 0.8rem);
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(0.4rem, 2vw, 0.65rem);
+    overflow: visible;
   }
 
   .app-nav-link,
-  .app-nav-user,
-  .app-nav-signout,
-  .app-nav-error {
-    width: 100%;
+  .app-nav-signout {
+    width: auto;
+    max-width: 100%;
   }
 
   .app-nav-actions {
-    flex-direction: column;
-    align-items: stretch;
+    flex-wrap: wrap;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
     justify-self: stretch;
-    gap: clamp(0.55rem, 2.5vw, 0.8rem);
+    gap: clamp(0.45rem, 2vw, 0.7rem);
   }
 
   .app-nav-user,
   .app-nav-signout,
   .app-nav-error {
-    max-width: none;
+    width: auto;
+    max-width: 100%;
     text-align: center;
+  }
+
+  .app-nav-link {
+    padding-block: 0.5rem;
+    padding-inline: 0.75rem;
+    white-space: normal;
+  }
+
+  .app-nav-user {
+    padding: 0.55rem 0.8rem;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .app-nav-signout-group {
+    align-items: center;
+  }
+
+  .app-nav-signout {
+    min-height: 2.5rem;
+    padding-inline: 0.85rem;
+  }
+
+  .app-nav-error {
+    width: 100%;
   }
 
   .dashboard-home-shell {
