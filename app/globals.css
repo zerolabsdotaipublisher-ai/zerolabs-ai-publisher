@@ -1706,7 +1706,7 @@ html[data-theme="dark"] .auth-panel-list {
   .app-nav-mobile-menu .app-nav-user {
     padding: 0.55rem 0.8rem;
     white-space: normal;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
   }
 
   .app-nav-mobile-menu .app-nav-signout-group {

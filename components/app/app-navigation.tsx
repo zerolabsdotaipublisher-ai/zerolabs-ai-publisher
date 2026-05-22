@@ -46,14 +46,31 @@ export function AppNavigation({ userEmail, userRole }: AppNavigationProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navLinks = userRole === "admin" ? adminNavLinks : customerNavLinks;
   const dashboardHref = userRole === "admin" ? routes.adminDashboard : routes.dashboard;
-
   const mobileMenuLabel = isMobileMenuOpen ? "Close dashboard menu" : "Open dashboard menu";
+  const renderBrandLogo = () => (
+    <Image src="/images/AI robot logo light.svg" alt="" aria-hidden="true" width={44} height={29} priority className="app-nav-brand-logo" />
+  );
+  const renderNavLink = (link: (typeof navLinks)[number], keyPrefix?: string, onClick?: () => void) => {
+    const isActive = isActivePath(pathname, link.href);
+
+    return (
+      <Link
+        key={`${keyPrefix ?? "nav"}-${link.href}`}
+        href={link.href}
+        className={`app-nav-link${isActive ? " app-nav-link-active" : ""}`}
+        aria-current={isActive ? "page" : undefined}
+        onClick={onClick}
+      >
+        {link.label}
+      </Link>
+    );
+  };
 
   return (
     <header className="app-header">
       <nav className="app-nav" aria-label="Primary">
         <Link href={dashboardHref} className="app-nav-brand app-nav-brand-link" aria-label="Open Zero Labs AI Publisher dashboard">
-          <Image src="/images/AI robot logo light.svg" alt="" aria-hidden="true" width={44} height={29} priority className="app-nav-brand-logo" />
+          {renderBrandLogo()}
         </Link>
 
         <button
@@ -64,24 +81,11 @@ export function AppNavigation({ userEmail, userRole }: AppNavigationProps) {
           aria-label={mobileMenuLabel}
           onClick={() => setIsMobileMenuOpen((open) => !open)}
         >
-          <Image src="/images/AI robot logo light.svg" alt="" aria-hidden="true" width={44} height={29} priority className="app-nav-brand-logo" />
+          {renderBrandLogo()}
         </button>
 
         <div className="app-nav-links">
-          {navLinks.map((link) => {
-            const isActive = isActivePath(pathname, link.href);
-
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`app-nav-link${isActive ? " app-nav-link-active" : ""}`}
-                aria-current={isActive ? "page" : undefined}
-              >
-                {link.label}
-              </Link>
-            );
-          })}
+          {navLinks.map((link) => renderNavLink(link, "desktop"))}
         </div>
 
         <div className="app-nav-actions">
@@ -98,21 +102,7 @@ export function AppNavigation({ userEmail, userRole }: AppNavigationProps) {
         </div>
 
         <div id={mobileMenuId} className="app-nav-mobile-menu" hidden={!isMobileMenuOpen}>
-          {navLinks.map((link) => {
-            const isActive = isActivePath(pathname, link.href);
-
-            return (
-              <Link
-                key={`mobile-${link.href}`}
-                href={link.href}
-                className={`app-nav-link${isActive ? " app-nav-link-active" : ""}`}
-                aria-current={isActive ? "page" : undefined}
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                {link.label}
-              </Link>
-            );
-          })}
+          {navLinks.map((link) => renderNavLink(link, "mobile", () => setIsMobileMenuOpen(false)))}
 
           {userEmail ? (
             <span className="app-nav-user" title={userEmail}>
