@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useCallback, useId, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -47,6 +47,7 @@ export function AppNavigation({ userEmail, userRole }: AppNavigationProps) {
   const navLinks = userRole === "admin" ? adminNavLinks : customerNavLinks;
   const dashboardHref = userRole === "admin" ? routes.adminDashboard : routes.dashboard;
   const mobileMenuLabel = isMobileMenuOpen ? "Close dashboard menu" : "Open dashboard menu";
+  const closeMobileMenu = useCallback(() => setIsMobileMenuOpen(false), []);
   const renderBrandLogo = () => (
     <Image src="/images/AI robot logo light.svg" alt="" aria-hidden="true" width={44} height={29} priority className="app-nav-brand-logo" />
   );
@@ -64,12 +65,12 @@ export function AppNavigation({ userEmail, userRole }: AppNavigationProps) {
       />
     </>
   );
-  const renderNavLink = (link: (typeof navLinks)[number], keyPrefix?: string, onClick?: () => void) => {
+  const renderNavLink = (link: (typeof navLinks)[number], linkKeyPrefix?: string, onClick?: () => void) => {
     const isActive = isActivePath(pathname, link.href);
 
     return (
       <Link
-        key={`${keyPrefix ?? "nav"}-${link.href}`}
+        key={`${linkKeyPrefix ?? "nav"}-${link.href}`}
         href={link.href}
         className={`app-nav-link${isActive ? " app-nav-link-active" : ""}`}
         aria-current={isActive ? "page" : undefined}
@@ -107,7 +108,7 @@ export function AppNavigation({ userEmail, userRole }: AppNavigationProps) {
         </div>
 
         <div id={mobileMenuId} className="app-nav-mobile-menu" role="region" aria-label="Dashboard menu" hidden={!isMobileMenuOpen}>
-          {navLinks.map((link) => renderNavLink(link, "mobile", () => setIsMobileMenuOpen(false)))}
+          {navLinks.map((link) => renderNavLink(link, "mobile", closeMobileMenu))}
           {renderUserActions()}
         </div>
       </nav>
