@@ -1202,10 +1202,6 @@ html[data-theme="dark"] .auth-panel-list {
     justify-content: center;
   }
 
-  .marketing-theme-toggle > * {
-    width: 100%;
-  }
-
   .marketing-nav-login {
     min-height: 2.75rem;
   }
@@ -1672,7 +1668,7 @@ html[data-theme="dark"] .auth-panel-list {
   .app-nav-link {
     padding-block: 0.5rem;
     padding-inline: 0.75rem;
-    white-space: normal;
+    white-space: nowrap;
   }
 
   .app-nav-user {
