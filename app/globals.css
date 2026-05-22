@@ -1436,13 +1436,6 @@ html[data-theme="dark"] .auth-panel-list {
   max-width: clamp(2.75rem, 5vw, 3rem);
 }
 
-.app-nav-mobile-trigger {
-  border: 0;
-  background: transparent;
-  padding: 0;
-  cursor: pointer;
-}
-
 .app-nav-mobile-trigger:focus-visible {
   outline: 2px solid rgba(173, 230, 205, 0.52);
   outline-offset: 0.3rem;
