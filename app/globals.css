@@ -1436,17 +1436,6 @@ html[data-theme="dark"] .auth-panel-list {
   max-width: clamp(2.75rem, 5vw, 3rem);
 }
 
-.app-nav-mobile-trigger:focus-visible {
-  outline: 2px solid rgba(173, 230, 205, 0.52);
-  outline-offset: 0.3rem;
-}
-
-.app-nav-mobile-trigger[aria-expanded="true"] {
-  border-radius: 0.9rem;
-  background: rgba(31, 111, 95, 0.16);
-  box-shadow: 0 0 24px rgba(31, 111, 95, 0.16);
-}
-
 .app-nav-brand-logo {
   flex: 0 0 auto;
   width: clamp(2.5rem, 3vw, 3rem);
@@ -1652,6 +1641,17 @@ html[data-theme="dark"] .auth-panel-list {
     background: transparent;
     padding: 0;
     cursor: pointer;
+  }
+
+  .app-nav-mobile-trigger:focus-visible {
+    outline: 2px solid rgba(173, 230, 205, 0.52);
+    outline-offset: 0.3rem;
+  }
+
+  .app-nav-mobile-trigger[aria-expanded="true"] {
+    border-radius: 0.9rem;
+    background: rgba(31, 111, 95, 0.16);
+    box-shadow: 0 0 24px rgba(31, 111, 95, 0.16);
   }
 
   .app-nav-brand-logo {
