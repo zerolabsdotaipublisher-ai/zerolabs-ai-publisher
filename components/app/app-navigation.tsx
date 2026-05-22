@@ -92,6 +92,7 @@ export function AppNavigation({ userEmail, userRole }: AppNavigationProps) {
         >
           {renderBrandLogo()}
         </Link>
+
         <button
           type="button"
           className="app-nav-brand app-nav-mobile-trigger"
@@ -102,10 +103,15 @@ export function AppNavigation({ userEmail, userRole }: AppNavigationProps) {
         >
           {renderBrandLogo()}
         </button>
+
         <div className="app-nav-links">
           {navLinks.map((link) => renderNavLink(link, "desktop"))}
         </div>
-        <div className="app-nav-actions">{renderUserActions()}</div>
+
+        <div className="app-nav-actions">
+          {renderUserActions()}
+        </div>
+
         <div
           id={mobileMenuId}
           className="app-nav-mobile-menu"
