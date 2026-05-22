@@ -1603,7 +1603,6 @@ html[data-theme="dark"] .auth-panel-list {
 
 @media (max-width: 767px) {
   .app-shell,
-  .app-nav,
   .dashboard-home-shell,
   .dashboard-panel-shell,
   .app-header {
@@ -1620,6 +1619,14 @@ html[data-theme="dark"] .auth-panel-list {
     padding: 0.5rem 0.5rem 0;
   }
 
+  .dashboard-home-shell {
+    width: min(100%, 42rem);
+    margin-inline: auto;
+    gap: clamp(0.75rem, 3vw, 1rem);
+  }
+}
+
+@media (max-width: 767px) {
   .app-nav {
     display: flex;
     align-items: center;
@@ -1690,12 +1697,6 @@ html[data-theme="dark"] .auth-panel-list {
 
   .app-nav-mobile-menu .app-nav-signout-group {
     align-items: stretch;
-  }
-
-  .dashboard-home-shell {
-    width: min(100%, 42rem);
-    margin-inline: auto;
-    gap: clamp(0.75rem, 3vw, 1rem);
   }
 }
 

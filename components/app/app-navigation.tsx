@@ -47,6 +47,7 @@ export function AppNavigation({ userEmail, userRole }: AppNavigationProps) {
   const navLinks = userRole === "admin" ? adminNavLinks : customerNavLinks;
   const dashboardHref = userRole === "admin" ? routes.adminDashboard : routes.dashboard;
   const mobileMenuLabel = isMobileMenuOpen ? "Close dashboard menu" : "Open dashboard menu";
+  const toggleMobileMenu = () => setIsMobileMenuOpen((open) => !open);
   const closeMobileMenu = useCallback(() => setIsMobileMenuOpen(false), []);
   const renderBrandLogo = () => (
     <Image src="/images/AI robot logo light.svg" alt="" aria-hidden="true" width={44} height={29} priority className="app-nav-brand-logo" />
@@ -84,7 +85,11 @@ export function AppNavigation({ userEmail, userRole }: AppNavigationProps) {
   return (
     <header className="app-header">
       <nav className="app-nav" aria-label="Primary">
-        <Link href={dashboardHref} className="app-nav-brand app-nav-brand-link" aria-label="Open Zero Labs AI Publisher dashboard">
+        <Link
+          href={dashboardHref}
+          className="app-nav-brand app-nav-brand-link"
+          aria-label="Open Zero Labs AI Publisher dashboard"
+        >
           {renderBrandLogo()}
         </Link>
 
@@ -94,7 +99,7 @@ export function AppNavigation({ userEmail, userRole }: AppNavigationProps) {
           aria-expanded={isMobileMenuOpen}
           aria-controls={mobileMenuId}
           aria-label={mobileMenuLabel}
-          onClick={() => setIsMobileMenuOpen((open) => !open)}
+          onClick={toggleMobileMenu}
         >
           {renderBrandLogo()}
         </button>
@@ -107,7 +112,13 @@ export function AppNavigation({ userEmail, userRole }: AppNavigationProps) {
           {renderUserActions()}
         </div>
 
-        <div id={mobileMenuId} className="app-nav-mobile-menu" role="region" aria-label="Dashboard menu" hidden={!isMobileMenuOpen}>
+        <div
+          id={mobileMenuId}
+          className="app-nav-mobile-menu"
+          role="region"
+          aria-label="Dashboard menu"
+          hidden={!isMobileMenuOpen}
+        >
           {navLinks.map((link) => renderNavLink(link, "mobile", closeMobileMenu))}
           {renderUserActions()}
         </div>
