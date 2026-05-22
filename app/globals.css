@@ -1643,6 +1643,12 @@ html[data-theme="dark"] .auth-panel-list {
   }
 
   .app-nav-link,
+  .app-nav-user,
+  .app-nav-signout,
+  .app-nav-error {
+    width: 100%;
+  }
+
   .app-nav-signout {
     width: auto;
     max-width: 100%;
@@ -1657,10 +1663,13 @@ html[data-theme="dark"] .auth-panel-list {
   }
 
   .app-nav-user,
+  .app-nav-signout {
+    max-width: 100%;
+  }
+
+  .app-nav-user,
   .app-nav-signout,
   .app-nav-error {
-    width: auto;
-    max-width: 100%;
     text-align: center;
   }
 
