@@ -1617,7 +1617,7 @@ html[data-theme="dark"] .auth-panel-list {
       "actions";
     row-gap: 0.6rem;
     padding: 0.75rem 0.85rem;
-    border-radius: 1.25rem;
+    border-radius: 1.5rem;
   }
 
   .app-nav-brand,
