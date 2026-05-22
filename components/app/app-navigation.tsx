@@ -101,7 +101,7 @@ export function AppNavigation({ userEmail, userRole }: AppNavigationProps) {
           />
         </div>
 
-        <div id={mobileMenuId} className="app-nav-mobile-menu" hidden={!isMobileMenuOpen}>
+        <div id={mobileMenuId} className="app-nav-mobile-menu" role="region" aria-label="Dashboard menu" hidden={!isMobileMenuOpen}>
           {navLinks.map((link) => renderNavLink(link, "mobile", () => setIsMobileMenuOpen(false)))}
 
           {userEmail ? (
