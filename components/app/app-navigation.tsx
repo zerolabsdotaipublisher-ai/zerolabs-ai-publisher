@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useId, useState } from "react";
+import { useCallback, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -42,7 +42,7 @@ function isActivePath(pathname: string, href: string) {
 
 export function AppNavigation({ userEmail, userRole }: AppNavigationProps) {
   const pathname = usePathname();
-  const mobileMenuId = useId();
+  const mobileMenuId = "app-navigation-mobile-menu";
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navLinks = userRole === "admin" ? adminNavLinks : customerNavLinks;
   const dashboardHref = userRole === "admin" ? routes.adminDashboard : routes.dashboard;
@@ -66,12 +66,12 @@ export function AppNavigation({ userEmail, userRole }: AppNavigationProps) {
       />
     </>
   );
-  const renderNavLink = (link: (typeof navLinks)[number], linkKeyPrefix?: string, onClick?: () => void) => {
+  const renderNavLink = (link: (typeof navLinks)[number], keyPrefix?: string, onClick?: () => void) => {
     const isActive = isActivePath(pathname, link.href);
 
     return (
       <Link
-        key={`${linkKeyPrefix ?? "nav"}-${link.href}`}
+        key={`${keyPrefix ?? "nav"}-${link.href}`}
         href={link.href}
         className={`app-nav-link${isActive ? " app-nav-link-active" : ""}`}
         aria-current={isActive ? "page" : undefined}
@@ -115,7 +115,6 @@ export function AppNavigation({ userEmail, userRole }: AppNavigationProps) {
         <div
           id={mobileMenuId}
           className="app-nav-mobile-menu"
-          role="region"
           aria-label="Dashboard menu"
           hidden={!isMobileMenuOpen}
         >
