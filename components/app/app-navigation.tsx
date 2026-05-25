@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Menu, X } from "lucide-react";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { routes } from "@/config/routes";
 import type { ProfileRole } from "@/lib/supabase/profile";
@@ -101,7 +102,11 @@ export function AppNavigation({ userEmail, userRole }: AppNavigationProps) {
           aria-label={mobileMenuLabel}
           onClick={toggleMobileMenu}
         >
-          {renderBrandLogo()}
+          {isMobileMenuOpen ? (
+            <X aria-hidden="true" className="app-nav-mobile-trigger-icon" />
+          ) : (
+            <Menu aria-hidden="true" className="app-nav-mobile-trigger-icon" />
+          )}
         </button>
 
         <div className="app-nav-links">
