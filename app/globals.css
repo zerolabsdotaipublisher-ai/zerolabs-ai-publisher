@@ -1140,23 +1140,27 @@ html[data-theme="dark"] .auth-panel-list {
   }
 
   .marketing-nav-layout {
+    display: grid;
     grid-template-columns: auto minmax(0, 1fr);
     grid-template-areas: "brand actions";
+    align-items: center;
     column-gap: 0.65rem;
     row-gap: 0;
+  }
+
+  .marketing-nav-brand {
+    grid-area: brand;
+    width: auto;
+    max-width: none;
   }
 
   .marketing-nav-brand-link {
     justify-content: flex-start;
   }
 
-  .marketing-nav-brand {
-    width: auto;
-    max-width: none;
-  }
-
   .marketing-nav-brand-logo {
     width: clamp(2rem, 8vw, 2.35rem);
+    height: auto;
   }
 
   .marketing-nav-links {
@@ -1164,6 +1168,7 @@ html[data-theme="dark"] .auth-panel-list {
   }
 
   .marketing-nav-actions {
+    grid-area: actions;
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -1200,7 +1205,9 @@ html[data-theme="dark"] .auth-panel-list {
   .marketing-hero-section {
     padding: clamp(1.4rem, 5vw, 2rem);
   }
+}
 
+@media (max-width: 767px) {
   .marketing-hero-copy {
     max-width: 100%;
   }
