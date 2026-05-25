@@ -1205,15 +1205,9 @@ html[data-theme="dark"] .auth-panel-list {
   .marketing-hero-section {
     padding: clamp(1.4rem, 5vw, 2rem);
   }
-}
 
-@media (max-width: 767px) {
   .marketing-hero-copy {
     max-width: 100%;
-  }
-
-  .marketing-hero-visual {
-    min-height: 0;
   }
 }
 
