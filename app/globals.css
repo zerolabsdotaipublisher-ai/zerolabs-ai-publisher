@@ -1614,6 +1614,12 @@ html[data-theme="dark"] .auth-panel-list {
 }
 
 @media (max-width: 767px) {
+  .app-header {
+    width: 100%;
+    max-width: 100%;
+    overflow: visible;
+  }
+
   .app-nav {
     display: flex;
     flex-wrap: nowrap;
@@ -1628,12 +1634,6 @@ html[data-theme="dark"] .auth-panel-list {
     padding: clamp(0.55rem, 2.5vw, 0.75rem);
     border-radius: 1.25rem;
     position: relative;
-    overflow: visible;
-  }
-
-  .app-header {
-    width: 100%;
-    max-width: 100%;
     overflow: visible;
   }
 
@@ -1681,12 +1681,6 @@ html[data-theme="dark"] .auth-panel-list {
     outline-offset: 0.3rem;
   }
 
-  .app-nav-mobile-trigger[aria-expanded="true"] {
-    border-radius: 0.9rem;
-    background: rgba(31, 111, 95, 0.16);
-    box-shadow: 0 0 24px rgba(31, 111, 95, 0.16);
-  }
-
   .app-nav-brand-logo {
     width: clamp(1.9rem, 8vw, 2.35rem);
     height: auto;
@@ -1698,6 +1692,9 @@ html[data-theme="dark"] .auth-panel-list {
     min-width: 0;
     padding: clamp(0.5rem, 2vw, 0.68rem) clamp(0.55rem, 2vw, 0.75rem);
     font-size: clamp(0.66rem, 2.8vw, 0.8rem);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .app-nav-actions .app-nav-signout-group {
@@ -1719,7 +1716,7 @@ html[data-theme="dark"] .auth-panel-list {
     top: calc(100% + 0.6rem);
     left: 0;
     right: 0;
-    z-index: 50;
+    z-index: 100;
     display: grid;
     gap: 0.55rem;
     padding: 0.85rem;
@@ -1730,8 +1727,8 @@ html[data-theme="dark"] .auth-panel-list {
     overflow-y: auto;
     border: 1px solid rgba(173, 230, 205, 0.16);
     border-radius: 1.25rem;
-    background: rgba(6, 26, 20, 0.96);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.28);
+    background: rgba(6, 26, 20, 0.98);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
     backdrop-filter: blur(18px);
   }
 
@@ -1749,12 +1746,14 @@ html[data-theme="dark"] .auth-panel-list {
     text-align: center;
   }
 
-  .app-nav-mobile-menu .app-nav-signout-group {
-    align-items: stretch;
-  }
-
   .app-nav-mobile-menu .app-nav-user {
     display: block;
+    white-space: normal;
+    overflow-wrap: break-word;
+  }
+
+  .app-nav-mobile-menu .app-nav-signout-group {
+    align-items: stretch;
   }
 }
 
