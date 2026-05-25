@@ -1638,12 +1638,6 @@ html[data-theme="dark"] .auth-panel-list {
   }
 
   .app-nav-brand-link,
-  .app-nav-mobile-trigger {
-    display: inline-flex;
-    flex: 0 0 auto;
-    min-width: 0;
-  }
-
   .app-nav-links {
     display: none;
   }
@@ -1663,15 +1657,17 @@ html[data-theme="dark"] .auth-panel-list {
   }
 
   .app-nav-mobile-trigger {
+    display: inline-flex;
+    flex: 0 0 auto;
     align-items: center;
     justify-content: center;
-    min-width: clamp(2.4rem, 10vw, 2.8rem);
-    min-height: clamp(2.4rem, 10vw, 2.8rem);
-    padding: clamp(0.45rem, 2vw, 0.6rem);
     border: 1px solid rgba(173, 230, 205, 0.18);
     border-radius: 9999px;
     background: rgba(248, 249, 250, 0.04);
     box-shadow: 0 0 22px rgba(31, 111, 95, 0.1);
+    min-width: clamp(2.4rem, 10vw, 2.8rem);
+    min-height: clamp(2.4rem, 10vw, 2.8rem);
+    padding: clamp(0.45rem, 2vw, 0.6rem);
     cursor: pointer;
   }
 
@@ -1744,6 +1740,8 @@ html[data-theme="dark"] .auth-panel-list {
   }
 
   .app-nav-mobile-menu .app-nav-link,
+  .app-nav-mobile-menu .app-nav-user,
+  .app-nav-mobile-menu .app-nav-signout,
   .app-nav-mobile-menu .app-nav-error {
     width: 100%;
     min-width: 0;
@@ -1751,9 +1749,12 @@ html[data-theme="dark"] .auth-panel-list {
     text-align: center;
   }
 
-  .app-nav-mobile-menu .app-nav-user,
   .app-nav-mobile-menu .app-nav-signout-group {
-    display: none;
+    align-items: stretch;
+  }
+
+  .app-nav-mobile-menu .app-nav-user {
+    display: block;
   }
 }
 
