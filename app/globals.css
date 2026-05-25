@@ -1134,76 +1134,67 @@ html[data-theme="dark"] .auth-panel-list {
 
 @media (max-width: 767px) {
   .marketing-nav-surface {
-    padding-block: clamp(0.8rem, 3.5vw, 1rem);
-    padding-inline: clamp(0.9rem, 4vw, 1.1rem);
-    border-radius: 1.5rem;
+    padding: 0.55rem 0.65rem;
+    border-radius: 999px;
+    overflow: hidden;
   }
 
   .marketing-nav-layout {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-areas:
-      "brand"
-      "links"
-      "actions";
-    row-gap: clamp(0.75rem, 3vw, 1rem);
-  }
-
-  .marketing-nav-brand,
-  .marketing-nav-links,
-  .marketing-nav-actions {
-    width: 100%;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: "brand actions";
+    column-gap: 0.65rem;
+    row-gap: 0;
   }
 
   .marketing-nav-brand-link {
-    justify-content: center;
+    justify-content: flex-start;
+  }
+
+  .marketing-nav-brand {
+    width: auto;
+    max-width: none;
   }
 
   .marketing-nav-brand-logo {
-    width: clamp(2rem, 9vw, 2.35rem);
+    width: clamp(2rem, 8vw, 2.35rem);
   }
 
   .marketing-nav-links {
-    overflow: visible;
-  }
-
-  .marketing-nav-links-list {
-    flex-direction: column;
-    align-items: stretch;
-    justify-content: center;
-    gap: clamp(0.5rem, 2.5vw, 0.75rem);
-    overflow: visible;
-  }
-
-  .marketing-nav-link-item {
-    width: 100%;
-    padding-block: 0.55rem;
-    padding-inline: 0.85rem;
-    white-space: normal;
-    overflow: visible;
-    text-overflow: clip;
+    display: none;
   }
 
   .marketing-nav-actions {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: clamp(0.65rem, 3vw, 0.9rem);
-    align-items: stretch;
-    justify-items: stretch;
-  }
-
-  .marketing-nav-search,
-  .marketing-nav-login,
-  .marketing-theme-toggle {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    gap: clamp(0.35rem, 2vw, 0.55rem);
     width: 100%;
-    max-width: 100%;
+    min-width: 0;
+    flex-wrap: nowrap;
   }
 
-  .marketing-theme-toggle {
-    justify-content: center;
+  .marketing-nav-search {
+    min-width: 0;
+    width: auto;
+    max-width: clamp(5.75rem, 30vw, 8rem);
+    flex: 1 1 auto;
   }
 
   .marketing-nav-login {
-    min-height: 2.75rem;
+    width: auto;
+    min-width: max-content;
+    min-height: 2.5rem;
+    white-space: nowrap;
+    padding-inline: clamp(0.75rem, 3vw, 1rem);
+  }
+
+  .marketing-theme-toggle {
+    width: 2.5rem;
+    min-width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    justify-content: center;
   }
 
   .marketing-hero-section {
@@ -1216,6 +1207,12 @@ html[data-theme="dark"] .auth-panel-list {
 
   .marketing-hero-visual {
     min-height: 0;
+  }
+}
+
+@media (min-width: 768px) {
+  .marketing-nav-links {
+    display: flex;
   }
 }
 
