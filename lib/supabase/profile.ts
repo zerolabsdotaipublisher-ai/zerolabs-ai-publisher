@@ -168,7 +168,7 @@ export async function updateProfile(userId: string, data: ProfileUpdateData): Pr
     const { data: updated, error } = await supabase.from("profiles").update(data).eq("id", userId).select().single();
 
     if (error) {
-      throw error;
+      throw toError(error, "Profile update failed.");
     }
 
     if (!updated) {
