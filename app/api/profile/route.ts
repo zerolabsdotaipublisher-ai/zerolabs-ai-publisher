@@ -10,8 +10,9 @@
  */
 
 import { NextResponse } from "next/server";
+import { normalizeEditableProfileUpdate, validateEditableProfileUpdate } from "@/lib/profile-validation";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { getProfile, updateProfile, type ProfileUpdateData } from "@/lib/supabase/profile";
+import { ensureProfile, updateProfile, type ProfileUpdateData } from "@/lib/supabase/profile";
 import { logger } from "@/lib/observability";
 
 export async function GET(): Promise<NextResponse> {
@@ -25,12 +26,7 @@ export async function GET(): Promise<NextResponse> {
   }
 
   try {
-    const profile = await getProfile(user.id);
-
-    if (!profile) {
-      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
-    }
-
+    const profile = await ensureProfile(user);
     return NextResponse.json({ profile });
   } catch (err) {
     logger.error("GET /api/profile failed", {
@@ -87,7 +83,22 @@ export async function PATCH(request: Request): Promise<NextResponse> {
   }
 
   try {
-    const profile = await updateProfile(user.id, data);
+    const normalizedData = normalizeEditableProfileUpdate(data);
+    const fieldErrors = validateEditableProfileUpdate(normalizedData);
+
+    if (Object.keys(fieldErrors).length > 0) {
+      return NextResponse.json(
+        {
+          error: "Please fix the highlighted fields and try again.",
+          fieldErrors,
+        },
+        { status: 400 },
+      );
+    }
+
+    await ensureProfile(user);
+
+    const profile = await updateProfile(user.id, normalizedData as ProfileUpdateData);
     return NextResponse.json({ profile });
   } catch (err) {
     logger.error("PATCH /api/profile failed", {

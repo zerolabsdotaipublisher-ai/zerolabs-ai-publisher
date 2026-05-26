@@ -41,6 +41,15 @@ function getErrorField(error: unknown, field: "code" | "message"): string | unde
   return typeof record[field] === "string" ? record[field] : undefined;
 }
 
+function toError(error: unknown, fallbackMessage: string): Error {
+  if (error instanceof Error) {
+    return error;
+  }
+
+  const message = getErrorField(error, "message");
+  return new Error(message ?? fallbackMessage);
+}
+
 // 42P01 = undefined_table, 42703 = undefined_column.
 function isRecoverableProfileSchemaError(error: unknown): boolean {
   const code = getErrorField(error, "code");
@@ -159,24 +168,25 @@ export async function updateProfile(userId: string, data: ProfileUpdateData): Pr
     const { data: updated, error } = await supabase.from("profiles").update(data).eq("id", userId).select().single();
 
     if (error) {
-      logger.error("updateProfile failed; returning fallback profile", {
-        category: "error",
-        service: "supabase",
-        userId,
-        error: { message: error.message, name: "SupabaseProfileError" },
-      });
-      return createFallbackProfileRecord(userId, "");
+      throw error;
+    }
+
+    if (!updated) {
+      throw new Error("Profile update did not return a profile row.");
     }
 
     return normalizeProfileRow(updated as Partial<Profile>);
   } catch (error) {
-    logger.error("updateProfile threw unexpectedly; returning fallback profile", {
+    const normalizedError = toError(error, "Profile update failed.");
+
+    logger.error("updateProfile threw unexpectedly", {
       category: "error",
       service: "supabase",
       userId,
-      error: { message: error instanceof Error ? error.message : String(error), name: "SupabaseProfileError" },
+      error: { message: normalizedError.message, name: "SupabaseProfileError" },
     });
-    return createFallbackProfileRecord(userId, "");
+
+    throw normalizedError;
   }
 }
 
