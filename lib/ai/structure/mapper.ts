@@ -7,11 +7,13 @@
  */
 
 import type {
+  PageDesignConfig,
   WebsiteGenerationInput,
   WebsiteGenerationOutput,
   WebsiteSectionName,
 } from "../prompts/types";
 import { createDefaultPageSeeds } from "../navigation/defaults";
+import type { NavigationPageSeed } from "../navigation/types";
 import type {
   WebsiteStructure,
   WebsitePage,
@@ -43,6 +45,104 @@ function cloneSection(section: WebsiteSection): WebsiteSection {
     components: section.components ? structuredClone(section.components) : undefined,
     styleHints: section.styleHints ? { ...section.styleHints } : undefined,
   };
+}
+
+function slugifyPageName(name: string, index: number): string {
+  const normalized = name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+
+  if (!normalized || normalized === "home" || index === 0) {
+    return "/";
+  }
+
+  return `/${normalized}`;
+}
+
+function inferPageTypeFromDesign(page: PageDesignConfig, index: number): WebsitePage["type"] {
+  const normalizedName = page.name.trim().toLowerCase();
+
+  if (normalizedName === "home" || index === 0) {
+    return "home";
+  }
+  if (normalizedName === "about" || page.layout === "about-story") {
+    return "about";
+  }
+  if (normalizedName === "contact" || page.layout === "contact-info") {
+    return "contact";
+  }
+  if (
+    normalizedName === "services" ||
+    normalizedName === "portfolio" ||
+    page.layout === "service-business" ||
+    page.layout === "portfolio-layout" ||
+    page.layout === "product-showcase" ||
+    page.layout === "grid-gallery"
+  ) {
+    return "services";
+  }
+
+  return "custom";
+}
+
+function createPageSeedsFromDesign(
+  pages: PageDesignConfig[],
+): NavigationPageSeed[] {
+  return pages.map((page, index) => {
+    const pageType = inferPageTypeFromDesign(page, index);
+    const slug = slugifyPageName(page.name, index);
+
+    return {
+      id: page.id,
+      title: page.name,
+      slug,
+      type: pageType,
+      order: index,
+      visible: true,
+      parentPageId: null,
+      priority: index * 10,
+      includeInNavigation: true,
+      navigationLabel: page.name,
+    };
+  });
+}
+
+function resolvePageSeeds(sourceInput: WebsiteGenerationInput): NavigationPageSeed[] {
+  const configuredPages = sourceInput.designConfig?.pages;
+
+  if (configuredPages?.length) {
+    return createPageSeedsFromDesign(configuredPages);
+  }
+
+  return createDefaultPageSeeds(sourceInput.websiteType);
+}
+
+function resolveSectionTypesForPage(
+  seed: NavigationPageSeed,
+  pageDesign: PageDesignConfig | undefined,
+): SectionType[] {
+  if (pageDesign?.layout === "contact-info" || seed.type === "contact") {
+    return ["hero", "contact", "cta", "footer"];
+  }
+
+  if (pageDesign?.layout === "about-story" || seed.type === "about") {
+    return ["hero", "about", "testimonials", "cta", "footer"];
+  }
+
+  if (
+    pageDesign?.layout === "blog-content" ||
+    pageDesign?.layout === "portfolio-layout" ||
+    pageDesign?.layout === "grid-gallery" ||
+    pageDesign?.layout === "product-showcase" ||
+    pageDesign?.layout === "service-business" ||
+    seed.type === "services"
+  ) {
+    return ["hero", "services", "testimonials", "cta", "contact", "footer"];
+  }
+
+  return ["hero", "about", "services", "testimonials", "cta", "contact", "footer"];
 }
 
 // ---------------------------------------------------------------------------
@@ -140,8 +240,11 @@ export function mapOutputToStructure(
   }
 
   const sectionByType = new Map(homeSections.map((section) => [section.type, section]));
-  const pageSeeds = createDefaultPageSeeds(output.websiteType);
+  const pageSeeds = resolvePageSeeds(sourceInput);
   const pageSeedById = new Map(pageSeeds.map((seed) => [seed.id, seed]));
+  const pageDesignById = new Map(
+    sourceInput.designConfig?.pages?.map((page) => [page.id, page]) ?? [],
+  );
 
   const resolveSeedDepth = (
     seedId: string,
@@ -156,16 +259,9 @@ export function mapOutputToStructure(
     return 1 + resolveSeedDepth(parent.id, seen);
   };
 
-  const sectionTypesByPageType: Record<WebsitePage["type"], SectionType[]> = {
-    home: ["hero", "about", "services", "testimonials", "cta", "contact", "footer"],
-    about: ["hero", "about", "testimonials", "cta", "footer"],
-    services: ["hero", "services", "testimonials", "cta", "contact", "footer"],
-    contact: ["hero", "contact", "cta", "footer"],
-    custom: ["hero", "services", "cta", "footer"],
-  };
-
   const pages: WebsitePage[] = pageSeeds.map((seed, pageIndex) => {
-    const sectionTypes = sectionTypesByPageType[seed.type] ?? sectionTypesByPageType.custom;
+    const pageDesign = pageDesignById.get(seed.id);
+    const sectionTypes = resolveSectionTypesForPage(seed, pageDesign);
     const selectedSections = sectionTypes
       .map((type) => sectionByType.get(type))
       .filter((section): section is WebsiteSection => Boolean(section))

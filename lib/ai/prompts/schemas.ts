@@ -78,6 +78,43 @@ function trimOrUndefined(value?: string): string | undefined {
   return trimmed ? trimmed : undefined;
 }
 
+function sanitizeDesignConfig(
+  designConfig?: WebsiteGenerationInput["designConfig"],
+): WebsiteGenerationInput["designConfig"] {
+  if (!designConfig?.pages?.length) {
+    return undefined;
+  }
+
+  return {
+    pages: designConfig.pages.map((page) => ({
+      id: page.id.trim(),
+      name: page.name.trim(),
+      layout: page.layout,
+      background: {
+        type: page.background.type,
+        primaryColor: page.background.primaryColor.trim(),
+        secondaryColor: trimOrUndefined(page.background.secondaryColor),
+        gradientDirection: trimOrUndefined(page.background.gradientDirection),
+        imageUrl: trimOrUndefined(page.background.imageUrl),
+        videoUrl: trimOrUndefined(page.background.videoUrl),
+      },
+      typography: {
+        bodyFont: page.typography.bodyFont.trim(),
+        bodyColor: page.typography.bodyColor.trim(),
+        fontMood: page.typography.fontMood,
+        fontSizePreference: page.typography.fontSizePreference,
+      },
+      headings: {
+        headingFont: page.headings.headingFont.trim(),
+        headingColor: page.headings.headingColor.trim(),
+        headingWeight: page.headings.headingWeight.trim(),
+        headingScale: page.headings.headingScale,
+      },
+      contentPrompt: page.contentPrompt.trim(),
+    })),
+  };
+}
+
 export function sanitizeInput(
   input: WebsiteGenerationInput,
 ): WebsiteGenerationInput {
@@ -115,6 +152,7 @@ export function sanitizeInput(
     constraints: input.constraints?.map((item) => item.trim()).filter(Boolean),
     customToneNotes: trimOrUndefined(input.customToneNotes),
     customStyleNotes: trimOrUndefined(input.customStyleNotes),
+    designConfig: sanitizeDesignConfig(input.designConfig),
   };
 }
 

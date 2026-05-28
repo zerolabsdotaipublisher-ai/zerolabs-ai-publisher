@@ -2,32 +2,25 @@ import type { WizardStepDefinition } from "./types";
 
 export const WIZARD_FORM_STEPS: WizardStepDefinition[] = [
   {
-    id: "website-type",
-    title: "Website type",
-    purpose: "Choose the website category and intent.",
+    id: "page-setup",
+    title: "Pages setup",
+    purpose: "Choose page count and name each page.",
     required: true,
     skippable: false,
   },
   {
-    id: "business-info",
-    title: "Business info",
-    purpose: "Capture core brand details and goals.",
+    id: "page-design",
+    title: "Design each page",
+    purpose: "Set layout, background, typography, and purpose for every page.",
     required: true,
     skippable: false,
   },
   {
-    id: "style-theme",
-    title: "Style and theme",
-    purpose: "Choose voice and visual direction.",
+    id: "brand-content",
+    title: "Brand and content",
+    purpose: "Capture brand, tone, and supporting content inputs.",
     required: true,
     skippable: false,
-  },
-  {
-    id: "content-input",
-    title: "Content inputs",
-    purpose: "Add optional depth and customization.",
-    required: false,
-    skippable: true,
   },
   {
     id: "review-confirm",

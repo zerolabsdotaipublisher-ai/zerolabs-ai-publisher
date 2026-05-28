@@ -1,17 +1,17 @@
 import { styleOptions, toneOptions } from "@/lib/wizard";
-import type { WebsiteWizardInput } from "@/lib/wizard";
+import type { WebsiteWizardInput, WebsiteWizardInputPatch } from "@/lib/wizard";
 
 interface StepStyleThemeProps {
   data: WebsiteWizardInput;
-  onFieldChange: (patch: Partial<WebsiteWizardInput>) => void;
+  onFieldChange: (patch: WebsiteWizardInputPatch) => void;
 }
 
 export function StepStyleTheme({ data, onFieldChange }: StepStyleThemeProps) {
   return (
     <section className="wizard-step-panel">
-      <h2>Style and theme</h2>
+      <h2>Style and tone</h2>
       <p className="wizard-step-description">
-        Choose the visual and voice direction that should shape structure, layout, content, and SEO.
+        Choose the voice and broader creative direction that should shape structure, content, and SEO.
       </p>
 
       <fieldset>

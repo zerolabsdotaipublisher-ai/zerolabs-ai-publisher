@@ -1,11 +1,11 @@
-import { defaultWizardInput } from "@/lib/wizard";
+import { createDefaultWizardInput } from "@/lib/wizard";
 import type { WebsiteWizardInput } from "@/lib/wizard";
 import type { GenerationInterfaceState, GenerationStage } from "./types";
 
 export const GENERATION_STORAGE_KEY = "zlai.websiteGenerationInterface";
 
 export function createInitialGenerationState(
-  input: WebsiteWizardInput = defaultWizardInput,
+  input: WebsiteWizardInput = createDefaultWizardInput(),
 ): GenerationInterfaceState {
   return {
     input,

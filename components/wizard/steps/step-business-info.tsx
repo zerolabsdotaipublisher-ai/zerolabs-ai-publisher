@@ -1,9 +1,9 @@
-import type { WebsiteWizardInput } from "@/lib/wizard";
+import type { WebsiteWizardInput, WebsiteWizardInputPatch } from "@/lib/wizard";
 
 interface StepBusinessInfoProps {
   data: WebsiteWizardInput;
   servicesText: string;
-  onFieldChange: (patch: Partial<WebsiteWizardInput>) => void;
+  onFieldChange: (patch: WebsiteWizardInputPatch) => void;
   onServicesTextChange: (value: string) => void;
 }
 

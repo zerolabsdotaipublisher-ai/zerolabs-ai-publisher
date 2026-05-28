@@ -6,16 +6,19 @@ import { routes } from "@/config/routes";
 import {
   WIZARD_FORM_STEPS,
   WIZARD_STORAGE_KEY,
+  createDefaultWizardInput,
   createInitialWizardState,
   getFormStepIndex,
   getNextFormStep,
   getPreviousFormStep,
   mergeWizardInput,
+  normalizeDesignConfig,
   normalizeList,
   validateReviewStep,
   validateWizardStep,
   type WebsiteCreationWizardState,
   type WebsiteWizardInput,
+  type WebsiteWizardInputPatch,
   type WizardStepId,
 } from "@/lib/wizard";
 import { WizardShell } from "./wizard-shell";
@@ -25,8 +28,29 @@ import { WizardNavigation } from "./wizard-navigation";
 import { WizardReview } from "./wizard-review";
 import { StepBusinessInfo } from "./steps/step-business-info";
 import { StepContentInput } from "./steps/step-content-input";
+import { StepPageDesign } from "./steps/step-page-design";
+import { StepPagesSetup } from "./steps/step-pages-setup";
 import { StepStyleTheme } from "./steps/step-style-theme";
-import { StepWebsiteType } from "./steps/step-website-type";
+
+function normalizeWizardStepId(stepId: string): WizardStepId {
+  switch (stepId) {
+    case "website-type":
+      return "page-setup";
+    case "business-info":
+    case "style-theme":
+    case "content-input":
+      return "brand-content";
+    case "page-setup":
+    case "page-design":
+    case "brand-content":
+    case "review-confirm":
+    case "loading":
+    case "success":
+      return stepId;
+    default:
+      return "page-setup";
+  }
+}
 
 function splitEscapedPipes(value: string): string[] {
   const segments: string[] = [];
@@ -102,11 +126,17 @@ export function WebsiteCreationWizard() {
 
       return {
         ...parsed,
+        data: mergeWizardInput(createDefaultWizardInput(), {
+          ...parsed.data,
+          designConfig: {
+            pages: normalizeDesignConfig(parsed.data.designConfig).pages,
+          },
+        }),
         generationStatus: "idle",
         currentStep:
           parsed.currentStep === "loading" || parsed.currentStep === "success"
             ? "review-confirm"
-            : parsed.currentStep,
+            : normalizeWizardStepId(parsed.currentStep),
       };
     } catch {
       window.localStorage.removeItem(WIZARD_STORAGE_KEY);
@@ -137,7 +167,7 @@ export function WebsiteCreationWizard() {
   );
   const constraintsText = useMemo(() => state.data.constraints.join("\n"), [state.data.constraints]);
 
-  function updateData(patch: Partial<WebsiteWizardInput>) {
+  function updateData(patch: WebsiteWizardInputPatch) {
     setState((current) => ({
       ...current,
       data: mergeWizardInput(current.data, patch),
@@ -257,44 +287,56 @@ export function WebsiteCreationWizard() {
         </div>
       ) : null}
 
-      {state.currentStep === "website-type" ? (
-        <StepWebsiteType
-          value={state.data.websiteType}
-          onChange={(value) => updateData({ websiteType: value })}
+      {state.currentStep === "page-setup" ? (
+        <StepPagesSetup
+          value={state.data.designConfig}
+          onChange={(value) => updateData({ designConfig: value })}
         />
       ) : null}
 
-      {state.currentStep === "business-info" ? (
-        <StepBusinessInfo
-          data={state.data}
-          servicesText={servicesText}
-          onFieldChange={updateData}
-          onServicesTextChange={(value) => updateData({ services: normalizeList(value.split("\n")) })}
+      {state.currentStep === "page-design" ? (
+        <StepPageDesign
+          value={state.data.designConfig}
+          onChange={(value) => updateData({ designConfig: value })}
         />
       ) : null}
 
-      {state.currentStep === "style-theme" ? (
-        <StepStyleTheme data={state.data} onFieldChange={updateData} />
-      ) : null}
+      {state.currentStep === "brand-content" ? (
+        <>
+          <section className="wizard-step-panel">
+            <h2>Brand and content inputs</h2>
+            <p className="wizard-step-description">
+              Add the global brand context and content direction that the generation pipeline still requires.
+            </p>
+          </section>
 
-      {state.currentStep === "content-input" ? (
-        <StepContentInput
-          data={state.data}
-          testimonialsText={testimonialsText}
-          socialLinksText={socialLinksText}
-          constraintsText={constraintsText}
-          onFieldChange={updateData}
-          onTestimonialsChange={(value) => updateData({ testimonials: parseTestimonials(value) })}
-          onSocialLinksChange={(value) =>
-            updateData({
-              contactInfo: {
-                ...state.data.contactInfo,
-                socialLinks: normalizeList(value.split("\n")),
-              },
-            })
-          }
-          onConstraintsChange={(value) => updateData({ constraints: normalizeList(value.split("\n")) })}
-        />
+          <StepBusinessInfo
+            data={state.data}
+            servicesText={servicesText}
+            onFieldChange={updateData}
+            onServicesTextChange={(value) => updateData({ services: normalizeList(value.split("\n")) })}
+          />
+
+          <StepStyleTheme data={state.data} onFieldChange={updateData} />
+
+          <StepContentInput
+            data={state.data}
+            testimonialsText={testimonialsText}
+            socialLinksText={socialLinksText}
+            constraintsText={constraintsText}
+            onFieldChange={updateData}
+            onTestimonialsChange={(value) => updateData({ testimonials: parseTestimonials(value) })}
+            onSocialLinksChange={(value) =>
+              updateData({
+                contactInfo: {
+                  ...state.data.contactInfo,
+                  socialLinks: normalizeList(value.split("\n")),
+                },
+              })
+            }
+            onConstraintsChange={(value) => updateData({ constraints: normalizeList(value.split("\n")) })}
+          />
+        </>
       ) : null}
 
       {state.currentStep === "review-confirm" ? (
@@ -307,7 +349,7 @@ export function WebsiteCreationWizard() {
           />
 
           <div className="wizard-navigation">
-            <button type="button" onClick={handleBack}>
+            <button type="button" className="wizard-button-secondary" onClick={handleBack}>
               Back
             </button>
           </div>

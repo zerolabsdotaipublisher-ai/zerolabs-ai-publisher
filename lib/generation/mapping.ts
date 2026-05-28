@@ -1,6 +1,9 @@
 import {
+  createDefaultWizardInput,
   mapWizardInputToGenerationInput,
+  mergeWizardInput,
   mapStructureIdToOutputPath,
+  normalizeDesignConfig,
   WIZARD_STORAGE_KEY,
   type WebsiteCreationWizardState,
   type WebsiteWizardInput,
@@ -27,5 +30,10 @@ export function extractWizardInput(value: unknown): WebsiteWizardInput | null {
     return null;
   }
 
-  return value.data;
+  return mergeWizardInput(createDefaultWizardInput(), {
+    ...value.data,
+    designConfig: {
+      pages: normalizeDesignConfig(value.data.designConfig).pages,
+    },
+  });
 }

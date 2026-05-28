@@ -17,6 +17,28 @@ interface SubmitOptions {
   onStageChange?: (stage: GenerationStage) => void;
 }
 
+function toSafeGenerationMessage(payload: {
+  error?: string;
+  message?: string;
+  details?: string[];
+}, fallback: string): string {
+  if (payload.details?.length) {
+    return payload.details.slice(0, 3).join(" ");
+  }
+
+  const raw = payload.message || payload.error;
+  if (!raw) {
+    return fallback;
+  }
+
+  const firstLine = raw.split(/\r?\n/)[0]?.trim();
+  if (!firstLine) {
+    return fallback;
+  }
+
+  return firstLine.length > 240 ? `${firstLine.slice(0, 237)}...` : firstLine;
+}
+
 export async function submitWebsiteGeneration(
   input: WebsiteWizardInput,
   options?: SubmitOptions,
@@ -36,7 +58,10 @@ export async function submitWebsiteGeneration(
   if (!structureResponse.ok || !structureBody.structure?.id) {
     return {
       ok: false,
-      error: structureBody.error || structureBody.message || "Structure generation failed.",
+      error: toSafeGenerationMessage(
+        structureBody,
+        "Structure generation failed.",
+      ),
     };
   }
 
@@ -53,7 +78,10 @@ export async function submitWebsiteGeneration(
   if (!contentResponse.ok) {
     return {
       ok: false,
-      error: contentBody.error || contentBody.message || "Content generation failed.",
+      error: toSafeGenerationMessage(
+        contentBody,
+        "Content generation failed.",
+      ),
     };
   }
 

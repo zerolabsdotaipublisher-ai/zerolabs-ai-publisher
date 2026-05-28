@@ -1,8 +1,9 @@
 import { StepBusinessInfo } from "@/components/wizard/steps/step-business-info";
 import { StepContentInput } from "@/components/wizard/steps/step-content-input";
+import { StepPageDesign } from "@/components/wizard/steps/step-page-design";
+import { StepPagesSetup } from "@/components/wizard/steps/step-pages-setup";
 import { StepStyleTheme } from "@/components/wizard/steps/step-style-theme";
-import { StepWebsiteType } from "@/components/wizard/steps/step-website-type";
-import type { WebsiteWizardInput } from "@/lib/wizard";
+import type { WebsiteWizardInput, WebsiteWizardInputPatch } from "@/lib/wizard";
 
 interface GenerationInputPanelProps {
   data: WebsiteWizardInput;
@@ -12,7 +13,7 @@ interface GenerationInputPanelProps {
   constraintsText: string;
   errors: string[];
   isEditing: boolean;
-  onFieldChange: (patch: Partial<WebsiteWizardInput>) => void;
+  onFieldChange: (patch: WebsiteWizardInputPatch) => void;
   onServicesTextChange: (value: string) => void;
   onTestimonialsChange: (value: string) => void;
   onSocialLinksChange: (value: string) => void;
@@ -57,9 +58,13 @@ export function GenerationInputPanel({
         disabled={!isEditing}
         className={`generation-input-fieldset ${!isEditing ? "generation-readonly" : ""}`.trim()}
       >
-        <StepWebsiteType
-          value={data.websiteType}
-          onChange={(value) => runIfEditing(onFieldChange, { websiteType: value })}
+        <StepPagesSetup
+          value={data.designConfig}
+          onChange={(value) => runIfEditing(onFieldChange, { designConfig: value })}
+        />
+        <StepPageDesign
+          value={data.designConfig}
+          onChange={(value) => runIfEditing(onFieldChange, { designConfig: value })}
         />
         <StepBusinessInfo
           data={data}

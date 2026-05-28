@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { defaultWizardInput, mergeWizardInput, normalizeList } from "@/lib/wizard";
+import {
+  createDefaultWizardInput,
+  mergeWizardInput,
+  normalizeDesignConfig,
+  normalizeList,
+} from "@/lib/wizard";
 import {
   createInitialGenerationState,
   extractWizardInput,
@@ -13,7 +18,7 @@ import {
   WIZARD_STORAGE_KEY,
   type GenerationInterfaceState,
 } from "@/lib/generation";
-import type { WebsiteWizardInput } from "@/lib/wizard";
+import type { WebsiteWizardInput, WebsiteWizardInputPatch } from "@/lib/wizard";
 import { GenerationActions } from "./generation-actions";
 import { GenerationInputPanel } from "./generation-input-panel";
 import { GenerationLayout } from "./generation-layout";
@@ -71,7 +76,15 @@ export function WebsiteGenerationInterface() {
       try {
         const parsed = JSON.parse(cachedGenerationState) as GenerationInterfaceState;
         if (parsed?.input) {
-          return parsed;
+          return {
+            ...parsed,
+            input: mergeWizardInput(createDefaultWizardInput(), {
+              ...parsed.input,
+              designConfig: {
+                pages: normalizeDesignConfig(parsed.input.designConfig).pages,
+              },
+            }),
+          };
         }
       } catch {
         window.localStorage.removeItem(GENERATION_STORAGE_KEY);
@@ -111,7 +124,7 @@ export function WebsiteGenerationInterface() {
   );
   const constraintsText = useMemo(() => state.input.constraints.join("\n"), [state.input.constraints]);
 
-  function updateInput(patch: Partial<WebsiteWizardInput>) {
+  function updateInput(patch: WebsiteWizardInputPatch) {
     setState((current) => ({
       ...current,
       input: mergeWizardInput(current.input, patch),
@@ -206,7 +219,7 @@ export function WebsiteGenerationInterface() {
   }
 
   function handleReset() {
-    const resetState = createInitialGenerationState(defaultWizardInput);
+    const resetState = createInitialGenerationState(createDefaultWizardInput());
     setState(resetState);
     window.localStorage.removeItem(GENERATION_STORAGE_KEY);
     window.localStorage.removeItem(WIZARD_STORAGE_KEY);

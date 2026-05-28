@@ -21,7 +21,12 @@ export function WizardNavigation({
 }: WizardNavigationProps) {
   return (
     <div className="wizard-navigation">
-      <button type="button" onClick={onBack} disabled={!canBack || isSubmitting}>
+      <button
+        type="button"
+        className="wizard-button-secondary"
+        onClick={onBack}
+        disabled={!canBack || isSubmitting}
+      >
         {backLabel}
       </button>
       <div className="wizard-navigation-actions">
