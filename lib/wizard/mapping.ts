@@ -1,6 +1,7 @@
 import { routes } from "@/config/routes";
 import type { WebsiteGenerationInput } from "@/lib/ai/prompts/types";
 import { sanitizeInput } from "@/lib/ai/prompts/schemas";
+import { inferWebsiteTypeFromPages } from "./schemas";
 import type { WebsiteWizardInput } from "./types";
 
 export interface WizardPipelineEndpoints {
@@ -20,8 +21,10 @@ export const wizardPipelineEndpoints: WizardPipelineEndpoints = {
 export function mapWizardInputToGenerationInput(
   input: WebsiteWizardInput,
 ): WebsiteGenerationInput {
+  const websiteType = inferWebsiteTypeFromPages(input.designConfig.pages);
+
   return sanitizeInput({
-    websiteType: input.websiteType,
+    websiteType,
     brandName: input.brandName,
     description: input.description,
     targetAudience: input.targetAudience,
@@ -44,6 +47,7 @@ export function mapWizardInputToGenerationInput(
     constraints: input.constraints,
     customToneNotes: input.customToneNotes,
     customStyleNotes: input.customStyleNotes,
+    designConfig: input.designConfig,
   });
 }
 
@@ -57,6 +61,7 @@ export interface StructureGenerationResponse {
   };
   error?: string;
   message?: string;
+  details?: string[];
 }
 
 export interface ContentGenerationResponse {
@@ -64,4 +69,5 @@ export interface ContentGenerationResponse {
   structure?: { id: string };
   error?: string;
   message?: string;
+  details?: string[];
 }

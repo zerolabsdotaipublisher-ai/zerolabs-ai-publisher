@@ -1,8 +1,13 @@
-import { defaultWizardInput } from "./schemas";
+import {
+  createDefaultWizardInput,
+  inferWebsiteTypeFromPages,
+  syncDesignPages,
+} from "./schemas";
 import { WIZARD_FORM_STEPS } from "./steps";
 import type {
   WebsiteCreationWizardState,
   WebsiteWizardInput,
+  WebsiteWizardInputPatch,
   WizardStepId,
 } from "./types";
 
@@ -12,9 +17,9 @@ const formStepIds = WIZARD_FORM_STEPS.map((step) => step.id);
 
 export function createInitialWizardState(): WebsiteCreationWizardState {
   return {
-    currentStep: "website-type",
+    currentStep: "page-setup",
     completedSteps: [],
-    data: defaultWizardInput,
+    data: createDefaultWizardInput(),
     stepErrors: {},
     generationStatus: "idle",
   };
@@ -44,8 +49,19 @@ export function getPreviousFormStep(stepId: WizardStepId): WizardStepId | null {
 
 export function mergeWizardInput(
   current: WebsiteWizardInput,
-  patch: Partial<WebsiteWizardInput>,
+  patch: WebsiteWizardInputPatch,
 ): WebsiteWizardInput {
+  const mergedDesignConfig = patch.designConfig
+    ? {
+        ...current.designConfig,
+        ...patch.designConfig,
+        pages: patch.designConfig.pages ?? current.designConfig.pages,
+      }
+    : current.designConfig;
+
+  const normalizedPages = syncDesignPages(mergedDesignConfig.pages, mergedDesignConfig.pages.length);
+  const inferredWebsiteType = inferWebsiteTypeFromPages(normalizedPages);
+
   return {
     ...current,
     ...patch,
@@ -61,6 +77,10 @@ export function mergeWizardInput(
     testimonials: patch.testimonials ?? current.testimonials,
     services: patch.services ?? current.services,
     constraints: patch.constraints ?? current.constraints,
+    websiteType: patch.websiteType ?? inferredWebsiteType,
+    designConfig: {
+      pages: normalizedPages,
+    },
   };
 }
 

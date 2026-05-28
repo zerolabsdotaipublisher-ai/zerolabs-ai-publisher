@@ -10,8 +10,8 @@ export function WizardShell({ children }: WizardShellProps) {
       <header className="wizard-header">
         <h1>Create website</h1>
         <p>
-          Answer a few questions and AI Publisher will generate your website using the existing
-          AI pipeline.
+          Define your pages first, customize each page, then provide brand inputs for the existing
+          AI generation pipeline.
         </p>
       </header>
       {children}

@@ -1,5 +1,6 @@
 import type {
   ContactInfoInput,
+  WebsiteDesignConfig,
   FounderProfileInput,
   StylePreset,
   TestimonialInput,
@@ -9,10 +10,9 @@ import type {
 } from "@/lib/ai/prompts/types";
 
 export type WizardStepId =
-  | "website-type"
-  | "business-info"
-  | "style-theme"
-  | "content-input"
+  | "page-setup"
+  | "page-design"
+  | "brand-content"
   | "review-confirm"
   | "loading"
   | "success";
@@ -42,7 +42,16 @@ export interface WebsiteWizardInput {
   testimonials: TestimonialInput[];
   contactInfo: ContactInfoInput;
   constraints: string[];
+  designConfig: WebsiteDesignConfig;
 }
+
+export interface WebsiteDesignConfigPatch {
+  pages?: WebsiteDesignConfig["pages"];
+}
+
+export type WebsiteWizardInputPatch = Partial<Omit<WebsiteWizardInput, "designConfig">> & {
+  designConfig?: WebsiteDesignConfigPatch;
+};
 
 export interface WizardGenerationResult {
   structureId?: string;

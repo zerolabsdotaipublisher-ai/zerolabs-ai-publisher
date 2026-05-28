@@ -1,3 +1,4 @@
+import { resolvePagePlanGuidance } from "../variables";
 import type { WebsiteGenerationInput } from "../types";
 
 interface CoreTemplateArgs {
@@ -21,6 +22,8 @@ export function createCoreWebsiteTemplate({
   guardrails,
   outputContract,
 }: CoreTemplateArgs): string {
+  const pagePlanGuidance = resolvePagePlanGuidance(input);
+
   return [
     "You are generating website copy for Zero Labs AI Publisher.",
     "Task: produce structured, render-ready website content in strict JSON.",
@@ -37,6 +40,9 @@ export function createCoreWebsiteTemplate({
     `- ${toneGuidance}`,
     "STYLE",
     `- ${styleGuidance}`,
+    ...(pagePlanGuidance.length > 0
+      ? ["PAGE PLAN", ...pagePlanGuidance.map((item) => `- ${item}`)]
+      : []),
     "READABILITY RULES",
     toBulletList(readabilityRules),
     "",

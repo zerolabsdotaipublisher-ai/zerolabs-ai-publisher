@@ -52,6 +52,64 @@ export interface ContactInfoInput {
   socialLinks?: string[];
 }
 
+export type BackgroundStyleType = "solid" | "blend" | "gradient" | "image" | "video";
+
+export type FontMood = "modern" | "editorial" | "minimal" | "luxury" | "bold" | "friendly";
+
+export type FontSizePreference = "compact" | "comfortable" | "large";
+
+export type HeadingScale = "large" | "balanced" | "compact" | "editorial";
+
+export type WebsiteLayoutStructure =
+  | "hero-sections"
+  | "landing-page"
+  | "portfolio-layout"
+  | "blog-content"
+  | "service-business"
+  | "product-showcase"
+  | "split-screen"
+  | "grid-gallery"
+  | "contact-info"
+  | "about-story"
+  | "dashboard-style";
+
+export interface WebsiteBackgroundDesign {
+  type: BackgroundStyleType;
+  primaryColor: string;
+  secondaryColor?: string;
+  gradientDirection?: string;
+  imageUrl?: string;
+  videoUrl?: string;
+}
+
+export interface WebsiteTypographyDesign {
+  bodyFont: string;
+  bodyColor: string;
+  fontMood: FontMood;
+  fontSizePreference?: FontSizePreference;
+}
+
+export interface WebsiteHeadingDesign {
+  headingFont: string;
+  headingColor: string;
+  headingWeight: string;
+  headingScale: HeadingScale;
+}
+
+export interface PageDesignConfig {
+  id: string;
+  name: string;
+  layout: WebsiteLayoutStructure;
+  background: WebsiteBackgroundDesign;
+  typography: WebsiteTypographyDesign;
+  headings: WebsiteHeadingDesign;
+  contentPrompt: string;
+}
+
+export interface WebsiteDesignConfig {
+  pages: PageDesignConfig[];
+}
+
 export interface WebsiteGenerationInput {
   websiteType: WebsiteType;
   brandName: string;
@@ -67,6 +125,7 @@ export interface WebsiteGenerationInput {
   constraints?: string[];
   customToneNotes?: string;
   customStyleNotes?: string;
+  designConfig?: WebsiteDesignConfig;
   seo?: SeoKeywordInput;
 }
 

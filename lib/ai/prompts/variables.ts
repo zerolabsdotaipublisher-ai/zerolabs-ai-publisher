@@ -22,6 +22,59 @@ export const READABILITY_RULES = [
   "Keep headline and CTA text action-oriented.",
 ];
 
+function describeBackground(
+  background: NonNullable<WebsiteGenerationInput["designConfig"]>["pages"][number]["background"],
+): string {
+  switch (background.type) {
+    case "solid":
+      return `Solid ${background.primaryColor}`;
+    case "blend":
+      return `Blend ${background.primaryColor} with ${background.secondaryColor ?? background.primaryColor}`;
+    case "gradient":
+      return `Gradient ${background.gradientDirection ?? "direction"} from ${background.primaryColor} to ${background.secondaryColor ?? background.primaryColor}`;
+    case "image":
+      return `Image-led background`;
+    case "video":
+      return `Video-led background`;
+    default:
+      return "Background not specified";
+  }
+}
+
+export function resolvePagePlanGuidance(input: WebsiteGenerationInput): string[] {
+  const designConfig = input.designConfig;
+  if (!designConfig?.pages?.length) {
+    return [];
+  }
+
+  return designConfig.pages.map((page, index) => {
+    return [
+      `Page ${index + 1}: ${page.name}`,
+      `layout ${page.layout}`,
+      `background ${describeBackground(page.background)}`,
+      `body font ${page.typography.bodyFont}`,
+      `font mood ${page.typography.fontMood}`,
+      `heading font ${page.headings.headingFont}`,
+      `heading scale ${page.headings.headingScale}`,
+      `content brief ${page.contentPrompt}`,
+    ].join(", ");
+  });
+}
+
+function describeDesignControls(input: WebsiteGenerationInput): string | null {
+  const pageGuidance = resolvePagePlanGuidance(input);
+  if (!pageGuidance.length) {
+    return null;
+  }
+
+  return [
+    `Planned pages: ${input.designConfig?.pages.map((page) => page.name).join(", ")}.`,
+    ...pageGuidance.map((pageSummary) => `Page detail: ${pageSummary}.`),
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
 export function resolveToneGuidance(input: WebsiteGenerationInput): string {
   const base =
     input.tone === "custom"
@@ -36,8 +89,8 @@ export function resolveStyleGuidance(input: WebsiteGenerationInput): string {
     input.style === "custom"
       ? "Use a custom visual-writing style aligned to provided notes."
       : STYLE_GUIDELINES[input.style];
+  const designControls = describeDesignControls(input);
+  const styleNotes = input.customStyleNotes ? `Notes: ${input.customStyleNotes}` : null;
 
-  return input.customStyleNotes
-    ? `${base} Notes: ${input.customStyleNotes}`
-    : base;
+  return [base, styleNotes, designControls].filter(Boolean).join(" ");
 }

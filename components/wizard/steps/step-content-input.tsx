@@ -1,12 +1,12 @@
 import type { TestimonialInput } from "@/lib/ai/prompts/types";
-import type { WebsiteWizardInput } from "@/lib/wizard";
+import type { WebsiteWizardInput, WebsiteWizardInputPatch } from "@/lib/wizard";
 
 interface StepContentInputProps {
   data: WebsiteWizardInput;
   testimonialsText: string;
   socialLinksText: string;
   constraintsText: string;
-  onFieldChange: (patch: Partial<WebsiteWizardInput>) => void;
+  onFieldChange: (patch: WebsiteWizardInputPatch) => void;
   onTestimonialsChange: (value: string) => void;
   onSocialLinksChange: (value: string) => void;
   onConstraintsChange: (value: string) => void;
