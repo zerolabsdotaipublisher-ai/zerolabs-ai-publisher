@@ -30,6 +30,7 @@ export interface WizardStepDefinition {
 export interface WebsiteWizardInput {
   websiteType: WebsiteType;
   brandName: string;
+  domainName: string;
   description: string;
   targetAudience: string;
   services: string[];

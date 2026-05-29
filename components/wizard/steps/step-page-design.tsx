@@ -1,5 +1,11 @@
-import type { ReactNode } from "react";
-import type { PageDesignConfig, WebsiteDesignConfig, WebsiteLayoutStructure } from "@/lib/ai/prompts/types";
+"use client";
+
+import { useMemo, useState, type ReactNode } from "react";
+import type {
+  PageDesignConfig,
+  WebsiteDesignConfig,
+  WebsiteLayoutStructure,
+} from "@/lib/ai/prompts/types";
 import {
   backgroundStyleOptions,
   fontFamilyOptions,
@@ -15,6 +21,10 @@ import {
 interface StepPageDesignProps {
   value: WebsiteWizardInput["designConfig"];
   onChange: (value: WebsiteWizardInput["designConfig"]) => void;
+  activePageId?: string;
+  onActivePageChange?: (pageId: string) => void;
+  mode?: "full" | "structure" | "design";
+  headerMode?: "default" | "compact";
 }
 
 const headingPreviewSizes = {
@@ -212,11 +222,60 @@ function SectionHeader({
   );
 }
 
-export function StepPageDesign({ value, onChange }: StepPageDesignProps) {
+export function StepPageDesign({
+  value,
+  onChange,
+  activePageId,
+  onActivePageChange,
+  mode = "full",
+  headerMode = "default",
+}: StepPageDesignProps) {
+  const [internalActivePageId, setInternalActivePageId] = useState<string | null>(
+    value.pages[0]?.id ?? null,
+  );
+
+  const resolvedActivePageId = activePageId ?? internalActivePageId ?? value.pages[0]?.id ?? null;
+
+  const activePageIndex = Math.max(
+    value.pages.findIndex((page) => page.id === resolvedActivePageId),
+    0,
+  );
+  const activePage = value.pages[activePageIndex];
+
+  const headingSizes = useMemo(() => {
+    if (!activePage) {
+      return headingPreviewSizes.large;
+    }
+
+    return headingPreviewSizes[activePage.headings.headingScale];
+  }, [activePage]);
+
+  const bodySize = activePage
+    ? bodyPreviewSizes[activePage.typography.fontSizePreference ?? "comfortable"]
+    : bodyPreviewSizes.comfortable;
+  const showLayoutSection = mode !== "design";
+  const showVisualSections = mode !== "structure";
+  const showContentSection = mode !== "design";
+  const headerTitle = mode === "structure" ? "Structure and build" : "Design selected page";
+  const headerDescription =
+    mode === "structure"
+      ? "Choose a page to shape, then define its layout and content direction."
+      : mode === "design"
+        ? "Fine-tune background, typography, and heading style for the selected page."
+        : "Each page keeps its own layout, background, typography, heading, and content settings. Select one page to edit at a time.";
+  const headerLabel = mode === "structure" ? "Phase 2" : mode === "design" ? "Phase 3" : "Step 2";
   function updatePages(nextPages: WebsiteDesignConfig["pages"]) {
     onChange({ pages: nextPages });
   }
 
+  function handleActivePageChange(pageId: string) {
+    if (onActivePageChange) {
+      onActivePageChange(pageId);
+      return;
+    }
+
+    setInternalActivePageId(pageId);
+  }
   function updatePage(index: number, patch: Partial<PageDesignConfig>) {
     updatePages(
       value.pages.map((page, pageIndex) =>
@@ -257,329 +316,387 @@ export function StepPageDesign({ value, onChange }: StepPageDesignProps) {
     });
   }
 
+  if (!activePage) {
+    return null;
+  }
+
   return (
     <section className="wizard-step-panel">
-      <h2>Design each page</h2>
-      <p className="wizard-step-description">
-        Each page can use its own layout, background, typography, heading system, and content direction.
-      </p>
+      {headerMode === "compact" ? (
+        <div className="website-builder-section-header">
+          <div>
+            <h3>{headerTitle}</h3>
+            <p className="wizard-step-description">{headerDescription}</p>
+          </div>
 
-      <div className="wizard-page-design-stack">
+          <div className="website-builder-step-summary" aria-live="polite">
+            <span className="website-builder-step-summary-label">Currently editing</span>
+            <strong>{activePage.name || `Page ${activePageIndex + 1}`}</strong>
+            <span className="website-builder-step-summary-meta">{`${value.pages.length} pages planned`}</span>
+          </div>
+        </div>
+      ) : (
+        <div className="website-builder-step-header">
+          <div>
+            <span className="website-builder-step-label">{headerLabel}</span>
+            <h2>{headerTitle}</h2>
+            <p className="wizard-step-description">{headerDescription}</p>
+          </div>
+
+          <div className="website-builder-step-summary" aria-live="polite">
+            <span className="website-builder-step-summary-label">Currently editing</span>
+            <strong>{activePage.name || `Page ${activePageIndex + 1}`}</strong>
+            <span className="website-builder-step-summary-meta">{`${value.pages.length} pages planned`}</span>
+          </div>
+        </div>
+      )}
+
+      <div className="wizard-page-selector" role="list" aria-label="Pages to design">
         {value.pages.map((page, index) => {
-          const headingSizes = headingPreviewSizes[page.headings.headingScale];
-          const bodySize = bodyPreviewSizes[page.typography.fontSizePreference ?? "comfortable"];
+          const isActive = page.id === activePage.id;
 
           return (
-            <article key={page.id} className="wizard-page-design-card">
-              <div className="wizard-page-design-header">
-                <div>
-                  <h3>{page.name || `Page ${index + 1}`}</h3>
-                  <p className="wizard-step-description">
-                    Page {index + 1} design configuration.
-                  </p>
-                </div>
-                <span className="wizard-page-badge">{findLayoutLabel(page.layout)}</span>
-              </div>
-
-              <SectionHeader title="Page layout" description="Choose the layout structure for this page.">
-                <div className="wizard-layout-grid">
-                  {layoutStructureOptions.map((option) => {
-                    const isSelected = page.layout === option.value;
-
-                    return (
-                      <label
-                        key={`${page.id}-${option.value}`}
-                        className={`wizard-choice-card wizard-layout-card${isSelected ? " is-selected" : ""}`}
-                      >
-                        <input
-                          type="radio"
-                          name={`page-layout-${page.id}`}
-                          value={option.value}
-                          checked={isSelected}
-                          onChange={() => updatePage(index, { layout: option.value })}
-                        />
-                        <LayoutPreview structure={option.value} />
-                        <span className="wizard-choice-title">{option.label}</span>
-                        <span className="wizard-choice-description">{option.description}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </SectionHeader>
-
-              <SectionHeader
-                title="Background design"
-                description="What background style should this page use?"
-              >
-                <div className="wizard-choice-grid">
-                  {backgroundStyleOptions.map((option) => {
-                    const isSelected = page.background.type === option.value;
-
-                    return (
-                      <label
-                        key={`${page.id}-${option.value}`}
-                        className={`wizard-choice-card${isSelected ? " is-selected" : ""}`}
-                      >
-                        <input
-                          type="radio"
-                          name={`page-background-${page.id}`}
-                          value={option.value}
-                          checked={isSelected}
-                          onChange={() => updatePageBackground(index, { type: option.value })}
-                        />
-                        <span className="wizard-choice-title">{option.label}</span>
-                        <span className="wizard-choice-description">{option.description}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-
-                <div className="wizard-form-grid">
-                  <ColorField
-                    label="Primary background color"
-                    value={page.background.primaryColor}
-                    onChange={(nextValue) => updatePageBackground(index, { primaryColor: nextValue })}
-                    pickerFallback="#0f352b"
-                  />
-
-                  {page.background.type === "blend" || page.background.type === "gradient" ? (
-                    <ColorField
-                      label="Secondary background color"
-                      value={page.background.secondaryColor ?? "#145340"}
-                      onChange={(nextValue) => updatePageBackground(index, { secondaryColor: nextValue })}
-                      pickerFallback="#145340"
-                    />
-                  ) : null}
-
-                  {page.background.type === "gradient" ? (
-                    <label>
-                      <span>Gradient direction</span>
-                      <select
-                        value={page.background.gradientDirection ?? gradientDirectionOptions[0].value}
-                        onChange={(event) =>
-                          updatePageBackground(index, { gradientDirection: event.target.value })
-                        }
-                      >
-                        {gradientDirectionOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  ) : null}
-
-                  {page.background.type === "image" ? (
-                    <label className="wizard-field-span-full">
-                      <span>Image URL</span>
-                      <input
-                        type="url"
-                        value={page.background.imageUrl ?? ""}
-                        onChange={(event) => updatePageBackground(index, { imageUrl: event.target.value })}
-                        placeholder="https://example.com/background.jpg"
-                      />
-                    </label>
-                  ) : null}
-
-                  {page.background.type === "video" ? (
-                    <label className="wizard-field-span-full">
-                      <span>Video URL</span>
-                      <input
-                        type="url"
-                        value={page.background.videoUrl ?? ""}
-                        onChange={(event) => updatePageBackground(index, { videoUrl: event.target.value })}
-                        placeholder="https://example.com/background.mp4"
-                      />
-                    </label>
-                  ) : null}
-                </div>
-              </SectionHeader>
-
-              <SectionHeader title="Typography" description="Choose the body text style for this page.">
-                <div className="wizard-form-grid">
-                  <label>
-                    <span>Body font family</span>
-                    <select
-                      value={page.typography.bodyFont}
-                      onChange={(event) => updatePageTypography(index, { bodyFont: event.target.value })}
-                    >
-                      {fontFamilyOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <ColorField
-                    label="Font color"
-                    value={page.typography.bodyColor}
-                    onChange={(nextValue) => updatePageTypography(index, { bodyColor: nextValue })}
-                    pickerFallback="#f8f9fa"
-                  />
-
-                  <label>
-                    <span>Font size preference</span>
-                    <select
-                      value={page.typography.fontSizePreference ?? "comfortable"}
-                      onChange={(event) =>
-                        updatePageTypography(index, {
-                          fontSizePreference:
-                            event.target.value as PageDesignConfig["typography"]["fontSizePreference"],
-                        })
-                      }
-                    >
-                      {fontSizePreferenceOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-
-                <div className="wizard-choice-grid compact">
-                  {fontMoodOptions.map((option) => {
-                    const isSelected = page.typography.fontMood === option.value;
-
-                    return (
-                      <label
-                        key={`${page.id}-${option.value}`}
-                        className={`wizard-choice-card${isSelected ? " is-selected" : ""}`}
-                      >
-                        <input
-                          type="radio"
-                          name={`page-font-mood-${page.id}`}
-                          value={option.value}
-                          checked={isSelected}
-                          onChange={() => updatePageTypography(index, { fontMood: option.value })}
-                        />
-                        <span className="wizard-choice-title">{option.label}</span>
-                        <span className="wizard-choice-description">{option.description}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-
-                <div
-                  className="wizard-typography-preview"
-                  style={{
-                    color: page.typography.bodyColor,
-                    fontFamily: page.typography.bodyFont,
-                    fontSize: bodySize,
-                  }}
-                >
-                  <strong>Body copy preview</strong>
-                  <p>
-                    This page is styled to feel {page.typography.fontMood}, so you can judge the page-level body type before generation.
-                  </p>
-                </div>
-              </SectionHeader>
-
-              <SectionHeader title="Heading style" description="Define the heading system for this page.">
-                <div className="wizard-form-grid">
-                  <label>
-                    <span>Heading font family</span>
-                    <select
-                      value={page.headings.headingFont}
-                      onChange={(event) => updatePageHeadings(index, { headingFont: event.target.value })}
-                    >
-                      {fontFamilyOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <ColorField
-                    label="Heading color"
-                    value={page.headings.headingColor}
-                    onChange={(nextValue) => updatePageHeadings(index, { headingColor: nextValue })}
-                    pickerFallback="#f8f9fa"
-                  />
-
-                  <label>
-                    <span>Heading weight</span>
-                    <select
-                      value={page.headings.headingWeight}
-                      onChange={(event) => updatePageHeadings(index, { headingWeight: event.target.value })}
-                    >
-                      {headingWeightOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
-
-                <div className="wizard-choice-grid compact">
-                  {headingScaleOptions.map((option) => {
-                    const isSelected = page.headings.headingScale === option.value;
-
-                    return (
-                      <label
-                        key={`${page.id}-${option.value}`}
-                        className={`wizard-choice-card${isSelected ? " is-selected" : ""}`}
-                      >
-                        <input
-                          type="radio"
-                          name={`page-heading-scale-${page.id}`}
-                          value={option.value}
-                          checked={isSelected}
-                          onChange={() => updatePageHeadings(index, { headingScale: option.value })}
-                        />
-                        <span className="wizard-choice-title">{option.label}</span>
-                        <span className="wizard-choice-description">{option.description}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-
-                <div className="wizard-heading-preview" aria-label={`${page.name} heading preview`}>
-                  {headingSizes.map((fontSize, headingIndex) => (
-                    <div
-                      key={`${page.id}-h${headingIndex + 1}`}
-                      className="wizard-heading-preview-row"
-                      style={{
-                        color: page.headings.headingColor,
-                        fontFamily: page.headings.headingFont,
-                        fontWeight: page.headings.headingWeight,
-                        fontSize,
-                      }}
-                    >
-                      <span className="wizard-heading-preview-tag">H{headingIndex + 1}</span>
-                      <span>
-                        {headingIndex === 0
-                          ? "Hero heading preview"
-                          : headingIndex === 1
-                            ? "Section heading preview"
-                            : `Supporting heading ${headingIndex + 1}`}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </SectionHeader>
-
-              <SectionHeader
-                title="Page purpose and content prompt"
-                description="Describe what this page should include so generation keeps the page focused."
-              >
-                <label>
-                  <span>What should this page include?</span>
-                  <textarea
-                    value={page.contentPrompt}
-                    onChange={(event) => updatePage(index, { contentPrompt: event.target.value })}
-                    rows={4}
-                    placeholder="Hero, value proposition, CTA"
-                  />
-                </label>
-              </SectionHeader>
-            </article>
+            <button
+              key={page.id}
+              type="button"
+              className={`wizard-page-tab${isActive ? " is-active" : ""}`}
+              aria-pressed={isActive}
+              onClick={() => handleActivePageChange(page.id)}
+            >
+              <span className="wizard-page-tab-index">Page {index + 1}</span>
+              <strong>{page.name || `Page ${index + 1}`}</strong>
+              <span className="wizard-page-tab-layout">{findLayoutLabel(page.layout)}</span>
+              {isActive ? <span className="wizard-page-tab-state">Editing now</span> : null}
+            </button>
           );
         })}
       </div>
+
+      <article key={activePage.id} className="wizard-page-design-card">
+        <div className="wizard-page-design-header">
+          <div>
+            <h3>{activePage.name || `Page ${activePageIndex + 1}`}</h3>
+            <p className="wizard-step-description">
+              The controls below affect only this page. Switch pages at any time without losing
+              page-specific settings.
+            </p>
+          </div>
+          <span className="wizard-page-badge">{findLayoutLabel(activePage.layout)}</span>
+        </div>
+
+        {showLayoutSection ? (
+          <SectionHeader title="Page layout" description="Choose the layout structure for this page.">
+            <div className="wizard-layout-grid">
+              {layoutStructureOptions.map((option) => {
+                const isSelected = activePage.layout === option.value;
+
+                return (
+                  <label
+                    key={`${activePage.id}-${option.value}`}
+                    className={`wizard-choice-card wizard-layout-card${isSelected ? " is-selected" : ""}`}
+                  >
+                    <input
+                      type="radio"
+                      name={`page-layout-${activePage.id}`}
+                      value={option.value}
+                      checked={isSelected}
+                      onChange={() => updatePage(activePageIndex, { layout: option.value })}
+                    />
+                    <LayoutPreview structure={option.value} />
+                    <span className="wizard-choice-title">{option.label}</span>
+                    <span className="wizard-choice-description">{option.description}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </SectionHeader>
+        ) : null}
+
+        {showVisualSections ? (
+          <SectionHeader
+            title="Background design"
+            description="Choose the page background style, then set the matching colors or media source."
+          >
+            <div className="wizard-choice-grid">
+              {backgroundStyleOptions.map((option) => {
+                const isSelected = activePage.background.type === option.value;
+
+                return (
+                  <label
+                    key={`${activePage.id}-${option.value}`}
+                    className={`wizard-choice-card${isSelected ? " is-selected" : ""}`}
+                  >
+                    <input
+                      type="radio"
+                      name={`page-background-${activePage.id}`}
+                      value={option.value}
+                      checked={isSelected}
+                      onChange={() => updatePageBackground(activePageIndex, { type: option.value })}
+                    />
+                    <span className="wizard-choice-title">{option.label}</span>
+                    <span className="wizard-choice-description">{option.description}</span>
+                  </label>
+                );
+              })}
+            </div>
+
+            <div className="wizard-form-grid">
+              <ColorField
+                label="Primary background color"
+                value={activePage.background.primaryColor}
+                onChange={(nextValue) => updatePageBackground(activePageIndex, { primaryColor: nextValue })}
+                pickerFallback="#0f352b"
+              />
+
+              {activePage.background.type === "blend" || activePage.background.type === "gradient" ? (
+                <ColorField
+                  label="Secondary background color"
+                  value={activePage.background.secondaryColor ?? "#145340"}
+                  onChange={(nextValue) =>
+                    updatePageBackground(activePageIndex, { secondaryColor: nextValue })
+                  }
+                  pickerFallback="#145340"
+                />
+              ) : null}
+
+              {activePage.background.type === "gradient" ? (
+                <label>
+                  <span>Gradient direction</span>
+                  <select
+                    value={activePage.background.gradientDirection ?? gradientDirectionOptions[0].value}
+                    onChange={(event) =>
+                      updatePageBackground(activePageIndex, { gradientDirection: event.target.value })
+                    }
+                  >
+                    {gradientDirectionOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
+
+              {activePage.background.type === "image" ? (
+                <label className="wizard-field-span-full">
+                  <span>Image URL</span>
+                  <input
+                    type="url"
+                    value={activePage.background.imageUrl ?? ""}
+                    onChange={(event) =>
+                      updatePageBackground(activePageIndex, { imageUrl: event.target.value })
+                    }
+                    placeholder="https://example.com/background.jpg"
+                  />
+                </label>
+              ) : null}
+
+              {activePage.background.type === "video" ? (
+                <label className="wizard-field-span-full">
+                  <span>Video URL</span>
+                  <input
+                    type="url"
+                    value={activePage.background.videoUrl ?? ""}
+                    onChange={(event) =>
+                      updatePageBackground(activePageIndex, { videoUrl: event.target.value })
+                    }
+                    placeholder="https://example.com/background.mp4"
+                  />
+                </label>
+              ) : null}
+            </div>
+          </SectionHeader>
+        ) : null}
+
+        {showVisualSections ? (
+          <SectionHeader title="Typography" description="Set the body font system for this page.">
+            <div className="wizard-form-grid">
+              <label>
+                <span>Body font</span>
+                <select
+                  value={activePage.typography.bodyFont}
+                  onChange={(event) => updatePageTypography(activePageIndex, { bodyFont: event.target.value })}
+                >
+                  {fontFamilyOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <ColorField
+                label="Body font color"
+                value={activePage.typography.bodyColor}
+                onChange={(nextValue) => updatePageTypography(activePageIndex, { bodyColor: nextValue })}
+                pickerFallback="#f8f9fa"
+              />
+
+              <label>
+                <span>Font size preference</span>
+                <select
+                  value={activePage.typography.fontSizePreference ?? "comfortable"}
+                  onChange={(event) =>
+                    updatePageTypography(activePageIndex, {
+                      fontSizePreference:
+                        event.target.value as PageDesignConfig["typography"]["fontSizePreference"],
+                    })
+                  }
+                >
+                  {fontSizePreferenceOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="wizard-choice-grid compact">
+              {fontMoodOptions.map((option) => {
+                const isSelected = activePage.typography.fontMood === option.value;
+
+                return (
+                  <label
+                    key={`${activePage.id}-${option.value}`}
+                    className={`wizard-choice-card${isSelected ? " is-selected" : ""}`}
+                  >
+                    <input
+                      type="radio"
+                      name={`page-font-mood-${activePage.id}`}
+                      value={option.value}
+                      checked={isSelected}
+                      onChange={() => updatePageTypography(activePageIndex, { fontMood: option.value })}
+                    />
+                    <span className="wizard-choice-title">{option.label}</span>
+                    <span className="wizard-choice-description">{option.description}</span>
+                  </label>
+                );
+              })}
+            </div>
+
+            <div
+              className="wizard-typography-preview"
+              style={{
+                color: activePage.typography.bodyColor,
+                fontFamily: activePage.typography.bodyFont,
+                fontSize: bodySize,
+              }}
+            >
+              <strong>Body copy preview</strong>
+              <p>
+                This page is styled to feel {activePage.typography.fontMood}, so you can review the
+                body text direction before generation.
+              </p>
+            </div>
+          </SectionHeader>
+        ) : null}
+
+        {showVisualSections ? (
+          <SectionHeader title="Heading style" description="Define the heading system for this page.">
+            <div className="wizard-form-grid">
+              <label>
+                <span>Heading font</span>
+                <select
+                  value={activePage.headings.headingFont}
+                  onChange={(event) => updatePageHeadings(activePageIndex, { headingFont: event.target.value })}
+                >
+                  {fontFamilyOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <ColorField
+                label="Heading color"
+                value={activePage.headings.headingColor}
+                onChange={(nextValue) => updatePageHeadings(activePageIndex, { headingColor: nextValue })}
+                pickerFallback="#f8f9fa"
+              />
+
+              <label>
+                <span>Heading weight</span>
+                <select
+                  value={activePage.headings.headingWeight}
+                  onChange={(event) => updatePageHeadings(activePageIndex, { headingWeight: event.target.value })}
+                >
+                  {headingWeightOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <div className="wizard-choice-grid compact">
+              {headingScaleOptions.map((option) => {
+                const isSelected = activePage.headings.headingScale === option.value;
+
+                return (
+                  <label
+                    key={`${activePage.id}-${option.value}`}
+                    className={`wizard-choice-card${isSelected ? " is-selected" : ""}`}
+                  >
+                    <input
+                      type="radio"
+                      name={`page-heading-scale-${activePage.id}`}
+                      value={option.value}
+                      checked={isSelected}
+                      onChange={() => updatePageHeadings(activePageIndex, { headingScale: option.value })}
+                    />
+                    <span className="wizard-choice-title">{option.label}</span>
+                    <span className="wizard-choice-description">{option.description}</span>
+                  </label>
+                );
+              })}
+            </div>
+
+            <div className="wizard-heading-preview" aria-label={`${activePage.name} heading preview`}>
+              {headingSizes.map((fontSize, headingIndex) => (
+                <div
+                  key={`${activePage.id}-h${headingIndex + 1}`}
+                  className="wizard-heading-preview-row"
+                  style={{
+                    color: activePage.headings.headingColor,
+                    fontFamily: activePage.headings.headingFont,
+                    fontWeight: activePage.headings.headingWeight,
+                    fontSize,
+                  }}
+                >
+                  <span className="wizard-heading-preview-tag">H{headingIndex + 1}</span>
+                  <span>
+                    {headingIndex === 0
+                      ? "Hero heading preview"
+                      : headingIndex === 1
+                        ? "Section heading preview"
+                        : `Supporting heading ${headingIndex + 1}`}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </SectionHeader>
+        ) : null}
+
+        {showContentSection ? (
+          <SectionHeader
+            title="Page purpose and content prompt"
+            description="Describe what this page should include so generation keeps the page focused."
+          >
+            <label>
+              <span>Page content prompt</span>
+              <textarea
+                value={activePage.contentPrompt}
+                onChange={(event) => updatePage(activePageIndex, { contentPrompt: event.target.value })}
+                rows={4}
+                placeholder="Hero, value proposition, CTA"
+              />
+            </label>
+          </SectionHeader>
+        ) : null}
+      </article>
     </section>
   );
 }

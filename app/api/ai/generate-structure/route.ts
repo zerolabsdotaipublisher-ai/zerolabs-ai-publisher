@@ -28,6 +28,29 @@ import {
 import { logger } from "@/lib/observability";
 import type { WebsiteGenerationInput } from "@/lib/ai/prompts/types";
 
+const RATE_LIMIT_MESSAGE =
+  "Generation is temporarily rate-limited. Please wait a moment, then try again.";
+
+function toSafeRouteError(err: unknown): { status: number; message: string; logMessage: string } {
+  const logMessage = err instanceof Error ? err.message : "Unknown error";
+  const openAiStatusMatch = logMessage.match(/OpenAI API error (\d+)/i);
+  const openAiStatus = openAiStatusMatch ? Number(openAiStatusMatch[1]) : null;
+
+  if (openAiStatus === 429) {
+    return {
+      status: 429,
+      message: RATE_LIMIT_MESSAGE,
+      logMessage,
+    };
+  }
+
+  return {
+    status: 500,
+    message: "Generation could not be completed right now. Please review your inputs or try again in a moment.",
+    logMessage,
+  };
+}
+
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const user = await getServerUser();
 
@@ -81,17 +104,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       validationErrors: [...result.validationErrors, ...seoResult.validationErrors],
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
+    const safeError = toSafeRouteError(err);
 
     logger.error("generate-structure route failed", {
       category: "error",
       service: "openai",
-      error: { message, name: "GenerateStructureError" },
+      error: { message: safeError.logMessage, name: "GenerateStructureError" },
     });
 
     return NextResponse.json(
-      { error: "Generation failed", message },
-      { status: 500 },
+      { error: safeError.message, message: safeError.message },
+      { status: safeError.status },
     );
   }
 }

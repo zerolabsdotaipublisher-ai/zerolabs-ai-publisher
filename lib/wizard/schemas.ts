@@ -440,6 +440,7 @@ export const defaultDesignConfig: WebsiteDesignConfig = {
 export const defaultWizardInput: WebsiteWizardInput = {
   websiteType: inferWebsiteTypeFromPages(defaultDesignConfig.pages),
   brandName: "",
+  domainName: "",
   description: "",
   targetAudience: "",
   services: [],

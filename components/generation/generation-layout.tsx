@@ -1,23 +1,29 @@
 import type { ReactNode } from "react";
 
 interface GenerationLayoutProps {
-  inputPanel: ReactNode;
-  statusPanel: ReactNode;
-  actions: ReactNode;
+  title: string;
+  description: string;
+  builderPanel: ReactNode;
+  previewPanel: ReactNode;
 }
 
-export function GenerationLayout({ inputPanel, statusPanel, actions }: GenerationLayoutProps) {
+export function GenerationLayout({
+  title,
+  description,
+  builderPanel,
+  previewPanel,
+}: GenerationLayoutProps) {
   return (
-    <section className="generation-shell" aria-label="Website generation interface">
+    <section className="generation-shell website-builder-shell" aria-label="Website builder workspace">
       <header className="wizard-header">
-        <h1>Generate website</h1>
-        <p>Review inputs, run AI generation, then continue to preview.</p>
+        <h1>{title}</h1>
+        <p>{description}</p>
       </header>
-      <div className="generation-grid">
-        <div>{inputPanel}</div>
-        <div>{statusPanel}</div>
+
+      <div className="website-builder-grid">
+        <div className="website-builder-panel">{builderPanel}</div>
+        <aside className="website-builder-panel website-builder-preview-panel">{previewPanel}</aside>
       </div>
-      <div>{actions}</div>
     </section>
   );
 }
