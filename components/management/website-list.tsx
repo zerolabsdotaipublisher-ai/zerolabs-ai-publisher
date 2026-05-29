@@ -1,15 +1,19 @@
-import type { WebsiteManagementRecord } from "@/lib/management";
+import type { PublishAction } from "@/lib/publish";
+import type { WebsiteManagementRecord } from "@/lib/management/types";
 import { WebsiteListItem } from "./website-list-item";
 
 interface WebsiteListProps {
   websites: WebsiteManagementRecord[];
+  currentUserId?: string;
   selectedIds: string[];
   deletingId?: string;
   renameId?: string;
   deleteDialogId?: string;
   renameBusyId?: string;
   statusBusyId?: string;
+  publishBusyId?: string;
   deleteErrorById: Record<string, string | undefined>;
+  actionErrorById: Record<string, string | undefined>;
   onSelectionChange: (id: string, checked: boolean) => void;
   onRenameOpen: (id: string) => void;
   onRenameCancel: () => void;
@@ -17,19 +21,22 @@ interface WebsiteListProps {
   onDeleteOpen: (id: string) => void;
   onDeleteCancel: () => void;
   onDeleteConfirm: (id: string) => void;
-  onArchive: (id: string) => void;
-  onActivate: (id: string) => void;
+  onPublish: (id: string, action: PublishAction) => void;
+  onStatus: (id: string, status: "archive" | "activate") => void;
 }
 
 export function WebsiteList({
   websites,
+  currentUserId,
   selectedIds,
   deletingId,
   renameId,
   deleteDialogId,
   renameBusyId,
   statusBusyId,
+  publishBusyId,
   deleteErrorById,
+  actionErrorById,
   onSelectionChange,
   onRenameOpen,
   onRenameCancel,
@@ -37,8 +44,8 @@ export function WebsiteList({
   onDeleteOpen,
   onDeleteCancel,
   onDeleteConfirm,
-  onArchive,
-  onActivate,
+  onPublish,
+  onStatus,
 }: WebsiteListProps) {
   return (
     <div className="website-list" role="list">
@@ -46,13 +53,16 @@ export function WebsiteList({
         <WebsiteListItem
           key={website.id}
           website={website}
+          currentUserId={currentUserId}
           selected={selectedIds.includes(website.id)}
           deleting={deletingId === website.id}
           deleteError={deleteErrorById[website.id]}
+          actionError={actionErrorById[website.id]}
           renameOpen={renameId === website.id}
           deleteOpen={deleteDialogId === website.id}
           renameBusy={renameBusyId === website.id}
           statusBusy={statusBusyId === website.id}
+          publishBusy={publishBusyId === website.id}
           onSelectionChange={(checked) => onSelectionChange(website.id, checked)}
           onRenameOpen={() => onRenameOpen(website.id)}
           onRenameCancel={onRenameCancel}
@@ -60,8 +70,8 @@ export function WebsiteList({
           onDeleteOpen={() => onDeleteOpen(website.id)}
           onDeleteCancel={onDeleteCancel}
           onDeleteConfirm={() => onDeleteConfirm(website.id)}
-          onArchive={() => onArchive(website.id)}
-          onActivate={() => onActivate(website.id)}
+          onPublish={(action) => onPublish(website.id, action)}
+          onStatus={(status) => onStatus(website.id, status)}
         />
       ))}
     </div>

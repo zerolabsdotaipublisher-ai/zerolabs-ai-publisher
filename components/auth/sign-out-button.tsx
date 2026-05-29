@@ -4,7 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { routes } from "@/config/routes";
 
-export function SignOutButton() {
+interface SignOutButtonProps {
+  className?: string;
+  containerClassName?: string;
+  errorClassName?: string;
+}
+
+export function SignOutButton({ className, containerClassName, errorClassName }: SignOutButtonProps = {}) {
   const router = useRouter();
   const [signingOut, setSigningOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -18,8 +24,6 @@ export function SignOutButton() {
       const response = await fetch("/api/auth/sign-out", { method: "POST" });
 
       if (response.ok) {
-        // Replace history entry so the back-button does not return to a
-        // protected page.  Then refresh to clear server-side session state.
         router.replace(routes.login);
         router.refresh();
       } else {
@@ -33,15 +37,15 @@ export function SignOutButton() {
   }
 
   return (
-    <>
-      <button type="button" onClick={onSignOut} disabled={signingOut} aria-busy={signingOut}>
+    <div className={containerClassName}>
+      <button type="button" onClick={onSignOut} disabled={signingOut} aria-busy={signingOut} className={className}>
         {signingOut ? "Signing out…" : "Sign out"}
       </button>
       {error && (
-        <p role="alert" className="auth-error">
+        <p role="alert" className={errorClassName ?? "auth-error"}>
           {error}
         </p>
       )}
-    </>
+    </div>
   );
 }

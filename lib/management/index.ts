@@ -8,4 +8,7 @@ export * from "./status";
 export * from "./ownership";
 export * from "./metadata";
 export * from "./storage";
+export * from "./actions";
+export * from "./permissions";
+export * from "./controls";
 export * from "./scenarios";

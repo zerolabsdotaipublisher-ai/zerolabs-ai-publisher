@@ -103,8 +103,8 @@ export function AuthProvider({
 
     // ── Initial session restore ──────────────────────────────────────────────
     // getSession() reads the session from the in-memory Supabase client (which
-    // is populated from cookies set by the server on every request via
-    // lib/supabase/middleware.ts).  This covers:
+    // is hydrated from the auth cookies refreshed by protected-route middleware
+    // and server-side auth handlers). This covers:
     //   • First load
     //   • Browser refresh
     //   • Returning visit / tab reopen

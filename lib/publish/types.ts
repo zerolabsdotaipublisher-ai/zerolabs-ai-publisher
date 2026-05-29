@@ -9,6 +9,7 @@ export type PublicationState =
   | "unpublished";
 
 export type PublishAction = "publish" | "update";
+export type PublishTargetContentType = "website" | "website_page" | "blog_post" | "article" | "social_post";
 
 export type PublicationDeploymentEnvironment = "preview" | "production";
 
@@ -183,6 +184,18 @@ export interface PublicationUpdateMetadata {
   staticSite?: PublicationStaticSiteMetadata;
   history?: PublicationVersionRecord[];
   logs?: PublicationUpdateLogEntry[];
+  manualOverride?: {
+    overrideUsed: boolean;
+    overrideReason: string;
+    overrideTimestamp: string;
+    overrideUserId: string;
+    bypassedWorkflows: Array<"approval" | "schedule">;
+    targetContentId: string;
+    targetContentType: PublishTargetContentType;
+    scenario: "urgent_publish" | "hotfix_update" | "bypass_scheduled_time" | "bypass_approval";
+    approvalBypassed: boolean;
+    requestId?: string;
+  };
 }
 
 export interface PublicationDeploymentMetadata {
@@ -279,4 +292,5 @@ export type PublishTrackingEvent =
   | "publish_failed"
   | "publish_retry_clicked"
   | "update_completed"
-  | "update_noop";
+  | "update_noop"
+  | "manual_override_used";

@@ -3,6 +3,7 @@ import { getServerUser } from "@/lib/supabase/server";
 import { getWebsiteStructure, updateWebsiteStructure } from "@/lib/ai/structure/storage";
 import { storeWebsiteNavigation } from "@/lib/ai/navigation";
 import { logger } from "@/lib/observability";
+import { listOwnedContentLibraryPage } from "@/lib/content/library";
 import {
   regenerateWebsiteContent,
   storeWebsiteGeneratedContent,
@@ -10,6 +11,8 @@ import {
 } from "@/lib/ai/content";
 import { generateWebsiteSeo, storeWebsiteSeoMetadata } from "@/lib/ai/seo";
 import type { WebsiteGenerationInput } from "@/lib/ai/prompts/types";
+import { toRevisionWorkflowIdMap } from "@/lib/revisions/model";
+import { recordContentRevisionAction } from "@/lib/revisions/workflow";
 
 interface RegenerateContentBody {
   structureId: string;
@@ -76,6 +79,37 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       version: updatedStructure.version,
       updatedAt: updatedStructure.updatedAt,
     });
+    const library = await listOwnedContentLibraryPage(user.id, {
+      page: 1,
+      perPage: 5000,
+      search: undefined,
+      type: "website_page",
+      status: "all",
+      websiteId: body.structureId,
+      sort: "updated_desc",
+    });
+    const targetPages = new Set(body.options?.pages ?? []);
+    const targetItems = library.items.filter((item) =>
+      !item.linkedWebsite?.structureId
+        ? false
+        : targetPages.size === 0
+          ? true
+          : (item.pageSlug ? targetPages.has(item.pageSlug) : false),
+    );
+    await Promise.all(
+      targetItems.map((item) =>
+        recordContentRevisionAction({
+          userId: user.id,
+          contentId: item.id,
+          actionType: "ai_regenerate",
+          relatedWorkflowIds: toRevisionWorkflowIdMap(),
+          metadata: {
+            structureId: body.structureId,
+            pageSlug: item.pageSlug,
+          },
+        }),
+      ),
+    );
 
     return NextResponse.json({
       content: result.content,

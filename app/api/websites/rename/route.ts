@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import {
+  canRenameWebsite,
   updateWebsiteMetadata,
   toWebsiteManagementRecord,
   validateWebsiteOwnership,
@@ -31,8 +32,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ ok: false, error: "Website not found" }, { status: 404 });
     }
 
-    if (ownership.website.management?.deletedAt) {
-      return NextResponse.json({ ok: false, error: "Deleted websites cannot be renamed" }, { status: 409 });
+    if (!canRenameWebsite(ownership.website, user.id)) {
+      return NextResponse.json({ ok: false, error: "You do not have permission to rename this website" }, { status: 403 });
     }
 
     const now = new Date().toISOString();

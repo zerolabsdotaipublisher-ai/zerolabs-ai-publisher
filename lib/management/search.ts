@@ -6,11 +6,5 @@ export function searchWebsites(websites: WebsiteManagementRecord[], query?: stri
     return websites;
   }
 
-  return websites.filter((website) => {
-    return (
-      website.title.toLowerCase().includes(normalized)
-      || website.description?.toLowerCase().includes(normalized)
-      || website.id.toLowerCase().includes(normalized)
-    );
-  });
+  return websites.filter((website) => website.title.toLowerCase().includes(normalized));
 }

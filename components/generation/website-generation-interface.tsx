@@ -146,7 +146,6 @@ export function WebsiteGenerationInterface({
     const index = state.input.designConfig.pages.findIndex((page) => page.id === activePage.id);
     return index === -1 ? 0 : index;
   }, [activePage, state.input.designConfig.pages]);
-
   function updateInput(patch: WebsiteWizardInputPatch) {
     setState((current) => ({
       ...current,

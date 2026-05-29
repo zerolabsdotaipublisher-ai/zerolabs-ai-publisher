@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { getStructureApprovalPublishingGate } from "@/lib/approval";
 import { getServerUser } from "@/lib/supabase/server";
 import { getOwnedPublishStructure } from "@/lib/publish/storage";
 import { runPublishWorkflow } from "@/lib/publish/workflow";
@@ -27,6 +28,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const structure = await getOwnedPublishStructure(body.structureId, user.id);
   if (!structure) {
     return NextResponse.json({ ok: false, error: "Structure not found" }, { status: 404 });
+  }
+
+  const approvalGate = await getStructureApprovalPublishingGate(user.id, body.structureId);
+  if (approvalGate.blocked) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: approvalGate.reason || "Publishing is blocked by approval state.",
+        approvalGate,
+      },
+      { status: 409 },
+    );
   }
 
   const result = await runPublishWorkflow({

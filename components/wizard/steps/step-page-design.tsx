@@ -264,7 +264,6 @@ export function StepPageDesign({
         ? "Fine-tune background, typography, and heading style for the selected page."
         : "Each page keeps its own layout, background, typography, heading, and content settings. Select one page to edit at a time.";
   const headerLabel = mode === "structure" ? "Phase 2" : mode === "design" ? "Phase 3" : "Step 2";
-
   function updatePages(nextPages: WebsiteDesignConfig["pages"]) {
     onChange({ pages: nextPages });
   }
@@ -277,7 +276,6 @@ export function StepPageDesign({
 
     setInternalActivePageId(pageId);
   }
-
   function updatePage(index: number, patch: Partial<PageDesignConfig>) {
     updatePages(
       value.pages.map((page, pageIndex) =>

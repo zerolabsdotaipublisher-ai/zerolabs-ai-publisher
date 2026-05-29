@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import {
+  canDeleteWebsite,
   softDeleteWebsite,
   toWebsiteManagementRecord,
   validateWebsiteOwnership,
@@ -7,6 +8,7 @@ import {
   saveOwnedWebsiteStructure,
   type WebsiteDeletePayload,
 } from "@/lib/management";
+import { archiveOwnedGeneratedContent } from "@/lib/content";
 import { getServerUser } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -36,9 +38,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ ok: false, error: "Website not found" }, { status: 404 });
     }
 
+    if (!canDeleteWebsite(ownership.website, user.id)) {
+      return NextResponse.json({ ok: false, error: "You do not have permission to delete this website" }, { status: 403 });
+    }
+
     const now = new Date().toISOString();
     const deletedWebsite = softDeleteWebsite(ownership.website, user.id, now);
     const saved = await saveOwnedWebsiteStructure(deletedWebsite);
+    await archiveOwnedGeneratedContent(body.structureId, user.id);
 
     return NextResponse.json({
       ok: true,

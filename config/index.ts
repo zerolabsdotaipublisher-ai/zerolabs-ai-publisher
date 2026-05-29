@@ -27,6 +27,8 @@ export type {
   DatabaseConfig,
   EmailConfig,
   OpenAIConfig,
+  MediaConfig,
+  MetaConfig,
   PipelineConfig,
   QdrantConfig,
   SchedulerConfig,

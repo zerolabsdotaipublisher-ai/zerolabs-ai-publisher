@@ -3,17 +3,20 @@
 import { useEffect, useMemo, useState } from "react";
 import type { WebsiteStructure } from "@/lib/ai/structure";
 import {
-  detectPublicationState,
   trackPublishEvent,
   type PublishAction,
   type PublishMutationResponse,
 } from "@/lib/publish";
-import { validatePublishEligibility } from "@/lib/publish/validation";
+import { buildPublishingStatusFromStructure, type PublishStatusApiResponse } from "@/lib/publish/status";
+import type { ManualOverrideScenario } from "@/lib/publish/override/types";
 import { LiveLinkCard } from "./live-link-card";
+import { ManualOverrideButton } from "./manual-override-button";
+import { ManualOverrideDialog } from "./manual-override-dialog";
+import { ManualOverrideStatus } from "./manual-override-status";
 import { PublishConfirmationDialog } from "./publish-confirmation-dialog";
 import { PublishErrorState } from "./publish-error-state";
 import { PublishLoadingState } from "./publish-loading-state";
-import { PublishStatusBadge } from "./publish-status-badge";
+import { PublishStatusSummary } from "./publish-status-summary";
 import { PublishSuccessState } from "./publish-success-state";
 
 interface PublishControlsProps {
@@ -22,26 +25,91 @@ interface PublishControlsProps {
   context: "editor" | "preview";
 }
 
+const PUBLISH_STATUS_POLL_INTERVAL_MS = 15_000;
+
 export function PublishControls({ structure, hasUnsavedChanges = false, context }: PublishControlsProps) {
   const [website, setWebsite] = useState<WebsiteStructure>(structure);
   const [loading, setLoading] = useState(false);
+  const [statusLoading, setStatusLoading] = useState(false);
+  const [statusError, setStatusError] = useState<string>();
+  const [statusSnapshot, setStatusSnapshot] = useState<ReturnType<typeof buildPublishingStatusFromStructure>>();
   const [errorMessage, setErrorMessage] = useState<string>();
   const [successMessage, setSuccessMessage] = useState<string>();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [manualOverrideOpen, setManualOverrideOpen] = useState(false);
+  const [manualOverrideLoading, setManualOverrideLoading] = useState(false);
+  const [manualOverrideDialogVersion, setManualOverrideDialogVersion] = useState(0);
+  const [overrideStatus, setOverrideStatus] = useState<PublishStatusApiResponse["overrideStatus"]>();
 
   useEffect(() => {
     setWebsite(structure);
+    setStatusSnapshot(undefined);
   }, [structure]);
 
-  const detection = useMemo(() => detectPublicationState(website), [website]);
-  const validation = useMemo(() => validatePublishEligibility(website), [website]);
+  const localStatus = useMemo(() => buildPublishingStatusFromStructure(website), [website]);
+  const status = statusSnapshot ?? localStatus;
+  const detection = status.detection;
+  const validation = status.validation;
 
-  const action: PublishAction = detection.neverPublished ? "publish" : "update";
-  const buttonLabel = detection.neverPublished ? "Publish website" : "Update live website";
+  const action: PublishAction = status.action.publishAction;
+  const buttonLabel = status.action.publishActionLabel;
 
   const blockedByUnsaved = context === "editor" && hasUnsavedChanges;
   const blockedByValidation = !validation.eligible;
-  const blockedBecauseNoUpdates = !detection.neverPublished && !detection.hasUnpublishedChanges;
+  const blockedBecauseNoUpdates = action === "update" && !status.hasUnpublishedChanges;
+  const blockedByStatus = !status.action.canTriggerPublishAction;
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadStatus(silent = true) {
+      if (!silent) {
+        setStatusLoading(true);
+      }
+
+      try {
+        const response = await fetch(`/api/publish/status?structureId=${encodeURIComponent(website.id)}`, {
+          method: "GET",
+          cache: "no-store",
+        });
+        const body = (await response.json()) as PublishStatusApiResponse;
+
+        if (!response.ok || !body.ok || !body.status) {
+          throw new Error(body.error || "Unable to refresh publishing status.");
+        }
+
+        if (!active) {
+          return;
+        }
+
+        setStatusSnapshot(body.status);
+        setOverrideStatus(body.overrideStatus);
+        setStatusError(undefined);
+      } catch (statusLoadError) {
+        if (!active) {
+          return;
+        }
+
+        setStatusError(statusLoadError instanceof Error ? statusLoadError.message : "Unable to refresh publishing status.");
+      } finally {
+        if (!silent && active) {
+          setStatusLoading(false);
+        }
+      }
+    }
+
+    void loadStatus(false);
+    const intervalId = setInterval(() => {
+      void loadStatus(true);
+    }, PUBLISH_STATUS_POLL_INTERVAL_MS);
+
+    return () => {
+      active = false;
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [website.id]);
 
   async function sendPublishRequest(selectedAction: PublishAction) {
     setLoading(true);
@@ -116,11 +184,76 @@ export function PublishControls({ structure, hasUnsavedChanges = false, context 
             ? "Website published successfully."
             : "Live website updated successfully."),
       );
+      setStatusSnapshot(undefined);
     } catch {
       setErrorMessage("Publish action failed unexpectedly.");
     } finally {
       setLoading(false);
       setConfirmOpen(false);
+    }
+  }
+
+  async function sendManualOverrideRequest(payload: {
+    reason: string;
+    scenario: ManualOverrideScenario;
+    bypassApproval: boolean;
+  }) {
+    setManualOverrideLoading(true);
+    setLoading(true);
+    setErrorMessage(undefined);
+    setSuccessMessage(undefined);
+
+    try {
+      const response = await fetch("/api/publish/override", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          structureId: website.id,
+          targetContentType:
+            website.websiteType === "blog"
+              ? "blog_post"
+              : website.websiteType === "article"
+                ? "article"
+                : "website",
+          reason: payload.reason,
+          scenario: payload.scenario,
+          bypassApproval: payload.bypassApproval,
+        }),
+      });
+
+      const body = (await response.json()) as {
+        ok: boolean;
+        error?: string;
+        message?: string;
+        publish?: PublishMutationResponse;
+      };
+
+      if (!response.ok || !body.ok) {
+        setErrorMessage(body.error || "Manual override failed.");
+        return;
+      }
+
+      if (body.publish?.structure) {
+        setWebsite(body.publish.structure);
+      }
+
+      setSuccessMessage(body.message || "Manual publishing override completed successfully.");
+      void trackPublishEvent({
+        event: "manual_override_used",
+        structureId: website.id,
+        action,
+        state: detection.state,
+        message: body.message,
+      });
+      setStatusSnapshot(undefined);
+      setManualOverrideOpen(false);
+    } catch {
+      setErrorMessage("Manual override failed unexpectedly.");
+    } finally {
+      setLoading(false);
+      setManualOverrideLoading(false);
     }
   }
 
@@ -143,6 +276,11 @@ export function PublishControls({ structure, hasUnsavedChanges = false, context 
       return;
     }
 
+    if (blockedByStatus && status.action.disableReason) {
+      setErrorMessage(status.action.disableReason);
+      return;
+    }
+
     setConfirmOpen(true);
   }
 
@@ -156,16 +294,18 @@ export function PublishControls({ structure, hasUnsavedChanges = false, context 
     void sendPublishRequest(action);
   }
 
-  const publishButtonDisabled = loading || blockedByUnsaved || blockedByValidation || blockedBecauseNoUpdates;
+  const publishButtonDisabled = loading || blockedByUnsaved || blockedByValidation || blockedBecauseNoUpdates || blockedByStatus;
+  const manualOverrideDisabled = loading || manualOverrideLoading || !overrideStatus?.canUseOverride;
 
   return (
     <section className="publish-controls" aria-label="Publish controls">
       <div className="publish-controls-header">
         <h2>Publication</h2>
-        <PublishStatusBadge state={detection.state} />
       </div>
+      <PublishStatusSummary status={status} loading={statusLoading} error={statusError} />
 
       {blockedByUnsaved ? <p className="publish-warning">You have unsaved edits. Save draft first.</p> : null}
+      {blockedByStatus && status.action.disableReason ? <p className="publish-warning">{status.action.disableReason}</p> : null}
       {blockedByValidation ? (
         <ul className="publish-validation-errors">
           {validation.errors.map((error) => (
@@ -178,6 +318,14 @@ export function PublishControls({ structure, hasUnsavedChanges = false, context 
         <button type="button" onClick={handleOpenConfirmation} disabled={publishButtonDisabled}>
           {loading ? "Processing…" : buttonLabel}
         </button>
+        <ManualOverrideButton
+          disabled={manualOverrideDisabled}
+          loading={manualOverrideLoading}
+          onClick={() => {
+            setManualOverrideDialogVersion((current) => current + 1);
+            setManualOverrideOpen(true);
+          }}
+        />
       </div>
 
       {loading ? <PublishLoadingState action={action} /> : null}
@@ -185,19 +333,30 @@ export function PublishControls({ structure, hasUnsavedChanges = false, context 
       {errorMessage ? <PublishErrorState message={errorMessage} onRetry={detection.hasFailedUpdate ? handleRetry : undefined} /> : null}
 
       <LiveLinkCard
-        liveUrl={detection.liveUrl}
-        lastPublishedAt={detection.lastPublishedAt}
-        lastDraftUpdatedAt={detection.lastDraftUpdatedAt}
+        liveUrl={status.liveUrl}
+        lastPublishedAt={status.timestamps.lastPublishedAt}
+        lastDraftUpdatedAt={status.timestamps.lastDraftUpdatedAt}
       />
+      <ManualOverrideStatus status={status} />
 
       <PublishConfirmationDialog
         open={confirmOpen}
         action={action}
-        hasUnpublishedChanges={detection.hasUnpublishedChanges}
+        hasUnpublishedChanges={status.hasUnpublishedChanges}
         hasUnsavedChanges={hasUnsavedChanges}
         onCancel={() => setConfirmOpen(false)}
         onConfirm={() => {
           void sendPublishRequest(action);
+        }}
+      />
+      <ManualOverrideDialog
+        key={manualOverrideDialogVersion}
+        open={manualOverrideOpen}
+        loading={manualOverrideLoading}
+        canBypassApproval={Boolean(overrideStatus?.canBypassApproval)}
+        onCancel={() => setManualOverrideOpen(false)}
+        onConfirm={(payload) => {
+          void sendManualOverrideRequest(payload);
         }}
       />
     </section>

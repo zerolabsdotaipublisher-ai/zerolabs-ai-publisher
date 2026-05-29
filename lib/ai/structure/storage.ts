@@ -27,6 +27,9 @@ function toRow(
   return {
     id: structure.id,
     user_id: structure.userId,
+    created_by: structure.userId,
+    updated_by: structure.userId,
+    deleted_at: structure.management?.deletedAt ?? null,
     website_type: structure.websiteType,
     site_title: structure.siteTitle,
     tagline: structure.tagline,
@@ -91,6 +94,8 @@ export async function updateWebsiteStructure(
       source_input: structure.sourceInput,
       status: structure.status,
       version: structure.version,
+      updated_by: structure.userId,
+      deleted_at: structure.management?.deletedAt ?? null,
       updated_at: structure.updatedAt,
     })
     .eq("id", structure.id)

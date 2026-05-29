@@ -233,7 +233,7 @@ Environment variables are loaded from `.env.local` by Next.js. Required variable
 
 | Variable | Description |
 |---|---|
-| `NEXT_PUBLIC_APP_NAME` | Application display name |
+| `NEXT_PUBLIC_APP_NAME` | Application display name (use `ZeroLabs AI Publisher`) |
 | `NEXT_PUBLIC_APP_URL` | Canonical URL for this deployment |
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL (browser-safe) |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key (browser-safe) |
@@ -274,6 +274,12 @@ Run the linter before building:
 npm run lint
 ```
 
+For local build validation, ensure `.env.local` includes at minimum:
+
+```env
+NEXT_PUBLIC_APP_NAME=ZeroLabs AI Publisher
+```
+
 ---
 
 ## Deployment
@@ -285,7 +291,7 @@ This application is designed to be deployed on **[Vercel](https://vercel.com)**.
 1. Connect the `zerolabsdotaipublisher-ai/zerolabs-ai-publisher` repository to a Vercel project.
 2. Set the **Framework Preset** to **Next.js** and leave the **Root Directory** blank.
 3. Set the **Production Branch** to `main`.
-4. Add all required environment variables under **Settings → Environment Variables** (see `.env.example` for the full list).
+4. Add all required environment variables under **Settings → Environment Variables** (see `.env.example` for the full list). Set `NEXT_PUBLIC_APP_NAME=ZeroLabs AI Publisher` for **Production**, **Preview**, and **Development** scopes.
 5. Vercel will automatically build and deploy on every push to `main` (production) and to all other branches (preview).
 
 ### Branch → deployment mapping

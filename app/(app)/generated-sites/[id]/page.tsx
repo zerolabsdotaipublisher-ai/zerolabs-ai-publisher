@@ -4,11 +4,23 @@ import { getServerUser } from "@/lib/supabase/server";
 import { getWebsiteStructure } from "@/lib/ai/structure/storage";
 import { getWebsiteSeoMetadata } from "@/lib/ai/seo";
 import { Renderer } from "@/components/generated-site/renderer";
+import { PublishStatusSummary } from "@/components/publish/publish-status-summary";
 import { PublishStatusBadge } from "@/components/publish/publish-status-badge";
+import { ManualOverrideStatus } from "@/components/publish/manual-override-status";
 import { ContentSchedulePanel } from "@/components/scheduling/content-schedule-panel";
 import { VersionHistoryPanel } from "@/components/versions/version-history-panel";
-import { detectPublicationState } from "@/lib/publish";
+import { buildPublishingStatusFromStructure } from "@/lib/publish/status";
 import { resolveWebsitePageByPath } from "@/lib/routing";
+import { SocialSchedulePanel } from "@/components/social/social-schedule-panel";
+import { listSocialAccountProviders } from "@/lib/social/accounts";
+import { listSocialAccountConnections } from "@/lib/social/accounts/workflow";
+import { listOwnedSocialPublishHistoryJobs } from "@/lib/social/history";
+import { listSocialPostsByStructureId } from "@/lib/social";
+import {
+  listOwnedSocialScheduleEvents,
+  listOwnedSocialScheduleRuns,
+  listOwnedSocialSchedules,
+} from "@/lib/social/scheduling";
 import {
   getOwnedContentScheduleByStructureId,
   listOwnedContentScheduleRuns,
@@ -89,12 +101,27 @@ export default async function GeneratedSitePage({ params, searchParams }: PagePr
   if (!structure || structure.management?.deletedAt) {
     notFound();
   }
-  const publication = detectPublicationState(structure);
+  const publication = buildPublishingStatusFromStructure(structure);
   const versions = await listWebsiteVersions(id, user.id);
-  const schedule = await getOwnedContentScheduleByStructureId(id, user.id);
-  const scheduleRuns = schedule
-    ? await listOwnedContentScheduleRuns(schedule.id, user.id, 10)
-    : [];
+  const [schedule, socialPosts, socialSchedules, socialHistoryResult, socialAccounts, socialAccountProviders] =
+    await Promise.all([
+    getOwnedContentScheduleByStructureId(id, user.id),
+    listSocialPostsByStructureId(id, user.id),
+    listOwnedSocialSchedules(user.id, { structureId: id }),
+    listOwnedSocialPublishHistoryJobs(user.id, { page: 1, perPage: 20, platform: undefined, status: undefined }),
+    listSocialAccountConnections(user.id),
+    Promise.resolve(listSocialAccountProviders()),
+  ]);
+  const [scheduleRuns, socialScheduleDetails] = await Promise.all([
+    schedule ? listOwnedContentScheduleRuns(schedule.id, user.id, 10) : Promise.resolve([]),
+    Promise.all(
+      socialSchedules.map(async (socialSchedule) => ({
+        ...socialSchedule,
+        runs: await listOwnedSocialScheduleRuns(socialSchedule.id, user.id, 10),
+        events: await listOwnedSocialScheduleEvents(socialSchedule.id, user.id, 10),
+      })),
+    ),
+  ]);
   const versionEntries = versions.map((version) => ({
     id: version.id,
     versionNumber: version.versionNumber,
@@ -116,15 +143,25 @@ export default async function GeneratedSitePage({ params, searchParams }: PagePr
         <p className="generated-site-info">
           <span>{structure.siteTitle}</span>
           <span className="generated-site-status">{structure.status}</span>
-          <PublishStatusBadge state={publication.state} />
+          <PublishStatusBadge state={publication.uiState} />
           <span className="generated-site-version">v{structure.version}</span>
         </p>
+        <PublishStatusSummary status={publication} compact />
+        <ManualOverrideStatus status={publication} />
       </div>
       <ContentSchedulePanel
         structureId={structure.id}
         websiteType={structure.websiteType}
         initialSchedule={schedule}
         initialRuns={scheduleRuns}
+      />
+      <SocialSchedulePanel
+        structureId={structure.id}
+        socialPosts={socialPosts}
+        initialSchedules={socialScheduleDetails}
+        initialHistory={socialHistoryResult.items}
+        initialAccounts={socialAccounts}
+        initialAccountProviders={socialAccountProviders}
       />
       <VersionHistoryPanel structureId={structure.id} entries={versionEntries} />
       <Renderer structure={structure} pageSlug={resolvedSearchParams?.page || "/"} />

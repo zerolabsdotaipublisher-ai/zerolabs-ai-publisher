@@ -87,12 +87,12 @@ Vercel environment variables can be scoped to one or more environments:
 
 ### Required variables
 
-The following variables must be present in the **Production** environment. Preview environments should also have them unless a separate preview project/database is used.
+The following variables must be present in **Production**, **Preview**, and **Development** environments.
 
 | Variable | Scope | Notes |
 |---|---|---|
-| `NEXT_PUBLIC_APP_NAME` | Production + Preview | Display name |
-| `NEXT_PUBLIC_APP_URL` | Production + Preview | Set to the canonical domain for Production; set to the preview slug for Preview |
+| `NEXT_PUBLIC_APP_NAME` | Production + Preview + Development | Set to `ZeroLabs AI Publisher` |
+| `NEXT_PUBLIC_APP_URL` | Production + Preview + Development | Set to canonical domain for Production, preview slug for Preview, and `http://localhost:3000` for Development |
 | `NEXT_PUBLIC_SUPABASE_URL` | Production + Preview | Public — safe in browser. Throws at startup if missing. |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Production + Preview | Public — safe in browser. Throws at startup if missing. |
 | `SUPABASE_SERVICE_ROLE_KEY` | Production + Preview | Server-side only. Do not prefix with `NEXT_PUBLIC_`. |
@@ -221,7 +221,7 @@ The following table maps the most likely causes of a 404 on the deployed app to 
 4. Is the root directory blank (repo root)?
    - No → clear the field → redeploy.
    - Yes → continue.
-5. Are NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, OPENAI_API_KEY set?
+5. Are NEXT_PUBLIC_APP_NAME, NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, OPENAI_API_KEY set?
    - No → add to Vercel environment variables → redeploy.
    - Yes → continue.
 6. Does next.config.ts contain output: 'export'?

@@ -6,11 +6,11 @@ interface WebsiteStatusBadgeProps {
 
 const STATUS_LABELS: Record<WebsiteLifecycleStatus, string> = {
   draft: "Draft",
-  published: "Published",
-  update_pending: "Update pending",
+  live: "Live",
+  unpublished_changes: "Updates pending",
   publishing: "Publishing",
-  update_failed: "Update failed",
-  unpublished: "Unpublished",
+  updating: "Publishing",
+  failed: "Failed",
   archived: "Archived",
   deleted: "Deleted",
 };

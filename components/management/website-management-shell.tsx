@@ -1,115 +1,160 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { PublishMutationResponse } from "@/lib/publish";
 import type {
+  WebsiteListPage,
   WebsiteManagementRecord,
   WebsiteMutationResponse,
+  WebsitePublishStateFilter,
   WebsiteStatusFilter,
+  WebsiteTypeFilter,
 } from "@/lib/management/types";
-import { WebsiteEmptyState } from "./website-empty-state";
-import { WebsiteFilters } from "./website-filters";
+import { getPublishEndpoint } from "@/lib/management/actions";
+import { WebsiteListControls } from "./website-list-controls";
+import { WebsiteListEmptyState } from "./website-list-empty-state";
+import { WebsiteListLoading } from "./website-list-loading";
 import { WebsiteList } from "./website-list";
-import { WebsiteSearch } from "./website-search";
 
 interface WebsiteManagementShellProps {
-  initialWebsites: WebsiteManagementRecord[];
+  initialListing: WebsiteListPage;
+  currentUserId?: string;
 }
 
 interface WebsiteListApiResponse {
   ok: boolean;
   websites?: WebsiteManagementRecord[];
+  total?: number;
+  page?: number;
+  perPage?: number;
+  hasMore?: boolean;
   error?: string;
 }
 
-export function WebsiteManagementShell({ initialWebsites }: WebsiteManagementShellProps) {
-  const [websites, setWebsites] = useState(initialWebsites);
+const DEFAULT_PER_PAGE = 12;
+const SEARCH_DEBOUNCE_MS = 250;
+const WEBSITE_LIST_POLL_INTERVAL_MS = 30_000;
+
+export function WebsiteManagementShell({ initialListing, currentUserId }: WebsiteManagementShellProps) {
+  const [websites, setWebsites] = useState(initialListing.websites);
+  const [total, setTotal] = useState(initialListing.total);
+  const [page, setPage] = useState(initialListing.page);
+  const [perPage, setPerPage] = useState(initialListing.perPage);
+  const [hasMore, setHasMore] = useState(initialListing.hasMore);
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [status, setStatus] = useState<WebsiteStatusFilter>("all");
+  const [publishState, setPublishState] = useState<WebsitePublishStateFilter>("all");
+  const [websiteType, setWebsiteType] = useState<WebsiteTypeFilter>("all");
   const [includeDeleted, setIncludeDeleted] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [feedback, setFeedback] = useState<string>();
   const [error, setError] = useState<string>();
+  const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [deletingId, setDeletingId] = useState<string>();
   const [renameId, setRenameId] = useState<string>();
   const [renameBusyId, setRenameBusyId] = useState<string>();
   const [statusBusyId, setStatusBusyId] = useState<string>();
+  const [publishBusyId, setPublishBusyId] = useState<string>();
   const [deleteDialogId, setDeleteDialogId] = useState<string>();
   const [deleteErrorById, setDeleteErrorById] = useState<Record<string, string | undefined>>({});
+  const [actionErrorById, setActionErrorById] = useState<Record<string, string | undefined>>({});
 
   useEffect(() => {
+    const timeout = setTimeout(() => setDebouncedQuery(query.trim()), SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timeout);
+  }, [query]);
+
+  const loadWebsites = useCallback(async (options: { append: boolean; targetPage: number; silent?: boolean }) => {
     const controller = new AbortController();
+    const nextPage = options.targetPage;
 
-    async function loadWebsites() {
+    if (options.silent) {
+      // keep existing UI steady during background refresh
+    } else if (options.append) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
+    if (!options.silent) {
       setError(undefined);
-      const params = new URLSearchParams();
-      if (query.trim()) {
-        params.set("query", query.trim());
-      }
-      if (status !== "all") {
-        params.set("status", status);
-      }
-      if (includeDeleted) {
-        params.set("includeDeleted", "true");
-      }
-
-      try {
-        const response = await fetch(`/api/websites/list?${params.toString()}`, {
-          method: "GET",
-          signal: controller.signal,
-        });
-
-        const body = (await response.json()) as WebsiteListApiResponse;
-        if (!response.ok || !body.ok || !body.websites) {
-          setError(body.error || "Unable to load websites.");
-          return;
-        }
-
-        setWebsites(body.websites);
-      } catch {
-        if (!controller.signal.aborted) {
-          setError("Unable to load websites.");
-        }
-      }
     }
 
-    void loadWebsites();
+    const params = new URLSearchParams();
+    if (debouncedQuery) params.set("query", debouncedQuery);
+    if (status !== "all") params.set("status", status);
+    if (publishState !== "all") params.set("publishState", publishState);
+    if (websiteType !== "all") params.set("websiteType", websiteType);
+    if (includeDeleted) params.set("includeDeleted", "true");
+    params.set("page", String(nextPage));
+    params.set("perPage", String(perPage || DEFAULT_PER_PAGE));
 
-    return () => {
-      controller.abort();
-    };
-  }, [query, status, includeDeleted]);
+    try {
+      const response = await fetch(`/api/websites/list?${params.toString()}`, {
+        method: "GET",
+        signal: controller.signal,
+      });
+      const body = (await response.json()) as WebsiteListApiResponse;
 
-  const selectedCount = selectedIds.length;
-
-  const hasResults = websites.length > 0;
-
-  function upsertWebsite(updated: WebsiteManagementRecord) {
-    setWebsites((current) => {
-      const hasExisting = current.some((website) => website.id === updated.id);
-      if (!hasExisting) {
-        return [updated, ...current];
+      if (!response.ok || !body.ok || !body.websites) {
+        setError(body.error || "Unable to load websites.");
+        return;
       }
 
-      return current.map((website) => (website.id === updated.id ? updated : website));
-    });
-  }
+      setWebsites((current) => (options.append ? [...current, ...body.websites!] : body.websites!));
+      setTotal(body.total ?? body.websites.length);
+      setPage(body.page ?? nextPage);
+      setPerPage(body.perPage ?? perPage ?? DEFAULT_PER_PAGE);
+      setHasMore(Boolean(body.hasMore));
+      if (!options.append) {
+        setSelectedIds([]);
+      }
+    } catch {
+      if (!controller.signal.aborted) {
+        setError("Unable to load websites.");
+      }
+    } finally {
+      if (!options.silent) {
+        setLoading(false);
+        setLoadingMore(false);
+      }
+    }
+  }, [debouncedQuery, includeDeleted, perPage, publishState, status, websiteType]);
+
+  useEffect(() => {
+    void loadWebsites({ append: false, targetPage: 1 });
+  }, [loadWebsites]);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      void loadWebsites({ append: false, targetPage: 1, silent: true });
+    }, WEBSITE_LIST_POLL_INTERVAL_MS);
+    return () => clearInterval(intervalId);
+  }, [loadWebsites]);
 
   async function runMutation(path: string, payload: object): Promise<WebsiteMutationResponse> {
     const response = await fetch(path, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-
     return (await response.json()) as WebsiteMutationResponse;
+  }
+
+  async function refreshListing() {
+    await loadWebsites({ append: false, targetPage: 1 });
+  }
+
+  function clearActionErrors(websiteId: string) {
+    setDeleteErrorById((current) => ({ ...current, [websiteId]: undefined }));
+    setActionErrorById((current) => ({ ...current, [websiteId]: undefined }));
   }
 
   async function handleDelete(websiteId: string) {
     setDeletingId(websiteId);
     setFeedback(undefined);
-    setDeleteErrorById((current) => ({ ...current, [websiteId]: undefined }));
+    clearActionErrors(websiteId);
 
     try {
       const body = await runMutation("/api/websites/delete", { structureId: websiteId });
@@ -119,14 +164,10 @@ export function WebsiteManagementShell({ initialWebsites }: WebsiteManagementShe
         return;
       }
 
-      if (includeDeleted) {
-        upsertWebsite(body.website);
-      } else {
-        setWebsites((current) => current.filter((website) => website.id !== websiteId));
-      }
       setDeleteDialogId(undefined);
       setSelectedIds((current) => current.filter((id) => id !== websiteId));
       setFeedback("Website deleted successfully.");
+      await refreshListing();
     } catch {
       setDeleteErrorById((current) => ({ ...current, [websiteId]: "Delete failed unexpectedly." }));
     } finally {
@@ -138,6 +179,7 @@ export function WebsiteManagementShell({ initialWebsites }: WebsiteManagementShe
     setRenameBusyId(websiteId);
     setFeedback(undefined);
     setError(undefined);
+    clearActionErrors(websiteId);
 
     try {
       const body = await runMutation("/api/websites/rename", {
@@ -147,15 +189,15 @@ export function WebsiteManagementShell({ initialWebsites }: WebsiteManagementShe
       });
 
       if (!body.ok || !body.website) {
-        setError(body.error || "Rename failed.");
+        setActionErrorById((current) => ({ ...current, [websiteId]: body.error || "Rename failed." }));
         return;
       }
 
-      upsertWebsite(body.website);
       setRenameId(undefined);
       setFeedback("Website metadata updated.");
+      await refreshListing();
     } catch {
-      setError("Rename failed unexpectedly.");
+      setActionErrorById((current) => ({ ...current, [websiteId]: "Rename failed unexpectedly." }));
     } finally {
       setRenameBusyId(undefined);
     }
@@ -165,6 +207,7 @@ export function WebsiteManagementShell({ initialWebsites }: WebsiteManagementShe
     setStatusBusyId(websiteId);
     setFeedback(undefined);
     setError(undefined);
+    clearActionErrors(websiteId);
 
     try {
       const body = await runMutation("/api/websites/status", {
@@ -173,29 +216,62 @@ export function WebsiteManagementShell({ initialWebsites }: WebsiteManagementShe
       });
 
       if (!body.ok || !body.website) {
-        setError(body.error || "Status update failed.");
+        setActionErrorById((current) => ({ ...current, [websiteId]: body.error || "Status update failed." }));
         return;
       }
 
-      upsertWebsite(body.website);
       setFeedback("Website status updated.");
+      await refreshListing();
     } catch {
-      setError("Status update failed unexpectedly.");
+      setActionErrorById((current) => ({ ...current, [websiteId]: "Status update failed unexpectedly." }));
     } finally {
       setStatusBusyId(undefined);
     }
   }
 
-  function handleSelectionChange(id: string, checked: boolean) {
-    setSelectedIds((current) => {
-      if (checked && !current.includes(id)) {
-        return [...current, id];
+  async function handlePublish(websiteId: string, action: "publish" | "update") {
+    setPublishBusyId(websiteId);
+    setFeedback(undefined);
+    setError(undefined);
+    clearActionErrors(websiteId);
+
+    try {
+      const response = await fetch(getPublishEndpoint(action), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ structureId: websiteId }),
+      });
+      const body = (await response.json()) as PublishMutationResponse;
+
+      if (!response.ok || !body.ok) {
+        setActionErrorById((current) => ({ ...current, [websiteId]: body.error || "Publish action failed." }));
+        return;
       }
 
+      setFeedback(
+        body.message
+          || (action === "publish" ? "Website publish initiated." : "Website publish-update initiated."),
+      );
+      await refreshListing();
+    } catch {
+      setActionErrorById((current) => ({ ...current, [websiteId]: "Publish action failed unexpectedly." }));
+    } finally {
+      setPublishBusyId(undefined);
+    }
+  }
+
+  function handleSelectionChange(id: string, checked: boolean) {
+    setSelectedIds((current) => {
+      if (checked && !current.includes(id)) return [...current, id];
       return current.filter((existing) => existing !== id);
     });
   }
 
+  const selectedCount = selectedIds.length;
+  const hasFilters = Boolean(
+    debouncedQuery || status !== "all" || publishState !== "all" || websiteType !== "all" || includeDeleted,
+  );
+  const hasResults = websites.length > 0;
   const bulkActionNotice = useMemo(() => {
     if (selectedCount === 0) {
       return "Bulk actions foundation is ready for MVP, but destructive bulk execution remains disabled.";
@@ -207,19 +283,22 @@ export function WebsiteManagementShell({ initialWebsites }: WebsiteManagementShe
   return (
     <section className="website-management-shell" aria-label="Website management">
       <header className="website-management-header">
-        <h1>Website management</h1>
-        <p>Manage listings, status, metadata, and deletion for your generated websites.</p>
+        <h1>Website listing</h1>
+        <p>View and manage user-owned websites with publish-aware status, quick actions, and responsive filtering.</p>
       </header>
 
-      <div className="website-management-controls">
-        <WebsiteSearch value={query} onChange={setQuery} />
-        <WebsiteFilters
-          status={status}
-          includeDeleted={includeDeleted}
-          onStatusChange={setStatus}
-          onIncludeDeletedChange={setIncludeDeleted}
-        />
-      </div>
+      <WebsiteListControls
+        query={query}
+        status={status}
+        publishState={publishState}
+        websiteType={websiteType}
+        includeDeleted={includeDeleted}
+        onQueryChange={setQuery}
+        onStatusChange={setStatus}
+        onPublishStateChange={setPublishState}
+        onWebsiteTypeChange={setWebsiteType}
+        onIncludeDeletedChange={setIncludeDeleted}
+      />
 
       <section className="website-bulk-foundation" aria-live="polite">
         <p>{bulkActionNotice}</p>
@@ -231,42 +310,74 @@ export function WebsiteManagementShell({ initialWebsites }: WebsiteManagementShe
         </button>
       </section>
 
-      {feedback ? <p className="website-management-success">{feedback}</p> : null}
-      {error ? <p className="website-management-error">{error}</p> : null}
+      <p className="website-management-meta">
+        Showing {websites.length} of {total} websites.
+      </p>
 
-      {hasResults ? (
-        <WebsiteList
-          websites={websites}
-          selectedIds={selectedIds}
-          deletingId={deletingId}
-          renameId={renameId}
-          deleteDialogId={deleteDialogId}
-          renameBusyId={renameBusyId}
-          statusBusyId={statusBusyId}
-          deleteErrorById={deleteErrorById}
-          onSelectionChange={handleSelectionChange}
-          onRenameOpen={(id) => {
-            setRenameId(id);
-            setError(undefined);
-            setFeedback(undefined);
-          }}
-          onRenameCancel={() => setRenameId(undefined)}
-          onRenameSave={handleRename}
-          onDeleteOpen={(id) => {
-            setDeleteDialogId(id);
-            setFeedback(undefined);
-          }}
-          onDeleteCancel={() => setDeleteDialogId(undefined)}
-          onDeleteConfirm={handleDelete}
-          onArchive={(id) => {
-            void handleStatus(id, "archive");
-          }}
-          onActivate={(id) => {
-            void handleStatus(id, "activate");
-          }}
-        />
+      {feedback ? <p className="website-management-success">{feedback}</p> : null}
+      {error ? (
+        <div className="website-management-error-panel">
+          <p className="website-management-error">{error}</p>
+          <button type="button" onClick={() => void refreshListing()} disabled={loading || loadingMore}>
+            Retry
+          </button>
+        </div>
+      ) : null}
+
+      {loading && !hasResults ? (
+        <WebsiteListLoading />
+      ) : hasResults ? (
+        <>
+          <WebsiteList
+            websites={websites}
+            currentUserId={currentUserId}
+            selectedIds={selectedIds}
+            deletingId={deletingId}
+            renameId={renameId}
+            deleteDialogId={deleteDialogId}
+            renameBusyId={renameBusyId}
+            statusBusyId={statusBusyId}
+            publishBusyId={publishBusyId}
+            deleteErrorById={deleteErrorById}
+            actionErrorById={actionErrorById}
+            onSelectionChange={handleSelectionChange}
+            onRenameOpen={(id) => {
+              setRenameId(id);
+              setError(undefined);
+              setFeedback(undefined);
+              clearActionErrors(id);
+            }}
+            onRenameCancel={() => setRenameId(undefined)}
+            onRenameSave={handleRename}
+            onDeleteOpen={(id) => {
+              setDeleteDialogId(id);
+              setFeedback(undefined);
+              clearActionErrors(id);
+            }}
+            onDeleteCancel={() => setDeleteDialogId(undefined)}
+            onDeleteConfirm={handleDelete}
+            onPublish={(id, action) => {
+              void handlePublish(id, action);
+            }}
+            onStatus={(id, nextStatus) => {
+              void handleStatus(id, nextStatus);
+            }}
+          />
+
+          {loadingMore ? <p className="website-loading-more">Loading more websites…</p> : null}
+          {hasMore ? (
+            <button
+              type="button"
+              className="wizard-button-secondary"
+              onClick={() => void loadWebsites({ append: true, targetPage: page + 1 })}
+              disabled={loading || loadingMore}
+            >
+              Load more
+            </button>
+          ) : null}
+        </>
       ) : (
-        <WebsiteEmptyState />
+        <WebsiteListEmptyState hasFilters={hasFilters} />
       )}
     </section>
   );

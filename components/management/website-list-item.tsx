@@ -1,16 +1,21 @@
-import Link from "next/link";
-import type { WebsiteManagementRecord } from "@/lib/management";
+import type { PublishAction } from "@/lib/publish";
+import type { WebsiteManagementRecord } from "@/lib/management/types";
+import { PublishStatusSummary } from "@/components/publish/publish-status-summary";
 import { WebsiteDeleteDialog } from "./website-delete-dialog";
 import { WebsiteDeleteState } from "./website-delete-state";
-import { WebsiteRenamePanel } from "./website-rename-panel";
+import { WebsiteRenameDialog } from "./website-rename-dialog";
 import { WebsiteStatusBadge } from "./website-status-badge";
+import { WebsiteManagementActions } from "./website-management-actions";
 
 interface WebsiteListItemProps {
   website: WebsiteManagementRecord;
+  currentUserId?: string;
   deleting: boolean;
   deleteError?: string;
+  actionError?: string;
   renameBusy?: boolean;
   statusBusy?: boolean;
+  publishBusy?: boolean;
   selected: boolean;
   renameOpen: boolean;
   deleteOpen: boolean;
@@ -22,16 +27,29 @@ interface WebsiteListItemProps {
   onDeleteOpen: () => void;
   onDeleteCancel: () => void;
   onDeleteConfirm: () => void;
-  onArchive: () => void;
-  onActivate: () => void;
+  onPublish: (action: PublishAction) => void;
+  onStatus: (status: "archive" | "activate") => void;
+}
+
+function formatLabel(value: string): string {
+  return value
+    .replaceAll("_", " ")
+    .replaceAll("-", " ")
+    .split(" ")
+    .filter(Boolean)
+    .map((token) => `${token.charAt(0).toUpperCase()}${token.slice(1)}`)
+    .join(" ");
 }
 
 export function WebsiteListItem({
   website,
+  currentUserId,
   deleting,
   deleteError,
+  actionError,
   renameBusy = false,
   statusBusy = false,
+  publishBusy = false,
   selected,
   renameOpen,
   deleteOpen,
@@ -43,11 +61,12 @@ export function WebsiteListItem({
   onDeleteOpen,
   onDeleteCancel,
   onDeleteConfirm,
-  onArchive,
-  onActivate,
+  onPublish,
+  onStatus,
 }: WebsiteListItemProps) {
   const isDeleted = website.status === "deleted";
-  const statusActionLabel = website.structureStatus === "archived" ? "Activate" : "Archive";
+  const websiteTypeLabel = formatLabel(website.websiteType);
+  const hasSocialSignals = Boolean(website.schedule);
 
   return (
     <article className="website-list-item">
@@ -69,6 +88,14 @@ export function WebsiteListItem({
       </header>
 
       <dl className="website-list-item-meta">
+        <div>
+          <dt>Website type</dt>
+          <dd>{websiteTypeLabel}</dd>
+        </div>
+        <div>
+          <dt>Publish state</dt>
+          <dd>{website.publishStatus.uiLabel}</dd>
+        </div>
         <div>
           <dt>Updated</dt>
           <dd>{new Date(website.lastUpdatedAt).toLocaleString()}</dd>
@@ -93,50 +120,39 @@ export function WebsiteListItem({
                 : "Not scheduled"}
           </dd>
         </div>
+        <div>
+          <dt>Social</dt>
+          <dd>{hasSocialSignals ? "Schedule-linked" : "No social signal"}</dd>
+        </div>
       </dl>
+      <PublishStatusSummary status={website.publishStatus} compact />
 
-      <div className="website-list-item-links">
-        <Link href={website.generatedSitePath}>View</Link>
-        <Link href={website.previewPath}>Preview</Link>
-        <Link href={website.editorPath}>Edit</Link>
-        <Link href={`${website.generatedSitePath}#content-schedule`}>Schedule</Link>
-        {website.liveUrl ? (
-          <a href={website.liveUrl} target="_blank" rel="noreferrer">
-            Live site
-          </a>
-        ) : (
-          <span aria-disabled="true">Live site unavailable</span>
-        )}
-      </div>
+      <WebsiteManagementActions
+        website={website}
+        currentUserId={currentUserId}
+        deleting={deleting}
+        renaming={renameBusy}
+        publishing={publishBusy}
+        statusBusy={statusBusy}
+        actionError={actionError}
+        onRenameOpen={onRenameOpen}
+        onDeleteOpen={onDeleteOpen}
+        onPublish={onPublish}
+        onStatus={onStatus}
+      />
 
-      <div className="website-list-item-actions">
-        <button type="button" className="wizard-button-secondary" onClick={onRenameOpen} disabled={deleting || isDeleted}>
-          Rename
-        </button>
-        <button
-          type="button"
-          className="wizard-button-secondary"
-          onClick={website.structureStatus === "archived" ? onActivate : onArchive}
-          disabled={deleting || isDeleted || statusBusy}
-        >
-          {statusBusy ? "Saving…" : statusActionLabel}
-        </button>
-        <button type="button" onClick={onDeleteOpen} disabled={deleting || isDeleted}>
-          Delete
-        </button>
-      </div>
-
-      {renameOpen ? (
-        <WebsiteRenamePanel
-          initialTitle={website.title}
-          initialDescription={website.description}
-          busy={renameBusy}
-          onCancel={onRenameCancel}
-          onSave={onRenameSave}
-        />
-      ) : null}
+      <WebsiteRenameDialog
+        key={`${website.id}-${renameOpen ? "rename-open" : "rename-closed"}-${website.lastUpdatedAt}`}
+        open={renameOpen}
+        initialTitle={website.title}
+        initialDescription={website.description}
+        busy={renameBusy}
+        onCancel={onRenameCancel}
+        onSave={onRenameSave}
+      />
 
       <WebsiteDeleteDialog
+        key={`${website.id}-${deleteOpen ? "delete-open" : "delete-closed"}-${website.lastUpdatedAt}`}
         title={website.title}
         open={deleteOpen}
         loading={deleting}

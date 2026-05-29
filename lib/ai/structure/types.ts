@@ -28,7 +28,14 @@ export type { WebsiteType, TonePreset, StylePreset };
 // Enumerations
 // ---------------------------------------------------------------------------
 
-export type WebsiteStructureStatus = "draft" | "published" | "archived";
+export type WebsiteStructureStatus =
+  | "draft"
+  | "generated"
+  | "edited"
+  | "scheduled"
+  | "published"
+  | "archived"
+  | "deleted";
 
 export type PageType = "home" | "about" | "services" | "contact" | "custom";
 
@@ -572,6 +579,9 @@ export interface StructureGenerationResult {
 export interface WebsiteStructureRow {
   id: string;
   user_id: string;
+  created_by?: string | null;
+  updated_by?: string | null;
+  deleted_at?: string | null;
   website_type: string;
   site_title: string;
   tagline: string;
