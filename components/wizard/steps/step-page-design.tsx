@@ -405,6 +405,7 @@ export function StepPageDesign({
                     <LayoutPreview structure={option.value} />
                     <span className="wizard-choice-title">{option.label}</span>
                     <span className="wizard-choice-description">{option.description}</span>
+                    {isSelected ? <span className="wizard-choice-state">Selected</span> : null}
                   </label>
                 );
               })}
@@ -435,6 +436,7 @@ export function StepPageDesign({
                     />
                     <span className="wizard-choice-title">{option.label}</span>
                     <span className="wizard-choice-description">{option.description}</span>
+                    {isSelected ? <span className="wizard-choice-state">Selected</span> : null}
                   </label>
                 );
               })}
@@ -570,6 +572,7 @@ export function StepPageDesign({
                     />
                     <span className="wizard-choice-title">{option.label}</span>
                     <span className="wizard-choice-description">{option.description}</span>
+                    {isSelected ? <span className="wizard-choice-state">Selected</span> : null}
                   </label>
                 );
               })}
@@ -649,6 +652,7 @@ export function StepPageDesign({
                     />
                     <span className="wizard-choice-title">{option.label}</span>
                     <span className="wizard-choice-description">{option.description}</span>
+                    {isSelected ? <span className="wizard-choice-state">Selected</span> : null}
                   </label>
                 );
               })}

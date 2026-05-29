@@ -1,5 +1,6 @@
 export const routes = {
   home: "/",
+  blog: "/blog",
   login: "/login",
   signup: "/signup",
   forgotPassword: "/forgot-password",
@@ -13,6 +14,7 @@ export const routes = {
   adminAnalytics: "/admin/analytics",
   adminMonitoring: "/admin/monitoring",
   activity: "/activity",
+  insights: "/insights",
   contentLibrary: "/content",
   review: "/review",
   reviewItem: (contentId: string) => `/review/${encodeURIComponent(contentId)}`,

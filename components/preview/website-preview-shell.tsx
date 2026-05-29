@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SiteThemeToggle } from "@/components/theme/site-theme-toggle";
 import { routes } from "@/config/routes";
 import { Renderer } from "@/components/generated-site/renderer";
 import { PublishControls } from "@/components/publish/publish-controls";
@@ -49,10 +50,10 @@ export function WebsitePreviewShell({ model }: WebsitePreviewShellProps) {
   };
 
   return (
-    <div className="preview-shell">
+    <main id="main-content" className="preview-shell">
       <PreviewToolbar
         title={`${model.structure.siteTitle} preview`}
-        subtitle={`${model.accessLevel === "owner" ? "Owner" : "Shared"} preview • ${model.structure.websiteType}`}
+        subtitle={`${model.accessLevel === "owner" ? "Owner" : "Shared"} preview / ${model.structure.websiteType}`}
         controls={
           <>
             <PreviewPageNavigation
@@ -68,6 +69,7 @@ export function WebsitePreviewShell({ model }: WebsitePreviewShellProps) {
         }
         actions={
           <>
+            <SiteThemeToggle className="theme-toggle-button theme-toggle-button-preview" />
             <Link
               href={buildHref({
                 [PREVIEW_QUERY_KEYS.refresh]: createPreviewRefreshKey(),
@@ -116,6 +118,6 @@ export function WebsitePreviewShell({ model }: WebsitePreviewShellProps) {
           />
         </div>
       </div>
-    </div>
+    </main>
   );
 }

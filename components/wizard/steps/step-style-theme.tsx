@@ -17,18 +17,23 @@ export function StepStyleTheme({ data, onFieldChange }: StepStyleThemeProps) {
       <fieldset>
         <legend>Style preference *</legend>
         <div className="wizard-choice-grid compact">
-          {styleOptions.map((option) => (
-            <label key={option.value} className="wizard-choice-card">
-              <input
-                type="radio"
-                name="style"
-                value={option.value}
-                checked={data.style === option.value}
-                onChange={() => onFieldChange({ style: option.value })}
-              />
-              <span className="wizard-choice-title">{option.label}</span>
-            </label>
-          ))}
+          {styleOptions.map((option) => {
+            const isSelected = data.style === option.value;
+
+            return (
+              <label key={option.value} className={`wizard-choice-card${isSelected ? " is-selected" : ""}`}>
+                <input
+                  type="radio"
+                  name="style"
+                  value={option.value}
+                  checked={isSelected}
+                  onChange={() => onFieldChange({ style: option.value })}
+                />
+                <span className="wizard-choice-title">{option.label}</span>
+                {isSelected ? <span className="wizard-choice-state">Selected</span> : null}
+              </label>
+            );
+          })}
         </div>
       </fieldset>
 
@@ -48,18 +53,23 @@ export function StepStyleTheme({ data, onFieldChange }: StepStyleThemeProps) {
       <fieldset>
         <legend>Tone preference *</legend>
         <div className="wizard-choice-grid compact">
-          {toneOptions.map((option) => (
-            <label key={option.value} className="wizard-choice-card">
-              <input
-                type="radio"
-                name="tone"
-                value={option.value}
-                checked={data.tone === option.value}
-                onChange={() => onFieldChange({ tone: option.value })}
-              />
-              <span className="wizard-choice-title">{option.label}</span>
-            </label>
-          ))}
+          {toneOptions.map((option) => {
+            const isSelected = data.tone === option.value;
+
+            return (
+              <label key={option.value} className={`wizard-choice-card${isSelected ? " is-selected" : ""}`}>
+                <input
+                  type="radio"
+                  name="tone"
+                  value={option.value}
+                  checked={isSelected}
+                  onChange={() => onFieldChange({ tone: option.value })}
+                />
+                <span className="wizard-choice-title">{option.label}</span>
+                {isSelected ? <span className="wizard-choice-state">Selected</span> : null}
+              </label>
+            );
+          })}
         </div>
       </fieldset>
 

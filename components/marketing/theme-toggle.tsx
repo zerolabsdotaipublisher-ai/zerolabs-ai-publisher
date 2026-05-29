@@ -1,23 +1,25 @@
 "use client";
 
-export type MarketingTheme = "light" | "dark";
+import { AppTheme } from "@/lib/theme";
+
+export type MarketingTheme = AppTheme;
 
 interface ThemeToggleProps {
   theme: MarketingTheme;
   onToggle: () => void;
+  className?: string;
 }
 
-export function ThemeToggle({ theme, onToggle }: ThemeToggleProps) {
+export function ThemeToggle({ theme, onToggle, className }: ThemeToggleProps) {
   const isDark = theme === "dark";
-  const iconColor = isDark ? "#F8F9FA" : "#124170";
 
   return (
     <button
       type="button"
       onClick={onToggle}
       aria-label={isDark ? "Switch Zero Labs AI Publisher to light mode" : "Switch Zero Labs AI Publisher to dark mode"}
-      className="marketing-icon-button focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1F6F5F] focus-visible:ring-offset-2"
-      style={{ color: iconColor }}
+      aria-pressed={isDark}
+      className={className}
     >
       <span className="sr-only">Toggle color theme</span>
       {isDark ? (

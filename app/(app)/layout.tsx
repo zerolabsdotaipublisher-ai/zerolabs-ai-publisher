@@ -14,7 +14,9 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       <SessionGuard />
       <div className="app-shell">
         <AppNavigation userEmail={user.email} userRole={profile.role} />
-        <main className="app-page">{children}</main>
+        <main id="main-content" className="app-page">
+          {children}
+        </main>
       </div>
     </>
   );
