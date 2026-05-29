@@ -19,10 +19,9 @@ import {
   type GenerationInterfaceState,
 } from "@/lib/generation";
 import type { WebsiteWizardInput, WebsiteWizardInputPatch } from "@/lib/wizard";
-import { GenerationActions } from "./generation-actions";
 import { GenerationInputPanel } from "./generation-input-panel";
 import { GenerationLayout } from "./generation-layout";
-import { GenerationStatusPanel } from "./generation-status-panel";
+import { WebsiteBuilderPreviewPanel } from "./website-builder-preview-panel";
 
 function splitEscapedPipes(value: string): string[] {
   const segments: string[] = [];
@@ -65,7 +64,13 @@ function parseTestimonials(value: string): WebsiteWizardInput["testimonials"] {
   });
 }
 
-export function WebsiteGenerationInterface() {
+interface WebsiteGenerationInterfaceProps {
+  entryPoint?: "create" | "generate";
+}
+
+export function WebsiteGenerationInterface({
+  entryPoint = "create",
+}: WebsiteGenerationInterfaceProps) {
   const [state, setState] = useState<GenerationInterfaceState>(() => {
     if (typeof window === "undefined") {
       return createInitialGenerationState();
@@ -105,6 +110,9 @@ export function WebsiteGenerationInterface() {
       return createInitialGenerationState();
     }
   });
+  const [activePageId, setActivePageId] = useState<string | null>(
+    state.input.designConfig.pages[0]?.id ?? null,
+  );
 
   useEffect(() => {
     window.localStorage.setItem(GENERATION_STORAGE_KEY, JSON.stringify(state));
@@ -123,6 +131,21 @@ export function WebsiteGenerationInterface() {
     [state.input.contactInfo.socialLinks],
   );
   const constraintsText = useMemo(() => state.input.constraints.join("\n"), [state.input.constraints]);
+  const readinessErrors = useMemo(() => validateGenerationInput(state.input), [state.input]);
+  const activePage = useMemo(
+    () =>
+      state.input.designConfig.pages.find((page) => page.id === activePageId) ??
+      state.input.designConfig.pages[0],
+    [activePageId, state.input.designConfig.pages],
+  );
+  const activePageIndex = useMemo(() => {
+    if (!activePage) {
+      return 0;
+    }
+
+    const index = state.input.designConfig.pages.findIndex((page) => page.id === activePage.id);
+    return index === -1 ? 0 : index;
+  }, [activePage, state.input.designConfig.pages]);
 
   function updateInput(patch: WebsiteWizardInputPatch) {
     setState((current) => ({
@@ -180,7 +203,7 @@ export function WebsiteGenerationInterface() {
         result: {
           error: result.error,
         },
-        isEditingInputs: false,
+        isEditingInputs: true,
       }));
       void trackGenerationEvent({
         event: "generation_failed",
@@ -210,6 +233,19 @@ export function WebsiteGenerationInterface() {
     });
   }
 
+  function handleReviewInputs() {
+    setState((current) => {
+      const errors = validateGenerationInput(current.input);
+
+      return {
+        ...current,
+        validationErrors: errors,
+        submissionStatus: errors.length > 0 ? "validating" : current.submissionStatus,
+        isEditingInputs: errors.length > 0 ? true : false,
+      };
+    });
+  }
+
   function handleEdit() {
     setState((current) => ({
       ...current,
@@ -218,16 +254,25 @@ export function WebsiteGenerationInterface() {
     void trackGenerationEvent({ event: "generation_edit_inputs_clicked" });
   }
 
-  function handleReset() {
-    const resetState = createInitialGenerationState(createDefaultWizardInput());
-    setState(resetState);
-    window.localStorage.removeItem(GENERATION_STORAGE_KEY);
-    window.localStorage.removeItem(WIZARD_STORAGE_KEY);
+  function handlePreviewClick() {
+    void trackGenerationEvent({
+      event: "generation_preview_opened",
+      structureId: state.result?.structureId,
+      status: state.submissionStatus,
+    });
   }
+
+  const title = entryPoint === "generate" ? "Generate website" : "Create website";
+  const description =
+    entryPoint === "generate"
+      ? "Review or refine the saved builder inputs, then generate and continue to preview."
+      : "Set up pages on the left, then generate, review status, and continue to preview on the right.";
 
   return (
     <GenerationLayout
-      inputPanel={
+      title={title}
+      description={description}
+      builderPanel={
         <GenerationInputPanel
           data={state.input}
           servicesText={servicesText}
@@ -236,6 +281,8 @@ export function WebsiteGenerationInterface() {
           constraintsText={constraintsText}
           errors={state.validationErrors}
           isEditing={state.isEditingInputs}
+          activePageId={activePageId ?? undefined}
+          onActivePageChange={setActivePageId}
           onFieldChange={updateInput}
           onServicesTextChange={(value) => updateInput({ services: normalizeList(value.split("\n")) })}
           onTestimonialsChange={(value) => updateInput({ testimonials: parseTestimonials(value) })}
@@ -250,24 +297,18 @@ export function WebsiteGenerationInterface() {
           onConstraintsChange={(value) => updateInput({ constraints: normalizeList(value.split("\n")) })}
         />
       }
-      statusPanel={<GenerationStatusPanel state={state} />}
-      actions={
-        <GenerationActions
-          isRunning={state.submissionStatus === "running"}
-          canRetry={state.submissionStatus === "error"}
-          canPreview={Boolean(state.result?.generatedSitePath)}
-          previewPath={state.result?.generatedSitePath}
+      previewPanel={
+        <WebsiteBuilderPreviewPanel
+          state={state}
+          activePage={activePage}
+          activePageIndex={activePageIndex}
+          totalPages={state.input.designConfig.pages.length}
+          readinessErrors={readinessErrors}
           onGenerate={() => void runGeneration(false)}
           onRetry={() => void runGeneration(true)}
-          onEdit={handleEdit}
-          onReset={handleReset}
-          onPreviewClick={() =>
-            void trackGenerationEvent({
-              event: "generation_preview_opened",
-              structureId: state.result?.structureId,
-              status: state.submissionStatus,
-            })
-          }
+          onReviewInputs={handleReviewInputs}
+          onEditInputs={handleEdit}
+          onPreviewClick={handlePreviewClick}
         />
       }
     />
