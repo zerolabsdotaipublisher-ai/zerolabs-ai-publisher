@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { type CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { routes } from "@/config/routes";
+import { useTheme } from "@/providers/theme-provider";
 import { MarketingFooter } from "./marketing-footer";
 import { MarketingNav } from "./marketing-nav";
-import { MarketingTheme } from "./theme-toggle";
 
 type FeatureCard = {
   id: string;
@@ -35,7 +35,6 @@ type PricingTier = {
   features: string[];
 };
 
-const THEME_STORAGE_KEY = "zero-labs-ai-publisher-theme";
 const headingClass = "font-[family:var(--font-heading)]";
 const heroToFeaturesSpacing = "clamp(40px, 5.2vw, 64px)";
 const featureToStorySpacing = "clamp(44px, 5.8vw, 72px)";
@@ -126,19 +125,6 @@ const pricingTiers: PricingTier[] = [
   },
 ];
 
-function resolveInitialTheme(): MarketingTheme {
-  if (typeof window === "undefined") {
-    return "light";
-  }
-
-  const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
-  if (storedTheme === "light" || storedTheme === "dark") {
-    return storedTheme;
-  }
-
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-}
-
 function buildCardStyle(padding: string, background: string, shadow: string): CSSProperties {
   return {
     padding,
@@ -160,32 +146,7 @@ function buildPanelStyle(padding: string, background: string, shadow: string, bo
 }
 
 export function LandingPage() {
-  const [theme, setTheme] = useState<MarketingTheme>("light");
-  const hasInitializedTheme = useRef(false);
-
-  useEffect(() => {
-    const frameId = window.requestAnimationFrame(() => {
-      const initialTheme = resolveInitialTheme();
-      hasInitializedTheme.current = true;
-      setTheme(initialTheme);
-      document.documentElement.dataset.theme = initialTheme;
-      document.documentElement.style.colorScheme = initialTheme;
-      window.localStorage.setItem(THEME_STORAGE_KEY, initialTheme);
-    });
-
-    return () => window.cancelAnimationFrame(frameId);
-  }, []);
-
-  useEffect(() => {
-    if (!hasInitializedTheme.current) {
-      return;
-    }
-
-    document.documentElement.dataset.theme = theme;
-    document.documentElement.style.colorScheme = theme;
-    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
-  }, [theme]);
-
+  const { theme } = useTheme();
   const isDark = theme === "dark";
   const heroAccentLogo = isDark ? "/images/AI robot logo dark.svg" : "/images/AI robot logo light.svg";
   const heroPrimaryGlow = isDark ? "rgba(31,111,95,0.18)" : "rgba(31,111,95,0.18)";
@@ -194,6 +155,7 @@ export function LandingPage() {
 
     return (
     <main
+      id="main-content"
       className="min-h-screen text-[var(--marketing-text)] transition-colors duration-300"
       style={{ backgroundColor: isDark ? "#061A14" : "#F8F9FA" }}
     >
@@ -211,7 +173,7 @@ export function LandingPage() {
         style={{ paddingTop: "clamp(32px, 5vw, 56px)", paddingBottom: "clamp(56px, 7vw, 88px)" }}
       >
         <div className="marketing-shell">
-          <MarketingNav currentPath="/" contained theme={theme} onToggleTheme={() => setTheme(isDark ? "light" : "dark")} />
+          <MarketingNav currentPath="/" contained />
         </div>
 
         <div className="marketing-shell" style={{ marginTop: "clamp(48px, 6vw, 80px)" }}>
@@ -258,7 +220,7 @@ export function LandingPage() {
                   </div>
 
                   <p className="marketing-label-muted max-w-md text-sm font-semibold tracking-[0.08em]">
-                    Sustainable humanistic AI · futuristic nature interface
+                    Sustainable humanistic AI / futuristic nature interface
                   </p>
                   <h1
                     className={`${headingClass} marketing-hero-title max-w-[12ch] font-semibold tracking-[-0.045em]`}
@@ -568,7 +530,7 @@ export function LandingPage() {
         </div>
 
         <div className="marketing-shell" style={{ marginTop: bannerToFooterSpacing }}>
-          <MarketingFooter contained theme={theme} />
+          <MarketingFooter contained />
         </div>
       </div>
     </main>

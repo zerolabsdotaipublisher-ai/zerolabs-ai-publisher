@@ -1,14 +1,19 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { SiteThemeToggle } from "@/components/theme/site-theme-toggle";
 import { routes } from "@/config/routes";
 
 export default function PublicLayout({ children }: { children: ReactNode }) {
   return (
-    <main className="auth-page">
+    <main id="main-content" className="auth-page">
       <div className="auth-page-backdrop" aria-hidden="true" />
       <div className="auth-shell">
         <section className="auth-card">
+          <div className="auth-card-toolbar">
+            <SiteThemeToggle className="theme-toggle-button theme-toggle-button-auth" />
+          </div>
+
           <Link href={routes.home} className="auth-brand" aria-label="Return to Zero Labs AI Publisher homepage">
             <span className="auth-brand-logo-wrap" aria-hidden="true">
               <Image

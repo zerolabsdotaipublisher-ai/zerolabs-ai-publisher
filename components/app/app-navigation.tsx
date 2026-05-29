@@ -6,17 +6,17 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { SignOutButton } from "@/components/auth/sign-out-button";
+import { SiteThemeToggle } from "@/components/theme/site-theme-toggle";
 import { routes } from "@/config/routes";
+import { useTheme } from "@/providers/theme-provider";
 import type { ProfileRole } from "@/lib/supabase/profile";
 
 const customerNavLinks = [
   { href: routes.dashboard, label: "Dashboard" },
   { href: routes.activity, label: "Activity" },
-  { href: routes.contentLibrary, label: "Content library" },
-  { href: routes.review, label: "Review" },
-  { href: routes.approval, label: "Approval" },
+  { href: routes.insights, label: "Insights" },
+  { href: routes.blog, label: "Blog" },
   { href: routes.createWebsite, label: "Create website" },
-  { href: routes.websites, label: "Websites" },
   { href: routes.profile, label: "Profile" },
 ];
 
@@ -43,6 +43,7 @@ function isActivePath(pathname: string, href: string) {
 
 export function AppNavigation({ userEmail, userRole }: AppNavigationProps) {
   const pathname = usePathname();
+  const { theme } = useTheme();
   const mobileMenuId = "app-navigation-mobile-menu";
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navLinks = userRole === "admin" ? adminNavLinks : customerNavLinks;
@@ -51,7 +52,15 @@ export function AppNavigation({ userEmail, userRole }: AppNavigationProps) {
   const toggleMobileMenu = () => setIsMobileMenuOpen((open) => !open);
   const closeMobileMenu = useCallback(() => setIsMobileMenuOpen(false), []);
   const renderBrandLogo = () => (
-    <Image src="/images/AI robot logo light.svg" alt="" aria-hidden="true" width={44} height={29} priority className="app-nav-brand-logo" />
+    <Image
+      src={theme === "dark" ? "/images/AI robot logo light.svg" : "/images/AI robot logo dark.svg"}
+      alt=""
+      aria-hidden="true"
+      width={44}
+      height={29}
+      priority
+      className="app-nav-brand-logo"
+    />
   );
   const renderUserActions = () => (
     <>
@@ -114,6 +123,9 @@ export function AppNavigation({ userEmail, userRole }: AppNavigationProps) {
         </div>
 
         <div className="app-nav-actions">
+          <div className="app-nav-theme-toggle app-nav-theme-toggle-desktop">
+            <SiteThemeToggle className="theme-toggle-button theme-toggle-button-app" />
+          </div>
           {renderUserActions()}
         </div>
 
@@ -123,6 +135,9 @@ export function AppNavigation({ userEmail, userRole }: AppNavigationProps) {
           aria-label="Dashboard menu"
           hidden={!isMobileMenuOpen}
         >
+          <div className="app-nav-theme-toggle app-nav-theme-toggle-mobile">
+            <SiteThemeToggle className="theme-toggle-button theme-toggle-button-app" />
+          </div>
           {navLinks.map((link) => renderNavLink(link, "mobile", closeMobileMenu))}
           {renderUserActions()}
         </div>

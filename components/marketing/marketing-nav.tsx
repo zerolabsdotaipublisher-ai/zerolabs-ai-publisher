@@ -3,14 +3,13 @@
 import type { CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { SiteThemeToggle } from "@/components/theme/site-theme-toggle";
 import { routes } from "@/config/routes";
-import { MarketingTheme, ThemeToggle } from "./theme-toggle";
+import { useTheme } from "@/providers/theme-provider";
 
 interface MarketingNavProps {
   currentPath?: string;
   contained?: boolean;
-  theme?: MarketingTheme;
-  onToggleTheme?: () => void;
 }
 
 const navigationItems: Array<{ label: string; href: string }> = [
@@ -43,9 +42,8 @@ function buildSurfaceStyle(isDark: boolean): CSSProperties {
 export function MarketingNav({
   currentPath = "/",
   contained = false,
-  theme = "light",
-  onToggleTheme,
 }: MarketingNavProps) {
+  const { theme } = useTheme();
   const isDark = theme === "dark";
   const logoSrc = isDark ? "/images/AI robot logo light.svg" : "/images/AI robot logo dark.svg";
 
@@ -56,6 +54,8 @@ export function MarketingNav({
 
     return currentPath === "/" ? href : `/${href}`;
   };
+
+  const isActiveLink = (href: string) => !href.startsWith("#") && currentPath === href;
 
   const content = (
     <header className="marketing-panel-surface marketing-nav-surface" style={buildSurfaceStyle(isDark)}>
@@ -75,7 +75,8 @@ export function MarketingNav({
               <Link
                 key={item.label}
                 href={resolveHref(item.href)}
-                className="marketing-nav-link-item"
+                className={`marketing-nav-link-item${isActiveLink(item.href) ? " is-active" : ""}`}
+                aria-current={isActiveLink(item.href) ? "page" : undefined}
               >
                 {item.label}
               </Link>
@@ -112,11 +113,9 @@ export function MarketingNav({
           >
             Login / Sign up
           </Link>
-          {onToggleTheme ? (
-            <div className="marketing-theme-toggle">
-              <ThemeToggle theme={theme} onToggle={onToggleTheme} />
-            </div>
-          ) : null}
+          <div className="marketing-theme-toggle">
+            <SiteThemeToggle className="marketing-icon-button theme-toggle-button theme-toggle-button-marketing" />
+          </div>
         </div>
       </div>
     </header>

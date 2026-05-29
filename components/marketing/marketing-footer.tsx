@@ -1,12 +1,13 @@
+"use client";
+
 import type { CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { routes } from "@/config/routes";
-import { MarketingTheme } from "./theme-toggle";
+import { useTheme } from "@/providers/theme-provider";
 
 interface MarketingFooterProps {
   contained?: boolean;
-  theme?: MarketingTheme;
 }
 
 const footerLinkGroups = [
@@ -21,7 +22,7 @@ const footerLinkGroups = [
   {
     title: "Company",
     links: [
-      { label: "Blog", href: "/blog" },
+      { label: "Blog", href: routes.blog },
       { label: "Login", href: routes.login },
       { label: "Create account", href: routes.signup },
     ],
@@ -45,7 +46,8 @@ function buildFooterSurfaceStyle(isDark: boolean): CSSProperties {
   } as CSSProperties;
 }
 
-export function MarketingFooter({ contained = false, theme = "light" }: MarketingFooterProps) {
+export function MarketingFooter({ contained = false }: MarketingFooterProps) {
+  const { theme } = useTheme();
   const isDark = theme === "dark";
   const logoSrc = isDark ? "/images/Zero Labs Logo transparent.svg" : "/images/Zero Labs Logo colored.svg";
 
@@ -63,7 +65,7 @@ export function MarketingFooter({ contained = false, theme = "light" }: Marketin
             </span>
           </div>
           <p className="marketing-label-muted text-xs font-semibold tracking-[0.16em]">
-            Sustainable AI · Editorial storytelling · Humanistic publishing
+            Sustainable AI / Editorial storytelling / Humanistic publishing
           </p>
           <p className="max-w-2xl font-[family:var(--font-heading)] text-3xl font-semibold leading-[1.08] sm:text-4xl lg:text-[2.9rem]">
             Zero Labs AI Publisher
@@ -71,7 +73,7 @@ export function MarketingFooter({ contained = false, theme = "light" }: Marketin
           <p className="marketing-copy-muted max-w-xl text-base leading-8 sm:text-lg">
             AI-powered publishing infrastructure for sustainable, humanistic digital operations.
           </p>
-          <p className="marketing-copy-muted text-sm">© 2026 Zero Labs AI Publisher. Built by Zero Labs.</p>
+          <p className="marketing-copy-muted text-sm">Copyright 2026 Zero Labs AI Publisher. Built by Zero Labs.</p>
         </div>
 
         {footerLinkGroups.map((group) => (
