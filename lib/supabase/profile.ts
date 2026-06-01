@@ -126,13 +126,17 @@ function resolveProfileField(primary?: string | null, fallback?: string | null):
   return normalizeOptionalMetadataValue(primary) ?? normalizeOptionalMetadataValue(fallback) ?? null;
 }
 
+function isProfileFieldMissing(value?: string | null): boolean {
+  return !normalizeOptionalMetadataValue(value);
+}
+
 function shouldSyncExistingProfile(existingProfile: Profile, user: User, metadata: AuthUserMetadata): boolean {
   const userEmail = user.email?.trim() ?? "";
 
   return (
     existingProfile.email !== userEmail ||
-    (!resolveProfileField(existingProfile.full_name, null) && Boolean(metadata.full_name)) ||
-    (!resolveProfileField(existingProfile.avatar_url, null) && Boolean(metadata.avatar_url))
+    (isProfileFieldMissing(existingProfile.full_name) && Boolean(metadata.full_name)) ||
+    (isProfileFieldMissing(existingProfile.avatar_url) && Boolean(metadata.avatar_url))
   );
 }
 
