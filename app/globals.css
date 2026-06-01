@@ -642,6 +642,7 @@ html[data-theme="dark"] .app-shell {
   min-width: 0;
   display: flex;
   justify-content: center;
+  margin-inline: auto;
   padding: clamp(1rem, 3vw, 2rem) clamp(1rem, 2.8vw, 2rem) clamp(2.5rem, 6vw, 4rem);
 }
 
@@ -651,6 +652,7 @@ html[data-theme="dark"] .app-shell {
   max-width: 100%;
   min-width: 0;
   box-sizing: border-box;
+  margin-inline: auto;
 }
 
 .dashboard-panel {
@@ -1421,6 +1423,7 @@ html[data-theme="dark"] .auth-panel-list {
   width: 100%;
   max-width: 100%;
   min-width: 0;
+  margin-inline: auto;
   padding: 1rem clamp(1rem, 2.8vw, 2rem) 0;
   background: linear-gradient(180deg, rgba(4, 18, 14, 0.92) 0%, rgba(4, 18, 14, 0.78) 72%, rgba(4, 18, 14, 0) 100%);
   backdrop-filter: blur(18px);
@@ -1893,6 +1896,7 @@ html[data-theme="dark"] .auth-panel-list {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  margin-inline: auto;
 }
 
 .profile-form {
@@ -4301,6 +4305,7 @@ html[data-theme="dark"] .auth-panel-list {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  margin-inline: auto;
 }
 
 .website-management-header p {
@@ -4630,10 +4635,12 @@ html[data-theme="dark"] .auth-panel-list {
   display: flex;
   flex-direction: column;
   gap: clamp(0.85rem, 1.6vw, 1.25rem);
+  margin-inline: auto;
 }
 
 .app-footer {
   width: 100%;
+  margin-inline: auto;
   padding: 0 clamp(1rem, 2.8vw, 2rem) clamp(1rem, 3vw, 2rem);
 }
 
@@ -4649,6 +4656,7 @@ html[data-theme="dark"] .auth-panel-list {
     linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 94%, transparent) 0%, color-mix(in srgb, var(--surface) 96%, transparent) 100%),
     color-mix(in srgb, var(--surface) 92%, transparent);
   box-shadow: var(--surface-shadow);
+  margin-inline: auto;
 }
 
 .app-footer-brand {
@@ -4678,15 +4686,29 @@ html[data-theme="dark"] .auth-panel-list {
   justify-content: center;
 }
 
-.app-footer-links span {
+.app-footer-link {
   display: inline-flex;
   align-items: center;
-  min-height: 2.1rem;
-  padding: 0.25rem 0.7rem;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  min-height: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   color: var(--text-secondary);
+  box-shadow: none;
+  text-decoration: none;
+  outline: none;
+}
+
+.app-footer-link:hover,
+.app-footer-link:focus-visible {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.app-footer-link:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
 }
 
 .app-footer-meta {

@@ -167,7 +167,7 @@ export function SignUpForm() {
           onChange={(event) => setFullName(event.target.value)}
           autoComplete="name"
           autoCapitalize="words"
-          placeholder="Example: Razon Umali"
+          placeholder="Example: Maria Santos"
         />
       </label>
 
@@ -182,7 +182,7 @@ export function SignUpForm() {
           autoComplete="email"
           aria-required="true"
           aria-describedby={displayedError ? errorId : undefined}
-          placeholder="Example: name@email.com"
+          placeholder="Example: maria@company.com"
         />
       </label>
 
@@ -197,7 +197,7 @@ export function SignUpForm() {
         minLength={8}
         aria-required="true"
         aria-describedby={displayedError ? errorId : passwordHintId}
-        placeholder="Minimum 8 characters"
+        placeholder="Create a secure password"
       />
       <span id={passwordHintId} className="auth-field-hint">
         Minimum 8 characters
@@ -214,7 +214,7 @@ export function SignUpForm() {
         minLength={8}
         aria-required="true"
         aria-describedby={displayedError ? errorId : undefined}
-        placeholder="Re-enter your password"
+        placeholder="Confirm your password"
       />
 
       {displayedError ? (

@@ -12,7 +12,9 @@ export function AppFooter() {
 
         <nav className="app-footer-links" aria-label="Workspace footer">
           {footerItems.map((item) => (
-            <span key={item}>{item}</span>
+            <span key={item} className="app-footer-link" tabIndex={0}>
+              {item}
+            </span>
           ))}
         </nav>
 
