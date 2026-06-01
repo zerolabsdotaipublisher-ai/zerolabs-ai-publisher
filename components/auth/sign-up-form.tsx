@@ -1,7 +1,7 @@
 "use client";
 
+import Link from "next/link";
 import { useId, useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import { PasswordField } from "@/components/auth/password-field";
 import { routes } from "@/config/routes";
 import { getSupabaseAppUrl, getSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -72,14 +72,13 @@ function mapSignUpError(message: string): string {
 
 export function SignUpForm() {
   const id = useId();
-  const router = useRouter();
   const supabase = getSupabaseBrowserClient();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [submittedEmail, setSubmittedEmail] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const errorId = `${id}-error`;
@@ -90,6 +89,7 @@ export function SignUpForm() {
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    setSubmittedEmail(null);
     const validationError = validateRegistration(email, password, confirmPassword);
     if (validationError) {
       setError(validationError);
@@ -101,7 +101,7 @@ export function SignUpForm() {
     try {
       const trimmedEmail = email.trim();
       const trimmedFullName = fullName.trim();
-      const { error: signUpError } = await supabase.auth.signUp({
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: trimmedEmail,
         password,
         options: {
@@ -117,8 +117,13 @@ export function SignUpForm() {
         return;
       }
 
-      setSuccess(true);
-      router.replace(`${routes.login}?message=check_email`);
+      if (signUpData.session) {
+        await supabase.auth.signOut();
+      }
+
+      setPassword("");
+      setConfirmPassword("");
+      setSubmittedEmail(trimmedEmail);
     } catch {
       setError("Unable to create your account right now. Please check your connection and try again.");
     } finally {
@@ -126,9 +131,32 @@ export function SignUpForm() {
     }
   }
 
+  if (submittedEmail) {
+    return (
+      <section className="auth-form" aria-label="Account created">
+        <h1>Check your email</h1>
+        <div className="auth-confirmation-card">
+          <p className="auth-success" role="status">
+            Account created. Please check your email to verify your account before signing in.
+          </p>
+          <p className="auth-confirmation-copy">
+            Verification email sent to <strong>{submittedEmail}</strong>.
+          </p>
+          <p className="auth-field-hint">After verifying your email, return here to sign in.</p>
+          <div className="auth-button-stack">
+            <Link href={routes.login} className="auth-inline-link-button">
+              Go to login
+            </Link>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <form className="auth-form" onSubmit={onSubmit} aria-label="Create account" noValidate>
       <h1>Create account</h1>
+      <p className="auth-field-hint">Email, password, and password confirmation are required.</p>
 
       <label htmlFor={`${id}-name`}>
         Full name
@@ -139,11 +167,12 @@ export function SignUpForm() {
           onChange={(event) => setFullName(event.target.value)}
           autoComplete="name"
           autoCapitalize="words"
+          placeholder="Example: Razon Umali"
         />
       </label>
 
       <label htmlFor={`${id}-email`}>
-        Email <span aria-hidden="true">*</span>
+        Email
         <input
           id={`${id}-email`}
           type="email"
@@ -153,16 +182,13 @@ export function SignUpForm() {
           autoComplete="email"
           aria-required="true"
           aria-describedby={displayedError ? errorId : undefined}
+          placeholder="Example: name@email.com"
         />
       </label>
 
       <PasswordField
         id={`${id}-password`}
-        label={
-          <>
-            Password <span aria-hidden="true">*</span>
-          </>
-        }
+        label="Password"
         toggleLabel="password"
         value={password}
         onChange={(event) => setPassword(event.target.value)}
@@ -171,6 +197,7 @@ export function SignUpForm() {
         minLength={8}
         aria-required="true"
         aria-describedby={displayedError ? errorId : passwordHintId}
+        placeholder="Minimum 8 characters"
       />
       <span id={passwordHintId} className="auth-field-hint">
         Minimum 8 characters
@@ -178,11 +205,7 @@ export function SignUpForm() {
 
       <PasswordField
         id={`${id}-confirm-password`}
-        label={
-          <>
-            Confirm password <span aria-hidden="true">*</span>
-          </>
-        }
+        label="Confirm password"
         toggleLabel="confirm password"
         value={confirmPassword}
         onChange={(event) => setConfirmPassword(event.target.value)}
@@ -191,16 +214,12 @@ export function SignUpForm() {
         minLength={8}
         aria-required="true"
         aria-describedby={displayedError ? errorId : undefined}
+        placeholder="Re-enter your password"
       />
 
       {displayedError ? (
         <p id={errorId} className="auth-error" role="alert">
           {displayedError}
-        </p>
-      ) : null}
-      {success ? (
-        <p className="auth-success" role="status">
-          Account created. Check your email to confirm, then sign in.
         </p>
       ) : null}
 

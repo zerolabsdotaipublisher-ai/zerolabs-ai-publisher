@@ -3,7 +3,7 @@ import { SignOutButton } from "@/components/auth/sign-out-button";
 import { routes } from "@/config/routes";
 import { logger } from "@/lib/observability";
 import { requireUser } from "@/lib/supabase/auth";
-import { createFallbackProfile, getSafeProfile } from "@/lib/supabase/profile";
+import { createFallbackProfile, getProfileDisplayName, getSafeProfile } from "@/lib/supabase/profile";
 
 export const dynamic = "force-dynamic";
 
@@ -70,6 +70,7 @@ const adminActions = [
 type DashboardView = {
   mode: "standard" | "emergency";
   userEmail?: string | null;
+  displayName?: string;
   isAdmin?: boolean;
 };
 
@@ -88,19 +89,23 @@ function DashboardActionGrid({ actions, prefetch = true }: { actions: typeof wor
   );
 }
 
-function renderStandardDashboard(userEmail?: string | null, isAdmin = false) {
+function renderStandardDashboard(displayName?: string, userEmail?: string | null, isAdmin = false) {
   return (
     <section className="dashboard-home-shell" aria-label="Dashboard homepage">
       <header className="dashboard-home-header">
         <div className="dashboard-hero-panel">
           <span className="dashboard-eyebrow">Zero Labs workspace</span>
           <h1>Dashboard</h1>
-          <p>Welcome back to Zero Labs AI Publisher. Your customer dashboard loads first as the stable entry point for authenticated users.</p>
+          <p>
+            Welcome back, {displayName ?? userEmail ?? "Zero Labs user"}. Your customer dashboard loads first as the
+            stable entry point for authenticated users.
+          </p>
         </div>
 
         <aside className="dashboard-welcome-card" aria-label="Account overview">
-          <span className="dashboard-welcome-label">Signed in as</span>
-          <strong>{userEmail ?? "Zero Labs user"}</strong>
+          <span className="dashboard-welcome-label">Account overview</span>
+          <strong>{displayName ?? userEmail ?? "Zero Labs user"}</strong>
+          {displayName && userEmail ? <p>{userEmail}</p> : null}
           <p>Your publishing controls are ready, and your dashboard session is active.</p>
         </aside>
       </header>
@@ -132,7 +137,7 @@ function renderStandardDashboard(userEmail?: string | null, isAdmin = false) {
   );
 }
 
-function renderEmergencyDashboard(userEmail?: string | null) {
+function renderEmergencyDashboard(displayName?: string, userEmail?: string | null) {
   return (
     <section className="dashboard-home-shell" aria-label="Dashboard temporarily unavailable">
       <header className="dashboard-home-header">
@@ -143,8 +148,9 @@ function renderEmergencyDashboard(userEmail?: string | null) {
         </div>
 
         <aside className="dashboard-welcome-card" aria-label="Account overview">
-          <span className="dashboard-welcome-label">Signed in as</span>
-          <strong>{userEmail ?? "Zero Labs user"}</strong>
+          <span className="dashboard-welcome-label">Account overview</span>
+          <strong>{displayName ?? userEmail ?? "Zero Labs user"}</strong>
+          {displayName && userEmail ? <p>{userEmail}</p> : null}
           <p>Use the safe actions below to continue working or sign out.</p>
         </aside>
       </header>
@@ -191,6 +197,7 @@ async function loadDashboardView(): Promise<DashboardView> {
     return {
       mode: "standard",
       userEmail: user.email,
+      displayName: getProfileDisplayName(profile),
       isAdmin: profile.role === "admin",
     };
   } catch (error) {
@@ -206,6 +213,7 @@ async function loadDashboardView(): Promise<DashboardView> {
     return {
       mode: "emergency",
       userEmail: fallbackProfile.email || user.email,
+      displayName: getProfileDisplayName(fallbackProfile),
     };
   }
 }
@@ -214,8 +222,8 @@ export default async function DashboardPage() {
   const view = await loadDashboardView();
 
   if (view.mode === "emergency") {
-    return renderEmergencyDashboard(view.userEmail);
+    return renderEmergencyDashboard(view.displayName, view.userEmail);
   }
 
-  return renderStandardDashboard(view.userEmail, view.isAdmin);
+  return renderStandardDashboard(view.displayName, view.userEmail, view.isAdmin);
 }

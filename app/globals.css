@@ -599,16 +599,26 @@ html[data-theme="dark"] .auth-panel-logo-dark {
 }
 
 .app-shell {
+  --app-layout-max-width: 82rem;
+  --app-surface-padding: clamp(1rem, 2.4vw, 1.75rem);
   --app-shell-left-glow: radial-gradient(circle at top left, rgba(31, 111, 95, 0.22), transparent 30%);
   --app-shell-right-accent: radial-gradient(circle at top right, rgba(18, 65, 112, 0.16), transparent 24%);
   min-height: 100vh;
   width: 100%;
   max-width: 100%;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
   background:
     var(--app-shell-left-glow),
     var(--app-shell-right-accent),
     linear-gradient(180deg, #04120e 0%, #071c15 24%, #06140f 100%);
+}
+
+.app-container {
+  width: min(100%, var(--app-layout-max-width));
+  max-width: var(--app-layout-max-width);
+  margin-inline: auto;
 }
 
 html[data-theme="dark"] body {
@@ -626,6 +636,7 @@ html[data-theme="dark"] .app-shell {
 }
 
 .app-page {
+  flex: 1 1 auto;
   width: 100%;
   max-width: 100%;
   min-width: 0;
@@ -634,10 +645,12 @@ html[data-theme="dark"] .app-shell {
   padding: clamp(1rem, 3vw, 2rem) clamp(1rem, 2.8vw, 2rem) clamp(2.5rem, 6vw, 4rem);
 }
 
+.app-page-content,
 .app-page > * {
   width: 100%;
   max-width: 100%;
   min-width: 0;
+  box-sizing: border-box;
 }
 
 .dashboard-panel {
@@ -1408,7 +1421,7 @@ html[data-theme="dark"] .auth-panel-list {
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  padding: 1rem 1rem 0;
+  padding: 1rem clamp(1rem, 2.8vw, 2rem) 0;
   background: linear-gradient(180deg, rgba(4, 18, 14, 0.92) 0%, rgba(4, 18, 14, 0.78) 72%, rgba(4, 18, 14, 0) 100%);
   backdrop-filter: blur(18px);
 }
@@ -1423,7 +1436,7 @@ html[data-theme="dark"] .auth-panel-list {
   width: 100%;
   min-width: 0;
   margin: 0 auto;
-  padding: 1rem 1.25rem;
+  padding: 1rem var(--app-surface-padding);
   border: 1px solid rgba(173, 230, 205, 0.18);
   border-radius: 1.5rem;
   background: rgba(6, 26, 20, 0.82);
@@ -1609,6 +1622,10 @@ html[data-theme="dark"] .auth-panel-list {
     padding-block: clamp(1rem, 4vw, 2rem);
   }
 
+  .app-page-content {
+    padding-inline: 0;
+  }
+
   .app-header {
     padding: 0.5rem 0.5rem 0;
   }
@@ -1617,6 +1634,11 @@ html[data-theme="dark"] .auth-panel-list {
     width: min(100%, 42rem);
     margin-inline: auto;
     gap: clamp(0.75rem, 3vw, 1rem);
+  }
+
+  .app-footer {
+    padding-inline: clamp(1rem, 4vw, 1.5rem);
+    padding-bottom: clamp(1rem, 4vw, 1.5rem);
   }
 }
 
@@ -1638,6 +1660,7 @@ html[data-theme="dark"] .auth-panel-list {
     min-width: 0;
     min-height: auto;
     height: auto;
+    margin-inline: 0;
     padding: clamp(0.55rem, 2.5vw, 0.75rem);
     border-radius: 1.25rem;
     position: relative;
@@ -1769,6 +1792,10 @@ html[data-theme="dark"] .auth-panel-list {
   .app-nav-mobile-menu {
     display: none;
   }
+
+  .app-page-content {
+    padding-inline: var(--app-surface-padding);
+  }
 }
 
 @media (min-width: 768px) and (max-width: 1099px) {
@@ -1861,7 +1888,7 @@ html[data-theme="dark"] .auth-panel-list {
 .generation-shell,
 .generated-site-container {
   width: 100%;
-  max-width: 64rem;
+  max-width: var(--app-layout-max-width);
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -1875,7 +1902,7 @@ html[data-theme="dark"] .auth-panel-list {
 }
 
 .profile-page {
-  max-width: 72rem;
+  max-width: var(--app-layout-max-width);
 }
 
 .profile-summary-card {
@@ -2048,7 +2075,7 @@ html[data-theme="dark"] .auth-panel-list {
 }
 
 .website-builder-shell {
-  max-width: 82rem;
+  max-width: var(--app-layout-max-width);
   gap: 1.25rem;
   --wizard-text-primary: rgba(243, 247, 245, 0.92);
   --wizard-text-secondary: rgba(215, 229, 223, 0.74);
@@ -4598,11 +4625,72 @@ html[data-theme="dark"] .auth-panel-list {
   --dashboard-quick-action-min-width: 14rem;
   --dashboard-definition-min-width: 9rem;
   width: 100%;
-  max-width: 80rem;
+  max-width: var(--app-layout-max-width);
   min-width: 0;
   display: flex;
   flex-direction: column;
   gap: clamp(0.85rem, 1.6vw, 1.25rem);
+}
+
+.app-footer {
+  width: 100%;
+  padding: 0 clamp(1rem, 2.8vw, 2rem) clamp(1rem, 3vw, 2rem);
+}
+
+.app-footer-surface {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: clamp(1rem, 2vw, 1.5rem);
+  align-items: center;
+  padding: clamp(1rem, 2vw, 1.4rem) var(--app-surface-padding);
+  border: 1px solid var(--border);
+  border-radius: 1.5rem;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 94%, transparent) 0%, color-mix(in srgb, var(--surface) 96%, transparent) 100%),
+    color-mix(in srgb, var(--surface) 92%, transparent);
+  box-shadow: var(--surface-shadow);
+}
+
+.app-footer-brand {
+  display: grid;
+  gap: 0.35rem;
+  max-width: 28rem;
+}
+
+.app-footer-title {
+  color: var(--text-primary);
+  font-family: var(--font-heading), serif;
+  font-size: clamp(1rem, 0.95rem + 0.35vw, 1.2rem);
+  font-weight: 700;
+}
+
+.app-footer-copy,
+.app-footer-links {
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.app-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1rem;
+  justify-content: center;
+}
+
+.app-footer-links span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.1rem;
+  padding: 0.25rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  color: var(--text-secondary);
+}
+
+.app-footer-meta {
+  text-align: right;
 }
 
 .dashboard-home-shell > *,
@@ -7161,6 +7249,18 @@ html[data-theme="dark"] .generation-shell {
 @media (max-width: 767px) {
   .app-nav-theme-toggle-desktop {
     display: none;
+  }
+
+  .app-footer-surface {
+    text-align: left;
+  }
+
+  .app-footer-links {
+    justify-content: flex-start;
+  }
+
+  .app-footer-meta {
+    text-align: left;
   }
 
   .preview-toolbar-actions,

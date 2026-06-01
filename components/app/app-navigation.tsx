@@ -29,6 +29,7 @@ const adminNavLinks = [
 ];
 
 interface AppNavigationProps {
+  userDisplayName?: string | null;
   userEmail?: string | null;
   userRole: ProfileRole;
 }
@@ -41,7 +42,7 @@ function isActivePath(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function AppNavigation({ userEmail, userRole }: AppNavigationProps) {
+export function AppNavigation({ userDisplayName, userEmail, userRole }: AppNavigationProps) {
   const pathname = usePathname();
   const { theme } = useTheme();
   const mobileMenuId = "app-navigation-mobile-menu";
@@ -51,6 +52,7 @@ export function AppNavigation({ userEmail, userRole }: AppNavigationProps) {
   const mobileMenuLabel = isMobileMenuOpen ? "Close dashboard menu" : "Open dashboard menu";
   const toggleMobileMenu = () => setIsMobileMenuOpen((open) => !open);
   const closeMobileMenu = useCallback(() => setIsMobileMenuOpen(false), []);
+  const userLabel = userDisplayName?.trim() || userEmail?.trim() || null;
   const renderBrandLogo = () => (
     <Image
       src={theme === "dark" ? "/images/AI robot logo light.svg" : "/images/AI robot logo dark.svg"}
@@ -64,9 +66,9 @@ export function AppNavigation({ userEmail, userRole }: AppNavigationProps) {
   );
   const renderUserActions = () => (
     <>
-      {userEmail ? (
-        <span className="app-nav-user" title={userEmail}>
-          {userEmail}
+      {userLabel ? (
+        <span className="app-nav-user" title={userEmail ?? userLabel}>
+          {userLabel}
         </span>
       ) : null}
       <SignOutButton
@@ -94,7 +96,7 @@ export function AppNavigation({ userEmail, userRole }: AppNavigationProps) {
 
   return (
     <header className="app-header">
-      <nav className="app-nav" aria-label="Primary">
+      <nav className="app-nav app-container" aria-label="Primary">
         <Link
           href={dashboardHref}
           className="app-nav-brand app-nav-brand-link"
