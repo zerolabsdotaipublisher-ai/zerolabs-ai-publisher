@@ -4683,29 +4683,13 @@ html[data-theme="dark"] .auth-panel-list {
   flex-wrap: wrap;
   justify-content: center;
   gap: clamp(0.75rem, 2vw, 1.25rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .app-footer-link {
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-  padding: 0;
-  border-radius: 0;
   color: var(--text-secondary);
-  font: inherit;
-  text-decoration: none;
-}
-
-.app-footer-link:hover {
-  color: var(--accent);
-  text-decoration: underline;
-}
-
-.app-footer-link:focus-visible {
-  color: var(--accent);
-  text-decoration: underline;
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 3px;
 }
 
 .app-footer-meta {
