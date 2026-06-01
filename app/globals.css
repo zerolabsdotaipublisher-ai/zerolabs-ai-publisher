@@ -4696,8 +4696,10 @@ html[data-theme="dark"] .auth-panel-list {
   background: transparent;
   color: var(--text-secondary);
   box-shadow: none;
+  font: inherit;
   text-decoration: none;
   outline: none;
+  cursor: pointer;
 }
 
 .app-footer-link:hover,
