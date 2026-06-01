@@ -10,12 +10,14 @@ export function AppFooter() {
           <p className="app-footer-copy">Calm publishing infrastructure for your authenticated workspace.</p>
         </div>
 
-        <nav className="app-footer-links" aria-label="Footer">
-          {footerItems.map((item) => (
-            <a key={item} className="app-footer-link" href={`#${item.toLowerCase()}`}>
-              {item}
-            </a>
-          ))}
+        <nav aria-label="Footer">
+          <ul className="app-footer-links">
+            {footerItems.map((item) => (
+              <li key={item} className="app-footer-link">
+                {item}
+              </li>
+            ))}
+          </ul>
         </nav>
 
         <p className="app-footer-copy app-footer-meta">© {currentYear} Zero Labs AI Publisher. All rights reserved.</p>
