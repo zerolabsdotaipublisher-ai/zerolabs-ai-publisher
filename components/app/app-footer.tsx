@@ -12,7 +12,7 @@ export function AppFooter() {
 
         <nav className="app-footer-links" aria-label="Footer">
           {footerItems.map((item) => (
-            <a key={item} className="app-footer-link" href={`/${item.toLowerCase()}`}>
+            <a key={item} className="app-footer-link" href={`#${item.toLowerCase()}`}>
               {item}
             </a>
           ))}
