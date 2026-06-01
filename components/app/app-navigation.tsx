@@ -94,7 +94,7 @@ export function AppNavigation({ userEmail, userRole }: AppNavigationProps) {
 
   return (
     <header className="app-header">
-      <nav className="app-nav" aria-label="Primary">
+      <nav className="app-nav app-container" aria-label="Primary">
         <Link
           href={dashboardHref}
           className="app-nav-brand app-nav-brand-link"

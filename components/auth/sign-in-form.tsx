@@ -10,6 +10,13 @@ function resolveInitialState(searchParams: ReturnType<typeof useSearchParams>): 
   initialMessage: string | null;
   initialError: string | null;
 } {
+  if (searchParams.get("verified") === "1") {
+    return {
+      initialMessage: "Email verified. You can now sign in.",
+      initialError: null,
+    };
+  }
+
   if (searchParams.get("message") === "check_email") {
     return {
       initialMessage: "Account created. Check your email to confirm your account, then sign in.",
@@ -119,9 +126,10 @@ export function SignInForm() {
   return (
     <form className="auth-form" onSubmit={onSubmit} aria-label="Sign in" noValidate>
       <h1>Sign in</h1>
+      <p className="auth-field-hint">Email and password are required.</p>
 
       <label htmlFor={`${id}-email`}>
-        Email <span aria-hidden="true">*</span>
+        Email
         <input
           id={`${id}-email`}
           type="email"
@@ -131,16 +139,13 @@ export function SignInForm() {
           autoComplete="email"
           aria-required="true"
           aria-describedby={error ? errorId : undefined}
+          placeholder="Example: name@email.com"
         />
       </label>
 
       <PasswordField
         id={`${id}-password`}
-        label={
-          <>
-            Password <span aria-hidden="true">*</span>
-          </>
-        }
+        label="Password"
         toggleLabel="password"
         value={password}
         onChange={(event) => setPassword(event.target.value)}
@@ -148,6 +153,7 @@ export function SignInForm() {
         autoComplete="current-password"
         aria-required="true"
         aria-describedby={error ? errorId : undefined}
+        placeholder="Enter your password"
       />
 
       {error ? (

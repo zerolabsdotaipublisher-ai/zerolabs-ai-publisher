@@ -100,6 +100,15 @@ function normalizeProfileRow(data: Partial<Profile>): Profile {
   };
 }
 
+function normalizeOptionalMetadataValue(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
 function extractUserMetadataFromAuth(user: User): AuthUserMetadata {
   if (!user.user_metadata || typeof user.user_metadata !== "object") {
     return {};
@@ -108,9 +117,70 @@ function extractUserMetadataFromAuth(user: User): AuthUserMetadata {
   const metadata = user.user_metadata as Record<string, unknown>;
 
   return {
-    full_name: typeof metadata.full_name === "string" ? metadata.full_name : undefined,
-    avatar_url: typeof metadata.avatar_url === "string" ? metadata.avatar_url : undefined,
+    full_name: normalizeOptionalMetadataValue(metadata.full_name),
+    avatar_url: normalizeOptionalMetadataValue(metadata.avatar_url),
   };
+}
+
+function resolveProfileField(primary?: string | null, fallback?: string | null): string | null {
+  return normalizeOptionalMetadataValue(primary) ?? normalizeOptionalMetadataValue(fallback) ?? null;
+}
+
+function shouldSyncExistingProfile(existingProfile: Profile, user: User, metadata: AuthUserMetadata): boolean {
+  const userEmail = user.email?.trim() ?? "";
+
+  return (
+    existingProfile.email !== userEmail ||
+    (!resolveProfileField(existingProfile.full_name, null) && Boolean(metadata.full_name)) ||
+    (!resolveProfileField(existingProfile.avatar_url, null) && Boolean(metadata.avatar_url))
+  );
+}
+
+async function syncAuthUserMetadata(userId: string, data: ProfileUpdateData): Promise<void> {
+  if (!("full_name" in data) && !("avatar_url" in data)) {
+    return;
+  }
+
+  const supabase = getSupabaseServiceClient();
+  const { data: authUserData, error: authUserError } = await supabase.auth.admin.getUserById(userId);
+
+  if (authUserError) {
+    logger.warn("auth metadata sync skipped because the user could not be loaded", {
+      category: "error",
+      service: "supabase",
+      userId,
+      error: { message: authUserError.message, name: "SupabaseAuthMetadataWarning" },
+    });
+    return;
+  }
+
+  const existingMetadata =
+    authUserData.user?.user_metadata && typeof authUserData.user.user_metadata === "object"
+      ? (authUserData.user.user_metadata as Record<string, unknown>)
+      : {};
+
+  const nextMetadata: Record<string, unknown> = { ...existingMetadata };
+
+  if ("full_name" in data) {
+    nextMetadata.full_name = data.full_name ?? null;
+  }
+
+  if ("avatar_url" in data) {
+    nextMetadata.avatar_url = data.avatar_url ?? null;
+  }
+
+  const { error: updateError } = await supabase.auth.admin.updateUserById(userId, {
+    user_metadata: nextMetadata,
+  });
+
+  if (updateError) {
+    logger.warn("auth metadata sync failed after profile update", {
+      category: "error",
+      service: "supabase",
+      userId,
+      error: { message: updateError.message, name: "SupabaseAuthMetadataWarning" },
+    });
+  }
 }
 
 function resolveSeededProfileRole(email: string): ProfileRole | null {
@@ -118,7 +188,14 @@ function resolveSeededProfileRole(email: string): ProfileRole | null {
 }
 
 export function createFallbackProfile(user: User): Profile {
-  return createFallbackProfileRecord(user.id, user.email ?? "", user.created_at ?? getCurrentTimestamp());
+  const metadata = extractUserMetadataFromAuth(user);
+  const fallbackProfile = createFallbackProfileRecord(user.id, user.email ?? "", user.created_at ?? getCurrentTimestamp());
+
+  return {
+    ...fallbackProfile,
+    full_name: metadata.full_name ?? null,
+    avatar_url: metadata.avatar_url ?? null,
+  };
 }
 
 export async function getProfile(userId: string): Promise<Profile | null> {
@@ -175,6 +252,8 @@ export async function updateProfile(userId: string, data: ProfileUpdateData): Pr
       throw new Error("Profile update did not return a profile row.");
     }
 
+    await syncAuthUserMetadata(userId, data);
+
     return normalizeProfileRow(updated as Partial<Profile>);
   } catch (error) {
     const normalizedError = toError(error, "Profile update failed.");
@@ -203,7 +282,10 @@ export async function syncProfileFromAuthUser(user: User): Promise<void> {
   try {
     const supabase = getSupabaseServiceClient();
     const metadata = extractUserMetadataFromAuth(user);
+    const existingProfile = await getProfile(user.id);
     const seededRole = resolveSeededProfileRole(user.email);
+    const fullName = resolveProfileField(metadata.full_name, existingProfile?.full_name);
+    const avatarUrl = resolveProfileField(metadata.avatar_url, existingProfile?.avatar_url);
 
     const profileRow: {
       id: string;
@@ -214,8 +296,8 @@ export async function syncProfileFromAuthUser(user: User): Promise<void> {
     } = {
       id: user.id,
       email: user.email,
-      full_name: metadata.full_name ?? null,
-      avatar_url: metadata.avatar_url ?? null,
+      full_name: fullName,
+      avatar_url: avatarUrl,
     };
 
     if (seededRole) {
@@ -272,6 +354,15 @@ export async function ensureProfile(user: User): Promise<Profile> {
   const existingProfile = await getProfile(user.id);
 
   if (existingProfile) {
+    const metadata = extractUserMetadataFromAuth(user);
+
+    if (shouldSyncExistingProfile(existingProfile, user, metadata)) {
+      await syncProfileFromAuthUser(user);
+
+      const syncedProfile = await getProfile(user.id);
+      return syncedProfile ?? existingProfile;
+    }
+
     return existingProfile;
   }
 
@@ -293,4 +384,8 @@ export async function getSafeProfile(user: User): Promise<Profile> {
     });
     return createFallbackProfile(user);
   }
+}
+
+export function getProfileDisplayName(profile: Pick<Profile, "full_name" | "email">): string {
+  return normalizeOptionalMetadataValue(profile.full_name) ?? profile.email;
 }

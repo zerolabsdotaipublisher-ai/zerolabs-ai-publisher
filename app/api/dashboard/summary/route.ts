@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { buildDashboardSummary, getDashboardUserDisplayName, getDefaultDashboardErrorMessage } from "@/lib/dashboard";
+import { buildDashboardSummary, getDefaultDashboardErrorMessage } from "@/lib/dashboard";
+import { getProfileDisplayName, getSafeProfile } from "@/lib/supabase/profile";
 import { getServerUser } from "@/lib/supabase/server";
 
 export async function GET(): Promise<NextResponse> {
@@ -9,10 +10,11 @@ export async function GET(): Promise<NextResponse> {
   }
 
   try {
+    const profile = await getSafeProfile(user);
     const summary = await buildDashboardSummary({
       userId: user.id,
       email: user.email ?? "",
-      displayName: getDashboardUserDisplayName(user.user_metadata),
+      displayName: getProfileDisplayName(profile),
     });
 
     return NextResponse.json({ ok: true, summary });
