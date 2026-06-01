@@ -10,7 +10,7 @@ export function AppFooter() {
           <p className="app-footer-copy">Calm publishing infrastructure for your authenticated workspace.</p>
         </div>
 
-        <div className="app-footer-links" aria-label="Workspace footer">
+        <div className="app-footer-links">
           {footerItems.map((item) => (
             <span key={item.label}>{item.label}</span>
           ))}
