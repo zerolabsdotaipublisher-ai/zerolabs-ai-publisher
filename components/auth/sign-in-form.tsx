@@ -19,7 +19,7 @@ function resolveInitialState(searchParams: ReturnType<typeof useSearchParams>): 
 
   if (searchParams.get("message") === "check_email") {
     return {
-      initialMessage: "Account created. Check your email to confirm your account, then sign in.",
+      initialMessage: "Account created. Please check your email to verify your account before signing in.",
       initialError: null,
     };
   }
@@ -153,7 +153,7 @@ export function SignInForm() {
         autoComplete="current-password"
         aria-required="true"
         aria-describedby={error ? errorId : undefined}
-        placeholder="Enter your password"
+        placeholder="Minimum 8 characters"
       />
 
       {error ? (
