@@ -59,6 +59,7 @@ export async function GET(request: Request): Promise<NextResponse> {
   }
 
   if (next === routes.login) {
+    // Supabase verification creates a session; sign out so the login screen can show the verified state first.
     await supabase.auth.signOut();
     return NextResponse.redirect(buildLoginUrl(request.url, { verified: "1" }));
   }

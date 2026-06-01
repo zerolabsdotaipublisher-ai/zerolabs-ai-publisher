@@ -108,7 +108,7 @@ export function SignUpForm() {
           data: {
             full_name: trimmedFullName || undefined,
           },
-          emailRedirectTo: `${getSupabaseAppUrl()}${routes.authCallback}?next=${encodeURIComponent(routes.login)}`,
+          emailRedirectTo: `${getSupabaseAppUrl()}${routes.authCallback}`,
         },
       });
 
