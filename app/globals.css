@@ -1907,6 +1907,7 @@ html[data-theme="dark"] .auth-panel-list {
 
 .profile-page {
   max-width: var(--app-layout-max-width);
+  margin-inline: auto;
 }
 
 .profile-summary-card {
@@ -4644,7 +4645,7 @@ html[data-theme="dark"] .auth-panel-list {
   padding: 0 clamp(1rem, 2.8vw, 2rem) clamp(1rem, 3vw, 2rem);
 }
 
-.app-footer-surface {
+.app-footer-inner {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
   gap: clamp(1rem, 2vw, 1.5rem);
@@ -4687,18 +4688,14 @@ html[data-theme="dark"] .auth-panel-list {
 }
 
 .app-footer-link {
-  display: inline-flex;
-  align-items: center;
-  min-height: auto;
-  padding: 0;
   border: 0;
-  border-radius: 0;
   background: transparent;
-  color: var(--text-secondary);
   box-shadow: none;
+  padding: 0;
+  border-radius: 0;
+  color: var(--text-secondary);
   font: inherit;
   text-decoration: none;
-  outline: none;
   cursor: pointer;
 }
 
@@ -7275,7 +7272,7 @@ html[data-theme="dark"] .generation-shell {
     display: none;
   }
 
-  .app-footer-surface {
+  .app-footer-inner {
     text-align: left;
   }
 
