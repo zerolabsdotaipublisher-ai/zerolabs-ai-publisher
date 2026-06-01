@@ -4683,9 +4683,6 @@ html[data-theme="dark"] .auth-panel-list {
   flex-wrap: wrap;
   justify-content: center;
   gap: clamp(0.75rem, 2vw, 1.25rem);
-  margin: 0;
-  padding: 0;
-  list-style: none;
 }
 
 .app-footer-link {
