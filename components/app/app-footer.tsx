@@ -11,16 +11,15 @@ export function AppFooter() {
         </div>
 
         <nav className="app-footer-links" aria-label="Footer">
-          {footerItems.map((item) => (
-            <a
-              key={item}
-              className="app-footer-link"
-              href="#"
-              onClick={(event) => event.preventDefault()}
-            >
-              {item}
-            </a>
-          ))}
+          {footerItems.map((item) => {
+            const footerItemId = item.toLowerCase();
+
+            return (
+              <a key={item} id={footerItemId} className="app-footer-link" href={`#${footerItemId}`}>
+                {item}
+              </a>
+            );
+          })}
         </nav>
 
         <p className="app-footer-copy app-footer-meta">© {currentYear} Zero Labs AI Publisher. All rights reserved.</p>
