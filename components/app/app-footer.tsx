@@ -1,20 +1,22 @@
 export function AppFooter() {
   const currentYear = new Date().getFullYear();
-  const footerItems = [{ label: "Terms" }, { label: "Privacy" }, { label: "Support" }] as const;
+  const footerItems = ["Terms", "Privacy", "Support"] as const;
 
   return (
-    <footer className="app-footer" role="contentinfo">
-      <div className="app-footer-inner app-container">
+    <footer className="app-footer">
+      <div className="app-footer-inner">
         <div className="app-footer-brand">
           <strong className="app-footer-title">Zero Labs AI Publisher</strong>
           <p className="app-footer-copy">Calm publishing infrastructure for your authenticated workspace.</p>
         </div>
 
-        <div className="app-footer-links">
+        <nav className="app-footer-links" aria-label="Footer">
           {footerItems.map((item) => (
-            <span key={item.label}>{item.label}</span>
+            <a key={item} className="app-footer-link" href={`/${item.toLowerCase()}`}>
+              {item}
+            </a>
           ))}
-        </div>
+        </nav>
 
         <p className="app-footer-copy app-footer-meta">© {currentYear} Zero Labs AI Publisher. All rights reserved.</p>
       </div>

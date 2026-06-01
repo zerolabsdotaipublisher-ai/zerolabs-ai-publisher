@@ -4650,41 +4650,39 @@ html[data-theme="dark"] .auth-panel-list {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
   gap: clamp(1rem, 2vw, 1.5rem);
   align-items: center;
-  padding: clamp(1rem, 2vw, 1.4rem) var(--app-surface-padding);
+  width: min(100%, var(--app-layout-max-width));
+  margin-inline: auto;
+  padding: clamp(1rem, 2.4vw, 1.5rem);
   border: 1px solid var(--border);
-  border-radius: 1.5rem;
+  border-radius: clamp(1.25rem, 3vw, 2rem);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 94%, transparent) 0%, color-mix(in srgb, var(--surface) 96%, transparent) 100%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-elevated) 94%, transparent) 0%,
+      color-mix(in srgb, var(--surface) 96%, transparent) 100%
+    ),
     color-mix(in srgb, var(--surface) 92%, transparent);
   box-shadow: var(--surface-shadow);
-  margin-inline: auto;
 }
 
 .app-footer-brand {
   display: grid;
   gap: 0.35rem;
-  max-width: 28rem;
 }
 
 .app-footer-title {
   color: var(--text-primary);
-  font-family: var(--font-heading), serif;
-  font-size: clamp(1rem, 0.95rem + 0.35vw, 1.2rem);
-  font-weight: 700;
 }
 
-.app-footer-copy,
-.app-footer-links {
+.app-footer-copy {
   color: var(--text-secondary);
-  font-size: 0.92rem;
-  line-height: 1.6;
 }
 
 .app-footer-links {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.65rem 1rem;
   justify-content: center;
+  gap: clamp(0.75rem, 2vw, 1.25rem);
 }
 
 .app-footer-link {
@@ -4696,21 +4694,22 @@ html[data-theme="dark"] .auth-panel-list {
   color: var(--text-secondary);
   font: inherit;
   text-decoration: none;
-  cursor: pointer;
 }
 
-.app-footer-link:hover,
-.app-footer-link:focus-visible {
+.app-footer-link:hover {
   color: var(--accent);
   text-decoration: underline;
 }
 
 .app-footer-link:focus-visible {
+  color: var(--accent);
+  text-decoration: underline;
   outline: 2px solid var(--focus-ring);
   outline-offset: 3px;
 }
 
 .app-footer-meta {
+  justify-self: end;
   text-align: right;
 }
 
@@ -7281,6 +7280,7 @@ html[data-theme="dark"] .generation-shell {
   }
 
   .app-footer-meta {
+    justify-self: start;
     text-align: left;
   }
 
