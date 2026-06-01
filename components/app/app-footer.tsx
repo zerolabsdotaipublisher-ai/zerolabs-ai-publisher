@@ -3,17 +3,21 @@ export function AppFooter() {
   const footerItems = ["Terms", "Privacy", "Support"] as const;
 
   return (
-    <footer className="app-footer" role="contentinfo">
-      <div className="app-footer-surface app-container">
+    <footer className="app-footer">
+      <div className="app-footer-inner">
         <div className="app-footer-brand">
           <strong className="app-footer-title">Zero Labs AI Publisher</strong>
           <p className="app-footer-copy">Calm publishing infrastructure for your authenticated workspace.</p>
         </div>
 
-        <nav className="app-footer-links" aria-label="Workspace footer">
-          {footerItems.map((item) => (
-            <span key={item}>{item}</span>
-          ))}
+        <nav aria-label="Footer">
+          <ul className="app-footer-links">
+            {footerItems.map((item) => (
+              <li key={item} className="app-footer-link">
+                {item}
+              </li>
+            ))}
+          </ul>
         </nav>
 
         <p className="app-footer-copy app-footer-meta">© {currentYear} Zero Labs AI Publisher. All rights reserved.</p>

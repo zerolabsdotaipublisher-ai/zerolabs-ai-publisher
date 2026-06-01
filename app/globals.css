@@ -642,6 +642,7 @@ html[data-theme="dark"] .app-shell {
   min-width: 0;
   display: flex;
   justify-content: center;
+  margin-inline: auto;
   padding: clamp(1rem, 3vw, 2rem) clamp(1rem, 2.8vw, 2rem) clamp(2.5rem, 6vw, 4rem);
 }
 
@@ -651,6 +652,7 @@ html[data-theme="dark"] .app-shell {
   max-width: 100%;
   min-width: 0;
   box-sizing: border-box;
+  margin-inline: auto;
 }
 
 .dashboard-panel {
@@ -1421,6 +1423,7 @@ html[data-theme="dark"] .auth-panel-list {
   width: 100%;
   max-width: 100%;
   min-width: 0;
+  margin-inline: auto;
   padding: 1rem clamp(1rem, 2.8vw, 2rem) 0;
   background: linear-gradient(180deg, rgba(4, 18, 14, 0.92) 0%, rgba(4, 18, 14, 0.78) 72%, rgba(4, 18, 14, 0) 100%);
   backdrop-filter: blur(18px);
@@ -1893,6 +1896,7 @@ html[data-theme="dark"] .auth-panel-list {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  margin-inline: auto;
 }
 
 .profile-form {
@@ -1903,6 +1907,7 @@ html[data-theme="dark"] .auth-panel-list {
 
 .profile-page {
   max-width: var(--app-layout-max-width);
+  margin-inline: auto;
 }
 
 .profile-summary-card {
@@ -4301,6 +4306,7 @@ html[data-theme="dark"] .auth-panel-list {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  margin-inline: auto;
 }
 
 .website-management-header p {
@@ -4630,23 +4636,31 @@ html[data-theme="dark"] .auth-panel-list {
   display: flex;
   flex-direction: column;
   gap: clamp(0.85rem, 1.6vw, 1.25rem);
+  margin-inline: auto;
 }
 
 .app-footer {
   width: 100%;
+  margin-inline: auto;
   padding: 0 clamp(1rem, 2.8vw, 2rem) clamp(1rem, 3vw, 2rem);
 }
 
-.app-footer-surface {
+.app-footer-inner {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
   gap: clamp(1rem, 2vw, 1.5rem);
   align-items: center;
-  padding: clamp(1rem, 2vw, 1.4rem) var(--app-surface-padding);
+  width: min(100%, var(--app-layout-max-width));
+  margin-inline: auto;
+  padding: clamp(1rem, 2.4vw, 1.5rem);
   border: 1px solid var(--border);
-  border-radius: 1.5rem;
+  border-radius: clamp(1.25rem, 3vw, 2rem);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 94%, transparent) 0%, color-mix(in srgb, var(--surface) 96%, transparent) 100%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-elevated) 94%, transparent) 0%,
+      color-mix(in srgb, var(--surface) 96%, transparent) 100%
+    ),
     color-mix(in srgb, var(--surface) 92%, transparent);
   box-shadow: var(--surface-shadow);
 }
@@ -4654,42 +4668,32 @@ html[data-theme="dark"] .auth-panel-list {
 .app-footer-brand {
   display: grid;
   gap: 0.35rem;
-  max-width: 28rem;
 }
 
 .app-footer-title {
   color: var(--text-primary);
-  font-family: var(--font-heading), serif;
-  font-size: clamp(1rem, 0.95rem + 0.35vw, 1.2rem);
-  font-weight: 700;
 }
 
-.app-footer-copy,
-.app-footer-links {
+.app-footer-copy {
   color: var(--text-secondary);
-  font-size: 0.92rem;
-  line-height: 1.6;
 }
 
 .app-footer-links {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.65rem 1rem;
   justify-content: center;
+  gap: clamp(0.75rem, 2vw, 1.25rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.app-footer-links span {
-  display: inline-flex;
-  align-items: center;
-  min-height: 2.1rem;
-  padding: 0.25rem 0.7rem;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--surface) 94%, transparent);
+.app-footer-link {
   color: var(--text-secondary);
 }
 
 .app-footer-meta {
+  justify-self: end;
   text-align: right;
 }
 
@@ -7251,7 +7255,7 @@ html[data-theme="dark"] .generation-shell {
     display: none;
   }
 
-  .app-footer-surface {
+  .app-footer-inner {
     text-align: left;
   }
 
@@ -7260,6 +7264,7 @@ html[data-theme="dark"] .generation-shell {
   }
 
   .app-footer-meta {
+    justify-self: start;
     text-align: left;
   }
 
