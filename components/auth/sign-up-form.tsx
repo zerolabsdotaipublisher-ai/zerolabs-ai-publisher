@@ -101,7 +101,7 @@ export function SignUpForm() {
     try {
       const trimmedEmail = email.trim();
       const trimmedFullName = fullName.trim();
-      const { data, error: signUpError } = await supabase.auth.signUp({
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: trimmedEmail,
         password,
         options: {
@@ -117,7 +117,7 @@ export function SignUpForm() {
         return;
       }
 
-      if (data.session) {
+      if (signUpData.session) {
         await supabase.auth.signOut();
       }
 

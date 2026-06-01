@@ -557,12 +557,6 @@ a {
 .auth-panel-logo-light {
   display: inline-flex;
 }
-}
-
-@media (min-width: 768px) {
-.app-page-content {
-  padding-inline: var(--app-surface-padding);
-}
 
 .auth-panel-logo-dark {
   display: none;
@@ -1797,6 +1791,10 @@ html[data-theme="dark"] .auth-panel-list {
   .app-nav-mobile-trigger,
   .app-nav-mobile-menu {
     display: none;
+  }
+
+  .app-page-content {
+    padding-inline: var(--app-surface-padding);
   }
 }
 
