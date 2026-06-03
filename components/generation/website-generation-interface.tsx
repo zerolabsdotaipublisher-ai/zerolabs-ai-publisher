@@ -271,6 +271,7 @@ export function WebsiteGenerationInterface({
     <GenerationLayout
       title={title}
       description={description}
+      entryPoint={entryPoint}
       builderPanel={
         <GenerationInputPanel
           data={state.input}

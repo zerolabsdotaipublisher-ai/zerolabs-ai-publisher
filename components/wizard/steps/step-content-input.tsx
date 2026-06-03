@@ -6,6 +6,7 @@ interface StepContentInputProps {
   testimonialsText: string;
   socialLinksText: string;
   constraintsText: string;
+  errors?: string[];
   onFieldChange: (patch: WebsiteWizardInputPatch) => void;
   onTestimonialsChange: (value: string) => void;
   onSocialLinksChange: (value: string) => void;
@@ -25,11 +26,15 @@ export function StepContentInput({
   testimonialsText,
   socialLinksText,
   constraintsText,
+  errors = [],
   onFieldChange,
   onTestimonialsChange,
   onSocialLinksChange,
   onConstraintsChange,
 }: StepContentInputProps) {
+  const testimonialError = errors.includes("Each testimonial needs both quote and author.");
+  const emailError = errors.includes("Contact email must be a valid email address.");
+
   return (
     <section className="wizard-step-panel">
       <h2>Content and customization (optional)</h2>
@@ -39,7 +44,7 @@ export function StepContentInput({
 
       <div className="wizard-columns">
         <label>
-          Founder name
+          <span>Founder name</span>
           <input
             type="text"
             value={data.founderProfile.name ?? ""}
@@ -50,7 +55,7 @@ export function StepContentInput({
         </label>
 
         <label>
-          Founder role
+          <span>Founder role</span>
           <input
             type="text"
             value={data.founderProfile.role ?? ""}
@@ -62,7 +67,7 @@ export function StepContentInput({
       </div>
 
       <label>
-        Founder bio
+        <span>Founder bio</span>
         <textarea
           value={data.founderProfile.bio ?? ""}
           onChange={(event) =>
@@ -73,19 +78,32 @@ export function StepContentInput({
       </label>
 
       <label>
-        Testimonials
+        <span>Testimonials</span>
         <textarea
           value={testimonialsText}
           onChange={(event) => onTestimonialsChange(event.target.value)}
           rows={4}
           placeholder={"They delivered incredible ROI | Alex Chen | Founder\nA seamless process | Dana Park | Marketing Lead"}
+          aria-invalid={testimonialError || undefined}
+          aria-describedby={
+            testimonialError
+              ? "wizard-testimonials-hint wizard-testimonials-error"
+              : "wizard-testimonials-hint"
+          }
         />
-        <span className="wizard-field-hint">{testimonialHint(data.testimonials)}</span>
+        <span className="wizard-field-hint" id="wizard-testimonials-hint">
+          {testimonialHint(data.testimonials)}
+        </span>
+        {testimonialError ? (
+          <span className="wizard-field-error" id="wizard-testimonials-error">
+            Each testimonial needs both quote and author.
+          </span>
+        ) : null}
       </label>
 
       <div className="wizard-columns">
         <label>
-          Contact email
+          <span>Contact email</span>
           <input
             type="email"
             value={data.contactInfo.email ?? ""}
@@ -93,11 +111,18 @@ export function StepContentInput({
               onFieldChange({ contactInfo: { ...data.contactInfo, email: event.target.value } })
             }
             placeholder="hello@example.com"
+            aria-invalid={emailError || undefined}
+            aria-describedby={emailError ? "wizard-contact-email-error" : undefined}
           />
+          {emailError ? (
+            <span className="wizard-field-error" id="wizard-contact-email-error">
+              Contact email must be a valid email address.
+            </span>
+          ) : null}
         </label>
 
         <label>
-          Contact phone
+          <span>Contact phone</span>
           <input
             type="text"
             value={data.contactInfo.phone ?? ""}
@@ -110,7 +135,7 @@ export function StepContentInput({
       </div>
 
       <label>
-        Location
+        <span>Location</span>
         <input
           type="text"
           value={data.contactInfo.location ?? ""}
@@ -122,23 +147,29 @@ export function StepContentInput({
       </label>
 
       <label>
-        Social links (one per line)
+        <span>Social links (one per line)</span>
         <textarea
           value={socialLinksText}
           onChange={(event) => onSocialLinksChange(event.target.value)}
           rows={3}
           placeholder={"https://linkedin.com/in/example\nhttps://instagram.com/example"}
         />
+        <span className="wizard-field-hint">
+          Include only full public URLs that should appear in the generated website.
+        </span>
       </label>
 
       <label>
-        Content constraints (one per line)
+        <span>Content constraints (one per line)</span>
         <textarea
           value={constraintsText}
           onChange={(event) => onConstraintsChange(event.target.value)}
           rows={3}
           placeholder={"Avoid jargon\nKeep claims evidence-based"}
         />
+        <span className="wizard-field-hint">
+          Use this for guardrails such as banned claims, legal notes, or brand language constraints.
+        </span>
       </label>
     </section>
   );
