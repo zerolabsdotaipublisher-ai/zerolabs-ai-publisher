@@ -152,8 +152,21 @@ export function LandingPage() {
   const heroPrimaryGlow = isDark ? "rgba(31,111,95,0.18)" : "rgba(31,111,95,0.18)";
   const heroChalkGlow = isDark ? "rgba(234,242,239,0.10)" : "rgba(234,242,239,0.10)";
   const heroMintGlow = isDark ? "rgba(173,230,205,0.10)" : "rgba(173,230,205,0.10)";
+  const heroPanelBackground = isDark ? "rgba(11,36,29,0.74)" : "rgba(248,249,250,0.74)";
+  const heroPanelGradient = isDark
+    ? "linear-gradient(116deg, rgba(6,26,20,0.95) 0%, rgba(10,32,26,0.92) 38%, rgba(15,48,40,0.88) 70%, rgba(22,67,58,0.82) 100%)"
+    : "linear-gradient(118deg, rgba(248,249,250,0.96) 0%, rgba(234,242,239,0.88) 42%, rgba(173,230,205,0.18) 100%)";
+  const heroPanelAtmosphere = isDark
+    ? "radial-gradient(circle at left center, rgba(31,111,95,0.18), transparent 36%), radial-gradient(circle at 78% 22%, rgba(173,230,205,0.10), transparent 24%), radial-gradient(88% 112% at 94% 56%, rgba(60,145,121,0.18) 0%, rgba(24,79,65,0.12) 44%, rgba(8,28,23,0.03) 72%, transparent 100%)"
+    : "radial-gradient(circle at left center, rgba(31,111,95,0.16), transparent 36%), radial-gradient(circle at 78% 18%, rgba(173,230,205,0.14), transparent 24%)";
+  const heroPanelHighlight = isDark
+    ? "radial-gradient(44% 58% at 82% 56%, rgba(194,239,220,0.10) 0%, rgba(77,156,133,0.08) 38%, transparent 72%), radial-gradient(circle at 88% 16%, rgba(84,157,136,0.08), transparent 22%)"
+    : "radial-gradient(circle at 86% 16%, rgba(18,65,112,0.06), transparent 24%)";
+  const heroRobotHalo = isDark
+    ? "radial-gradient(ellipse at center, rgba(194,239,220,0.14) 0%, rgba(72,150,127,0.11) 38%, rgba(11,36,29,0.04) 68%, transparent 82%)"
+    : null;
 
-    return (
+  return (
     <main
       id="main-content"
       className="min-h-screen text-[var(--marketing-text)] transition-colors duration-300"
@@ -182,32 +195,26 @@ export function LandingPage() {
             className="marketing-hero-section relative overflow-hidden rounded-[44px] border border-transparent transition-colors duration-300 xl:rounded-[52px]"
             style={{
               borderColor: isDark ? "rgba(173,230,205,0.18)" : "rgba(31,111,95,0.16)",
-              background: isDark ? "rgba(11,36,29,0.74)" : "rgba(248,249,250,0.74)",
+              background: heroPanelBackground,
               boxShadow: isDark ? "0 32px 120px rgba(0, 0, 0, 0.28)" : "0 32px 120px rgba(18, 65, 112, 0.10)",
             }}
           >
             <div
               className="absolute inset-0"
               style={{
-                background: isDark
-                  ? "linear-gradient(118deg, rgba(6,26,20,0.94) 0%, rgba(11,36,29,0.88) 42%, rgba(18,65,112,0.14) 100%)"
-                  : "linear-gradient(118deg, rgba(248,249,250,0.96) 0%, rgba(234,242,239,0.88) 42%, rgba(173,230,205,0.18) 100%)",
+                background: heroPanelGradient,
               }}
             />
             <div
               className="absolute inset-0"
               style={{
-                background: isDark
-                  ? "radial-gradient(circle at left center, rgba(31,111,95,0.18), transparent 36%), radial-gradient(circle at 76% 18%, rgba(173,230,205,0.12), transparent 24%)"
-                  : "radial-gradient(circle at left center, rgba(31,111,95,0.16), transparent 36%), radial-gradient(circle at 78% 18%, rgba(173,230,205,0.14), transparent 24%)",
+                background: heroPanelAtmosphere,
               }}
             />
             <div
               className="absolute inset-0"
               style={{
-                background: isDark
-                  ? "radial-gradient(circle at 86% 16%, rgba(18,65,112,0.08), transparent 24%)"
-                  : "radial-gradient(circle at 86% 16%, rgba(18,65,112,0.06), transparent 24%)",
+                background: heroPanelHighlight,
               }}
             />
 
@@ -252,14 +259,29 @@ export function LandingPage() {
               </div>
 
               <div className="marketing-hero-visual">
-                <div className="marketing-hero-visual-shell">
+                <div className="marketing-hero-visual-shell relative isolate">
+                  {heroRobotHalo ? (
+                    <div
+                      aria-hidden="true"
+                      className="pointer-events-none absolute"
+                      style={{
+                        top: "12%",
+                        right: "8%",
+                        bottom: "8%",
+                        left: "8%",
+                        borderRadius: "999px",
+                        background: heroRobotHalo,
+                        filter: "blur(40px)",
+                      }}
+                    />
+                  ) : null}
                   <Image
                     src="/images/FULL ROBOT BODY.svg"
                     alt=""
                     width={820}
                     height={1080}
                     priority
-                    className="marketing-hero-robot pointer-events-none h-auto w-full object-contain"
+                    className="marketing-hero-robot pointer-events-none relative z-10 h-auto w-full object-contain"
                     style={{
                       opacity: isDark ? 0.56 : 0.4,
                       filter: "drop-shadow(0 0 56px rgba(31,111,95,0.18)) saturate(1.08) brightness(1.02)",
