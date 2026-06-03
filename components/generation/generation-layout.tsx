@@ -5,6 +5,7 @@ interface GenerationLayoutProps {
   description: string;
   builderPanel: ReactNode;
   previewPanel: ReactNode;
+  entryPoint?: "create" | "generate";
 }
 
 export function GenerationLayout({
@@ -12,9 +13,14 @@ export function GenerationLayout({
   description,
   builderPanel,
   previewPanel,
+  entryPoint = "create",
 }: GenerationLayoutProps) {
   return (
-    <section className="generation-shell website-builder-shell" aria-label="Website builder workspace">
+    <section
+      className="generation-shell website-builder-shell"
+      aria-label="Website builder workspace"
+      data-entry-point={entryPoint}
+    >
       <header className="wizard-header">
         <h1>{title}</h1>
         <p>{description}</p>

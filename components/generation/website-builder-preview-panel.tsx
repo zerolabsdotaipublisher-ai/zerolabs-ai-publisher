@@ -13,6 +13,29 @@ import {
 const RATE_LIMIT_MESSAGE =
   "Generation is temporarily rate-limited. Please wait a moment, then try again.";
 
+const generationStageDetails = [
+  {
+    id: "preparing",
+    label: "Prepare inputs",
+    description: "Check the saved builder inputs before generation starts.",
+  },
+  {
+    id: "structure",
+    label: "Build structure",
+    description: "Generate the page structure, navigation, and layout plan.",
+  },
+  {
+    id: "content",
+    label: "Generate content",
+    description: "Write content, metadata, and supporting page details.",
+  },
+  {
+    id: "finalizing",
+    label: "Finalize output",
+    description: "Save the generated website and prepare the preview route.",
+  },
+] as const;
+
 function findLabel<T extends string>(
   options: Array<{ value: T; label: string }>,
   value: T,
@@ -230,6 +253,24 @@ function classifyGenerationFailure(error?: string) {
   };
 }
 
+function getGenerationStageState(
+  currentStage: GenerationInterfaceState["stage"],
+  stageId: typeof generationStageDetails[number]["id"],
+): "complete" | "current" | "upcoming" {
+  const currentIndex = generationStageDetails.findIndex((stage) => stage.id === currentStage);
+  const stageIndex = generationStageDetails.findIndex((stage) => stage.id === stageId);
+
+  if (stageIndex < currentIndex) {
+    return "complete";
+  }
+
+  if (stageIndex === currentIndex) {
+    return "current";
+  }
+
+  return "upcoming";
+}
+
 interface WebsiteBuilderPreviewPanelProps {
   state: GenerationInterfaceState;
   activePage?: PageDesignConfig;
@@ -277,40 +318,48 @@ export function WebsiteBuilderPreviewPanel({
   const previewBodyColor = activePage
     ? resolvePreviewTextColor(activePage.typography.bodyColor, "rgba(248, 249, 250, 0.9)")
     : "rgba(248, 249, 250, 0.9)";
+  const currentStage =
+    generationStageDetails.find((stage) => stage.id === state.stage) ?? generationStageDetails[0];
+  const showMissingRequirements = workflowStatus.label === "Not ready" && readinessErrors.length > 0;
 
   return (
     <section className="generation-panel" aria-labelledby="website-builder-preview-title">
-      <section className="wizard-step-panel website-generation-status" aria-live="polite">
+      <section className="wizard-step-panel website-generation-status" aria-live="polite" aria-atomic="true">
         <div className="website-generation-status-header">
           <div>
             <span className="website-builder-step-label">Step 3</span>
             <h2 id="website-builder-preview-title">Review and generate</h2>
             <p className="wizard-step-description">{workflowStatus.description}</p>
           </div>
-          <span className={`website-generation-status-badge is-${workflowStatus.tone}`}>
+          <span
+            className={`website-generation-status-badge is-${workflowStatus.tone}`}
+            aria-label={`Generation status: ${workflowStatus.label}`}
+          >
             {workflowStatus.label}
           </span>
         </div>
 
         <div className="website-generation-context">
-          <span className="website-preview-chip">{`${totalPages} ${totalPages === 1 ? "page" : "pages"} planned`}</span>
-          <span className="website-preview-chip">{`Editing page ${activePageIndex + 1}`}</span>
-          <span className="website-preview-chip">{activePage?.name || "Untitled page"}</span>
+          <span className="website-preview-chip">{`Pages planned: ${totalPages}`}</span>
+          <span className="website-preview-chip">{`Current page: ${activePageIndex + 1} of ${totalPages}`}</span>
+          <span className="website-preview-chip">{`Editing: ${activePage?.name || "Untitled page"}`}</span>
           {state.input.brandName ? (
-            <span className="website-preview-chip">{state.input.brandName}</span>
+            <span className="website-preview-chip">{`Brand: ${state.input.brandName}`}</span>
           ) : null}
           {state.input.domainName ? (
-            <span className="website-preview-chip">{state.input.domainName}</span>
+            <span className="website-preview-chip">{`Domain: ${state.input.domainName}`}</span>
           ) : null}
         </div>
 
-        {workflowStatus.label === "Not ready" && readinessErrors.length > 0 ? (
-          <ul className="website-generation-status-list">
-            {readinessErrors.slice(0, 4).map((error) => (
+        {showMissingRequirements ? (
+          <div className="website-generation-status-list-wrap">
+            <p className="website-generation-status-list-label">Missing requirements</p>
+            <ul className="website-generation-status-list" id="website-generation-missing-requirements">
+              {readinessErrors.map((error) => (
               <li key={error}>{error}</li>
-            ))}
-            {readinessErrors.length > 4 ? <li>{`+${readinessErrors.length - 4} more items`}</li> : null}
-          </ul>
+              ))}
+            </ul>
+          </div>
         ) : null}
       </section>
 
@@ -321,8 +370,9 @@ export function WebsiteBuilderPreviewPanel({
           onClick={onGenerate}
           disabled={state.submissionStatus === "running"}
           aria-busy={state.submissionStatus === "running"}
+          aria-describedby={showMissingRequirements ? "website-generation-missing-requirements" : undefined}
         >
-          {state.submissionStatus === "running" ? "Generating..." : "Generate website"}
+          {state.submissionStatus === "running" ? "Generating website..." : "Generate website"}
         </button>
 
         {state.result?.generatedSitePath ? (
@@ -331,7 +381,7 @@ export function WebsiteBuilderPreviewPanel({
             className="website-action-button is-primary"
             onClick={onPreviewClick}
           >
-            Continue
+            Continue to preview
           </Link>
         ) : null}
 
@@ -365,22 +415,45 @@ export function WebsiteBuilderPreviewPanel({
       </section>
 
       {state.submissionStatus === "running" ? (
-        <section className="website-preview-card website-preview-status-card" aria-live="polite" aria-busy="true">
+        <section
+          className="website-preview-card website-preview-status-card"
+          aria-live="polite"
+          aria-busy="true"
+          role="status"
+        >
           <h3>Generation status</h3>
-          <p>
-            {state.stage === "preparing"
-              ? "Preparing structured prompt inputs."
-              : state.stage === "structure"
-                ? "Generating structure and layout."
-                : state.stage === "content"
-                  ? "Generating content and metadata."
-                  : "Finalizing the generated website output."}
-          </p>
+          <p>{currentStage.description}</p>
+
+          <ol className="website-generation-stage-list" aria-label="Generation progress">
+            {generationStageDetails.map((stage) => {
+              const stageState = getGenerationStageState(state.stage, stage.id);
+              const stageStateLabel =
+                stageState === "complete"
+                  ? "Complete"
+                  : stageState === "current"
+                    ? "Current"
+                    : "Next";
+
+              return (
+                <li
+                  key={stage.id}
+                  className={`website-generation-stage-item is-${stageState}`}
+                >
+                  <div>
+                    <strong>{stage.label}</strong>
+                    <span>{stage.description}</span>
+                  </div>
+                  <span className="website-generation-stage-state">{stageStateLabel}</span>
+                </li>
+              );
+            })}
+          </ol>
         </section>
       ) : null}
 
       {state.submissionStatus === "error" && state.result?.error ? (
         <section className="wizard-error website-generation-status" role="alert" aria-live="assertive">
+          <p className="website-generation-status-label">Generation failed</p>
           <h3>{failureState.title}</h3>
           <p>{failureState.description}</p>
           <p>{failureState.guidance}</p>
@@ -449,9 +522,9 @@ export function WebsiteBuilderPreviewPanel({
         {activePage ? (
           <>
             <div className="website-preview-chip-row" aria-label="Active page summary">
-              <span className="website-preview-chip">{activePage.name || "Untitled page"}</span>
-              <span className="website-preview-chip">{pageLayout}</span>
-              <span className="website-preview-chip">{pageBackground}</span>
+              <span className="website-preview-chip">{`Page: ${activePage.name || "Untitled page"}`}</span>
+              <span className="website-preview-chip">{`Layout: ${pageLayout}`}</span>
+              <span className="website-preview-chip">{`Background: ${pageBackground}`}</span>
             </div>
 
             <div className="website-preview-card-hero" style={previewStyle}>

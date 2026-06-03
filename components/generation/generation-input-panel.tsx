@@ -37,6 +37,11 @@ function hasContent(value?: string): boolean {
   return Boolean(value?.trim());
 }
 
+function joinDescribedBy(...ids: Array<string | undefined>): string | undefined {
+  const resolved = ids.filter(Boolean);
+  return resolved.length > 0 ? resolved.join(" ") : undefined;
+}
+
 function validateStructurePhase(data: WebsiteWizardInput): string[] {
   return data.designConfig.pages.flatMap((page, index) => {
     const pageLabel = page.name.trim() || `Page ${index + 1}`;
@@ -128,6 +133,30 @@ function formatPhaseStatus(errors: string[]): string {
   return `${errors.length} ${errors.length === 1 ? "item" : "items"} left`;
 }
 
+function getPhaseStateLabel(isActive: boolean, errors: string[]): string {
+  if (isActive) {
+    return "Current";
+  }
+
+  if (errors.length === 0) {
+    return "Ready";
+  }
+
+  return "Items left";
+}
+
+function getPhaseStateTone(isActive: boolean, errors: string[]): "current" | "ready" | "attention" {
+  if (isActive) {
+    return "current";
+  }
+
+  if (errors.length === 0) {
+    return "ready";
+  }
+
+  return "attention";
+}
+
 export function GenerationInputPanel({
   data,
   servicesText,
@@ -189,6 +218,11 @@ export function GenerationInputPanel({
   ];
 
   const currentPhase = phaseMetadata.find((phase) => phase.id === activePhase) ?? phaseMetadata[0];
+  const brandNameError = errors.includes("Brand name is required.");
+  const descriptionError = errors.includes("Short description is required.");
+  const targetAudienceError = errors.includes("Target audience is required.");
+  const servicesError = errors.includes("Add at least one service or offer.");
+  const primaryCtaError = errors.includes("Primary CTA is required.");
 
   function runIfEditing<T>(handler: (value: T) => void, value: T) {
     if (!isEditing) {
@@ -204,6 +238,7 @@ export function GenerationInputPanel({
         <StepPagesSetup
           value={data.designConfig}
           headerMode="compact"
+          errors={errors}
           onChange={(value) => runIfEditing(onFieldChange, { designConfig: value })}
         />
 
@@ -227,8 +262,15 @@ export function GenerationInputPanel({
                 value={data.brandName}
                 onChange={(event) => runIfEditing(onFieldChange, { brandName: event.target.value })}
                 placeholder="Acme Studio"
+                aria-invalid={brandNameError || undefined}
+                aria-describedby={joinDescribedBy(brandNameError ? "website-brand-name-error" : undefined)}
                 required
               />
+              {brandNameError ? (
+                <span className="wizard-field-error" id="website-brand-name-error">
+                  Brand name is required.
+                </span>
+              ) : null}
             </label>
 
             <label>
@@ -238,9 +280,10 @@ export function GenerationInputPanel({
                 value={data.domainName}
                 onChange={(event) => runIfEditing(onFieldChange, { domainName: event.target.value })}
                 placeholder="acmestudio.com"
+                aria-describedby="website-domain-name-hint"
                 spellCheck={false}
               />
-              <span className="wizard-field-hint">
+              <span className="wizard-field-hint" id="website-domain-name-hint">
                 Optional for planning. It stays in the UI context and does not break the current
                 generation payload.
               </span>
@@ -253,8 +296,17 @@ export function GenerationInputPanel({
                 onChange={(event) => runIfEditing(onFieldChange, { description: event.target.value })}
                 placeholder="What the website should communicate and the value it should highlight"
                 rows={3}
+                aria-invalid={descriptionError || undefined}
+                aria-describedby={joinDescribedBy(
+                  descriptionError ? "website-short-description-error" : undefined,
+                )}
                 required
               />
+              {descriptionError ? (
+                <span className="wizard-field-error" id="website-short-description-error">
+                  Short description is required.
+                </span>
+              ) : null}
             </label>
 
             <label>
@@ -266,8 +318,17 @@ export function GenerationInputPanel({
                   runIfEditing(onFieldChange, { targetAudience: event.target.value })
                 }
                 placeholder="Startup founders and growth teams"
+                aria-invalid={targetAudienceError || undefined}
+                aria-describedby={joinDescribedBy(
+                  targetAudienceError ? "website-target-audience-error" : undefined,
+                )}
                 required
               />
+              {targetAudienceError ? (
+                <span className="wizard-field-error" id="website-target-audience-error">
+                  Target audience is required.
+                </span>
+              ) : null}
             </label>
 
             <label>
@@ -277,8 +338,15 @@ export function GenerationInputPanel({
                 value={data.primaryCta}
                 onChange={(event) => runIfEditing(onFieldChange, { primaryCta: event.target.value })}
                 placeholder="Book a strategy call"
+                aria-invalid={primaryCtaError || undefined}
+                aria-describedby={joinDescribedBy(primaryCtaError ? "website-primary-cta-error" : undefined)}
                 required
               />
+              {primaryCtaError ? (
+                <span className="wizard-field-error" id="website-primary-cta-error">
+                  Primary call-to-action is required.
+                </span>
+              ) : null}
             </label>
 
             <label className="wizard-field-span-full">
@@ -288,8 +356,15 @@ export function GenerationInputPanel({
                 onChange={(event) => runIfEditing(onServicesTextChange, event.target.value)}
                 placeholder={"Brand strategy\nWebsite design\nConversion optimization"}
                 rows={4}
+                aria-invalid={servicesError || undefined}
+                aria-describedby={joinDescribedBy(servicesError ? "website-services-error" : undefined)}
                 required
               />
+              {servicesError ? (
+                <span className="wizard-field-error" id="website-services-error">
+                  Add at least one service or offer.
+                </span>
+              ) : null}
             </label>
           </div>
         </section>
@@ -304,6 +379,7 @@ export function GenerationInputPanel({
         mode="structure"
         headerMode="compact"
         activePageId={activePageId}
+        errors={errors}
         onActivePageChange={(pageId) => runIfEditing(onActivePageChange, pageId)}
         onChange={(value) => runIfEditing(onFieldChange, { designConfig: value })}
       />
@@ -318,12 +394,14 @@ export function GenerationInputPanel({
           mode="design"
           headerMode="compact"
           activePageId={activePageId}
+          errors={errors}
           onActivePageChange={(pageId) => runIfEditing(onActivePageChange, pageId)}
           onChange={(value) => runIfEditing(onFieldChange, { designConfig: value })}
         />
 
         <StepStyleTheme
           data={data}
+          errors={errors}
           onFieldChange={(patch) => runIfEditing(onFieldChange, patch)}
         />
 
@@ -335,6 +413,7 @@ export function GenerationInputPanel({
               testimonialsText={testimonialsText}
               socialLinksText={socialLinksText}
               constraintsText={constraintsText}
+              errors={errors}
               onFieldChange={(patch) => runIfEditing(onFieldChange, patch)}
               onTestimonialsChange={(value) => runIfEditing(onTestimonialsChange, value)}
               onSocialLinksChange={(value) => runIfEditing(onSocialLinksChange, value)}
@@ -361,21 +440,32 @@ export function GenerationInputPanel({
           const isActive = phase.id === activePhase;
           const phaseErrors = phaseStates[phase.id];
           const isComplete = phaseErrors.length === 0;
+          const stateLabel = getPhaseStateLabel(isActive, phaseErrors);
+          const stateTone = getPhaseStateTone(isActive, phaseErrors);
+          const phaseSummaryId = `website-builder-phase-${phase.id}-summary`;
 
           return (
             <button
               key={phase.id}
               type="button"
               className={`website-builder-phase-step${isActive ? " is-active" : ""}${isComplete ? " is-complete" : ""}`}
+              data-state={stateTone}
               onClick={() => setActivePhase(phase.id)}
               aria-pressed={isActive}
               aria-current={isActive ? "step" : undefined}
+              aria-describedby={phaseSummaryId}
             >
               <span className="website-builder-phase-step-index">{index + 1}</span>
               <span className="website-builder-phase-step-content">
+                <span className="website-builder-phase-step-eyebrow">{phase.label}</span>
                 <strong>{phase.title}</strong>
-                <span>{formatPhaseStatus(phaseErrors)}</span>
+                <span className="website-builder-phase-step-meta" id={phaseSummaryId}>
+                  {phaseErrors.length === 0
+                    ? "All required inputs are complete."
+                    : formatPhaseStatus(phaseErrors)}
+                </span>
               </span>
+              <span className="website-builder-phase-step-status">{stateLabel}</span>
             </button>
           );
         })}
@@ -398,11 +488,19 @@ export function GenerationInputPanel({
       </section>
 
       {errors.length > 0 ? (
-        <div className="wizard-error" role="alert" aria-live="assertive">
-          {errors.map((error) => (
-            <p key={error}>{error}</p>
-          ))}
-        </div>
+        <section
+          className="wizard-error website-builder-error-summary"
+          role="alert"
+          aria-live="assertive"
+          aria-labelledby="website-builder-error-summary-title"
+        >
+          <h3 id="website-builder-error-summary-title">Review these required items</h3>
+          <ul>
+            {errors.map((error) => (
+              <li key={error}>{error}</li>
+            ))}
+          </ul>
+        </section>
       ) : null}
 
       <fieldset

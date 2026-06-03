@@ -4,14 +4,17 @@ interface StepPagesSetupProps {
   value: WebsiteWizardInput["designConfig"];
   onChange: (value: WebsiteWizardInput["designConfig"]) => void;
   headerMode?: "default" | "compact";
+  errors?: string[];
 }
 
 export function StepPagesSetup({
   value,
   onChange,
   headerMode = "default",
+  errors = [],
 }: StepPagesSetupProps) {
   const pageCount = value.pages.length;
+  const pageNameError = errors.includes("Each page needs a name.");
 
   function updatePages(nextPages: WebsiteWizardInput["designConfig"]["pages"]) {
     onChange({
@@ -140,7 +143,7 @@ export function StepPagesSetup({
                   onClick={() => removePage(index)}
                   aria-label={`Remove ${page.name || `page ${index + 1}`}`}
                 >
-                  Remove
+                  Remove page
                 </button>
               ) : null}
             </div>
@@ -152,7 +155,18 @@ export function StepPagesSetup({
                 value={page.name}
                 onChange={(event) => updatePageName(index, event.target.value)}
                 placeholder={`Page ${index + 1}`}
+                aria-invalid={pageNameError && !page.name.trim() ? true : undefined}
+                aria-describedby={
+                  pageNameError && !page.name.trim()
+                    ? `website-page-name-error-${page.id}`
+                    : undefined
+                }
               />
+              {pageNameError && !page.name.trim() ? (
+                <span className="wizard-field-error" id={`website-page-name-error-${page.id}`}>
+                  Page name is required.
+                </span>
+              ) : null}
             </label>
           </article>
         ))}

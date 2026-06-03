@@ -25,6 +25,7 @@ interface StepPageDesignProps {
   onActivePageChange?: (pageId: string) => void;
   mode?: "full" | "structure" | "design";
   headerMode?: "default" | "compact";
+  errors?: string[];
 }
 
 const headingPreviewSizes = {
@@ -42,6 +43,37 @@ const bodyPreviewSizes = {
 
 function findLayoutLabel(value: WebsiteLayoutStructure): string {
   return layoutStructureOptions.find((option) => option.value === value)?.label ?? value;
+}
+
+function formatItemsLeft(count: number): string {
+  return `${count} ${count === 1 ? "item" : "items"} left`;
+}
+
+function getPageLabel(page: PageDesignConfig, index: number): string {
+  return page.name.trim() || `Page ${index + 1}`;
+}
+
+function getPageErrors(errors: string[], page: PageDesignConfig, index: number): string[] {
+  const resolvedLabel = getPageLabel(page, index);
+  const pagePrefix = `${resolvedLabel}:`;
+  const fallbackPrefix = `Page ${index + 1}:`;
+
+  return errors.filter((error) => error.startsWith(pagePrefix) || error.startsWith(fallbackPrefix));
+}
+
+function summarizeSectionErrors(
+  errors: string[],
+  label: string,
+): string | undefined {
+  if (errors.length === 0) {
+    return undefined;
+  }
+
+  if (errors.length === 1) {
+    return errors[0];
+  }
+
+  return `${errors.length} ${label} settings still need attention.`;
 }
 
 function toSafeColorValue(value: string, fallback = "#0f352b"): string {
@@ -205,10 +237,12 @@ function LayoutPreview({ structure }: { structure: WebsiteLayoutStructure }) {
 function SectionHeader({
   title,
   description,
+  statusMessage,
   children,
 }: {
   title: string;
   description: string;
+  statusMessage?: string;
   children: ReactNode;
 }) {
   return (
@@ -216,6 +250,7 @@ function SectionHeader({
       <div className="wizard-design-section-header">
         <h4>{title}</h4>
         <p>{description}</p>
+        {statusMessage ? <p className="wizard-section-status">{statusMessage}</p> : null}
       </div>
       {children}
     </section>
@@ -229,6 +264,7 @@ export function StepPageDesign({
   onActivePageChange,
   mode = "full",
   headerMode = "default",
+  errors = [],
 }: StepPageDesignProps) {
   const [internalActivePageId, setInternalActivePageId] = useState<string | null>(
     value.pages[0]?.id ?? null,
@@ -264,6 +300,14 @@ export function StepPageDesign({
         ? "Fine-tune background, typography, and heading style for the selected page."
         : "Each page keeps its own layout, background, typography, heading, and content settings. Select one page to edit at a time.";
   const headerLabel = mode === "structure" ? "Phase 2" : mode === "design" ? "Phase 3" : "Step 2";
+  const pageErrorsById = useMemo(
+    () =>
+      new Map(
+        value.pages.map((page, index) => [page.id, getPageErrors(errors, page, index)]),
+      ),
+    [errors, value.pages],
+  );
+
   function updatePages(nextPages: WebsiteDesignConfig["pages"]) {
     onChange({ pages: nextPages });
   }
@@ -320,6 +364,32 @@ export function StepPageDesign({
     return null;
   }
 
+  const activePageErrors = pageErrorsById.get(activePage.id) ?? [];
+  const layoutErrors = activePageErrors.filter((error) => error.includes("choose a layout"));
+  const backgroundErrors = activePageErrors.filter(
+    (error) =>
+      error.includes("background color") ||
+      error.includes("gradient direction") ||
+      error.includes("image URL") ||
+      error.includes("video URL"),
+  );
+  const typographyErrors = activePageErrors.filter(
+    (error) =>
+      error.includes("body font family") ||
+      error.includes("body font color") ||
+      error.includes("font mood"),
+  );
+  const headingErrors = activePageErrors.filter(
+    (error) =>
+      error.includes("heading font family") ||
+      error.includes("heading color") ||
+      error.includes("heading weight") ||
+      error.includes("heading scale"),
+  );
+  const contentPromptError = activePageErrors.find((error) =>
+    error.includes("describe what this page should include."),
+  );
+
   return (
     <section className="wizard-step-panel">
       {headerMode === "compact" ? (
@@ -354,6 +424,16 @@ export function StepPageDesign({
       <div className="wizard-page-selector" role="list" aria-label="Pages to design">
         {value.pages.map((page, index) => {
           const isActive = page.id === activePage.id;
+          const pageErrors = pageErrorsById.get(page.id) ?? [];
+          const pageStateLabel = isActive
+            ? "Current"
+            : pageErrors.length === 0
+              ? "Ready"
+              : "Items left";
+          const pageStatusCopy =
+            pageErrors.length === 0
+              ? "All required page settings complete."
+              : formatItemsLeft(pageErrors.length);
 
           return (
             <button
@@ -361,12 +441,14 @@ export function StepPageDesign({
               type="button"
               className={`wizard-page-tab${isActive ? " is-active" : ""}`}
               aria-pressed={isActive}
+              aria-current={isActive ? "page" : undefined}
               onClick={() => handleActivePageChange(page.id)}
             >
               <span className="wizard-page-tab-index">Page {index + 1}</span>
               <strong>{page.name || `Page ${index + 1}`}</strong>
               <span className="wizard-page-tab-layout">{findLayoutLabel(page.layout)}</span>
-              {isActive ? <span className="wizard-page-tab-state">Editing now</span> : null}
+              <span className="wizard-page-tab-status-copy">{pageStatusCopy}</span>
+              <span className="wizard-page-tab-state">{pageStateLabel}</span>
             </button>
           );
         })}
@@ -384,8 +466,16 @@ export function StepPageDesign({
           <span className="wizard-page-badge">{findLayoutLabel(activePage.layout)}</span>
         </div>
 
+        {activePageErrors.length > 0 ? (
+          <p className="wizard-field-error">{`${getPageLabel(activePage, activePageIndex)} still has ${formatItemsLeft(activePageErrors.length)} before generation.`}</p>
+        ) : null}
+
         {showLayoutSection ? (
-          <SectionHeader title="Page layout" description="Choose the layout structure for this page.">
+          <SectionHeader
+            title="Page layout"
+            description="Choose the layout structure for this page."
+            statusMessage={summarizeSectionErrors(layoutErrors, "layout")}
+          >
             <div className="wizard-layout-grid">
               {layoutStructureOptions.map((option) => {
                 const isSelected = activePage.layout === option.value;
@@ -417,6 +507,7 @@ export function StepPageDesign({
           <SectionHeader
             title="Background design"
             description="Choose the page background style, then set the matching colors or media source."
+            statusMessage={summarizeSectionErrors(backgroundErrors, "background")}
           >
             <div className="wizard-choice-grid">
               {backgroundStyleOptions.map((option) => {
@@ -511,7 +602,11 @@ export function StepPageDesign({
         ) : null}
 
         {showVisualSections ? (
-          <SectionHeader title="Typography" description="Set the body font system for this page.">
+          <SectionHeader
+            title="Typography"
+            description="Set the body font system for this page."
+            statusMessage={summarizeSectionErrors(typographyErrors, "typography")}
+          >
             <div className="wizard-form-grid">
               <label>
                 <span>Body font</span>
@@ -596,7 +691,11 @@ export function StepPageDesign({
         ) : null}
 
         {showVisualSections ? (
-          <SectionHeader title="Heading style" description="Define the heading system for this page.">
+          <SectionHeader
+            title="Heading style"
+            description="Define the heading system for this page."
+            statusMessage={summarizeSectionErrors(headingErrors, "heading")}
+          >
             <div className="wizard-form-grid">
               <label>
                 <span>Heading font</span>
@@ -688,6 +787,7 @@ export function StepPageDesign({
           <SectionHeader
             title="Page purpose and content prompt"
             description="Describe what this page should include so generation keeps the page focused."
+            statusMessage={contentPromptError}
           >
             <label>
               <span>Page content prompt</span>
@@ -696,7 +796,20 @@ export function StepPageDesign({
                 onChange={(event) => updatePage(activePageIndex, { contentPrompt: event.target.value })}
                 rows={4}
                 placeholder="Hero, value proposition, CTA"
+                aria-invalid={Boolean(contentPromptError) || undefined}
+                aria-describedby={contentPromptError ? `wizard-page-content-prompt-error-${activePage.id}` : undefined}
               />
+              <span className="wizard-field-hint">
+                Use this field to name the sections, proof points, and CTA the page should include.
+              </span>
+              {contentPromptError ? (
+                <span
+                  className="wizard-field-error"
+                  id={`wizard-page-content-prompt-error-${activePage.id}`}
+                >
+                  {contentPromptError}
+                </span>
+              ) : null}
             </label>
           </SectionHeader>
         ) : null}
