@@ -432,7 +432,7 @@ export function WebsiteBuilderPreviewPanel({
                   ? "Complete"
                   : stageState === "current"
                     ? "Current"
-                    : "Next";
+                    : "Upcoming";
 
               return (
                 <li
