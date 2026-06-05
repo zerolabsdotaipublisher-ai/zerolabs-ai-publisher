@@ -425,8 +425,13 @@ export function StepPageDesign({
         {value.pages.map((page, index) => {
           const isActive = page.id === activePage.id;
           const pageErrors = pageErrorsById.get(page.id) ?? [];
+          const pageStateTone = isActive
+            ? "current"
+            : pageErrors.length === 0
+              ? "ready"
+              : "attention";
           const pageStateLabel = isActive
-            ? "Current"
+            ? "Current page"
             : pageErrors.length === 0
               ? "Ready"
               : "Items left";
@@ -440,6 +445,7 @@ export function StepPageDesign({
               key={page.id}
               type="button"
               className={`wizard-page-tab${isActive ? " is-active" : ""}`}
+              data-state={pageStateTone}
               aria-pressed={isActive}
               aria-current={isActive ? "page" : undefined}
               onClick={() => handleActivePageChange(page.id)}
