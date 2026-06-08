@@ -9,6 +9,7 @@ export const routes = {
   dashboard: "/dashboard",
   admin: "/admin",
   adminDashboard: "/admin/dashboard",
+  adminDeployments: "/admin/deployments",
   adminUsers: "/admin/users",
   adminWebsites: "/admin/websites",
   adminAnalytics: "/admin/analytics",

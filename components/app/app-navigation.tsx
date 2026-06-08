@@ -20,13 +20,7 @@ const customerNavLinks = [
   { href: routes.profile, label: "Profile" },
 ];
 
-const adminNavLinks = [
-  { href: routes.adminDashboard, label: "Admin Dashboard" },
-  { href: routes.adminUsers, label: "Users" },
-  { href: routes.adminWebsites, label: "Websites" },
-  { href: routes.adminAnalytics, label: "Analytics" },
-  { href: routes.adminMonitoring, label: "Monitoring" },
-];
+const adminNavLink = { href: routes.adminDashboard, label: "Admin" };
 
 interface AppNavigationProps {
   userDisplayName?: string | null;
@@ -35,8 +29,12 @@ interface AppNavigationProps {
 }
 
 function isActivePath(pathname: string, href: string) {
-  if (href === routes.dashboard || href === routes.adminDashboard) {
+  if (href === routes.dashboard) {
     return pathname === href;
+  }
+
+  if (href === routes.adminDashboard) {
+    return pathname === routes.admin || pathname.startsWith(`${routes.admin}/`);
   }
 
   return pathname === href || pathname.startsWith(`${href}/`);
@@ -47,8 +45,8 @@ export function AppNavigation({ userDisplayName, userEmail, userRole }: AppNavig
   const { theme } = useTheme();
   const mobileMenuId = "app-navigation-mobile-menu";
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const navLinks = userRole === "admin" ? adminNavLinks : customerNavLinks;
-  const dashboardHref = userRole === "admin" ? routes.adminDashboard : routes.dashboard;
+  const navLinks = userRole === "admin" ? [...customerNavLinks, adminNavLink] : customerNavLinks;
+  const dashboardHref = routes.dashboard;
   const mobileMenuLabel = isMobileMenuOpen ? "Close dashboard menu" : "Open dashboard menu";
   const toggleMobileMenu = () => setIsMobileMenuOpen((open) => !open);
   const closeMobileMenu = useCallback(() => setIsMobileMenuOpen(false), []);

@@ -5,6 +5,7 @@ import { updateSession } from "@/lib/supabase/middleware";
 
 const protectedPaths = [
   routes.dashboard,
+  routes.admin,
   routes.activity,
   routes.contentLibrary,
   routes.review,

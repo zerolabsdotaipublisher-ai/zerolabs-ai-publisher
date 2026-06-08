@@ -48,22 +48,22 @@ const adminActions = [
     description: "Open the admin overview only when you want the operations workspace.",
   },
   {
+    href: routes.adminDeployments,
+    kicker: "Deploy",
+    label: "Deployment Center",
+    description: "Inspect recent Vercel builds, statuses, and environment readiness.",
+  },
+  {
     href: routes.adminUsers,
     kicker: "Users",
     label: "Manage Users",
     description: "Review account roles, signups, and user visibility safely.",
   },
   {
-    href: routes.adminWebsites,
-    kicker: "Websites",
-    label: "Manage Websites",
-    description: "Inspect website records and publishing state from the admin area.",
-  },
-  {
-    href: routes.adminMonitoring,
-    kicker: "Ops",
-    label: "Monitoring Center",
-    description: "Open monitoring and recent platform activity when needed.",
+    href: routes.adminAnalytics,
+    kicker: "Insights",
+    label: "Analytics Readiness",
+    description: "Review platform metrics and Vercel analytics readiness without fake traffic data.",
   },
 ];
 

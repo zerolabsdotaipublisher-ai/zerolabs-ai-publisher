@@ -1,112 +1,261 @@
-import { AdminFallback } from "@/components/admin/admin-fallback";
 import { routes } from "@/config/routes";
 import { formatAdminDate, getAdminDashboardData, listAdminUsers } from "@/lib/admin/data";
-import { logger } from "@/lib/observability";
-import { requireAdminUser } from "@/lib/supabase/auth";
+import { findAdminUserRecordByEmail, listCurrentAdminUsers } from "@/lib/admin/users";
+import { promoteAdminUserAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
+type PageProps = {
+  searchParams?: Promise<Record<string, string | undefined>>;
+};
+
 function renderMetric(value: number): string {
-  return String(value);
+  return new Intl.NumberFormat("en-US").format(value);
 }
 
-function renderAdminAccountLabel(count: number): string {
-  return count === 1 ? "admin account" : "admin accounts";
-}
-
-async function loadAdminUsersView() {
-  try {
-    const { user, isAdmin } = await requireAdminUser();
-
-    if (!user || !isAdmin) {
+function getResultMessage(result: string | undefined, email: string | undefined) {
+  switch (result) {
+    case "promoted":
       return {
-        ok: false as const,
-        userEmail: user?.email,
-        title: "Admin access unavailable",
-        description: "Admin access could not be confirmed for the users page, so a fallback view is being shown.",
-        retryHref: routes.adminUsers,
+        tone: "success",
+        title: "Admin access granted",
+        detail: `${email ?? "The selected account"} can now access /admin after signing in again or refreshing the session.`,
       };
-    }
-
-    const [dashboard, users] = await Promise.all([getAdminDashboardData(), listAdminUsers(24)]);
-
-    return {
-      ok: true as const,
-      dashboard,
-      users,
-    };
-  } catch (error) {
-    logger.error("AdminUsersPage fell back to AdminFallback", {
-      category: "error",
-      service: "dashboard",
-      error: { message: error instanceof Error ? error.message : String(error), name: "AdminUsersRenderError" },
-    });
-
-    return {
-      ok: false as const,
-      title: "Admin users temporarily limited",
-      description: "Admin user data could not be loaded safely, so a fallback view is being shown.",
-      retryHref: routes.adminUsers,
-    };
+    case "already-admin":
+      return {
+        tone: "info",
+        title: "User already has admin access",
+        detail: `${email ?? "That account"} already has the admin role.`,
+      };
+    case "not-found":
+      return {
+        tone: "error",
+        title: "User not found",
+        detail: "Only existing accounts can be promoted. No invitation flow was triggered.",
+      };
+    case "invalid-email":
+      return {
+        tone: "error",
+        title: "Enter a valid email",
+        detail: "Provide the email address of an existing user account before submitting the form.",
+      };
+    case "self-noop":
+      return {
+        tone: "warning",
+        title: "Self-service promotion is blocked",
+        detail: "Admin access is controlled by another admin via the protected server action, not by self-targeting requests.",
+      };
+    case "failed":
+      return {
+        tone: "error",
+        title: "Promotion failed",
+        detail: "The admin role update could not be completed safely. Try again after confirming the target user exists.",
+      };
+    default:
+      return null;
   }
 }
 
-export default async function AdminUsersPage() {
-  const view = await loadAdminUsersView();
-
-  if (!view.ok) {
-    return (
-      <AdminFallback
-        userEmail={view.userEmail}
-        title={view.title}
-        description={view.description}
-        retryHref={view.retryHref}
-      />
-    );
-  }
-
-  const { dashboard, users } = view;
+export default async function AdminUsersPage({ searchParams }: PageProps) {
+  const queryParams = searchParams ? await searchParams : {};
+  const query = queryParams.query?.trim() ?? "";
+  const result = queryParams.result;
+  const resultEmail = queryParams.email?.trim() ?? "";
+  const feedback = getResultMessage(result, resultEmail || query);
+  const [dashboard, users, currentAdmins, lookupUser] = await Promise.all([
+    getAdminDashboardData(),
+    listAdminUsers(24),
+    listCurrentAdminUsers(12),
+    query ? findAdminUserRecordByEmail(query) : Promise.resolve(null),
+  ]);
 
   return (
-    <section className="dashboard-home-shell" aria-label="Admin users page">
-      <header className="dashboard-home-header">
-        <div className="dashboard-hero-panel">
-          <span className="dashboard-eyebrow">Zero Labs operations</span>
+    <section className="admin-page-shell" aria-label="Admin users page">
+      <header className="admin-page-header">
+        <div>
+          <span className="admin-page-kicker">Admin access control</span>
           <h1>Admin Users</h1>
-          <p>Review account email addresses, roles, signup dates, and basic auth status without any server-side redirects.</p>
-        </div>
-
-        <aside className="dashboard-welcome-card" aria-label="Admin users summary">
-          <span className="dashboard-welcome-label">User summary</span>
-          <strong>{renderMetric(dashboard.users.total)} total users</strong>
           <p>
-            {renderMetric(dashboard.users.admins)} {renderAdminAccountLabel(dashboard.users.admins)} · {renderMetric(dashboard.users.recentSignups)} recent signups
+            Protected admin-only user management. Existing users can be granted admin access by email through a
+            server-side role update.
           </p>
-        </aside>
+        </div>
       </header>
 
-      <section className="dashboard-panel-shell" aria-label="Admin user records">
-        <header className="dashboard-section-heading">
-          <div>
-            <h2>User directory</h2>
-            <p>Stable admin listing with safe fallbacks when user data is unavailable.</p>
-          </div>
-        </header>
+      <div className="admin-stat-grid" aria-label="Admin user summary cards">
+        <article className="admin-stat-card">
+          <span className="admin-stat-label">Total users</span>
+          <strong className="admin-stat-value">{renderMetric(dashboard.users.total)}</strong>
+          <span className="admin-stat-hint">{renderMetric(dashboard.users.recentSignups)} recent signups in 7 days</span>
+        </article>
+        <article className="admin-stat-card">
+          <span className="admin-stat-label">Current admins</span>
+          <strong className="admin-stat-value">{renderMetric(dashboard.users.admins)}</strong>
+          <span className="admin-stat-hint">Admin access is enforced server-side</span>
+        </article>
+        <article className="admin-stat-card">
+          <span className="admin-stat-label">Published websites</span>
+          <strong className="admin-stat-value">{renderMetric(dashboard.websites.published)}</strong>
+          <span className="admin-stat-hint">Customer dashboard behavior remains unchanged</span>
+        </article>
+      </div>
 
-        {users.length > 0 ? (
-          <ul className="dashboard-compact-list">
-            {users.map((record) => (
-              <li key={record.id}>
-                <strong>{record.email}</strong>
-                <span>{record.role} · {record.status}</span>
-                <span>Created {formatAdminDate(record.createdAt)}</span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="dashboard-empty-note">No user records available.</p>
-        )}
-      </section>
+      {feedback ? (
+        <div className={`admin-form-message admin-form-message-${feedback.tone}`} role="status" aria-live="polite">
+          <strong>{feedback.title}</strong>
+          <p>{feedback.detail}</p>
+        </div>
+      ) : null}
+
+      <div className="admin-content-grid">
+        <section className="admin-panel" aria-label="Promote user to admin">
+          <header className="admin-panel-header">
+            <div>
+              <span className="admin-panel-kicker">Grant access</span>
+              <h2>Promote an existing user</h2>
+              <p>Only existing accounts can be promoted. Normal users cannot reach or run this action.</p>
+            </div>
+          </header>
+
+          <form action={promoteAdminUserAction} className="admin-form">
+            <label htmlFor="promote-email" className="admin-field">
+              <span>Email address</span>
+              <input
+                id="promote-email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                placeholder="name@example.com"
+                defaultValue={resultEmail || query}
+                required
+              />
+            </label>
+            <button type="submit" className="admin-page-action-link">
+              Grant admin access
+            </button>
+          </form>
+
+          <div className="admin-empty-state">
+            <strong>Security guardrails</strong>
+            <p>
+              This action runs only on the server, re-checks the current user role, and never exposes Supabase service
+              credentials to the browser.
+            </p>
+          </div>
+        </section>
+
+        <section className="admin-panel" aria-label="Search user by email">
+          <header className="admin-panel-header">
+            <div>
+              <span className="admin-panel-kicker">Search</span>
+              <h2>Find a user by email</h2>
+              <p>Look up an existing account before granting access.</p>
+            </div>
+          </header>
+
+          <form action={routes.adminUsers} method="get" className="admin-form">
+            <label htmlFor="lookup-email" className="admin-field">
+              <span>Search email</span>
+              <input
+                id="lookup-email"
+                name="query"
+                type="email"
+                autoComplete="email"
+                placeholder="Search an existing account"
+                defaultValue={query}
+              />
+            </label>
+            <button type="submit" className="admin-page-action-link admin-page-action-link-secondary">
+              Search user
+            </button>
+          </form>
+
+          {query ? (
+            lookupUser ? (
+              <div className="admin-surface-card">
+                <span className="admin-surface-label">Search result</span>
+                <strong>{lookupUser.email}</strong>
+                <p>
+                  {lookupUser.role} · {lookupUser.status}
+                </p>
+                <p>Created {formatAdminDate(lookupUser.createdAt)}</p>
+              </div>
+            ) : (
+              <div className="admin-empty-state">
+                <strong>No user found for {query}.</strong>
+                <p>Only existing accounts can be promoted to admin.</p>
+              </div>
+            )
+          ) : (
+            <div className="admin-empty-state">
+              <strong>Search an existing account</strong>
+              <p>Enter an email address to verify the account exists before promoting it.</p>
+            </div>
+          )}
+        </section>
+      </div>
+
+      <div className="admin-content-grid">
+        <section className="admin-panel" aria-label="Current admin users">
+          <header className="admin-panel-header">
+            <div>
+              <span className="admin-panel-kicker">Current admins</span>
+              <h2>Existing admin accounts</h2>
+              <p>Visible admin list pulled from the existing profile role field.</p>
+            </div>
+          </header>
+
+          {currentAdmins.length > 0 ? (
+            <ul className="admin-list">
+              {currentAdmins.map((record) => (
+                <li key={record.id} className="admin-list-item">
+                  <div>
+                    <strong>{record.email}</strong>
+                    <p>{record.status}</p>
+                  </div>
+                  <span className="admin-list-meta">Created {formatAdminDate(record.createdAt)}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="admin-empty-state">
+              <strong>No admin profiles were found.</strong>
+              <p>At least one existing admin account is required to manage this area.</p>
+            </div>
+          )}
+        </section>
+
+        <section className="admin-panel" aria-label="Recent user directory">
+          <header className="admin-panel-header">
+            <div>
+              <span className="admin-panel-kicker">Recent accounts</span>
+              <h2>User directory</h2>
+              <p>Recent user records with role and auth status details.</p>
+            </div>
+          </header>
+
+          {users.length > 0 ? (
+            <ul className="admin-list">
+              {users.map((record) => (
+                <li key={record.id} className="admin-list-item">
+                  <div>
+                    <strong>{record.email}</strong>
+                    <p>
+                      {record.role} · {record.status}
+                    </p>
+                  </div>
+                  <span className="admin-list-meta">Created {formatAdminDate(record.createdAt)}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="admin-empty-state">
+              <strong>No user records are available.</strong>
+              <p>The admin directory will appear once user profile data is available.</p>
+            </div>
+          )}
+        </section>
+      </div>
     </section>
   );
 }

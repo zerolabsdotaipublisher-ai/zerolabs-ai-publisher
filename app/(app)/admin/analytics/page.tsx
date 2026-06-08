@@ -1,109 +1,118 @@
-import { AdminFallback } from "@/components/admin/admin-fallback";
-import { routes } from "@/config/routes";
 import { getAdminDashboardData } from "@/lib/admin/data";
-import { logger } from "@/lib/observability";
-import { requireAdminUser } from "@/lib/supabase/auth";
+import { getVercelIntegrationOverview } from "@/lib/admin/vercel";
 
 export const dynamic = "force-dynamic";
 
 function renderMetric(value: number): string {
-  return String(value);
-}
-
-async function loadAdminAnalyticsView() {
-  try {
-    const { user, isAdmin } = await requireAdminUser();
-
-    if (!user || !isAdmin) {
-      return {
-        ok: false as const,
-        userEmail: user?.email,
-        title: "Admin access unavailable",
-        description: "Admin access could not be confirmed for the analytics page, so a fallback view is being shown.",
-        retryHref: routes.adminAnalytics,
-      };
-    }
-
-    const dashboard = await getAdminDashboardData();
-
-    return {
-      ok: true as const,
-      dashboard,
-    };
-  } catch (error) {
-    logger.error("AdminAnalyticsPage fell back to AdminFallback", {
-      category: "error",
-      service: "dashboard",
-      error: { message: error instanceof Error ? error.message : String(error), name: "AdminAnalyticsRenderError" },
-    });
-
-    return {
-      ok: false as const,
-      title: "Admin analytics temporarily limited",
-      description: "Admin analytics data could not be loaded safely, so a fallback view is being shown.",
-      retryHref: routes.adminAnalytics,
-    };
-  }
+  return new Intl.NumberFormat("en-US").format(value);
 }
 
 export default async function AdminAnalyticsPage() {
-  const view = await loadAdminAnalyticsView();
-
-  if (!view.ok) {
-    return (
-      <AdminFallback
-        userEmail={view.userEmail}
-        title={view.title}
-        description={view.description}
-        retryHref={view.retryHref}
-      />
-    );
-  }
-
-  const { dashboard } = view;
+  const [dashboard, vercel] = await Promise.all([getAdminDashboardData(), getVercelIntegrationOverview()]);
 
   return (
-    <section className="dashboard-home-shell" aria-label="Admin analytics page">
-      <header className="dashboard-home-header">
-        <div className="dashboard-hero-panel">
-          <span className="dashboard-eyebrow">Zero Labs operations</span>
+    <section className="admin-page-shell" aria-label="Admin analytics page">
+      <header className="admin-page-header">
+        <div>
+          <span className="admin-page-kicker">Analytics</span>
           <h1>Admin Analytics</h1>
-          <p>Follow stable platform analytics focused on generation volume, publishing activity, and user growth.</p>
+          <p>
+            Stable platform metrics plus a Vercel analytics readiness layer. This page does not invent visitor numbers
+            when no real analytics payload is available.
+          </p>
         </div>
-
-        <aside className="dashboard-welcome-card" aria-label="Admin analytics summary">
-          <span className="dashboard-welcome-label">Analytics snapshot</span>
-          <strong>{renderMetric(dashboard.analytics.websiteGenerationVolume)} recent generations</strong>
-          <p>Safe stat-card analytics are shown even when live reporting is limited.</p>
-        </aside>
       </header>
 
-      <section className="dashboard-panel-shell" aria-label="Admin analytics metrics">
-        <header className="dashboard-section-heading">
-          <div>
-            <h2>Analytics metrics</h2>
-            <p>These cards rely on safe server-side fallbacks instead of unstable admin routing or redirects.</p>
-          </div>
-        </header>
+      <div className="admin-stat-grid" aria-label="Analytics summary cards">
+        <article className="admin-stat-card">
+          <span className="admin-stat-label">Website generation volume</span>
+          <strong className="admin-stat-value">{renderMetric(dashboard.analytics.websiteGenerationVolume)}</strong>
+          <span className="admin-stat-hint">Generated websites in the last 30 days</span>
+        </article>
+        <article className="admin-stat-card">
+          <span className="admin-stat-label">Publishing activity</span>
+          <strong className="admin-stat-value">{renderMetric(dashboard.analytics.publishingActivity)}</strong>
+          <span className="admin-stat-hint">Published website records tracked by the platform</span>
+        </article>
+        <article className="admin-stat-card">
+          <span className="admin-stat-label">User growth</span>
+          <strong className="admin-stat-value">{renderMetric(dashboard.analytics.userGrowth)}</strong>
+          <span className="admin-stat-hint">New accounts detected in the last 30 days</span>
+        </article>
+        <article className="admin-stat-card">
+          <span className="admin-stat-label">Vercel analytics</span>
+          <strong className="admin-stat-value">{vercel.analytics.available ? "Available" : "Unavailable"}</strong>
+          <span className="admin-stat-hint">{vercel.analytics.message}</span>
+        </article>
+      </div>
 
-        <div className="dashboard-metrics-grid">
-          <article className="dashboard-metric-card">
-            <span className="dashboard-metric-label">Website generation volume</span>
-            <strong className="dashboard-metric-value">{renderMetric(dashboard.analytics.websiteGenerationVolume)}</strong>
-            <span className="dashboard-metric-hint">Generated websites in the last 30 days</span>
-          </article>
-          <article className="dashboard-metric-card">
-            <span className="dashboard-metric-label">Publishing activity</span>
-            <strong className="dashboard-metric-value">{renderMetric(dashboard.analytics.publishingActivity)}</strong>
-            <span className="dashboard-metric-hint">Published website records tracked by the platform</span>
-          </article>
-          <article className="dashboard-metric-card">
-            <span className="dashboard-metric-label">User growth</span>
-            <strong className="dashboard-metric-value">{renderMetric(dashboard.analytics.userGrowth)}</strong>
-            <span className="dashboard-metric-hint">New accounts detected in the last 30 days</span>
-          </article>
-        </div>
-      </section>
+      <div className="admin-content-grid">
+        <section className="admin-panel admin-panel-wide" aria-label="Analytics status">
+          <header className="admin-panel-header">
+            <div>
+              <span className="admin-panel-kicker">Platform metrics</span>
+              <h2>Current admin analytics foundation</h2>
+              <p>
+                These metrics are real platform counts. Visitor analytics are not fabricated when Vercel analytics data
+                is unavailable.
+              </p>
+            </div>
+          </header>
+
+          <div className="admin-overview-grid">
+            <article className="admin-surface-card">
+              <span className="admin-surface-label">Recent generations</span>
+              <strong>{renderMetric(dashboard.analytics.websiteGenerationVolume)}</strong>
+              <p>Website generation volume measured over the last 30 days.</p>
+            </article>
+            <article className="admin-surface-card">
+              <span className="admin-surface-label">Published websites</span>
+              <strong>{renderMetric(dashboard.websites.published)}</strong>
+              <p>Published website records currently visible to the platform.</p>
+            </article>
+            <article className="admin-surface-card">
+              <span className="admin-surface-label">Recent signups</span>
+              <strong>{renderMetric(dashboard.users.recentSignups)}</strong>
+              <p>New user signups detected in the last seven days.</p>
+            </article>
+            <article className="admin-surface-card">
+              <span className="admin-surface-label">Analytics state</span>
+              <strong>{vercel.analytics.available ? "Configured" : "Pending"}</strong>
+              <p>{vercel.analytics.message}</p>
+            </article>
+          </div>
+        </section>
+
+        <section className="admin-panel" aria-label="Analytics readiness">
+          <header className="admin-panel-header">
+            <div>
+              <span className="admin-panel-kicker">Readiness</span>
+              <h2>Vercel analytics readiness</h2>
+              <p>Configuration status for future analytics expansion.</p>
+            </div>
+          </header>
+
+          <ul className="admin-check-list">
+            {vercel.checks.map((check) => (
+              <li
+                key={check.id}
+                className={`admin-check${check.status === "missing" || check.status === "unavailable" ? " admin-check-warning" : ""}`}
+              >
+                <strong>{check.label}</strong>
+                <span>{check.detail}</span>
+              </li>
+            ))}
+          </ul>
+
+          <div className="admin-empty-state">
+            <strong>No fake production metrics</strong>
+            <p>
+              This page only shows platform counts and configuration readiness until a real Vercel analytics feed is
+              added.
+            </p>
+          </div>
+        </section>
+      </div>
     </section>
   );
 }

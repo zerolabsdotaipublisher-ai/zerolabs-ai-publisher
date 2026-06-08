@@ -69,6 +69,10 @@ const REQUIRED_VARS = [
   "OPENAI_API_KEY",
 ] as const;
 
+const vercelApiToken = process.env.VERCEL_API_TOKEN ?? process.env.PIPELINE_VERCEL_TOKEN;
+const vercelProjectId = process.env.VERCEL_PROJECT_ID ?? process.env.PIPELINE_VERCEL_PROJECT_ID;
+const vercelTeamId = process.env.VERCEL_TEAM_ID ?? process.env.PIPELINE_VERCEL_TEAM_ID;
+
 export const env = {
   /** Application identity */
   app: {
@@ -195,9 +199,9 @@ export const env = {
     retryBaseDelayMs: optionalPositiveInteger(process.env.PIPELINE_RETRY_BASE_DELAY_MS, 100),
     vercel: {
       apiUrl: process.env.PIPELINE_VERCEL_API_URL ?? "https://api.vercel.com",
-      token: optional(process.env.PIPELINE_VERCEL_TOKEN),
-      projectId: optional(process.env.PIPELINE_VERCEL_PROJECT_ID),
-      teamId: optional(process.env.PIPELINE_VERCEL_TEAM_ID),
+      token: optional(vercelApiToken),
+      projectId: optional(vercelProjectId),
+      teamId: optional(vercelTeamId),
       deployHookPreviewUrl: optional(process.env.PIPELINE_VERCEL_DEPLOY_HOOK_PREVIEW_URL),
       deployHookProductionUrl: optional(process.env.PIPELINE_VERCEL_DEPLOY_HOOK_PRODUCTION_URL),
       defaultDomain: optional(process.env.PIPELINE_VERCEL_DEFAULT_DOMAIN),
