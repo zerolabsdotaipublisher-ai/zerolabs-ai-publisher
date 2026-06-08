@@ -1,329 +1,268 @@
 import Link from "next/link";
-import { AdminFallback } from "@/components/admin/admin-fallback";
-import { routes } from "@/config/routes";
+import { config, routes } from "@/config";
 import { formatAdminDate, getAdminDashboardData } from "@/lib/admin/data";
-import { logger } from "@/lib/observability";
-import { requireAdminUser } from "@/lib/supabase/auth";
+import { formatVercelState, getVercelIntegrationOverview } from "@/lib/admin/vercel";
 
 export const dynamic = "force-dynamic";
 
-const adminTools = [
+const quickLinks = [
   {
-    href: routes.adminUsers,
-    kicker: "Users",
-    label: "User management",
-    description: "Review account roles, signups, and account status details.",
-  },
-  {
-    href: routes.adminWebsites,
-    kicker: "Websites",
-    label: "Website management",
-    description: "Track created websites, publishing state, and owner visibility.",
-  },
-  {
-    href: routes.adminMonitoring,
-    kicker: "Ops",
-    label: "Monitoring",
-    description: "See recent activity, failed jobs, and platform health summaries.",
+    href: routes.adminDeployments,
+    kicker: "Vercel",
+    label: "Open deployments",
+    description: "Inspect recent builds, deployment state, and environment readiness.",
   },
   {
     href: routes.adminAnalytics,
-    kicker: "Insights",
-    label: "Analytics",
-    description: "Follow generation volume, publishing activity, and growth placeholders.",
+    kicker: "Traffic",
+    label: "Open analytics",
+    description: "See platform metrics and Vercel analytics readiness without fake production numbers.",
+  },
+  {
+    href: routes.adminUsers,
+    kicker: "Access",
+    label: "Manage admin users",
+    description: "Grant admin access to existing accounts using a protected server action.",
   },
 ];
 
 function renderMetric(value: number): string {
-  return String(value);
+  return new Intl.NumberFormat("en-US").format(value);
 }
 
-async function loadAdminDashboardView() {
-  try {
-    const { user, isAdmin } = await requireAdminUser();
-
-    if (!user || !isAdmin) {
-      return {
-        ok: false as const,
-        userEmail: user?.email,
-        title: "Admin access unavailable",
-        description: "Admin access could not be confirmed for this request, so a fallback view is being shown.",
-        retryHref: routes.adminDashboard,
-      };
-    }
-
-    const dashboard = await getAdminDashboardData();
-
-    return {
-      ok: true as const,
-      userEmail: user.email,
-      dashboard,
-    };
-  } catch (error) {
-    logger.error("AdminDashboardPage fell back to AdminFallback", {
-      category: "error",
-      service: "dashboard",
-      error: { message: error instanceof Error ? error.message : String(error), name: "AdminDashboardRenderError" },
-    });
-
-    return {
-      ok: false as const,
-      title: "Admin dashboard temporarily limited",
-      description: "Admin dashboard data could not be loaded safely, so a fallback view is being shown.",
-      retryHref: routes.adminDashboard,
-    };
+function getCheckClass(status: string): string {
+  if (status === "missing" || status === "unavailable") {
+    return "admin-check admin-check-warning";
   }
+
+  return "admin-check";
 }
 
 export default async function AdminDashboardPage() {
-  const view = await loadAdminDashboardView();
-
-  if (!view.ok) {
-    return (
-      <AdminFallback
-        userEmail={view.userEmail}
-        title={view.title}
-        description={view.description}
-        retryHref={view.retryHref}
-      />
-    );
-  }
-
-  const { userEmail, dashboard } = view;
+  const [dashboard, vercel] = await Promise.all([getAdminDashboardData(), getVercelIntegrationOverview()]);
+  const latestDeployment = vercel.latestDeployment;
+  const serviceChecks = [
+    { label: "Supabase", value: "Configured" },
+    { label: "Media provider", value: config.services.media.provider },
+    { label: "Publishing", value: config.features.enablePublishing ? "Enabled" : "Disabled" },
+    { label: "Runtime", value: config.app.environment },
+  ];
 
   return (
-    <section className="dashboard-home-shell" aria-label="Admin dashboard homepage">
-      <header className="dashboard-home-header">
-        <div className="dashboard-hero-panel">
-          <span className="dashboard-eyebrow">Zero Labs operations</span>
+    <section className="admin-page-shell" aria-label="Admin dashboard homepage">
+      <header className="admin-page-header">
+        <div>
+          <span className="admin-page-kicker">Zero Labs operations</span>
           <h1>Admin Dashboard</h1>
-          <p>Manage platform operations with safe server-rendered summaries across users, websites, monitoring, and analytics.</p>
+          <p>
+            Separate server-rendered admin workspace for deployment visibility, platform health, analytics readiness,
+            and access control.
+          </p>
         </div>
-
-        <aside className="dashboard-welcome-card" aria-label="Admin account overview">
-          <span className="dashboard-welcome-label">Signed in as</span>
-          <strong>{userEmail ?? "Zero Labs admin"}</strong>
-          <p>This workspace shows safe fallbacks when admin data is unavailable instead of failing the page.</p>
-        </aside>
+        <div className="admin-page-actions">
+          <Link href={routes.adminDeployments} className="admin-page-action-link">
+            View deployments
+          </Link>
+          <Link href={routes.adminUsers} className="admin-page-action-link admin-page-action-link-secondary">
+            Manage admin users
+          </Link>
+        </div>
       </header>
 
-      <section className="dashboard-panel-shell" aria-label="Admin summary metrics">
-        <header className="dashboard-section-heading">
-          <div>
-            <h2>Platform overview</h2>
-            <p>Track the current state of users, websites, and monitoring from one admin workspace.</p>
-          </div>
-        </header>
-
-        <div className="dashboard-metrics-grid">
-          <article className="dashboard-metric-card">
-            <span className="dashboard-metric-label">Total users</span>
-            <strong className="dashboard-metric-value">{renderMetric(dashboard.users.total)}</strong>
-            <span className="dashboard-metric-hint">{renderMetric(dashboard.users.recentSignups)} recent signups in the last 7 days</span>
-          </article>
-          <article className="dashboard-metric-card">
-            <span className="dashboard-metric-label">Websites created</span>
-            <strong className="dashboard-metric-value">{renderMetric(dashboard.websites.total)}</strong>
-            <span className="dashboard-metric-hint">{renderMetric(dashboard.websites.published)} published · {renderMetric(dashboard.websites.drafts)} drafts</span>
-          </article>
-          <article className={`dashboard-metric-card${dashboard.monitoring.systemTone === "error" ? " dashboard-metric-card-error" : dashboard.monitoring.systemTone === "warning" ? " dashboard-metric-card-warning" : ""}`}>
-            <span className="dashboard-metric-label">System status</span>
-            <strong className="dashboard-metric-value">{dashboard.monitoring.systemStatus}</strong>
-            <span className="dashboard-metric-hint">{renderMetric(dashboard.monitoring.failedJobs)} failed jobs or retries currently tracked</span>
-          </article>
-          <article className="dashboard-metric-card">
-            <span className="dashboard-metric-label">Generation volume</span>
-            <strong className="dashboard-metric-value">{renderMetric(dashboard.analytics.websiteGenerationVolume)}</strong>
-            <span className="dashboard-metric-hint">Websites generated in the last 30 days</span>
-          </article>
-          <article className="dashboard-metric-card">
-            <span className="dashboard-metric-label">User growth</span>
-            <strong className="dashboard-metric-value">{renderMetric(dashboard.analytics.userGrowth)}</strong>
-            <span className="dashboard-metric-hint">New accounts tracked in the last 30 days</span>
-          </article>
-        </div>
-      </section>
-
-      <div className="dashboard-two-column-grid">
-        <section className="dashboard-panel-shell" aria-label="Admin users section">
-          <header className="dashboard-section-heading">
-            <div>
-              <h2>Users</h2>
-              <p>Review total users, recent signups, and role assignments.</p>
-            </div>
-            <Link href={routes.adminUsers} prefetch={false} className="dashboard-inline-link">
-              Manage users
-            </Link>
-          </header>
-
-          <dl className="dashboard-definition-grid">
-            <div>
-              <dt>Total users</dt>
-              <dd>{renderMetric(dashboard.users.total)}</dd>
-            </div>
-            <div>
-              <dt>Admins</dt>
-              <dd>{renderMetric(dashboard.users.admins)}</dd>
-            </div>
-            <div>
-              <dt>Recent signups</dt>
-              <dd>{renderMetric(dashboard.users.recentSignups)}</dd>
-            </div>
-          </dl>
-
-          {dashboard.users.records.length > 0 ? (
-            <ul className="dashboard-compact-list">
-              {dashboard.users.records.map((record) => (
-                <li key={record.id}>
-                  <strong>{record.email}</strong>
-                  <span>{record.role} · {record.status}</span>
-                  <span>Created {formatAdminDate(record.createdAt)}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="dashboard-empty-note">No user data available.</p>
-          )}
-        </section>
-
-        <section className="dashboard-panel-shell" aria-label="Admin websites section">
-          <header className="dashboard-section-heading">
-            <div>
-              <h2>Websites</h2>
-              <p>Watch created websites, published output, and draft inventory.</p>
-            </div>
-            <Link href={routes.adminWebsites} prefetch={false} className="dashboard-inline-link">
-              Manage websites
-            </Link>
-          </header>
-
-          <dl className="dashboard-definition-grid">
-            <div>
-              <dt>Total websites</dt>
-              <dd>{renderMetric(dashboard.websites.total)}</dd>
-            </div>
-            <div>
-              <dt>Published</dt>
-              <dd>{renderMetric(dashboard.websites.published)}</dd>
-            </div>
-            <div>
-              <dt>Drafts</dt>
-              <dd>{renderMetric(dashboard.websites.drafts)}</dd>
-            </div>
-          </dl>
-
-          {dashboard.websites.records.length > 0 ? (
-            <ul className="dashboard-compact-list">
-              {dashboard.websites.records.map((website) => (
-                <li key={website.id}>
-                  <strong>{website.title}</strong>
-                  <span>{website.websiteType} · {website.status} · {website.ownerEmail}</span>
-                  <span>Created {formatAdminDate(website.createdAt)}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="dashboard-empty-note">No website data available.</p>
-          )}
-        </section>
+      <div className="admin-stat-grid" aria-label="Admin dashboard summary cards">
+        <article className="admin-stat-card">
+          <span className="admin-stat-label">Latest deployment</span>
+          <strong className="admin-stat-value">
+            {latestDeployment ? formatVercelState(latestDeployment.state) : "Not configured"}
+          </strong>
+          <span className="admin-stat-hint">
+            {latestDeployment ? `Created ${formatAdminDate(latestDeployment.createdAt)}` : vercel.status.message}
+          </span>
+        </article>
+        <article className="admin-stat-card">
+          <span className="admin-stat-label">Platform health</span>
+          <strong className="admin-stat-value">{dashboard.monitoring.systemStatus}</strong>
+          <span className="admin-stat-hint">
+            {renderMetric(dashboard.monitoring.failedJobs)} tracked failed jobs or retries
+          </span>
+        </article>
+        <article className="admin-stat-card">
+          <span className="admin-stat-label">Admin accounts</span>
+          <strong className="admin-stat-value">{renderMetric(dashboard.users.admins)}</strong>
+          <span className="admin-stat-hint">{renderMetric(dashboard.users.total)} total platform users</span>
+        </article>
+        <article className="admin-stat-card">
+          <span className="admin-stat-label">Published websites</span>
+          <strong className="admin-stat-value">{renderMetric(dashboard.websites.published)}</strong>
+          <span className="admin-stat-hint">{renderMetric(dashboard.websites.total)} websites tracked</span>
+        </article>
       </div>
 
-      <div className="dashboard-two-column-grid">
-        <section className="dashboard-panel-shell" aria-label="Admin activity and monitoring section">
-          <header className="dashboard-section-heading">
+      <div className="admin-content-grid">
+        <section className="admin-panel admin-panel-wide" aria-label="Deployment and platform overview">
+          <header className="admin-panel-header">
             <div>
-              <h2>Activity &amp; monitoring</h2>
-              <p>Track recent operational events, failed jobs, and monitoring alerts.</p>
+              <span className="admin-panel-kicker">Vercel overview</span>
+              <h2>Deployment, analytics, and monitoring foundation</h2>
+              <p>
+                Server-side Vercel reads are used when configuration is available. Secrets are never exposed to the
+                browser.
+              </p>
             </div>
-            <Link href={routes.adminMonitoring} prefetch={false} className="dashboard-inline-link">
-              Open monitoring
+            <Link href={routes.adminDeployments} className="admin-inline-link">
+              Open deployment details
             </Link>
           </header>
 
-          <ul className="dashboard-alert-list">
-            {dashboard.monitoring.alerts.map((alert) => (
-              <li
-                key={alert.id}
-                className={`dashboard-alert ${alert.tone === "error" ? "dashboard-alert-error" : alert.tone === "warning" ? "dashboard-alert-warning" : "dashboard-alert-info"}`}
-              >
-                <div>
-                  <strong>{alert.title}</strong>
-                  <p>{alert.detail}</p>
-                </div>
+          <div className="admin-overview-grid">
+            <article className="admin-surface-card">
+              <span className="admin-surface-label">Deployment status</span>
+              <strong>{latestDeployment ? latestDeployment.name : "Vercel integration is not configured yet."}</strong>
+              <p>
+                {latestDeployment
+                  ? `${formatVercelState(latestDeployment.state)}${latestDeployment.branch ? ` on ${latestDeployment.branch}` : ""}`
+                  : "Add server-side VERCEL_API_TOKEN and VERCEL_PROJECT_ID values to enable deployment reads."}
+              </p>
+            </article>
+            <article className="admin-surface-card">
+              <span className="admin-surface-label">Website health</span>
+              <strong>{dashboard.monitoring.systemStatus}</strong>
+              <p>{dashboard.monitoring.alerts[0]?.detail ?? "Health details are not available yet."}</p>
+            </article>
+            <article className="admin-surface-card">
+              <span className="admin-surface-label">Traffic &amp; analytics</span>
+              <strong>{vercel.analytics.available ? "Ready for analytics expansion" : "Analytics placeholder"}</strong>
+              <p>{vercel.analytics.message}</p>
+            </article>
+            <article className="admin-surface-card">
+              <span className="admin-surface-label">Admin management</span>
+              <strong>{renderMetric(dashboard.users.admins)} admin users</strong>
+              <p>Grant access only to existing accounts through the protected admin users page.</p>
+            </article>
+          </div>
+
+          {vercel.deployments.length > 0 ? (
+            <div className="admin-list-shell">
+              <div className="admin-list-heading">
+                <h3>Recent builds and deployments</h3>
+                <p>Latest deployment records returned from the configured Vercel project.</p>
+              </div>
+              <ul className="admin-list">
+                {vercel.deployments.slice(0, 4).map((deployment) => (
+                  <li key={deployment.id} className="admin-list-item">
+                    <div>
+                      <strong>{deployment.name}</strong>
+                      <p>
+                        {formatVercelState(deployment.state)}
+                        {deployment.branch ? ` · ${deployment.branch}` : ""}
+                        {deployment.commitSha ? ` · ${deployment.commitSha.slice(0, 7)}` : ""}
+                      </p>
+                    </div>
+                    <div className="admin-list-meta">
+                      <span>{formatAdminDate(deployment.createdAt)}</span>
+                      {deployment.url ? (
+                        <a href={deployment.url} target="_blank" rel="noreferrer" className="admin-inline-link">
+                          Open
+                        </a>
+                      ) : null}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <div className="admin-empty-state">
+              <strong>No deployment records available yet.</strong>
+              <p>Once the Vercel project is connected, recent deployments will appear here.</p>
+            </div>
+          )}
+        </section>
+
+        <section className="admin-panel" aria-label="Environment and service status">
+          <header className="admin-panel-header">
+            <div>
+              <span className="admin-panel-kicker">Status checks</span>
+              <h2>Environment and service checks</h2>
+              <p>Configuration and platform checks used to gate the admin integration foundation.</p>
+            </div>
+          </header>
+
+          <ul className="admin-check-list">
+            {vercel.checks.map((check) => (
+              <li key={check.id} className={getCheckClass(check.status)}>
+                <strong>{check.label}</strong>
+                <span>{check.detail}</span>
               </li>
             ))}
           </ul>
 
-          {dashboard.monitoring.recentActivity.length > 0 ? (
-            <ul className="dashboard-activity-list">
-              {dashboard.monitoring.recentActivity.map((activity) => (
-                <li
-                  key={activity.id}
-                  className={`dashboard-activity-item${activity.tone === "error" ? " dashboard-activity-error" : activity.tone === "warning" ? " dashboard-activity-warning" : ""}`}
-                >
-                  <div>
-                    <strong>{activity.title}</strong>
-                    <p>{activity.detail}</p>
-                  </div>
-                  <span>{formatAdminDate(activity.timestamp)}</span>
+          <div className="admin-list-shell">
+            <div className="admin-list-heading">
+              <h3>Storage and API status</h3>
+              <p>Safe server-side status checks for services used by this platform.</p>
+            </div>
+            <ul className="admin-key-value-list">
+              {serviceChecks.map((check) => (
+                <li key={check.label}>
+                  <span>{check.label}</span>
+                  <strong>{check.value}</strong>
                 </li>
               ))}
             </ul>
-          ) : (
-            <p className="dashboard-empty-note">No recent activity available.</p>
-          )}
-        </section>
-
-        <section className="dashboard-panel-shell" aria-label="Admin analytics section">
-          <header className="dashboard-section-heading">
-            <div>
-              <h2>Analytics</h2>
-              <p>Use stable stat cards now and expand into deeper reporting when more datasets become available.</p>
-            </div>
-            <Link href={routes.adminAnalytics} prefetch={false} className="dashboard-inline-link">
-              Open analytics
-            </Link>
-          </header>
-
-          <div className="dashboard-metrics-grid">
-            <article className="dashboard-metric-card">
-              <span className="dashboard-metric-label">Website generation volume</span>
-              <strong className="dashboard-metric-value">{renderMetric(dashboard.analytics.websiteGenerationVolume)}</strong>
-              <span className="dashboard-metric-hint">Last 30 days</span>
-            </article>
-            <article className="dashboard-metric-card">
-              <span className="dashboard-metric-label">Publishing activity</span>
-              <strong className="dashboard-metric-value">{renderMetric(dashboard.analytics.publishingActivity)}</strong>
-              <span className="dashboard-metric-hint">Published website records tracked so far</span>
-            </article>
-            <article className="dashboard-metric-card">
-              <span className="dashboard-metric-label">User growth</span>
-              <strong className="dashboard-metric-value">{renderMetric(dashboard.analytics.userGrowth)}</strong>
-              <span className="dashboard-metric-hint">Safe fallback values are shown when auth data is unavailable</span>
-            </article>
           </div>
         </section>
       </div>
 
-      <section className="dashboard-panel-shell" aria-label="Admin tools">
-        <header className="dashboard-section-heading">
-          <div>
-            <h2>Tools</h2>
-            <p>Jump directly into the admin sections for platform operations.</p>
-          </div>
-        </header>
+      <div className="admin-content-grid">
+        <section className="admin-panel" aria-label="Recent platform activity">
+          <header className="admin-panel-header">
+            <div>
+              <span className="admin-panel-kicker">Monitoring</span>
+              <h2>Recent platform activity</h2>
+              <p>Current platform events and alerts surfaced by existing server-side admin data.</p>
+            </div>
+          </header>
 
-        <div className="dashboard-quick-actions-grid">
-          {adminTools.map((tool) => (
-            <Link key={tool.href} href={tool.href} prefetch={false} className="dashboard-quick-action">
-              <span className="dashboard-quick-action-kicker">{tool.kicker}</span>
-              <strong>{tool.label}</strong>
-              <span className="dashboard-quick-action-description">{tool.description}</span>
-              <span className="dashboard-quick-action-arrow">Open →</span>
-            </Link>
-          ))}
-        </div>
-      </section>
+          {dashboard.monitoring.recentActivity.length > 0 ? (
+            <ul className="admin-list">
+              {dashboard.monitoring.recentActivity.map((activity) => (
+                <li key={activity.id} className="admin-list-item">
+                  <div>
+                    <strong>{activity.title}</strong>
+                    <p>{activity.detail}</p>
+                  </div>
+                  <span className="admin-list-meta">{formatAdminDate(activity.timestamp)}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="admin-empty-state">
+              <strong>No recent activity is available.</strong>
+              <p>Activity cards will populate when publishing and scheduling events are present.</p>
+            </div>
+          )}
+        </section>
+
+        <section className="admin-panel" aria-label="Quick admin actions">
+          <header className="admin-panel-header">
+            <div>
+              <span className="admin-panel-kicker">Admin actions</span>
+              <h2>Jump to the protected admin tools</h2>
+              <p>Use the dedicated admin routes for deployment visibility, analytics, and role management.</p>
+            </div>
+          </header>
+
+          <div className="admin-action-grid">
+            {quickLinks.map((link) => (
+              <Link key={link.href} href={link.href} className="admin-action-card">
+                <span>{link.kicker}</span>
+                <strong>{link.label}</strong>
+                <p>{link.description}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      </div>
     </section>
   );
 }

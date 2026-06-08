@@ -49,6 +49,16 @@ export async function requireUserProfile(redirectPath?: string): Promise<UserPro
   }
 }
 
+export async function requireAdminAccess(redirectPath = routes.admin): Promise<UserProfileResult> {
+  const { user, profile } = await requireUserProfile(redirectPath);
+
+  if (profile.role !== "admin") {
+    redirect(routes.dashboard);
+  }
+
+  return { user, profile };
+}
+
 export async function requireAdminUser(): Promise<AdminUserResult> {
   const user = await getServerUser();
 

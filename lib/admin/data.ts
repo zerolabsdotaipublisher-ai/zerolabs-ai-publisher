@@ -7,6 +7,7 @@ import { getSupabaseServiceClient } from "@/lib/supabase/server";
 
 const FALLBACK_UNAVAILABLE_LABEL = "Unavailable";
 const DEFAULT_RECENT_RECORD_LIMIT = 12;
+const AUTH_USERS_PAGE_SIZE = 100;
 
 type ProfileRow = {
   id: string;
@@ -247,14 +248,29 @@ async function safeCount(scope: string, operation: () => Promise<{ count: number
 async function listAuthUsers(limit = 100): Promise<User[]> {
   return withAdminFallback("listAuthUsers", [], async () => {
     const supabase = getSupabaseServiceClient();
-    const { data, error } = await supabase.auth.admin.listUsers({ page: 1, perPage: limit });
+    const users: User[] = [];
+    let page = 1;
 
-    if (error) {
-      logAdminFallback("listAuthUsers", error.message);
-      return [];
+    while (users.length < limit) {
+      const perPage = Math.min(AUTH_USERS_PAGE_SIZE, limit - users.length);
+      const { data, error } = await supabase.auth.admin.listUsers({ page, perPage });
+
+      if (error) {
+        logAdminFallback("listAuthUsers", error.message);
+        return users;
+      }
+
+      const pageUsers = data.users ?? [];
+      users.push(...pageUsers);
+
+      if (pageUsers.length < perPage) {
+        break;
+      }
+
+      page += 1;
     }
 
-    return data.users ?? [];
+    return users;
   });
 }
 
