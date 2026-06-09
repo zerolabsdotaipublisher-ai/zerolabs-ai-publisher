@@ -1,4 +1,5 @@
 import type { User } from "@supabase/supabase-js";
+import { isAdminEmail, resolveAdminRole } from "@/lib/admin/access";
 import { logger } from "@/lib/observability";
 import { getSupabaseServiceClient } from "./server";
 
@@ -25,8 +26,6 @@ type AuthUserMetadata = {
   full_name?: string;
   avatar_url?: string;
 };
-
-const ADMIN_PROFILE_EMAILS = new Set(["zerolabsaipublisher@gmail.com"]);
 
 function getCurrentTimestamp(): string {
   return new Date().toISOString();
@@ -74,7 +73,7 @@ function createFallbackProfileRecord(id: string, email: string, createdAt?: stri
   return {
     id,
     email,
-    role: "user",
+    role: resolveAdminRole(email),
     full_name: null,
     avatar_url: null,
     preferences: null,
@@ -97,6 +96,19 @@ function normalizeProfileRow(data: Partial<Profile>): Profile {
     metadata: data.metadata && typeof data.metadata === "object" ? data.metadata : null,
     created_at: timestamp,
     updated_at: typeof data.updated_at === "string" ? data.updated_at : timestamp,
+  };
+}
+
+function applyResolvedProfileRole(profile: Profile, emailOverride?: string | null): Profile {
+  const resolvedRole = resolveAdminRole(emailOverride ?? profile.email, profile.role);
+
+  if (resolvedRole === profile.role) {
+    return profile;
+  }
+
+  return {
+    ...profile,
+    role: resolvedRole,
   };
 }
 
@@ -132,9 +144,11 @@ function isProfileFieldMissing(value?: string | null): boolean {
 
 function shouldSyncExistingProfile(existingProfile: Profile, user: User, metadata: AuthUserMetadata): boolean {
   const userEmail = user.email?.trim() ?? "";
+  const seededRole = resolveSeededProfileRole(userEmail);
 
   return (
     existingProfile.email !== userEmail ||
+    (seededRole === "admin" && existingProfile.role !== "admin") ||
     (isProfileFieldMissing(existingProfile.full_name) && Boolean(metadata.full_name)) ||
     (isProfileFieldMissing(existingProfile.avatar_url) && Boolean(metadata.avatar_url))
   );
@@ -188,7 +202,7 @@ async function syncAuthUserMetadata(userId: string, data: ProfileUpdateData): Pr
 }
 
 function resolveSeededProfileRole(email: string): ProfileRole | null {
-  return ADMIN_PROFILE_EMAILS.has(email.trim().toLowerCase()) ? "admin" : null;
+  return isAdminEmail(email) ? "admin" : null;
 }
 
 export function createFallbackProfile(user: User): Profile {
@@ -258,7 +272,7 @@ export async function updateProfile(userId: string, data: ProfileUpdateData): Pr
 
     await syncAuthUserMetadata(userId, data);
 
-    return normalizeProfileRow(updated as Partial<Profile>);
+    return applyResolvedProfileRole(normalizeProfileRow(updated as Partial<Profile>));
   } catch (error) {
     const normalizedError = toError(error, "Profile update failed.");
 
@@ -364,16 +378,16 @@ export async function ensureProfile(user: User): Promise<Profile> {
       await syncProfileFromAuthUser(user);
 
       const syncedProfile = await getProfile(user.id);
-      return syncedProfile ?? existingProfile;
+      return applyResolvedProfileRole(syncedProfile ?? existingProfile, user.email);
     }
 
-    return existingProfile;
+    return applyResolvedProfileRole(existingProfile, user.email);
   }
 
   await syncProfileFromAuthUser(user);
 
   const syncedProfile = await getProfile(user.id);
-  return syncedProfile ?? createFallbackProfile(user);
+  return applyResolvedProfileRole(syncedProfile ?? createFallbackProfile(user), user.email);
 }
 
 export async function getSafeProfile(user: User): Promise<Profile> {

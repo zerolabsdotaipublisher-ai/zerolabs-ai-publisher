@@ -131,6 +131,7 @@ export const env = {
   /** Auth / session (optional) */
   auth: {
     jwtSecret: optional(process.env.JWT_SECRET),
+    adminEmails: parseCsvList(process.env.ADMIN_EMAILS),
   },
 
   /** Qdrant vector database (future — optional until vector features are active) */
