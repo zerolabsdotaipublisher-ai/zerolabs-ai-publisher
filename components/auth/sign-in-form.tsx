@@ -3,8 +3,10 @@
 import { useId, useState, type FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import { PasswordField } from "@/components/auth/password-field";
-import { resolveSafeNextPath } from "@/lib/auth/redirect";
+import { sanitizeNextPath } from "@/lib/auth/redirect";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
+
+const POST_LOGIN_REDIRECT_PATH = "/api/auth/post-login";
 
 function resolveInitialState(searchParams: ReturnType<typeof useSearchParams>): {
   initialMessage: string | null;
@@ -82,7 +84,7 @@ export function SignInForm() {
   const searchParams = useSearchParams();
   const supabase = getSupabaseBrowserClient();
   const { initialMessage, initialError } = resolveInitialState(searchParams);
-  const nextPath = resolveSafeNextPath(searchParams.get("next"));
+  const requestedNextPath = sanitizeNextPath(searchParams.get("next"));
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(initialError);
@@ -115,7 +117,11 @@ export function SignInForm() {
         return;
       }
 
-      window.location.replace(nextPath);
+      const redirectPath = requestedNextPath
+        ? `${POST_LOGIN_REDIRECT_PATH}?next=${encodeURIComponent(requestedNextPath)}`
+        : POST_LOGIN_REDIRECT_PATH;
+
+      window.location.replace(redirectPath);
     } catch {
       setError("Unable to sign in right now. Please check your connection and try again.");
     } finally {

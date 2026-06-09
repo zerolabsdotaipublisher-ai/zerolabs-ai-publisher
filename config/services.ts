@@ -163,6 +163,8 @@ export interface PipelineConfig {
 export interface AuthConfig {
   /** JWT secret for signing application-level session tokens */
   jwtSecret: string | undefined;
+  /** Bootstrap admin emails recognized server-side after sign-in */
+  adminEmails: string[] | undefined;
 }
 
 /** All external service configurations grouped by provider. */
@@ -277,5 +279,6 @@ export const servicesConfig: ServiceConfig = {
 
   auth: {
     jwtSecret: env.auth.jwtSecret,
+    adminEmails: env.auth.adminEmails,
   },
 };
