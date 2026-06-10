@@ -4,8 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { routes } from "@/config/routes";
 import { logger } from "@/lib/observability";
-import { promoteUserToAdminByEmail } from "@/lib/admin/users";
-import { requireAdminAccess } from "@/lib/supabase/auth";
+import { normalizeAdminUserEmailInput, promoteUserToAdminByEmail } from "@/lib/admin/users";
+import { requireAdminUser } from "@/lib/supabase/auth";
 
 function redirectToUsersPage(params: Record<string, string>): never {
   const searchParams = new URLSearchParams(params);
@@ -13,41 +13,36 @@ function redirectToUsersPage(params: Record<string, string>): never {
 }
 
 export async function promoteAdminUserAction(formData: FormData): Promise<void> {
-  const { user } = await requireAdminAccess(routes.adminUsers);
   const rawEmail = formData.get("email");
-  const email = typeof rawEmail === "string" ? rawEmail.trim().toLowerCase() : "";
+  const email = typeof rawEmail === "string" ? normalizeAdminUserEmailInput(rawEmail) : "";
 
   if (!email) {
     redirectToUsersPage({ result: "invalid-email" });
   }
 
-  if (user.email?.trim().toLowerCase() === email) {
-    redirectToUsersPage({ result: "self-noop", email });
+  const { user, isAdmin } = await requireAdminUser();
+
+  if (!user || !isAdmin) {
+    redirectToUsersPage({ result: "unauthorized", email });
   }
 
-  try {
-    const result = await promoteUserToAdminByEmail(email);
+  let result: Awaited<ReturnType<typeof promoteUserToAdminByEmail>>;
 
-    revalidatePath(routes.adminDashboard);
-    revalidatePath(routes.adminDeployments);
-    revalidatePath(routes.adminAnalytics);
-    revalidatePath(routes.adminUsers);
-    revalidatePath(routes.dashboard);
+  try {
+    result = await promoteUserToAdminByEmail(email);
 
     if (result.status === "promoted") {
-      redirectToUsersPage({ result: "promoted", email: result.email });
+      revalidatePath(routes.adminDashboard);
+      revalidatePath(routes.adminDeployments);
+      revalidatePath(routes.adminAnalytics);
+      revalidatePath(routes.adminUsers);
+      revalidatePath(routes.dashboard);
     }
-
-    if (result.status === "already_admin") {
-      redirectToUsersPage({ result: "already-admin", email: result.email });
-    }
-
-    redirectToUsersPage({ result: "not-found", email });
   } catch (error) {
     logger.error("Admin user promotion failed", {
       category: "error",
       service: "supabase",
-      userId: user.id,
+      userId: user?.id,
       error: {
         message: error instanceof Error ? error.message : String(error),
         name: "AdminUserPromotionError",
@@ -56,4 +51,14 @@ export async function promoteAdminUserAction(formData: FormData): Promise<void> 
 
     redirectToUsersPage({ result: "failed", email });
   }
+
+  if (result.status === "promoted") {
+    redirectToUsersPage({ result: "promoted", email: result.email });
+  }
+
+  if (result.status === "already_admin") {
+    redirectToUsersPage({ result: "already-admin", email: result.email });
+  }
+
+  redirectToUsersPage({ result: "no-user", email: result.email });
 }
