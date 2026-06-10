@@ -79,7 +79,7 @@ export async function requireAdminUser(): Promise<AdminUserResult> {
       isAdmin: profile.role === "admin",
     };
   } catch (error) {
-    logger.warn("requireAdminUser fell back to a non-admin profile", {
+    logger.warn("requireAdminUser fell back to a safe profile", {
       category: "error",
       service: "supabase",
       userId: user.id,
@@ -91,7 +91,7 @@ export async function requireAdminUser(): Promise<AdminUserResult> {
     return {
       user,
       profile,
-      isAdmin: false,
+      isAdmin: profile.role === "admin",
     };
   }
 }

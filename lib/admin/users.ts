@@ -2,7 +2,7 @@ import "server-only";
 
 import type { User } from "@supabase/supabase-js";
 import type { AdminUserRecord } from "@/lib/admin/data";
-import type { ProfileRole } from "@/lib/supabase/profile";
+import { getProfile, syncProfileFromAuthUser, type ProfileRole } from "@/lib/supabase/profile";
 import { logger } from "@/lib/observability";
 import { getSupabaseServiceClient } from "@/lib/supabase/server";
 
@@ -13,16 +13,54 @@ type ProfileRow = {
   id: string;
   email: string;
   role: ProfileRole;
+  full_name: string | null;
   created_at: string;
 };
 
 export type AdminUserPromotionResult =
   | { status: "promoted"; email: string; userId: string }
   | { status: "already_admin"; email: string; userId: string }
-  | { status: "not_found"; email: string };
+  | { status: "no_user"; email: string };
+
+export interface AdminUserLookupRecord extends AdminUserRecord {
+  fullName: string | null;
+}
+
+export function normalizeAdminUserEmailInput(value: string | null | undefined): string {
+  if (typeof value !== "string") {
+    return "";
+  }
+
+  return value.trim().toLowerCase();
+}
+
+function normalizeOptionalText(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const normalizedValue = value.trim();
+  return normalizedValue.length > 0 ? normalizedValue : null;
+}
+
+function getAuthUserFullName(user: User | null): string | null {
+  if (!user?.user_metadata || typeof user.user_metadata !== "object") {
+    return null;
+  }
+
+  return normalizeOptionalText((user.user_metadata as Record<string, unknown>).full_name);
+}
+
+function getAuthUserAvatarUrl(user: User): string | null {
+  if (!user.user_metadata || typeof user.user_metadata !== "object") {
+    return null;
+  }
+
+  return normalizeOptionalText((user.user_metadata as Record<string, unknown>).avatar_url);
+}
 
 function normalizeEmailAddress(value: string): string {
-  return value.trim().toLowerCase();
+  return normalizeAdminUserEmailInput(value);
 }
 
 function summarizeUserStatus(user: User): string {
@@ -77,11 +115,31 @@ async function findAuthUserByEmail(email: string): Promise<User | null> {
   return null;
 }
 
+async function findAuthUserById(userId: string): Promise<User | null> {
+  const supabase = getSupabaseServiceClient();
+  const { data, error } = await supabase.auth.admin.getUserById(userId);
+
+  if (error) {
+    logger.warn("Admin auth user lookup by id fell back to a safe null state", {
+      category: "error",
+      service: "supabase",
+      userId,
+      error: {
+        message: error.message,
+        name: "AdminAuthUserLookupWarning",
+      },
+    });
+    return null;
+  }
+
+  return data.user ?? null;
+}
+
 async function getProfileRow(userId: string): Promise<ProfileRow | null> {
   const supabase = getSupabaseServiceClient();
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, email, role, created_at")
+    .select("id, email, role, full_name, created_at")
     .eq("id", userId)
     .maybeSingle();
 
@@ -101,32 +159,151 @@ async function getProfileRow(userId: string): Promise<ProfileRow | null> {
   return data as ProfileRow | null;
 }
 
-function buildAdminUserRecord(user: User, profile: ProfileRow | null): AdminUserRecord {
-  return {
-    id: user.id,
-    email: user.email ?? profile?.email ?? "Unavailable",
-    role: profile?.role ?? "user",
-    createdAt: user.created_at ?? profile?.created_at ?? null,
-    status: summarizeUserStatus(user),
-  };
-}
+async function findProfileRowByEmail(email: string): Promise<ProfileRow | null> {
+  const normalizedEmail = normalizeEmailAddress(email);
 
-export async function findAdminUserRecordByEmail(email: string): Promise<AdminUserRecord | null> {
-  const authUser = await findAuthUserByEmail(email);
-
-  if (!authUser) {
+  if (!normalizedEmail) {
     return null;
   }
 
-  const profile = await getProfileRow(authUser.id);
-  return buildAdminUserRecord(authUser, profile);
+  const supabase = getSupabaseServiceClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, email, role, full_name, created_at")
+    .ilike("email", normalizedEmail)
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  if (error) {
+    logger.warn("Admin profile lookup by email fell back to a safe null state", {
+      category: "error",
+      service: "supabase",
+      error: {
+        message: error.message,
+        name: "AdminProfileLookupWarning",
+      },
+    });
+    return null;
+  }
+
+  return (data?.[0] as ProfileRow | undefined) ?? null;
+}
+
+function buildAdminUserRecord(user: User | null, profile: ProfileRow | null, fallbackEmail: string): AdminUserLookupRecord {
+  const email = normalizeOptionalText(user?.email) ?? normalizeOptionalText(profile?.email) ?? fallbackEmail;
+
+  return {
+    id: user?.id ?? profile?.id ?? fallbackEmail,
+    email,
+    role: profile?.role ?? "user",
+    fullName: profile?.full_name ?? getAuthUserFullName(user),
+    createdAt: user?.created_at ?? profile?.created_at ?? null,
+    status: user ? summarizeUserStatus(user) : "Profile available",
+  };
+}
+
+async function findLookupContextByEmail(
+  email: string,
+): Promise<{ authUser: User | null; profile: ProfileRow | null; normalizedEmail: string }> {
+  const normalizedEmail = normalizeEmailAddress(email);
+
+  if (!normalizedEmail) {
+    return {
+      authUser: null,
+      profile: null,
+      normalizedEmail,
+    };
+  }
+
+  let profile = await findProfileRowByEmail(normalizedEmail);
+  let authUser = profile ? await findAuthUserById(profile.id) : null;
+
+  if (!authUser) {
+    authUser = await findAuthUserByEmail(normalizedEmail);
+  }
+
+  if (!profile && authUser) {
+    profile = await getProfileRow(authUser.id);
+  }
+
+  return {
+    authUser,
+    profile,
+    normalizedEmail,
+  };
+}
+
+async function insertMissingProfileFromAuthUser(user: User): Promise<ProfileRow | null> {
+  const email = normalizeEmailAddress(user.email ?? "");
+
+  if (!email) {
+    return null;
+  }
+
+  const supabase = getSupabaseServiceClient();
+  const { error } = await supabase.from("profiles").insert({
+    id: user.id,
+    email,
+    full_name: getAuthUserFullName(user),
+    avatar_url: getAuthUserAvatarUrl(user),
+    role: "user",
+  });
+
+  if (error) {
+    if (error.code !== "23505") {
+      throw new Error(error.message);
+    }
+  }
+
+  return getProfileRow(user.id);
+}
+
+async function ensureProfileRowForAuthUser(user: User): Promise<ProfileRow | null> {
+  await syncProfileFromAuthUser(user);
+
+  const syncedProfile = await getProfileRow(user.id);
+  if (syncedProfile) {
+    return syncedProfile;
+  }
+
+  const safeProfile = await getProfile(user.id);
+  if (safeProfile) {
+    return getProfileRow(user.id);
+  }
+
+  return insertMissingProfileFromAuthUser(user);
+}
+
+async function updateProfileRoleToAdmin(profileId: string, email: string): Promise<void> {
+  const supabase = getSupabaseServiceClient();
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      email: normalizeEmailAddress(email),
+      role: "admin",
+    })
+    .eq("id", profileId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
+export async function findAdminUserRecordByEmail(email: string): Promise<AdminUserLookupRecord | null> {
+  const { authUser, profile, normalizedEmail } = await findLookupContextByEmail(email);
+
+  if (!authUser && !profile) {
+    return null;
+  }
+
+  return buildAdminUserRecord(authUser, profile, normalizedEmail);
 }
 
 export async function listCurrentAdminUsers(limit = 12): Promise<AdminUserRecord[]> {
   const supabase = getSupabaseServiceClient();
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, email, role, created_at")
+    .select("id, email, role, full_name, created_at")
     .eq("role", "admin")
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -153,54 +330,53 @@ export async function listCurrentAdminUsers(limit = 12): Promise<AdminUserRecord
 }
 
 export async function promoteUserToAdminByEmail(email: string): Promise<AdminUserPromotionResult> {
-  const normalizedEmail = normalizeEmailAddress(email);
-  const authUser = await findAuthUserByEmail(normalizedEmail);
-
-  if (!authUser || !authUser.email) {
-    return {
-      status: "not_found",
-      email: normalizedEmail,
-    };
-  }
-
-  const supabase = getSupabaseServiceClient();
-  const profile = await getProfileRow(authUser.id);
+  const { authUser, profile, normalizedEmail } = await findLookupContextByEmail(email);
+  const resolvedEmail =
+    normalizeOptionalText(authUser?.email) ?? normalizeOptionalText(profile?.email) ?? normalizedEmail;
 
   if (profile?.role === "admin") {
     return {
       status: "already_admin",
-      email: authUser.email,
-      userId: authUser.id,
+      email: resolvedEmail,
+      userId: profile.id,
     };
   }
 
   if (profile) {
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        email: authUser.email,
-        role: "admin",
-      })
-      .eq("id", authUser.id);
-
-    if (error) {
-      throw new Error(error.message);
-    }
-  } else {
-    const { error } = await supabase.from("profiles").insert({
-      id: authUser.id,
-      email: authUser.email,
-      role: "admin",
-    });
-
-    if (error) {
-      throw new Error(error.message);
-    }
+    await updateProfileRoleToAdmin(profile.id, resolvedEmail);
+    return {
+      status: "promoted",
+      email: resolvedEmail,
+      userId: profile.id,
+    };
   }
+
+  if (!authUser) {
+    return {
+      status: "no_user",
+      email: normalizedEmail,
+    };
+  }
+
+  const repairedProfile = await ensureProfileRowForAuthUser(authUser);
+
+  if (!repairedProfile) {
+    throw new Error("Profile repair did not create a profile row for the target user.");
+  }
+
+  if (repairedProfile.role === "admin") {
+    return {
+      status: "already_admin",
+      email: normalizeOptionalText(authUser.email) ?? repairedProfile.email,
+      userId: repairedProfile.id,
+    };
+  }
+
+  await updateProfileRoleToAdmin(repairedProfile.id, normalizeOptionalText(authUser.email) ?? repairedProfile.email);
 
   return {
     status: "promoted",
-    email: authUser.email,
-    userId: authUser.id,
+    email: normalizeOptionalText(authUser.email) ?? repairedProfile.email,
+    userId: repairedProfile.id,
   };
 }

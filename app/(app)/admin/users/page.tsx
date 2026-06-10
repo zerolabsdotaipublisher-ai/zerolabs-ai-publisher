@@ -1,6 +1,6 @@
 import { routes } from "@/config/routes";
 import { formatAdminDate, getAdminDashboardData, listAdminUsers } from "@/lib/admin/data";
-import { findAdminUserRecordByEmail, listCurrentAdminUsers } from "@/lib/admin/users";
+import { findAdminUserRecordByEmail, listCurrentAdminUsers, normalizeAdminUserEmailInput } from "@/lib/admin/users";
 import { promoteAdminUserAction } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -24,14 +24,20 @@ function getResultMessage(result: string | undefined, email: string | undefined)
     case "already-admin":
       return {
         tone: "info",
-        title: "User already has admin access",
+        title: "This user already has admin access.",
         detail: `${email ?? "That account"} already has the admin role.`,
       };
-    case "not-found":
+    case "no-user":
       return {
         tone: "error",
-        title: "User not found",
-        detail: "Only existing accounts can be promoted. No invitation flow was triggered.",
+        title: "No existing account found",
+        detail: "No existing account found for this email. Ask the user to sign up first.",
+      };
+    case "unauthorized":
+      return {
+        tone: "error",
+        title: "Unauthorized",
+        detail: "Only current admins can grant admin access.",
       };
     case "invalid-email":
       return {
@@ -39,17 +45,11 @@ function getResultMessage(result: string | undefined, email: string | undefined)
         title: "Enter a valid email",
         detail: "Provide the email address of an existing user account before submitting the form.",
       };
-    case "self-noop":
-      return {
-        tone: "warning",
-        title: "Self-service promotion is blocked",
-        detail: "Admin access is controlled by another admin via the protected server action, not by self-targeting requests.",
-      };
     case "failed":
       return {
         tone: "error",
         title: "Promotion failed",
-        detail: "The admin role update could not be completed safely. Try again after confirming the target user exists.",
+        detail: "The admin role update could not be completed safely. Please try again.",
       };
     default:
       return null;
@@ -58,9 +58,9 @@ function getResultMessage(result: string | undefined, email: string | undefined)
 
 export default async function AdminUsersPage({ searchParams }: PageProps) {
   const queryParams = searchParams ? await searchParams : {};
-  const query = queryParams.query?.trim() ?? "";
+  const query = normalizeAdminUserEmailInput(queryParams.query);
   const result = queryParams.result;
-  const resultEmail = queryParams.email?.trim() ?? "";
+  const resultEmail = normalizeAdminUserEmailInput(queryParams.email);
   const feedback = getResultMessage(result, resultEmail || query);
   const [dashboard, users, currentAdmins, lookupUser] = await Promise.all([
     getAdminDashboardData(),
@@ -175,15 +175,16 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
               <div className="admin-surface-card">
                 <span className="admin-surface-label">Search result</span>
                 <strong>{lookupUser.email}</strong>
+                <p>{lookupUser.fullName ?? "Name unavailable"}</p>
                 <p>
-                  {lookupUser.role} · {lookupUser.status}
+                  Role: {lookupUser.role} · {lookupUser.status}
                 </p>
                 <p>Created {formatAdminDate(lookupUser.createdAt)}</p>
               </div>
             ) : (
               <div className="admin-empty-state">
-                <strong>No user found for {query}.</strong>
-                <p>Only existing accounts can be promoted to admin.</p>
+                <strong>No existing account found for {query}.</strong>
+                <p>No existing account found for this email. Ask the user to sign up first.</p>
               </div>
             )
           ) : (
