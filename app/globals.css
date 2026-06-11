@@ -7576,6 +7576,18 @@ html[data-theme="dark"] .generation-shell {
   --wizard-border: rgba(173, 230, 205, 0.22);
   --wizard-border-strong: rgba(173, 230, 205, 0.42);
   --wizard-input-surface: rgba(8, 28, 22, 0.96);
+  --create-phase-surface-start: #e7f8f0;
+  --create-phase-surface-end: #d4ecdf;
+  --create-phase-surface-hover-start: #f0fbf6;
+  --create-phase-surface-hover-end: #e0f3e9;
+  --create-phase-surface-active-start: #d9efe3;
+  --create-phase-surface-active-end: #cae4d6;
+  --create-phase-surface-current-start: #d4efdf;
+  --create-phase-surface-current-end: #c2e1d1;
+  --create-phase-border: rgba(4, 18, 14, 0.12);
+  --create-phase-border-strong: rgba(4, 18, 14, 0.22);
+  --create-phase-text: #04120e;
+  --create-phase-text-muted: rgba(4, 18, 14, 0.72);
   --create-button-primary-start: #ade6cd;
   --create-button-primary-end: #9ee7c5;
   --create-button-primary-active: #93dab8;
@@ -7863,6 +7875,163 @@ html[data-theme="dark"] .generation-shell {
   text-transform: uppercase;
   white-space: normal;
   overflow-wrap: anywhere;
+}
+
+.website-builder-shell[data-entry-point="create"] .website-builder-phase-stepper {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13.75rem), 1fr));
+  align-items: stretch;
+  gap: 0.7rem;
+}
+
+.website-builder-shell[data-entry-point="create"] .website-builder-phase-step {
+  min-height: clamp(4.8rem, 8vw, 5.6rem);
+  padding: 0.82rem 0.92rem;
+  border-radius: 1.5rem;
+  border-color: var(--create-phase-border);
+  background: linear-gradient(
+    180deg,
+    var(--create-phase-surface-start) 0%,
+    var(--create-phase-surface-end) 100%
+  );
+  color: var(--create-phase-text);
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr) auto;
+  gap: 0.72rem;
+  align-items: start;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 10px 24px rgba(4, 18, 14, 0.08);
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.website-builder-shell[data-entry-point="create"] .website-builder-phase-step:hover {
+  border-color: var(--create-phase-border-strong);
+  background: linear-gradient(
+    180deg,
+    var(--create-phase-surface-hover-start) 0%,
+    var(--create-phase-surface-hover-end) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.54),
+    0 14px 30px rgba(4, 18, 14, 0.1);
+  transform: translateY(-1px);
+}
+
+.website-builder-shell[data-entry-point="create"] .website-builder-phase-step:active {
+  transform: translateY(0);
+  background: linear-gradient(
+    180deg,
+    var(--create-phase-surface-active-start) 0%,
+    var(--create-phase-surface-active-end) 100%
+  );
+}
+
+.website-builder-shell[data-entry-point="create"] .website-builder-phase-step.is-active {
+  border-color: var(--create-phase-border-strong);
+  background: linear-gradient(
+    180deg,
+    var(--create-phase-surface-current-start) 0%,
+    var(--create-phase-surface-current-end) 100%
+  );
+  box-shadow:
+    inset 0 0 0 1px rgba(4, 18, 14, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.56),
+    0 14px 30px rgba(4, 18, 14, 0.12);
+}
+
+.website-builder-shell[data-entry-point="create"] .website-builder-phase-step[data-state="attention"]:not(.is-active) {
+  border-color: color-mix(in srgb, #b45309 34%, var(--create-phase-border));
+}
+
+.website-builder-shell[data-entry-point="create"] .website-builder-phase-step-content {
+  gap: 0.14rem;
+  align-self: center;
+}
+
+.website-builder-shell[data-entry-point="create"] .website-builder-phase-step-eyebrow {
+  color: rgba(4, 18, 14, 0.68);
+  font-size: 0.72rem;
+  line-height: 1.2;
+  letter-spacing: 0.08em;
+}
+
+.website-builder-shell[data-entry-point="create"] .website-builder-phase-step-content strong {
+  color: var(--create-phase-text);
+  font-size: 0.96rem;
+  line-height: 1.24;
+}
+
+.website-builder-shell[data-entry-point="create"] .website-builder-phase-step-meta {
+  color: var(--create-phase-text-muted);
+  font-size: 0.82rem;
+  line-height: 1.38;
+}
+
+.website-builder-shell[data-entry-point="create"] .website-builder-phase-step-index {
+  align-self: center;
+  border-color: rgba(4, 18, 14, 0.12);
+  background: rgba(255, 255, 255, 0.64);
+  color: var(--create-phase-text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.website-builder-shell[data-entry-point="create"] .website-builder-phase-step[data-state="current"] .website-builder-phase-step-index {
+  border-color: #0f352b;
+  background: #0f352b;
+  color: #f8fffc;
+}
+
+.website-builder-shell[data-entry-point="create"] .website-builder-phase-step.is-complete:not(.is-active) .website-builder-phase-step-index {
+  border-color: rgba(15, 53, 43, 0.22);
+  background: rgba(255, 255, 255, 0.78);
+  color: #0f352b;
+}
+
+.website-builder-shell[data-entry-point="create"] .website-builder-phase-step-status {
+  align-self: start;
+  justify-self: end;
+  min-height: 1.72rem;
+  padding: 0.18rem 0.62rem;
+  border-radius: 999px;
+  border-color: rgba(4, 18, 14, 0.14);
+  background: rgba(255, 255, 255, 0.74);
+  color: var(--create-phase-text);
+  font-size: 0.76rem;
+  line-height: 1.15;
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+
+.website-builder-shell[data-entry-point="create"] .website-builder-phase-step[data-state="current"] .website-builder-phase-step-status {
+  border-color: #0f352b;
+  background: #0f352b;
+  color: #f8fffc;
+}
+
+.website-builder-shell[data-entry-point="create"] .website-builder-phase-step[data-state="ready"] .website-builder-phase-step-status {
+  border-color: rgba(15, 53, 43, 0.18);
+  background: rgba(255, 255, 255, 0.76);
+  color: #0f352b;
+}
+
+.website-builder-shell[data-entry-point="create"] .website-builder-phase-step[data-state="attention"] .website-builder-phase-step-status {
+  border-color: rgba(180, 83, 9, 0.28);
+  background: #fff4da;
+  color: #7c3d00;
+}
+
+.website-builder-shell[data-entry-point="create"] .website-builder-phase-step:focus-visible {
+  outline: 3px solid #04120e;
+  outline-offset: 3px;
+  box-shadow:
+    0 0 0 4px rgba(173, 230, 205, 0.46),
+    0 14px 30px rgba(4, 18, 14, 0.14);
 }
 
 .website-builder-shell[data-entry-point="create"] .website-generation-stage-item.is-upcoming .website-generation-stage-state {
