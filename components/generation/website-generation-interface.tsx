@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   createDefaultWizardInput,
   mergeWizardInput,
@@ -71,6 +72,8 @@ interface WebsiteGenerationInterfaceProps {
 export function WebsiteGenerationInterface({
   entryPoint = "create",
 }: WebsiteGenerationInterfaceProps) {
+  const router = useRouter();
+  const isSubmissionInFlightRef = useRef(false);
   const [state, setState] = useState<GenerationInterfaceState>(() => {
     if (typeof window === "undefined") {
       return createInitialGenerationState();
@@ -89,6 +92,14 @@ export function WebsiteGenerationInterface({
                 pages: normalizeDesignConfig(parsed.input.designConfig).pages,
               },
             }),
+            lastSubmittedInput: parsed.lastSubmittedInput
+              ? mergeWizardInput(createDefaultWizardInput(), {
+                  ...parsed.lastSubmittedInput,
+                  designConfig: {
+                    pages: normalizeDesignConfig(parsed.lastSubmittedInput.designConfig).pages,
+                  },
+                })
+              : undefined,
           };
         }
       } catch {
@@ -146,18 +157,77 @@ export function WebsiteGenerationInterface({
     const index = state.input.designConfig.pages.findIndex((page) => page.id === activePage.id);
     return index === -1 ? 0 : index;
   }, [activePage, state.input.designConfig.pages]);
+
+  function cloneWizardInput(input: WebsiteWizardInput): WebsiteWizardInput {
+    return mergeWizardInput(createDefaultWizardInput(), {
+      ...input,
+      designConfig: {
+        pages: normalizeDesignConfig(input.designConfig).pages,
+      },
+    });
+  }
+
+  function preserveRetryTarget(result: GenerationInterfaceState["result"]) {
+    if (!result) {
+      return undefined;
+    }
+
+    if (!result.structureId && !result.generatedSitePath && !result.completedAt) {
+      return undefined;
+    }
+
+    return {
+      ...result,
+      error: undefined,
+      diagnosticCode: undefined,
+      requestId: undefined,
+    };
+  }
+
   function updateInput(patch: WebsiteWizardInputPatch) {
     setState((current) => ({
       ...current,
       input: mergeWizardInput(current.input, patch),
       validationErrors: [],
-      result: current.submissionStatus === "error" ? undefined : current.result,
+      result:
+        current.submissionStatus === "error"
+          ? preserveRetryTarget(current.result)
+          : current.result,
       submissionStatus: current.submissionStatus === "error" ? "idle" : current.submissionStatus,
     }));
   }
 
+  function setRetryUnavailableState() {
+    setState((current) => ({
+      ...current,
+      submissionStatus: "error",
+      result: {
+        structureId: current.result?.structureId,
+        generatedSitePath: current.result?.generatedSitePath,
+        completedAt: current.result?.completedAt,
+        error: "Retry is unavailable because no saved valid generation input was found. Review the inputs, then generate again.",
+        diagnosticCode: "RETRY_UNAVAILABLE",
+        requestId: undefined,
+      },
+      isEditingInputs: true,
+    }));
+  }
+
   async function runGeneration(isRetry = false) {
-    const errors = validateGenerationInput(state.input);
+    if (isSubmissionInFlightRef.current) {
+      return;
+    }
+
+    const submissionInput = isRetry
+      ? (state.lastSubmittedInput ? cloneWizardInput(state.lastSubmittedInput) : null)
+      : cloneWizardInput(state.input);
+
+    if (!submissionInput) {
+      setRetryUnavailableState();
+      return;
+    }
+
+    const errors = validateGenerationInput(submissionInput);
     if (errors.length > 0) {
       setState((current) => ({
         ...current,
@@ -169,9 +239,11 @@ export function WebsiteGenerationInterface({
     }
 
     const nextRetryCount = isRetry ? state.retryCount + 1 : state.retryCount;
+    const targetStructureId = state.result?.structureId;
 
     setState((current) => ({
       ...current,
+      lastSubmittedInput: submissionInput,
       submissionStatus: "running",
       validationErrors: [],
       stage: "preparing",
@@ -179,57 +251,76 @@ export function WebsiteGenerationInterface({
       isEditingInputs: false,
       retryCount: nextRetryCount,
     }));
+    isSubmissionInFlightRef.current = true;
 
-    if (isRetry) {
-      void trackGenerationEvent({
-        event: "generation_retry_clicked",
-        retryCount: nextRetryCount,
+    try {
+      if (isRetry) {
+        void trackGenerationEvent({
+          event: "generation_retry_clicked",
+          retryCount: nextRetryCount,
+        });
+      }
+
+      void trackGenerationEvent({ event: "generation_started", retryCount: nextRetryCount });
+
+      const result = await submitWebsiteGeneration(submissionInput, {
+        structureId: targetStructureId,
+        onStageChange(stage) {
+          setState((current) => updateGenerationStage(current, stage));
+        },
       });
-    }
 
-    void trackGenerationEvent({ event: "generation_started", retryCount: nextRetryCount });
+      if (!result.ok) {
+        setState((current) => ({
+          ...current,
+          submissionStatus: "error",
+          result: {
+            structureId: result.structureId ?? current.result?.structureId,
+            generatedSitePath: result.generatedSitePath ?? current.result?.generatedSitePath,
+            completedAt: current.result?.completedAt,
+            error: result.error,
+            diagnosticCode: result.diagnosticCode,
+            requestId: result.requestId,
+          },
+          isEditingInputs: true,
+        }));
+        void trackGenerationEvent({
+          event: "generation_failed",
+          status: "error",
+          message: result.error,
+          retryCount: nextRetryCount,
+        });
+        return;
+      }
 
-    const result = await submitWebsiteGeneration(state.input, {
-      onStageChange(stage) {
-        setState((current) => updateGenerationStage(current, stage));
-      },
-    });
-
-    if (!result.ok) {
       setState((current) => ({
         ...current,
-        submissionStatus: "error",
+        submissionStatus: "success",
         result: {
-          error: result.error,
+          structureId: result.structureId,
+          generatedSitePath: result.generatedSitePath,
+          completedAt: new Date().toISOString(),
+          diagnosticCode: undefined,
+          requestId: undefined,
         },
-        isEditingInputs: true,
+        isEditingInputs: false,
       }));
+
       void trackGenerationEvent({
-        event: "generation_failed",
-        status: "error",
-        message: result.error,
+        event: "generation_completed",
+        status: "success",
+        structureId: result.structureId,
         retryCount: nextRetryCount,
       });
-      return;
-    }
-
-    setState((current) => ({
-      ...current,
-      submissionStatus: "success",
-      result: {
+      void trackGenerationEvent({
+        event: "generation_preview_opened",
         structureId: result.structureId,
-        generatedSitePath: result.generatedSitePath,
-        completedAt: new Date().toISOString(),
-      },
-      isEditingInputs: false,
-    }));
-
-    void trackGenerationEvent({
-      event: "generation_completed",
-      status: "success",
-      structureId: result.structureId,
-      retryCount: nextRetryCount,
-    });
+        status: "success",
+      });
+      router.push(result.generatedSitePath);
+    } finally {
+      isSubmissionInFlightRef.current = false;
+    }
   }
 
   function handleReviewInputs() {

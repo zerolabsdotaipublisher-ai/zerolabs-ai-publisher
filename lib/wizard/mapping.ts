@@ -1,5 +1,6 @@
 import { routes } from "@/config/routes";
 import type { WebsiteGenerationInput } from "@/lib/ai/prompts/types";
+import type { GenerationDiagnosticCode } from "@/lib/generation/types";
 import { sanitizeInput } from "@/lib/ai/prompts/schemas";
 import { inferWebsiteTypeFromPages } from "./schemas";
 import type { WebsiteWizardInput } from "./types";
@@ -7,6 +8,8 @@ import type { WebsiteWizardInput } from "./types";
 export interface WizardPipelineEndpoints {
   generateStructure: "/api/ai/generate-structure";
   generateContent: "/api/ai/generate-content";
+  regenerateStructure: "/api/ai/regenerate-structure";
+  regenerateContent: "/api/ai/regenerate-content";
   generateNavigation: "/api/ai/generate-navigation";
   generateSeo: "/api/ai/generate-seo";
 }
@@ -14,6 +17,8 @@ export interface WizardPipelineEndpoints {
 export const wizardPipelineEndpoints: WizardPipelineEndpoints = {
   generateStructure: "/api/ai/generate-structure",
   generateContent: "/api/ai/generate-content",
+  regenerateStructure: "/api/ai/regenerate-structure",
+  regenerateContent: "/api/ai/regenerate-content",
   generateNavigation: "/api/ai/generate-navigation",
   generateSeo: "/api/ai/generate-seo",
 };
@@ -62,6 +67,8 @@ export interface StructureGenerationResponse {
   error?: string;
   message?: string;
   details?: string[];
+  diagnosticCode?: GenerationDiagnosticCode;
+  requestId?: string;
 }
 
 export interface ContentGenerationResponse {
@@ -70,4 +77,6 @@ export interface ContentGenerationResponse {
   error?: string;
   message?: string;
   details?: string[];
+  diagnosticCode?: GenerationDiagnosticCode;
+  requestId?: string;
 }

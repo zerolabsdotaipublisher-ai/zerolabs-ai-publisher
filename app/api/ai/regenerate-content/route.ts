@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { getServerUser } from "@/lib/supabase/server";
 import { getWebsiteStructure, updateWebsiteStructure } from "@/lib/ai/structure/storage";
 import { storeWebsiteNavigation } from "@/lib/ai/navigation";
-import { logger } from "@/lib/observability";
+import { createRequestId } from "@/lib/observability";
 import { listOwnedContentLibraryPage } from "@/lib/content/library";
 import {
   regenerateWebsiteContent,
@@ -13,6 +13,10 @@ import { generateWebsiteSeo, storeWebsiteSeoMetadata } from "@/lib/ai/seo";
 import type { WebsiteGenerationInput } from "@/lib/ai/prompts/types";
 import { toRevisionWorkflowIdMap } from "@/lib/revisions/model";
 import { recordContentRevisionAction } from "@/lib/revisions/workflow";
+import {
+  createGenerationRouteErrorResponse,
+  createLoggedGenerationFailureResponse,
+} from "@/lib/ai/route-diagnostics";
 
 interface RegenerateContentBody {
   structureId: string;
@@ -21,10 +25,19 @@ interface RegenerateContentBody {
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const requestId = createRequestId(request);
   const user = await getServerUser();
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return createLoggedGenerationFailureResponse({
+      route: "regenerate-content",
+      requestId,
+      status: 401,
+      diagnosticCode: "UNAUTHORIZED",
+      stage: "auth",
+      source: "route_guard",
+      body: { error: "Unauthorized" },
+    });
   }
 
   let body: RegenerateContentBody;
@@ -32,17 +45,45 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     body = (await request.json()) as RegenerateContentBody;
   } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    return createLoggedGenerationFailureResponse({
+      route: "regenerate-content",
+      requestId,
+      status: 400,
+      diagnosticCode: "INVALID_JSON",
+      stage: "input",
+      source: "route_guard",
+      userId: user.id,
+      body: { error: "Invalid JSON body" },
+    });
   }
 
   if (!body.structureId?.trim()) {
-    return NextResponse.json({ error: "structureId is required" }, { status: 400 });
+    return createLoggedGenerationFailureResponse({
+      route: "regenerate-content",
+      requestId,
+      status: 400,
+      diagnosticCode: "STRUCTURE_ID_REQUIRED",
+      stage: "input",
+      source: "route_guard",
+      userId: user.id,
+      body: { error: "structureId is required" },
+    });
   }
 
   const existing = await getWebsiteStructure(body.structureId, user.id);
 
   if (!existing) {
-    return NextResponse.json({ error: "Structure not found" }, { status: 404 });
+    return createLoggedGenerationFailureResponse({
+      route: "regenerate-content",
+      requestId,
+      status: 404,
+      diagnosticCode: "STRUCTURE_NOT_FOUND",
+      stage: "lookup",
+      source: "route_guard",
+      structureId: body.structureId,
+      userId: user.id,
+      body: { error: "Structure not found" },
+    });
   }
 
   try {
@@ -111,26 +152,28 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       ),
     );
 
-    return NextResponse.json({
-      content: result.content,
-      structure: updatedStructure,
-      seo: seoResult.seo,
-      usedFallback: result.usedFallback || seoResult.usedFallback,
-      validationErrors: [...result.validationErrors, ...seoResult.validationErrors],
-    });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-
-    logger.error("regenerate-content route failed", {
-      category: "error",
-      service: "openai",
-      structureId: body.structureId,
-      error: { message, name: "RegenerateContentRouteError" },
-    });
-
     return NextResponse.json(
-      { error: "Content regeneration failed", message },
-      { status: 500 },
+      {
+        content: result.content,
+        structure: updatedStructure,
+        seo: seoResult.seo,
+        usedFallback: result.usedFallback || seoResult.usedFallback,
+        validationErrors: [...result.validationErrors, ...seoResult.validationErrors],
+      },
+      {
+        headers: {
+          "x-request-id": requestId,
+        },
+      },
     );
+  } catch (err) {
+    return createGenerationRouteErrorResponse({
+      err,
+      route: "regenerate-content",
+      requestId,
+      structureId: body.structureId,
+      userId: user.id,
+      websiteType: existing.sourceInput.websiteType,
+    });
   }
 }

@@ -25,37 +25,27 @@ import {
   validateWebsiteGenerationInput,
   sanitizeInput,
 } from "@/lib/ai/prompts/schemas";
-import { logger } from "@/lib/observability";
+import { createRequestId } from "@/lib/observability";
 import type { WebsiteGenerationInput } from "@/lib/ai/prompts/types";
-
-const RATE_LIMIT_MESSAGE =
-  "Generation is temporarily rate-limited. Please wait a moment, then try again.";
-
-function toSafeRouteError(err: unknown): { status: number; message: string; logMessage: string } {
-  const logMessage = err instanceof Error ? err.message : "Unknown error";
-  const openAiStatusMatch = logMessage.match(/OpenAI API error (\d+)/i);
-  const openAiStatus = openAiStatusMatch ? Number(openAiStatusMatch[1]) : null;
-
-  if (openAiStatus === 429) {
-    return {
-      status: 429,
-      message: RATE_LIMIT_MESSAGE,
-      logMessage,
-    };
-  }
-
-  return {
-    status: 500,
-    message: "Generation could not be completed right now. Please review your inputs or try again in a moment.",
-    logMessage,
-  };
-}
+import {
+  createGenerationRouteErrorResponse,
+  createLoggedGenerationFailureResponse,
+} from "@/lib/ai/route-diagnostics";
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const requestId = createRequestId(request);
   const user = await getServerUser();
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return createLoggedGenerationFailureResponse({
+      route: "generate-structure",
+      requestId,
+      status: 401,
+      diagnosticCode: "UNAUTHORIZED",
+      stage: "auth",
+      source: "route_guard",
+      body: { error: "Unauthorized" },
+    });
   }
 
   let body: WebsiteGenerationInput;
@@ -63,17 +53,34 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     body = (await request.json()) as WebsiteGenerationInput;
   } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    return createLoggedGenerationFailureResponse({
+      route: "generate-structure",
+      requestId,
+      status: 400,
+      diagnosticCode: "INVALID_JSON",
+      stage: "input",
+      source: "route_guard",
+      userId: user.id,
+      body: { error: "Invalid JSON body" },
+    });
   }
 
   const input = sanitizeInput(body);
   const validationErrors = validateWebsiteGenerationInput(input);
 
   if (validationErrors.length > 0) {
-    return NextResponse.json(
-      { error: "Invalid input", details: validationErrors },
-      { status: 422 },
-    );
+    return createLoggedGenerationFailureResponse({
+      route: "generate-structure",
+      requestId,
+      status: 422,
+      diagnosticCode: "INVALID_INPUT",
+      stage: "input",
+      source: "route_guard",
+      userId: user.id,
+      websiteType: input.websiteType,
+      details: validationErrors,
+      body: { error: "Invalid input", details: validationErrors },
+    });
   }
 
   try {
@@ -97,24 +104,26 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       updatedAt: stored.updatedAt,
     });
 
-    return NextResponse.json({
-      structure: stored,
-      seo: seoResult.seo,
-      usedFallback: result.usedFallback || seoResult.usedFallback,
-      validationErrors: [...result.validationErrors, ...seoResult.validationErrors],
-    });
-  } catch (err) {
-    const safeError = toSafeRouteError(err);
-
-    logger.error("generate-structure route failed", {
-      category: "error",
-      service: "openai",
-      error: { message: safeError.logMessage, name: "GenerateStructureError" },
-    });
-
     return NextResponse.json(
-      { error: safeError.message, message: safeError.message },
-      { status: safeError.status },
+      {
+        structure: stored,
+        seo: seoResult.seo,
+        usedFallback: result.usedFallback || seoResult.usedFallback,
+        validationErrors: [...result.validationErrors, ...seoResult.validationErrors],
+      },
+      {
+        headers: {
+          "x-request-id": requestId,
+        },
+      },
     );
+  } catch (err) {
+    return createGenerationRouteErrorResponse({
+      err,
+      route: "generate-structure",
+      requestId,
+      userId: user.id,
+      websiteType: input.websiteType,
+    });
   }
 }

@@ -2,16 +2,33 @@ import type { WebsiteWizardInput } from "@/lib/wizard";
 
 export type GenerationStage = "preparing" | "structure" | "content" | "finalizing";
 export type GenerationRunStatus = "idle" | "validating" | "running" | "success" | "error";
+export type GenerationDiagnosticCode =
+  | "UNAUTHORIZED"
+  | "INVALID_JSON"
+  | "INVALID_INPUT"
+  | "STRUCTURE_ID_REQUIRED"
+  | "STRUCTURE_NOT_FOUND"
+  | "OPENAI_RATE_LIMITED"
+  | "OPENAI_AUTH_INVALID"
+  | "OPENAI_REQUEST_REJECTED"
+  | "OPENAI_UPSTREAM_ERROR"
+  | "SUPABASE_SCHEMA_MISSING"
+  | "SUPABASE_STORAGE_ERROR"
+  | "GENERATION_INTERNAL_ERROR"
+  | "RETRY_UNAVAILABLE";
 
 export interface GenerationInterfaceResult {
   structureId?: string;
   generatedSitePath?: string;
   completedAt?: string;
   error?: string;
+  diagnosticCode?: GenerationDiagnosticCode;
+  requestId?: string;
 }
 
 export interface GenerationInterfaceState {
   input: WebsiteWizardInput;
+  lastSubmittedInput?: WebsiteWizardInput;
   validationErrors: string[];
   submissionStatus: GenerationRunStatus;
   stage: GenerationStage;
@@ -29,6 +46,10 @@ export interface GenerationSubmissionSuccess {
 export interface GenerationSubmissionFailure {
   ok: false;
   error: string;
+  structureId?: string;
+  generatedSitePath?: string;
+  diagnosticCode?: GenerationDiagnosticCode;
+  requestId?: string;
 }
 
 export type GenerationSubmissionResult =
