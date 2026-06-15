@@ -29,8 +29,12 @@ import { getWebsiteStructure, updateWebsiteStructure } from "@/lib/ai/structure/
 import { regenerateWebsiteStructure } from "@/lib/ai/structure/regeneration";
 import { storeWebsiteNavigation } from "@/lib/ai/navigation";
 import { generateWebsiteSeo, storeWebsiteSeoMetadata } from "@/lib/ai/seo";
-import { logger } from "@/lib/observability";
+import { createRequestId } from "@/lib/observability";
 import type { WebsiteGenerationInput } from "@/lib/ai/prompts/types";
+import {
+  createGenerationRouteErrorResponse,
+  createLoggedGenerationFailureResponse,
+} from "@/lib/ai/route-diagnostics";
 
 interface RegenerateBody {
   structureId: string;
@@ -38,10 +42,19 @@ interface RegenerateBody {
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const requestId = createRequestId(request);
   const user = await getServerUser();
 
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return createLoggedGenerationFailureResponse({
+      route: "regenerate-structure",
+      requestId,
+      status: 401,
+      diagnosticCode: "UNAUTHORIZED",
+      stage: "auth",
+      source: "route_guard",
+      body: { error: "Unauthorized" },
+    });
   }
 
   let body: RegenerateBody;
@@ -49,20 +62,45 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     body = (await request.json()) as RegenerateBody;
   } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    return createLoggedGenerationFailureResponse({
+      route: "regenerate-structure",
+      requestId,
+      status: 400,
+      diagnosticCode: "INVALID_JSON",
+      stage: "input",
+      source: "route_guard",
+      userId: user.id,
+      body: { error: "Invalid JSON body" },
+    });
   }
 
   if (!body.structureId?.trim()) {
-    return NextResponse.json(
-      { error: "structureId is required" },
-      { status: 400 },
-    );
+    return createLoggedGenerationFailureResponse({
+      route: "regenerate-structure",
+      requestId,
+      status: 400,
+      diagnosticCode: "STRUCTURE_ID_REQUIRED",
+      stage: "input",
+      source: "route_guard",
+      userId: user.id,
+      body: { error: "structureId is required" },
+    });
   }
 
   const existing = await getWebsiteStructure(body.structureId, user.id);
 
   if (!existing) {
-    return NextResponse.json({ error: "Structure not found" }, { status: 404 });
+    return createLoggedGenerationFailureResponse({
+      route: "regenerate-structure",
+      requestId,
+      status: 404,
+      diagnosticCode: "STRUCTURE_NOT_FOUND",
+      stage: "lookup",
+      source: "route_guard",
+      structureId: body.structureId,
+      userId: user.id,
+      body: { error: "Structure not found" },
+    });
   }
 
   try {
@@ -93,25 +131,27 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       updatedAt: updated.updatedAt,
     });
 
-    return NextResponse.json({
-      structure: updated,
-      seo: seoResult.seo,
-      usedFallback: result.usedFallback || seoResult.usedFallback,
-      validationErrors: [...result.validationErrors, ...seoResult.validationErrors],
-    });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-
-    logger.error("regenerate-structure route failed", {
-      category: "error",
-      service: "openai",
-      structureId: body.structureId,
-      error: { message, name: "RegenerateStructureError" },
-    });
-
     return NextResponse.json(
-      { error: "Regeneration failed", message },
-      { status: 500 },
+      {
+        structure: updated,
+        seo: seoResult.seo,
+        usedFallback: result.usedFallback || seoResult.usedFallback,
+        validationErrors: [...result.validationErrors, ...seoResult.validationErrors],
+      },
+      {
+        headers: {
+          "x-request-id": requestId,
+        },
+      },
     );
+  } catch (err) {
+    return createGenerationRouteErrorResponse({
+      err,
+      route: "regenerate-structure",
+      requestId,
+      structureId: body.structureId,
+      userId: user.id,
+      websiteType: existing.sourceInput.websiteType,
+    });
   }
 }

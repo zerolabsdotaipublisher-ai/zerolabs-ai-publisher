@@ -1,5 +1,5 @@
-import { WebsiteGenerationInterface } from "@/components/generation/website-generation-interface";
+import { WebsiteCreationWizard } from "@/components/wizard/website-creation-wizard";
 
 export default function CreateWebsitePage() {
-  return <WebsiteGenerationInterface entryPoint="create" />;
+  return <WebsiteCreationWizard />;
 }

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import type { PageDesignConfig } from "@/lib/ai/prompts/types";
-import type { GenerationInterfaceState } from "@/lib/generation";
+import type { GenerationDiagnosticCode, GenerationInterfaceState } from "@/lib/generation";
 import {
   backgroundStyleOptions,
   headingScaleOptions,
@@ -211,7 +211,12 @@ function getWorkflowStatus(state: GenerationInterfaceState, readinessErrors: str
   };
 }
 
-function classifyGenerationFailure(error?: string) {
+function classifyGenerationFailure(args: {
+  error?: string;
+  diagnosticCode?: GenerationDiagnosticCode;
+  requestId?: string;
+}) {
+  const { diagnosticCode, error, requestId } = args;
   const safeDescription = sanitizeFailureDescription(error);
   const normalized = (error ?? "").toLowerCase();
   const isRateLimited =
@@ -229,19 +234,88 @@ function classifyGenerationFailure(error?: string) {
     normalized.includes("add ") ||
     normalized.includes("need attention");
 
-  if (isRateLimited) {
+  const referenceId = requestId?.trim() ? requestId.trim() : undefined;
+
+  if (diagnosticCode === "RETRY_UNAVAILABLE") {
+    return {
+      title: "Retry needs the last saved generation input",
+      description:
+        safeDescription ??
+        "Retry could not continue because the last valid generation input is no longer available.",
+      guidance: "Review the current inputs, then start generation again.",
+      referenceId: undefined,
+    };
+  }
+
+  if (diagnosticCode === "UNAUTHORIZED") {
+    return {
+      title: "Your session needs to be refreshed",
+      description:
+        safeDescription ?? "Generation could not continue because your session is no longer active.",
+      guidance: "Sign in again, then retry generation.",
+      referenceId: undefined,
+    };
+  }
+
+  if (diagnosticCode === "STRUCTURE_NOT_FOUND" || diagnosticCode === "STRUCTURE_ID_REQUIRED") {
+    return {
+      title: "The saved website draft could not be resumed",
+      description:
+        safeDescription ?? "Retry could not find the saved website structure needed to continue.",
+      guidance: "Review the inputs and start generation again.",
+      referenceId,
+    };
+  }
+
+  if (diagnosticCode === "SUPABASE_SCHEMA_MISSING") {
+    return {
+      title: "Website generation is temporarily unavailable",
+      description:
+        safeDescription ?? "The generation service could not save the website because storage is not ready.",
+      guidance: "Your inputs are still saved. Try again later or share the reference ID with support.",
+      referenceId,
+    };
+  }
+
+  if (diagnosticCode === "SUPABASE_STORAGE_ERROR") {
+    return {
+      title: "We couldn't save the generated website yet",
+      description:
+        safeDescription ?? "Generation reached the save step, but progress could not be stored right now.",
+      guidance: "Your inputs are still saved. Retry generation in a moment.",
+      referenceId,
+    };
+  }
+
+  if (
+    diagnosticCode === "OPENAI_AUTH_INVALID" ||
+    diagnosticCode === "OPENAI_REQUEST_REJECTED" ||
+    diagnosticCode === "OPENAI_UPSTREAM_ERROR"
+  ) {
+    return {
+      title: "The AI generation service could not complete this request",
+      description:
+        safeDescription ?? "Generation is temporarily unavailable because the AI provider could not complete the request.",
+      guidance: "Your inputs are still saved. Retry in a moment.",
+      referenceId,
+    };
+  }
+
+  if (diagnosticCode === "OPENAI_RATE_LIMITED" || isRateLimited) {
     return {
       title: "Generation is temporarily rate-limited",
       description: RATE_LIMIT_MESSAGE,
       guidance: "Your inputs are still saved. Wait a moment, then retry generation.",
+      referenceId,
     };
   }
 
-  if (isValidationIssue) {
+  if (diagnosticCode === "INVALID_INPUT" || isValidationIssue) {
     return {
       title: "Some inputs need attention",
       description: safeDescription ?? "A required input is missing or incomplete.",
       guidance: "Review the required inputs on the left, then retry generation.",
+      referenceId: undefined,
     };
   }
 
@@ -250,6 +324,7 @@ function classifyGenerationFailure(error?: string) {
     description:
       safeDescription ?? "Generation could not be completed right now. Please try again in a moment.",
     guidance: "Your page setup is still available. You can retry now or continue editing.",
+    referenceId,
   };
 }
 
@@ -297,7 +372,11 @@ export function WebsiteBuilderPreviewPanel({
   onPreviewClick,
 }: WebsiteBuilderPreviewPanelProps) {
   const workflowStatus = getWorkflowStatus(state, readinessErrors);
-  const failureState = classifyGenerationFailure(state.result?.error);
+  const failureState = classifyGenerationFailure({
+    error: state.result?.error,
+    diagnosticCode: state.result?.diagnosticCode,
+    requestId: state.result?.requestId,
+  });
   const pageLayout = activePage
     ? findLabel(layoutStructureOptions, activePage.layout)
     : "Not selected";
@@ -457,6 +536,11 @@ export function WebsiteBuilderPreviewPanel({
           <h3>{failureState.title}</h3>
           <p>{failureState.description}</p>
           <p>{failureState.guidance}</p>
+          {failureState.referenceId ? (
+            <p className="website-generation-status-reference">
+              Reference ID: {failureState.referenceId}
+            </p>
+          ) : null}
 
           <div className="website-generation-failure-actions">
             <button

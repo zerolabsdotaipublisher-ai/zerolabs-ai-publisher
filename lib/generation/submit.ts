@@ -1,14 +1,23 @@
 import { wizardPipelineEndpoints } from "@/lib/wizard";
 import { mapStructureIdToOutputPath, mapWizardInputToGenerationInput } from "./mapping";
-import type { GenerationStage, GenerationSubmissionResult } from "./types";
+import type {
+  GenerationDiagnosticCode,
+  GenerationStage,
+  GenerationSubmissionResult,
+} from "./types";
 import type {
   ContentGenerationResponse,
   StructureGenerationResponse,
   WebsiteWizardInput,
 } from "@/lib/wizard";
+import {
+  type WebsiteGenerationInput,
+  validateWebsiteGenerationInput,
+} from "@/lib/ai/prompts";
 
 interface SubmitOptions {
   onStageChange?: (stage: GenerationStage) => void;
+  structureId?: string;
 }
 
 const RATE_LIMIT_MESSAGE =
@@ -20,6 +29,8 @@ type SafeGenerationPayload = {
   error?: string;
   message?: string;
   details?: string[];
+  diagnosticCode?: GenerationDiagnosticCode;
+  requestId?: string;
 };
 
 function humanizeFieldName(value: string): string {
@@ -154,40 +165,25 @@ async function parseJsonResponse<T extends SafeGenerationPayload>(response: Resp
   }
 }
 
-function createCompatibleGenerationPayload(input: WebsiteWizardInput) {
-  const generationInput = mapWizardInputToGenerationInput(input);
-  const primaryPage =
-    generationInput.designConfig?.pages.find((page) => page.name.trim().toLowerCase() === "home") ??
-    generationInput.designConfig?.pages[0];
+function createGenerationPayload(input: WebsiteWizardInput): WebsiteGenerationInput {
+  return mapWizardInputToGenerationInput(input);
+}
 
+function buildFailureResult(args: {
+  error: string;
+  structureId?: string;
+  diagnosticCode?: GenerationDiagnosticCode;
+  requestId?: string;
+}): GenerationSubmissionResult {
   return {
-    ...generationInput,
-    websiteType: generationInput.websiteType,
-    brandName: generationInput.brandName ?? "",
-    description: generationInput.description ?? "",
-    targetAudience: generationInput.targetAudience ?? "",
-    primaryCta: generationInput.primaryCta ?? "",
-    services: generationInput.services ?? [],
-    founderProfile: generationInput.founderProfile ?? {
-      name: "",
-      role: "",
-      bio: "",
-    },
-    testimonials: generationInput.testimonials ?? [],
-    contactInfo: {
-      email: generationInput.contactInfo?.email ?? "",
-      phone: generationInput.contactInfo?.phone ?? "",
-      location: generationInput.contactInfo?.location ?? "",
-      socialLinks: generationInput.contactInfo?.socialLinks ?? [],
-    },
-    constraints: generationInput.constraints ?? [],
-    customToneNotes: generationInput.customToneNotes ?? "",
-    customStyleNotes: generationInput.customStyleNotes ?? "",
-    designConfig: generationInput.designConfig ?? { pages: [] },
-    layout: primaryPage ? { structure: primaryPage.layout } : undefined,
-    background: primaryPage?.background,
-    typography: primaryPage?.typography,
-    headings: primaryPage?.headings,
+    ok: false,
+    error: args.error,
+    structureId: args.structureId,
+    diagnosticCode: args.diagnosticCode,
+    requestId: args.requestId,
+    generatedSitePath: args.structureId
+      ? mapStructureIdToOutputPath(args.structureId)
+      : undefined,
   };
 }
 
@@ -197,46 +193,85 @@ export async function submitWebsiteGeneration(
 ): Promise<GenerationSubmissionResult> {
   options?.onStageChange?.("preparing");
 
-  const generationInput = createCompatibleGenerationPayload(input);
+  const generationInput = createGenerationPayload(input);
+  const payloadValidationErrors = validateWebsiteGenerationInput(generationInput);
+
+  if (payloadValidationErrors.length > 0) {
+    return buildFailureResult({
+      error: toSafeGenerationMessage(
+        { details: payloadValidationErrors },
+        GENERIC_FAILURE_MESSAGE,
+        422,
+      ),
+      structureId: options?.structureId?.trim() || undefined,
+      diagnosticCode: "INVALID_INPUT",
+    });
+  }
+
+  const existingStructureId = options?.structureId?.trim() || undefined;
+  const structureEndpoint = existingStructureId
+    ? wizardPipelineEndpoints.regenerateStructure
+    : wizardPipelineEndpoints.generateStructure;
 
   options?.onStageChange?.("structure");
-  const structureResponse = await fetch(wizardPipelineEndpoints.generateStructure, {
+  const structureResponse = await fetch(structureEndpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(generationInput),
+    body: JSON.stringify(
+      existingStructureId
+        ? {
+            structureId: existingStructureId,
+            updatedInput: generationInput,
+          }
+        : generationInput,
+    ),
   });
 
   const structureBody = await parseJsonResponse<StructureGenerationResponse>(structureResponse);
   if (!structureResponse.ok || !structureBody.structure?.id) {
-    return {
-      ok: false,
+    return buildFailureResult({
       error: toSafeGenerationMessage(
         structureBody,
         GENERIC_FAILURE_MESSAGE,
         structureResponse.status,
       ),
-    };
+      structureId: existingStructureId,
+      diagnosticCode: structureBody.diagnosticCode,
+      requestId: structureBody.requestId,
+    });
   }
 
   const structureId = structureBody.structure.id;
+  const contentEndpoint = existingStructureId
+    ? wizardPipelineEndpoints.regenerateContent
+    : wizardPipelineEndpoints.generateContent;
 
   options?.onStageChange?.("content");
-  const contentResponse = await fetch(wizardPipelineEndpoints.generateContent, {
+  const contentResponse = await fetch(contentEndpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ structureId }),
+    body: JSON.stringify(
+      existingStructureId
+        ? {
+            structureId,
+            updatedInput: generationInput,
+          }
+        : { structureId },
+    ),
   });
 
   const contentBody = await parseJsonResponse<ContentGenerationResponse>(contentResponse);
   if (!contentResponse.ok) {
-    return {
-      ok: false,
+    return buildFailureResult({
       error: toSafeGenerationMessage(
         contentBody,
         GENERIC_FAILURE_MESSAGE,
         contentResponse.status,
       ),
-    };
+      structureId,
+      diagnosticCode: contentBody.diagnosticCode,
+      requestId: contentBody.requestId,
+    });
   }
 
   options?.onStageChange?.("finalizing");
