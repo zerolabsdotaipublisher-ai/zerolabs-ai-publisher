@@ -5,7 +5,7 @@ export const wizardScenarios: WizardScenario[] = [
     id: "business-full-input",
     name: "Business website with full inputs",
     goal: "Validate all required fields and optional customizations feed generation.",
-    notes: "Covers required flow plus testimonials/contact info and review confirmation.",
+    notes: "Covers required flow plus contact info and review confirmation.",
   },
   {
     id: "portfolio-light-input",

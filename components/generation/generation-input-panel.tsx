@@ -17,7 +17,6 @@ import {
 interface GenerationInputPanelProps {
   data: WebsiteWizardInput;
   servicesText: string;
-  testimonialsText: string;
   socialLinksText: string;
   constraintsText: string;
   errors: string[];
@@ -26,7 +25,6 @@ interface GenerationInputPanelProps {
   onActivePageChange: (pageId: string) => void;
   onFieldChange: (patch: WebsiteWizardInputPatch) => void;
   onServicesTextChange: (value: string) => void;
-  onTestimonialsChange: (value: string) => void;
   onSocialLinksChange: (value: string) => void;
   onConstraintsChange: (value: string) => void;
 }
@@ -160,7 +158,6 @@ function getPhaseStateTone(isActive: boolean, errors: string[]): "current" | "re
 export function GenerationInputPanel({
   data,
   servicesText,
-  testimonialsText,
   socialLinksText,
   constraintsText,
   errors,
@@ -169,7 +166,6 @@ export function GenerationInputPanel({
   onActivePageChange,
   onFieldChange,
   onServicesTextChange,
-  onTestimonialsChange,
   onSocialLinksChange,
   onConstraintsChange,
 }: GenerationInputPanelProps) {
@@ -213,7 +209,7 @@ export function GenerationInputPanel({
       description:
         "Tune background, typography, and heading style for each page, then add broader creative direction if needed.",
       helper:
-        "Visual settings stay page-specific, and optional founder, contact, and testimonial inputs remain available without cluttering the main flow.",
+        "Visual settings stay page-specific, and optional founder, contact, and content constraints remain available without cluttering the main flow.",
     },
   ];
 
@@ -410,12 +406,10 @@ export function GenerationInputPanel({
           <div className="website-builder-advanced-details-body">
             <StepContentInput
               data={data}
-              testimonialsText={testimonialsText}
               socialLinksText={socialLinksText}
               constraintsText={constraintsText}
               errors={errors}
               onFieldChange={(patch) => runIfEditing(onFieldChange, patch)}
-              onTestimonialsChange={(value) => runIfEditing(onTestimonialsChange, value)}
               onSocialLinksChange={(value) => runIfEditing(onSocialLinksChange, value)}
               onConstraintsChange={(value) => runIfEditing(onConstraintsChange, value)}
             />

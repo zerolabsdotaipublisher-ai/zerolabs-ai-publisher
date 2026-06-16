@@ -15,6 +15,22 @@ export const WIZARD_STORAGE_KEY = "zlai.websiteCreationWizard";
 
 const formStepIds = WIZARD_FORM_STEPS.map((step) => step.id);
 
+function stripLegacyWizardFields(
+  patch: WebsiteWizardInputPatch,
+): WebsiteWizardInputPatch {
+  const rest = {
+    ...patch,
+  } as WebsiteWizardInputPatch & {
+    testimonials?: unknown;
+  };
+
+  if ("testimonials" in rest) {
+    delete rest.testimonials;
+  }
+
+  return rest;
+}
+
 export function createInitialWizardState(): WebsiteCreationWizardState {
   return {
     currentStep: "page-setup",
@@ -51,11 +67,13 @@ export function mergeWizardInput(
   current: WebsiteWizardInput,
   patch: WebsiteWizardInputPatch,
 ): WebsiteWizardInput {
-  const mergedDesignConfig = patch.designConfig
+  const sanitizedPatch = stripLegacyWizardFields(patch);
+
+  const mergedDesignConfig = sanitizedPatch.designConfig
     ? {
         ...current.designConfig,
-        ...patch.designConfig,
-        pages: patch.designConfig.pages ?? current.designConfig.pages,
+        ...sanitizedPatch.designConfig,
+        pages: sanitizedPatch.designConfig.pages ?? current.designConfig.pages,
       }
     : current.designConfig;
 
@@ -64,20 +82,19 @@ export function mergeWizardInput(
 
   return {
     ...current,
-    ...patch,
+    ...sanitizedPatch,
     founderProfile: {
       ...current.founderProfile,
-      ...patch.founderProfile,
+      ...sanitizedPatch.founderProfile,
     },
     contactInfo: {
       ...current.contactInfo,
-      ...patch.contactInfo,
-      socialLinks: patch.contactInfo?.socialLinks ?? current.contactInfo.socialLinks,
+      ...sanitizedPatch.contactInfo,
+      socialLinks: sanitizedPatch.contactInfo?.socialLinks ?? current.contactInfo.socialLinks,
     },
-    testimonials: patch.testimonials ?? current.testimonials,
-    services: patch.services ?? current.services,
-    constraints: patch.constraints ?? current.constraints,
-    websiteType: patch.websiteType ?? inferredWebsiteType,
+    services: sanitizedPatch.services ?? current.services,
+    constraints: sanitizedPatch.constraints ?? current.constraints,
+    websiteType: sanitizedPatch.websiteType ?? inferredWebsiteType,
     designConfig: {
       pages: normalizedPages,
     },

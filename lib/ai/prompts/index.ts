@@ -29,10 +29,16 @@ const SECTION_BUILDERS: Record<
   footer: createFooterSectionTemplate,
 };
 
-function resolveSectionList(options?: PromptBuildOptions): WebsiteSectionName[] {
+function resolveSectionList(
+  input: WebsiteGenerationInput,
+  options?: PromptBuildOptions,
+): WebsiteSectionName[] {
   const requested = options?.includeSections;
   if (!requested?.length) {
-    return Object.keys(SECTION_BUILDERS) as WebsiteSectionName[];
+    const defaults = Object.keys(SECTION_BUILDERS) as WebsiteSectionName[];
+    return input.testimonials?.length
+      ? defaults
+      : defaults.filter((section) => section !== "testimonials");
   }
 
   return requested.filter((section) => SECTION_BUILDERS[section]);
@@ -49,6 +55,8 @@ export function buildWebsitePrompt(
     throw new Error(`Invalid website generation input: ${errors.join("; ")}`);
   }
 
+  const includeSections = resolveSectionList(input, options);
+
   const corePrompt = createCoreWebsiteTemplate({
     input,
     toneGuidance: resolveToneGuidance(input),
@@ -62,7 +70,7 @@ export function buildWebsitePrompt(
     return corePrompt;
   }
 
-  const sectionPrompts = resolveSectionList(options).map((section) => {
+  const sectionPrompts = includeSections.map((section) => {
     const builder = SECTION_BUILDERS[section];
     return `\n[SECTION:${section}]\n${builder(input)}`;
   });
@@ -95,7 +103,7 @@ export function buildPromptBundle(
   options?: PromptBuildOptions,
 ): PromptBundle {
   const input = sanitizeInput(rawInput);
-  const includeSections = resolveSectionList(options);
+  const includeSections = resolveSectionList(input, options);
 
   const sectionPrompts = includeSections.reduce<
     Partial<Record<WebsiteSectionName, string>>

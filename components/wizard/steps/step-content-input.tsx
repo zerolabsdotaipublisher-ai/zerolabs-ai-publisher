@@ -1,38 +1,24 @@
-import type { TestimonialInput } from "@/lib/ai/prompts/types";
 import type { WebsiteWizardInput, WebsiteWizardInputPatch } from "@/lib/wizard";
 
 interface StepContentInputProps {
   data: WebsiteWizardInput;
-  testimonialsText: string;
   socialLinksText: string;
   constraintsText: string;
   errors?: string[];
   onFieldChange: (patch: WebsiteWizardInputPatch) => void;
-  onTestimonialsChange: (value: string) => void;
   onSocialLinksChange: (value: string) => void;
   onConstraintsChange: (value: string) => void;
 }
 
-function testimonialHint(testimonials: TestimonialInput[]): string {
-  if (!testimonials.length) {
-    return "Optional. Format: quote | author | role (escape pipe with \\|)";
-  }
-
-  return `${testimonials.length} testimonial ${testimonials.length === 1 ? "entry" : "entries"} parsed`;
-}
-
 export function StepContentInput({
   data,
-  testimonialsText,
   socialLinksText,
   constraintsText,
   errors = [],
   onFieldChange,
-  onTestimonialsChange,
   onSocialLinksChange,
   onConstraintsChange,
 }: StepContentInputProps) {
-  const testimonialError = errors.includes("Each testimonial needs both quote and author.");
   const emailError = errors.includes("Contact email must be a valid email address.");
 
   return (
@@ -75,30 +61,6 @@ export function StepContentInput({
           }
           rows={3}
         />
-      </label>
-
-      <label>
-        <span>Testimonials</span>
-        <textarea
-          value={testimonialsText}
-          onChange={(event) => onTestimonialsChange(event.target.value)}
-          rows={4}
-          placeholder={"They delivered incredible ROI | Alex Chen | Founder\nA seamless process | Dana Park | Marketing Lead"}
-          aria-invalid={testimonialError || undefined}
-          aria-describedby={
-            testimonialError
-              ? "wizard-testimonials-hint wizard-testimonials-error"
-              : "wizard-testimonials-hint"
-          }
-        />
-        <span className="wizard-field-hint" id="wizard-testimonials-hint">
-          {testimonialHint(data.testimonials)}
-        </span>
-        {testimonialError ? (
-          <span className="wizard-field-error" id="wizard-testimonials-error">
-            Each testimonial needs both quote and author.
-          </span>
-        ) : null}
       </label>
 
       <div className="wizard-columns">

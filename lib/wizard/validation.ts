@@ -148,16 +148,6 @@ export function validateBrandContentStep(data: WebsiteWizardInput): string[] {
 export function validateOptionalContentInputs(data: WebsiteWizardInput): string[] {
   const errors: string[] = [];
 
-  const incompleteTestimonials = data.testimonials.filter(
-    (testimonial) =>
-      (hasContent(testimonial.quote) && !hasContent(testimonial.author)) ||
-      (!hasContent(testimonial.quote) && hasContent(testimonial.author)),
-  );
-
-  if (incompleteTestimonials.length > 0) {
-    errors.push("Each testimonial needs both quote and author.");
-  }
-
   const email = data.contactInfo.email?.trim();
   if (email && !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(email)) {
     errors.push("Contact email must be a valid email address.");

@@ -24,47 +24,6 @@ import { GenerationInputPanel } from "./generation-input-panel";
 import { GenerationLayout } from "./generation-layout";
 import { WebsiteBuilderPreviewPanel } from "./website-builder-preview-panel";
 
-function splitEscapedPipes(value: string): string[] {
-  const segments: string[] = [];
-  let current = "";
-  let escaped = false;
-
-  for (const char of value) {
-    if (escaped) {
-      current += char;
-      escaped = false;
-      continue;
-    }
-
-    if (char === "\\") {
-      escaped = true;
-      continue;
-    }
-
-    if (char === "|") {
-      segments.push(current.trim());
-      current = "";
-      continue;
-    }
-
-    current += char;
-  }
-
-  segments.push(current.trim());
-  return segments;
-}
-
-function parseTestimonials(value: string): WebsiteWizardInput["testimonials"] {
-  return normalizeList(value.split("\n")).map((line) => {
-    const [quote, author, ...roleParts] = splitEscapedPipes(line);
-    return {
-      quote: quote || "",
-      author: author || "",
-      role: roleParts.length ? roleParts.join(" | ") : undefined,
-    };
-  });
-}
-
 interface WebsiteGenerationInterfaceProps {
   entryPoint?: "create" | "generate";
 }
@@ -130,13 +89,6 @@ export function WebsiteGenerationInterface({
   }, [state]);
 
   const servicesText = useMemo(() => state.input.services.join("\n"), [state.input.services]);
-  const testimonialsText = useMemo(
-    () =>
-      state.input.testimonials
-        .map((item) => [item.quote, item.author, item.role].filter(Boolean).join(" | "))
-        .join("\n"),
-    [state.input.testimonials],
-  );
   const socialLinksText = useMemo(
     () => state.input.contactInfo.socialLinks?.join("\n") ?? "",
     [state.input.contactInfo.socialLinks],
@@ -367,7 +319,6 @@ export function WebsiteGenerationInterface({
         <GenerationInputPanel
           data={state.input}
           servicesText={servicesText}
-          testimonialsText={testimonialsText}
           socialLinksText={socialLinksText}
           constraintsText={constraintsText}
           errors={state.validationErrors}
@@ -376,7 +327,6 @@ export function WebsiteGenerationInterface({
           onActivePageChange={setActivePageId}
           onFieldChange={updateInput}
           onServicesTextChange={(value) => updateInput({ services: normalizeList(value.split("\n")) })}
-          onTestimonialsChange={(value) => updateInput({ testimonials: parseTestimonials(value) })}
           onSocialLinksChange={(value) =>
             updateInput({
               contactInfo: {
