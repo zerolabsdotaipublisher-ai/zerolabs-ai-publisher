@@ -82,7 +82,6 @@ export function WizardReview({ data, onEditStep, onGenerate, isSubmitting }: Wiz
         <article>
           <h3>Supporting content</h3>
           <p>Founder: {data.founderProfile.name || "Not provided"}</p>
-          <p>Testimonials: {data.testimonials.length}</p>
           <p>Contact email: {data.contactInfo.email || "Not provided"}</p>
           <p>Constraints: {renderList(data.constraints)}</p>
           <button type="button" className="wizard-button-link" onClick={() => onEditStep("brand-content")}>

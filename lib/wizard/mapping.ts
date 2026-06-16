@@ -42,7 +42,6 @@ export function mapWizardInputToGenerationInput(
       role: input.founderProfile.role,
       bio: input.founderProfile.bio,
     },
-    testimonials: input.testimonials,
     contactInfo: {
       email: input.contactInfo.email,
       phone: input.contactInfo.phone,

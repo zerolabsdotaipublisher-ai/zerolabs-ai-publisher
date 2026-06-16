@@ -454,7 +454,6 @@ export const defaultWizardInput: WebsiteWizardInput = {
     role: "",
     bio: "",
   },
-  testimonials: [],
   contactInfo: {
     email: "",
     phone: "",
@@ -473,7 +472,6 @@ export function createDefaultWizardInput(): WebsiteWizardInput {
       ...defaultWizardInput.contactInfo,
       socialLinks: [...(defaultWizardInput.contactInfo.socialLinks ?? [])],
     },
-    testimonials: [...defaultWizardInput.testimonials],
     services: [...defaultWizardInput.services],
     constraints: [...defaultWizardInput.constraints],
     designConfig: {

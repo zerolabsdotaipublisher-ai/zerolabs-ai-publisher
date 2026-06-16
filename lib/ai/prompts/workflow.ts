@@ -16,7 +16,8 @@ export const WEBSITE_PROMPT_WORKFLOW: PromptWorkflowStep[] = [
   {
     id: "sections",
     objective: "Generate section-level copy using modular prompts.",
-    output: "Section JSON payloads for hero/about/services/testimonials/cta/contact/footer.",
+    output:
+      "Section JSON payloads for hero/about/services/cta/contact/footer, plus testimonials only when explicitly requested.",
   },
   {
     id: "normalize",
@@ -27,5 +28,5 @@ export const WEBSITE_PROMPT_WORKFLOW: PromptWorkflowStep[] = [
 ];
 
 export function defaultSectionsForWorkflow(): WebsiteSectionName[] {
-  return ["hero", "about", "services", "testimonials", "cta", "contact", "footer"];
+  return ["hero", "about", "services", "cta", "contact", "footer"];
 }

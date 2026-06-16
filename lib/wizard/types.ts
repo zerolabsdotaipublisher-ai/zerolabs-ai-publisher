@@ -3,7 +3,6 @@ import type {
   WebsiteDesignConfig,
   FounderProfileInput,
   StylePreset,
-  TestimonialInput,
   TonePreset,
   WebsiteGenerationInput,
   WebsiteType,
@@ -40,7 +39,6 @@ export interface WebsiteWizardInput {
   customToneNotes: string;
   customStyleNotes: string;
   founderProfile: FounderProfileInput;
-  testimonials: TestimonialInput[];
   contactInfo: ContactInfoInput;
   constraints: string[];
   designConfig: WebsiteDesignConfig;

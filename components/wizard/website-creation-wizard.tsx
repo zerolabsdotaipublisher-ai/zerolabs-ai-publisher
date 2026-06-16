@@ -17,7 +17,6 @@ import {
   validateReviewStep,
   validateWizardStep,
   type WebsiteCreationWizardState,
-  type WebsiteWizardInput,
   type WebsiteWizardInputPatch,
   type WizardStepId,
 } from "@/lib/wizard";
@@ -50,47 +49,6 @@ function normalizeWizardStepId(stepId: string): WizardStepId {
     default:
       return "page-setup";
   }
-}
-
-function splitEscapedPipes(value: string): string[] {
-  const segments: string[] = [];
-  let current = "";
-  let escaped = false;
-
-  for (const char of value) {
-    if (escaped) {
-      current += char;
-      escaped = false;
-      continue;
-    }
-
-    if (char === "\\") {
-      escaped = true;
-      continue;
-    }
-
-    if (char === "|") {
-      segments.push(current.trim());
-      current = "";
-      continue;
-    }
-
-    current += char;
-  }
-
-  segments.push(current.trim());
-  return segments;
-}
-
-function parseTestimonials(value: string): WebsiteWizardInput["testimonials"] {
-  return normalizeList(value.split("\n")).map((line) => {
-    const [quote, author, ...roleParts] = splitEscapedPipes(line);
-    return {
-      quote: quote || "",
-      author: author || "",
-      role: roleParts.length ? roleParts.join(" | ") : undefined,
-    };
-  });
 }
 
 function isRestorableWizardState(value: unknown): value is WebsiteCreationWizardState {
@@ -154,13 +112,6 @@ export function WebsiteCreationWizard() {
   const stepErrors = state.stepErrors[state.currentStep] || [];
 
   const servicesText = useMemo(() => state.data.services.join("\n"), [state.data.services]);
-  const testimonialsText = useMemo(
-    () =>
-      state.data.testimonials
-        .map((item) => [item.quote, item.author, item.role].filter(Boolean).join(" | "))
-        .join("\n"),
-    [state.data.testimonials],
-  );
   const socialLinksText = useMemo(
     () => state.data.contactInfo.socialLinks?.join("\n") ?? "",
     [state.data.contactInfo.socialLinks],
@@ -321,11 +272,9 @@ export function WebsiteCreationWizard() {
 
           <StepContentInput
             data={state.data}
-            testimonialsText={testimonialsText}
             socialLinksText={socialLinksText}
             constraintsText={constraintsText}
             onFieldChange={updateData}
-            onTestimonialsChange={(value) => updateData({ testimonials: parseTestimonials(value) })}
             onSocialLinksChange={(value) =>
               updateData({
                 contactInfo: {
