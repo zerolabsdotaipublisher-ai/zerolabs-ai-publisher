@@ -43,7 +43,7 @@ function humanizeFieldName(value: string): string {
 
   switch (normalized) {
     case "brand name":
-      return "brand name";
+      return "website name or domain";
     case "target audience":
       return "target audience";
     case "primary cta":

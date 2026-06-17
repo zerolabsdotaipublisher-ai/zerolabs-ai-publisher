@@ -1,8 +1,10 @@
 import {
   createDefaultWizardInput,
   inferWebsiteTypeFromPages,
+  normalizeDesignConfig,
   syncDesignPages,
 } from "./schemas";
+import { buildWebsiteIdentityPatch, getWebsiteIdentityValue } from "./identity";
 import { WIZARD_FORM_STEPS } from "./steps";
 import type {
   WebsiteCreationWizardState,
@@ -14,6 +16,10 @@ import type {
 export const WIZARD_STORAGE_KEY = "zlai.websiteCreationWizard";
 
 const formStepIds = WIZARD_FORM_STEPS.map((step) => step.id);
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
 
 function stripLegacyWizardFields(
   patch: WebsiteWizardInputPatch,
@@ -68,6 +74,13 @@ export function mergeWizardInput(
   patch: WebsiteWizardInputPatch,
 ): WebsiteWizardInput {
   const sanitizedPatch = stripLegacyWizardFields(patch);
+  const hasWebsiteIdentityPatch = Object.prototype.hasOwnProperty.call(
+    sanitizedPatch,
+    "websiteIdentity",
+  );
+  const identityPatch = hasWebsiteIdentityPatch
+    ? buildWebsiteIdentityPatch(typeof sanitizedPatch.websiteIdentity === "string" ? sanitizedPatch.websiteIdentity : "")
+    : null;
 
   const mergedDesignConfig = sanitizedPatch.designConfig
     ? {
@@ -83,6 +96,14 @@ export function mergeWizardInput(
   return {
     ...current,
     ...sanitizedPatch,
+    ...identityPatch,
+    websiteIdentity:
+      identityPatch?.websiteIdentity ??
+      getWebsiteIdentityValue({
+        websiteIdentity: current.websiteIdentity,
+        brandName: sanitizedPatch.brandName ?? current.brandName,
+        domainName: sanitizedPatch.domainName ?? current.domainName,
+      }),
     founderProfile: {
       ...current.founderProfile,
       ...sanitizedPatch.founderProfile,
@@ -99,6 +120,19 @@ export function mergeWizardInput(
       pages: normalizedPages,
     },
   };
+}
+
+export function restoreWizardInput(value: unknown): WebsiteWizardInput | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  return mergeWizardInput(createDefaultWizardInput(), {
+    ...(value as WebsiteWizardInputPatch),
+    designConfig: {
+      pages: normalizeDesignConfig(value.designConfig).pages,
+    },
+  });
 }
 
 export function normalizeList(values: string[]): string[] {

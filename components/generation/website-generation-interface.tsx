@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import {
   createDefaultWizardInput,
   mergeWizardInput,
-  normalizeDesignConfig,
   normalizeList,
+  restoreWizardInput,
 } from "@/lib/wizard";
 import {
   createInitialGenerationState,
@@ -17,6 +17,7 @@ import {
   updateGenerationStage,
   validateGenerationInput,
   WIZARD_STORAGE_KEY,
+  type GenerationDiagnosticCode,
   type GenerationInterfaceState,
 } from "@/lib/generation";
 import type { WebsiteWizardInput, WebsiteWizardInputPatch } from "@/lib/wizard";
@@ -26,6 +27,63 @@ import { WebsiteBuilderPreviewPanel } from "./website-builder-preview-panel";
 
 interface WebsiteGenerationInterfaceProps {
   entryPoint?: "create" | "generate";
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+const SAFE_DIAGNOSTIC_CODES: GenerationDiagnosticCode[] = [
+  "UNAUTHORIZED",
+  "INVALID_JSON",
+  "INVALID_INPUT",
+  "STRUCTURE_ID_REQUIRED",
+  "STRUCTURE_NOT_FOUND",
+  "OPENAI_RATE_LIMITED",
+  "OPENAI_AUTH_INVALID",
+  "OPENAI_REQUEST_REJECTED",
+  "OPENAI_UPSTREAM_ERROR",
+  "SUPABASE_SCHEMA_MISSING",
+  "SUPABASE_STORAGE_ERROR",
+  "GENERATION_INTERNAL_ERROR",
+  "RETRY_UNAVAILABLE",
+];
+
+function normalizeGenerationStage(value: unknown): GenerationInterfaceState["stage"] {
+  return value === "preparing" || value === "structure" || value === "content" || value === "finalizing"
+    ? value
+    : "preparing";
+}
+
+function normalizeSubmissionStatus(value: unknown): GenerationInterfaceState["submissionStatus"] {
+  return value === "idle" ||
+    value === "validating" ||
+    value === "running" ||
+    value === "success" ||
+    value === "error"
+    ? value
+    : "idle";
+}
+
+function normalizeGenerationResult(value: unknown): GenerationInterfaceState["result"] {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const diagnosticCode =
+    typeof value.diagnosticCode === "string" &&
+    SAFE_DIAGNOSTIC_CODES.includes(value.diagnosticCode as GenerationDiagnosticCode)
+      ? (value.diagnosticCode as GenerationDiagnosticCode)
+      : undefined;
+
+  return {
+    structureId: typeof value.structureId === "string" ? value.structureId : undefined,
+    generatedSitePath: typeof value.generatedSitePath === "string" ? value.generatedSitePath : undefined,
+    completedAt: typeof value.completedAt === "string" ? value.completedAt : undefined,
+    error: typeof value.error === "string" ? value.error : undefined,
+    diagnosticCode,
+    requestId: typeof value.requestId === "string" ? value.requestId : undefined,
+  };
 }
 
 export function WebsiteGenerationInterface({
@@ -41,24 +99,28 @@ export function WebsiteGenerationInterface({
     const cachedGenerationState = window.localStorage.getItem(GENERATION_STORAGE_KEY);
     if (cachedGenerationState) {
       try {
-        const parsed = JSON.parse(cachedGenerationState) as GenerationInterfaceState;
-        if (parsed?.input) {
+        const parsed = JSON.parse(cachedGenerationState) as unknown;
+        if (isRecord(parsed)) {
+          const restoredInput = restoreWizardInput(parsed.input);
+          if (!restoredInput) {
+            window.localStorage.removeItem(GENERATION_STORAGE_KEY);
+            return createInitialGenerationState();
+          }
+
           return {
-            ...parsed,
-            input: mergeWizardInput(createDefaultWizardInput(), {
-              ...parsed.input,
-              designConfig: {
-                pages: normalizeDesignConfig(parsed.input.designConfig).pages,
-              },
-            }),
-            lastSubmittedInput: parsed.lastSubmittedInput
-              ? mergeWizardInput(createDefaultWizardInput(), {
-                  ...parsed.lastSubmittedInput,
-                  designConfig: {
-                    pages: normalizeDesignConfig(parsed.lastSubmittedInput.designConfig).pages,
-                  },
-                })
-              : undefined,
+            ...createInitialGenerationState(restoredInput),
+            input: restoredInput,
+            lastSubmittedInput: restoreWizardInput(parsed.lastSubmittedInput) ?? undefined,
+            validationErrors: [],
+            submissionStatus: normalizeSubmissionStatus(parsed.submissionStatus),
+            stage: normalizeGenerationStage(parsed.stage),
+            retryCount:
+              typeof parsed.retryCount === "number" && Number.isFinite(parsed.retryCount) && parsed.retryCount >= 0
+                ? parsed.retryCount
+                : 0,
+            isEditingInputs:
+              typeof parsed.isEditingInputs === "boolean" ? parsed.isEditingInputs : true,
+            result: normalizeGenerationResult(parsed.result),
           };
         }
       } catch {
@@ -88,7 +150,6 @@ export function WebsiteGenerationInterface({
     window.localStorage.setItem(GENERATION_STORAGE_KEY, JSON.stringify(state));
   }, [state]);
 
-  const servicesText = useMemo(() => state.input.services.join("\n"), [state.input.services]);
   const socialLinksText = useMemo(
     () => state.input.contactInfo.socialLinks?.join("\n") ?? "",
     [state.input.contactInfo.socialLinks],
@@ -111,12 +172,7 @@ export function WebsiteGenerationInterface({
   }, [activePage, state.input.designConfig.pages]);
 
   function cloneWizardInput(input: WebsiteWizardInput): WebsiteWizardInput {
-    return mergeWizardInput(createDefaultWizardInput(), {
-      ...input,
-      designConfig: {
-        pages: normalizeDesignConfig(input.designConfig).pages,
-      },
-    });
+    return restoreWizardInput(input) ?? createDefaultWizardInput();
   }
 
   function preserveRetryTarget(result: GenerationInterfaceState["result"]) {
@@ -318,7 +374,6 @@ export function WebsiteGenerationInterface({
       builderPanel={
         <GenerationInputPanel
           data={state.input}
-          servicesText={servicesText}
           socialLinksText={socialLinksText}
           constraintsText={constraintsText}
           errors={state.validationErrors}
@@ -326,7 +381,6 @@ export function WebsiteGenerationInterface({
           activePageId={activePageId ?? undefined}
           onActivePageChange={setActivePageId}
           onFieldChange={updateInput}
-          onServicesTextChange={(value) => updateInput({ services: normalizeList(value.split("\n")) })}
           onSocialLinksChange={(value) =>
             updateInput({
               contactInfo: {

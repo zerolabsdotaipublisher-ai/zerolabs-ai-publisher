@@ -17,8 +17,8 @@ export const WIZARD_FORM_STEPS: WizardStepDefinition[] = [
   },
   {
     id: "brand-content",
-    title: "Brand and content",
-    purpose: "Capture brand, tone, and supporting content inputs.",
+    title: "Website identity",
+    purpose: "Add the website name or domain that should seed generation.",
     required: true,
     skippable: false,
   },

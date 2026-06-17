@@ -28,6 +28,7 @@ export interface WizardStepDefinition {
 
 export interface WebsiteWizardInput {
   websiteType: WebsiteType;
+  websiteIdentity: string;
   brandName: string;
   domainName: string;
   description: string;

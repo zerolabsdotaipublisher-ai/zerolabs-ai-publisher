@@ -1,6 +1,8 @@
 import {
+  WEBSITE_BRAND_NAME_FALLBACK,
   fontFamilyOptions,
   layoutStructureOptions,
+  resolveWebsiteIdentity,
   type WebsiteWizardInput,
   type WizardStepId,
 } from "@/lib/wizard";
@@ -10,10 +12,6 @@ interface WizardReviewProps {
   onEditStep: (stepId: WizardStepId) => void;
   onGenerate: () => void;
   isSubmitting: boolean;
-}
-
-function renderList(items: string[]): string {
-  return items.length > 0 ? items.join(", ") : "Not provided";
 }
 
 function findLayoutLabel(value: string): string {
@@ -44,11 +42,16 @@ function renderBackgroundSummary(
 }
 
 export function WizardReview({ data, onEditStep, onGenerate, isSubmitting }: WizardReviewProps) {
+  const identity = resolveWebsiteIdentity(data);
+  const domainLabel = identity.domainName;
+  const websiteNameLabel = identity.brandName || WEBSITE_BRAND_NAME_FALLBACK;
+
   return (
     <section className="wizard-step-panel">
       <h2>Review and confirm</h2>
       <p className="wizard-step-description">
-        Review the page plan and brand inputs before running structure, content, navigation, and SEO generation.
+        Review the page plan and website identity before moving into structure, content,
+        navigation, and SEO generation.
       </p>
 
       <div className="wizard-review-grid">
@@ -64,26 +67,11 @@ export function WizardReview({ data, onEditStep, onGenerate, isSubmitting }: Wiz
         </article>
 
         <article>
-          <h3>Brand and generation inputs</h3>
+          <h3>Website identity</h3>
           <p>
-            <strong>{data.brandName || "Not provided"}</strong>
+            <strong>{websiteNameLabel}</strong>
           </p>
-          <p>{data.description || "Not provided"}</p>
-          <p>Audience: {data.targetAudience || "Not provided"}</p>
-          <p>Services: {renderList(data.services)}</p>
-          <p>CTA: {data.primaryCta || "Not provided"}</p>
-          <p>Style: {data.style}</p>
-          <p>Tone: {data.tone}</p>
-          <button type="button" className="wizard-button-link" onClick={() => onEditStep("brand-content")}>
-            Edit
-          </button>
-        </article>
-
-        <article>
-          <h3>Supporting content</h3>
-          <p>Founder: {data.founderProfile.name || "Not provided"}</p>
-          <p>Contact email: {data.contactInfo.email || "Not provided"}</p>
-          <p>Constraints: {renderList(data.constraints)}</p>
+          {domainLabel ? <p>Domain: {domainLabel}</p> : null}
           <button type="button" className="wizard-button-link" onClick={() => onEditStep("brand-content")}>
             Edit
           </button>
