@@ -10,7 +10,7 @@ export function WizardShell({ children }: WizardShellProps) {
       <header className="wizard-header">
         <h1>Create website</h1>
         <p>
-          Define your pages first, customize each page, then provide brand inputs for the existing
+          Define your pages first, customize each page, then add a website name or domain for the
           AI generation pipeline.
         </p>
       </header>

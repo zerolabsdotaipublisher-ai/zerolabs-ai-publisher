@@ -4,10 +4,6 @@ function hasContent(value?: string): boolean {
   return Boolean(value?.trim());
 }
 
-function hasAnyValue(values?: string[]): boolean {
-  return Boolean(values?.some((value) => hasContent(value)));
-}
-
 function validatePageDesign(page: WebsiteWizardInput["designConfig"]["pages"][number], index: number): string[] {
   const errors: string[] = [];
   const pageLabel = page.name?.trim() || `Page ${index + 1}`;
@@ -93,30 +89,9 @@ export function validatePageSetupStep(data: WebsiteWizardInput): string[] {
   return errors;
 }
 
-export function validateBusinessInfoStep(data: WebsiteWizardInput): string[] {
-  const errors: string[] = [];
-
-  if (!hasContent(data.brandName)) {
-    errors.push("Brand name is required.");
-  }
-
-  if (!hasContent(data.description)) {
-    errors.push("Short description is required.");
-  }
-
-  if (!hasContent(data.targetAudience)) {
-    errors.push("Target audience is required.");
-  }
-
-  if (!hasAnyValue(data.services)) {
-    errors.push("Add at least one service or offer.");
-  }
-
-  if (!hasContent(data.primaryCta)) {
-    errors.push("Primary CTA is required.");
-  }
-
-  return errors;
+export function validateBusinessInfoStep(data?: WebsiteWizardInput): string[] {
+  void data;
+  return [];
 }
 
 export function validatePageDesignStep(data: WebsiteWizardInput): string[] {
@@ -124,25 +99,8 @@ export function validatePageDesignStep(data: WebsiteWizardInput): string[] {
 }
 
 export function validateBrandContentStep(data: WebsiteWizardInput): string[] {
-  const errors: string[] = [];
-
-  if (!data.style) {
-    errors.push("Select a style preference.");
-  }
-
-  if (!data.tone) {
-    errors.push("Select a tone preference.");
-  }
-
-  if (data.style === "custom" && !hasContent(data.customStyleNotes)) {
-    errors.push("Add custom style notes when style is set to custom.");
-  }
-
-  if (data.tone === "custom" && !hasContent(data.customToneNotes)) {
-    errors.push("Add custom tone notes when tone is set to custom.");
-  }
-
-  return errors;
+  void data;
+  return [];
 }
 
 export function validateOptionalContentInputs(data: WebsiteWizardInput): string[] {
@@ -173,11 +131,7 @@ export function validateWizardStep(stepId: WizardStepId, data: WebsiteWizardInpu
     case "page-design":
       return validatePageDesignStep(data);
     case "brand-content":
-      return [
-        ...validateBusinessInfoStep(data),
-        ...validateBrandContentStep(data),
-        ...validateOptionalContentInputs(data),
-      ];
+      return [];
     case "review-confirm":
       return validateReviewStep(data);
     default:

@@ -1,9 +1,7 @@
 import {
-  createDefaultWizardInput,
   mapWizardInputToGenerationInput,
-  mergeWizardInput,
   mapStructureIdToOutputPath,
-  normalizeDesignConfig,
+  restoreWizardInput,
   WIZARD_STORAGE_KEY,
   type WebsiteCreationWizardState,
   type WebsiteWizardInput,
@@ -20,8 +18,7 @@ export function isRestorableWizardState(value: unknown): value is WebsiteCreatio
   return Boolean(
     candidate.data &&
       typeof candidate.data === "object" &&
-      typeof candidate.currentStep === "string" &&
-      typeof candidate.data.brandName === "string",
+      typeof candidate.currentStep === "string",
   );
 }
 
@@ -30,10 +27,5 @@ export function extractWizardInput(value: unknown): WebsiteWizardInput | null {
     return null;
   }
 
-  return mergeWizardInput(createDefaultWizardInput(), {
-    ...value.data,
-    designConfig: {
-      pages: normalizeDesignConfig(value.data.designConfig).pages,
-    },
-  });
+  return restoreWizardInput(value.data);
 }

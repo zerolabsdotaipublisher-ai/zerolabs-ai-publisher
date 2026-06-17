@@ -5,9 +5,12 @@ import type { CSSProperties } from "react";
 import type { PageDesignConfig } from "@/lib/ai/prompts/types";
 import type { GenerationDiagnosticCode, GenerationInterfaceState } from "@/lib/generation";
 import {
+  WEBSITE_BRAND_NAME_FALLBACK,
   backgroundStyleOptions,
+  getWebsiteDomainSlugValue,
   headingScaleOptions,
   layoutStructureOptions,
+  resolveWebsiteIdentity,
 } from "@/lib/wizard";
 
 const RATE_LIMIT_MESSAGE =
@@ -371,6 +374,9 @@ export function WebsiteBuilderPreviewPanel({
   onEditInputs,
   onPreviewClick,
 }: WebsiteBuilderPreviewPanelProps) {
+  const identity = resolveWebsiteIdentity(state.input);
+  const websiteNameLabel = identity.brandName || WEBSITE_BRAND_NAME_FALLBACK;
+  const domainSlugValue = getWebsiteDomainSlugValue(state.input);
   const workflowStatus = getWorkflowStatus(state, readinessErrors);
   const failureState = classifyGenerationFailure({
     error: state.result?.error,
@@ -620,8 +626,8 @@ export function WebsiteBuilderPreviewPanel({
                     <span />
                   </div>
                   <div className="website-preview-browser-meta">
-                    <strong>{state.input.brandName || "Website name"}</strong>
-                    <span>{state.input.domainName || "your-domain.com"}</span>
+                    <strong>{websiteNameLabel}</strong>
+                    <span>{domainSlugValue}</span>
                   </div>
                 </div>
 
@@ -698,11 +704,11 @@ export function WebsiteBuilderPreviewPanel({
               </div>
               <div>
                 <dt>Website name</dt>
-                <dd>{state.input.brandName || "Not set yet"}</dd>
+                <dd>{websiteNameLabel}</dd>
               </div>
               <div>
                 <dt>Domain</dt>
-                <dd>{state.input.domainName || "Not set yet"}</dd>
+                <dd>{domainSlugValue}</dd>
               </div>
               <div>
                 <dt>Body font</dt>

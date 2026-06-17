@@ -1,19 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { routes } from "@/config/routes";
 import {
   WIZARD_FORM_STEPS,
   WIZARD_STORAGE_KEY,
-  createDefaultWizardInput,
   createInitialWizardState,
   getFormStepIndex,
   getNextFormStep,
   getPreviousFormStep,
   mergeWizardInput,
-  normalizeDesignConfig,
-  normalizeList,
+  restoreWizardInput,
   validateReviewStep,
   validateWizardStep,
   type WebsiteCreationWizardState,
@@ -25,11 +23,9 @@ import { WizardProgress } from "./wizard-progress";
 import { WizardStepper } from "./wizard-stepper";
 import { WizardNavigation } from "./wizard-navigation";
 import { WizardReview } from "./wizard-review";
-import { StepBusinessInfo } from "./steps/step-business-info";
-import { StepContentInput } from "./steps/step-content-input";
 import { StepPageDesign } from "./steps/step-page-design";
 import { StepPagesSetup } from "./steps/step-pages-setup";
-import { StepStyleTheme } from "./steps/step-style-theme";
+import { StepWebsiteIdentity } from "./steps/step-website-identity";
 
 function normalizeWizardStepId(stepId: string): WizardStepId {
   switch (stepId) {
@@ -61,7 +57,31 @@ function isRestorableWizardState(value: unknown): value is WebsiteCreationWizard
     return false;
   }
 
-  return typeof candidate.currentStep === "string" && typeof candidate.data.brandName === "string";
+  return typeof candidate.currentStep === "string";
+}
+
+function normalizeCompletedWizardSteps(value: unknown): WizardStepId[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const allowedStepIds = new Set(WIZARD_FORM_STEPS.map((step) => step.id));
+  const completedSteps: WizardStepId[] = [];
+
+  value.forEach((stepId) => {
+    if (typeof stepId !== "string") {
+      return;
+    }
+
+    const normalizedStepId = normalizeWizardStepId(stepId);
+    if (!allowedStepIds.has(normalizedStepId) || completedSteps.includes(normalizedStepId)) {
+      return;
+    }
+
+    completedSteps.push(normalizedStepId);
+  });
+
+  return completedSteps;
 }
 
 export function WebsiteCreationWizard() {
@@ -82,19 +102,20 @@ export function WebsiteCreationWizard() {
         return createInitialWizardState();
       }
 
+      const restoredInput = restoreWizardInput(parsed.data);
+      if (!restoredInput) {
+        return createInitialWizardState();
+      }
+
       return {
-        ...parsed,
-        data: mergeWizardInput(createDefaultWizardInput(), {
-          ...parsed.data,
-          designConfig: {
-            pages: normalizeDesignConfig(parsed.data.designConfig).pages,
-          },
-        }),
-        generationStatus: "idle",
         currentStep:
           parsed.currentStep === "loading" || parsed.currentStep === "success"
             ? "review-confirm"
             : normalizeWizardStepId(parsed.currentStep),
+        completedSteps: normalizeCompletedWizardSteps(parsed.completedSteps),
+        data: restoredInput,
+        stepErrors: {},
+        generationStatus: "idle",
       };
     } catch {
       window.localStorage.removeItem(WIZARD_STORAGE_KEY);
@@ -110,13 +131,6 @@ export function WebsiteCreationWizard() {
   const currentStepIndex = Math.max(getFormStepIndex(state.currentStep), 0);
 
   const stepErrors = state.stepErrors[state.currentStep] || [];
-
-  const servicesText = useMemo(() => state.data.services.join("\n"), [state.data.services]);
-  const socialLinksText = useMemo(
-    () => state.data.contactInfo.socialLinks?.join("\n") ?? "",
-    [state.data.contactInfo.socialLinks],
-  );
-  const constraintsText = useMemo(() => state.data.constraints.join("\n"), [state.data.constraints]);
 
   function updateData(patch: WebsiteWizardInputPatch) {
     setState((current) => ({
@@ -230,7 +244,7 @@ export function WebsiteCreationWizard() {
         completedSteps={state.completedSteps}
       />
 
-      {stepErrors.length > 0 ? (
+      {stepErrors.length > 0 && state.currentStep !== "brand-content" ? (
         <div className="wizard-error" role="alert">
           {stepErrors.map((error) => (
             <p key={error}>{error}</p>
@@ -253,39 +267,7 @@ export function WebsiteCreationWizard() {
       ) : null}
 
       {state.currentStep === "brand-content" ? (
-        <>
-          <section className="wizard-step-panel">
-            <h2>Brand and content inputs</h2>
-            <p className="wizard-step-description">
-              Add the global brand context and content direction that the generation pipeline still requires.
-            </p>
-          </section>
-
-          <StepBusinessInfo
-            data={state.data}
-            servicesText={servicesText}
-            onFieldChange={updateData}
-            onServicesTextChange={(value) => updateData({ services: normalizeList(value.split("\n")) })}
-          />
-
-          <StepStyleTheme data={state.data} onFieldChange={updateData} />
-
-          <StepContentInput
-            data={state.data}
-            socialLinksText={socialLinksText}
-            constraintsText={constraintsText}
-            onFieldChange={updateData}
-            onSocialLinksChange={(value) =>
-              updateData({
-                contactInfo: {
-                  ...state.data.contactInfo,
-                  socialLinks: normalizeList(value.split("\n")),
-                },
-              })
-            }
-            onConstraintsChange={(value) => updateData({ constraints: normalizeList(value.split("\n")) })}
-          />
-        </>
+        <StepWebsiteIdentity data={state.data} errors={stepErrors} onFieldChange={updateData} />
       ) : null}
 
       {state.currentStep === "review-confirm" ? (

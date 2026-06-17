@@ -1,5 +1,6 @@
 export * from "./types";
 export * from "./schemas";
+export * from "./identity";
 export * from "./steps";
 export * from "./validation";
 export * from "./state";
