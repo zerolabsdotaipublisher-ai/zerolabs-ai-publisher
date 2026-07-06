@@ -1,4 +1,5 @@
 import { config, routes } from "@/config";
+import { assertOpenAiGenerationConfig } from "@/lib/ai/openai-config";
 import { logger } from "@/lib/observability";
 import { generateSeoContentMetadata } from "@/lib/seo";
 import type { WebsiteGenerationInput } from "../prompts/types";
@@ -47,6 +48,8 @@ interface ParsedSeoPayload {
 }
 
 async function callOpenAI(prompt: string): Promise<string> {
+  assertOpenAiGenerationConfig();
+
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {

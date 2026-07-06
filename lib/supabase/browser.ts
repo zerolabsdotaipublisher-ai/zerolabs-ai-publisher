@@ -6,6 +6,15 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 let browserClient: SupabaseClient | undefined;
 let appUrl: string | undefined;
 
+function resolveBrowserOrigin(): string | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const origin = window.location.origin?.trim();
+  return origin ? origin : null;
+}
+
 export type SupabaseBrowserConfig = {
   url: string;
   anonKey: string;
@@ -31,6 +40,11 @@ export function getSupabaseBrowserClient(): SupabaseClient {
 }
 
 export function getSupabaseAppUrl(): string {
+  const browserOrigin = resolveBrowserOrigin();
+  if (browserOrigin) {
+    return browserOrigin;
+  }
+
   if (!appUrl) {
     throw new Error("Supabase browser config is not initialized");
   }

@@ -4,7 +4,7 @@ import { logger, normalizeError } from "@/lib/observability";
 const RATE_LIMIT_MESSAGE =
   "Generation is temporarily rate-limited. Please wait a moment, then try again.";
 const OPENAI_AUTH_MESSAGE =
-  "Generation is temporarily unavailable because the AI provider could not authenticate this request. Please try again later.";
+  "Generation is temporarily unavailable because the AI generation configuration is missing or invalid.";
 const OPENAI_REQUEST_MESSAGE =
   "Generation request was rejected by the AI provider. Please review your inputs and try again.";
 const STORAGE_NOT_READY_MESSAGE =
@@ -196,6 +196,25 @@ function classifyGenerationRouteError(err: unknown): ClassifiedGenerationRouteEr
   const backendDetails = readString(errorLike?.details);
   const backendHint = readString(errorLike?.hint);
   const openAiStatus = parseOpenAiStatus(rawMessage);
+  const normalizedMessage = rawMessage.toLowerCase();
+
+  if (
+    normalizedMessage.includes("generation configuration") ||
+    normalizedMessage.includes("openai configuration") ||
+    normalizedMessage.includes("openai api key") ||
+    normalizedMessage.includes("openai model")
+  ) {
+    return {
+      status: 503,
+      message: OPENAI_AUTH_MESSAGE,
+      diagnosticCode: "OPENAI_AUTH_INVALID",
+      service: "openai",
+      providerErrorCategory: "auth",
+      backendCode,
+      backendDetails,
+      backendHint,
+    };
+  }
 
   if (openAiStatus === 429) {
     return {

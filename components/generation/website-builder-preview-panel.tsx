@@ -291,7 +291,6 @@ function classifyGenerationFailure(args: {
   }
 
   if (
-    diagnosticCode === "OPENAI_AUTH_INVALID" ||
     diagnosticCode === "OPENAI_REQUEST_REJECTED" ||
     diagnosticCode === "OPENAI_UPSTREAM_ERROR"
   ) {
@@ -300,6 +299,17 @@ function classifyGenerationFailure(args: {
       description:
         safeDescription ?? "Generation is temporarily unavailable because the AI provider could not complete the request.",
       guidance: "Your inputs are still saved. Retry in a moment.",
+      referenceId,
+    };
+  }
+
+  if (diagnosticCode === "OPENAI_AUTH_INVALID") {
+    return {
+      title: "Generation configuration needs attention",
+      description:
+        safeDescription ??
+        "Generation is temporarily unavailable because the AI generation configuration is missing or invalid.",
+      guidance: "Add or correct the server-side OpenAI configuration, then retry generation.",
       referenceId,
     };
   }

@@ -1,4 +1,5 @@
 import { config } from "@/config";
+import { assertOpenAiGenerationConfig } from "@/lib/ai/openai-config";
 import { logger } from "@/lib/observability";
 import type { WebsiteGenerationInput } from "../prompts/types";
 import type { WebsiteStructure } from "../structure/types";
@@ -43,6 +44,8 @@ function generateContentId(): string {
 }
 
 async function callOpenAI(prompt: string): Promise<string> {
+  assertOpenAiGenerationConfig();
+
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {

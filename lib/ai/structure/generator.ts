@@ -16,6 +16,7 @@
 
 import { config } from "@/config";
 import { logger } from "@/lib/observability";
+import { assertOpenAiGenerationConfig } from "@/lib/ai/openai-config";
 import { buildWebsitePrompt } from "../prompts";
 import { hasMinimumRenderableShape } from "../prompts/evaluation";
 import type {
@@ -56,6 +57,8 @@ interface OpenAIChatResponse {
  * Uses config.services.openai for API key and model — never reads process.env.
  */
 async function callOpenAI(prompt: string): Promise<string> {
+  assertOpenAiGenerationConfig();
+
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
