@@ -365,7 +365,9 @@ export async function promoteUserToAdminByEmail(email: string): Promise<AdminUse
     profile = await ensureProfileRowForAuthUser(authUser);
 
     if (!profile) {
-      throw new Error("Auth user was found, but a matching profile row could not be created or loaded for admin promotion.");
+      throw new Error(
+        `Auth user ${authUser.id} (${resolvedEmail}) was found, but a matching profile row could not be created or loaded for admin promotion.`
+      );
     }
 
     resolvedEmail = resolveLookupEmail(authUser, profile, normalizedEmail);
@@ -395,5 +397,7 @@ export async function promoteUserToAdminByEmail(email: string): Promise<AdminUse
     };
   }
 
-  throw new Error("Admin promotion could not continue because the auth user did not resolve to a promotable profile row.");
+  throw new Error(
+    `Admin promotion could not continue for ${normalizedEmail} because the auth lookup completed without a promotable profile row.`
+  );
 }
