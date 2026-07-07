@@ -202,6 +202,10 @@ function buildAdminUserRecord(user: User | null, profile: ProfileRow | null, fal
   };
 }
 
+function resolveLookupEmail(user: User | null, profile: ProfileRow | null, fallbackEmail: string): string {
+  return normalizeOptionalText(user?.email) ?? normalizeOptionalText(profile?.email) ?? fallbackEmail;
+}
+
 async function findLookupContextByEmail(
   email: string,
 ): Promise<{ authUser: User | null; profile: ProfileRow | null; normalizedEmail: string }> {
@@ -355,16 +359,16 @@ export async function promoteUserToAdminByEmail(email: string): Promise<AdminUse
   const lookupContext = await findLookupContextByEmail(email);
   const { authUser, normalizedEmail } = lookupContext;
   let { profile } = lookupContext;
-  let resolvedEmail = normalizeOptionalText(authUser?.email) ?? normalizeOptionalText(profile?.email) ?? normalizedEmail;
+  let resolvedEmail = resolveLookupEmail(authUser, profile, normalizedEmail);
 
   if (authUser && (!profile || profile.id !== authUser.id)) {
     profile = await ensureProfileRowForAuthUser(authUser);
 
     if (!profile) {
-      throw new Error("Profile repair did not create a profile row for the target user.");
+      throw new Error("Auth user was found, but a matching profile row could not be created or loaded for admin promotion.");
     }
 
-    resolvedEmail = normalizeOptionalText(authUser.email) ?? normalizeOptionalText(profile.email) ?? normalizedEmail;
+    resolvedEmail = resolveLookupEmail(authUser, profile, normalizedEmail);
   }
 
   if (profile?.role === "admin") {
@@ -391,5 +395,5 @@ export async function promoteUserToAdminByEmail(email: string): Promise<AdminUse
     };
   }
 
-  throw new Error("Auth user lookup completed without a promotable profile row.");
+  throw new Error("Admin promotion could not continue because the auth user did not resolve to a promotable profile row.");
 }
