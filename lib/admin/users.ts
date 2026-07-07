@@ -352,7 +352,9 @@ export async function listCurrentAdminUsers(limit = 12): Promise<AdminUserRecord
 }
 
 export async function promoteUserToAdminByEmail(email: string): Promise<AdminUserPromotionResult> {
-  let { authUser, profile, normalizedEmail } = await findLookupContextByEmail(email);
+  const lookupContext = await findLookupContextByEmail(email);
+  const { authUser, normalizedEmail } = lookupContext;
+  let { profile } = lookupContext;
   let resolvedEmail = normalizeOptionalText(authUser?.email) ?? normalizeOptionalText(profile?.email) ?? normalizedEmail;
 
   if (authUser && (!profile || profile.id !== authUser.id)) {
