@@ -364,7 +364,7 @@ export async function promoteUserToAdminByEmail(email: string): Promise<AdminUse
       throw new Error("Profile repair did not create a profile row for the target user.");
     }
 
-    resolvedEmail = normalizeOptionalText(authUser.email) ?? profile.email;
+    resolvedEmail = normalizeOptionalText(authUser.email) ?? normalizeOptionalText(profile.email) ?? normalizedEmail;
   }
 
   if (profile?.role === "admin") {
