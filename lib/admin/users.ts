@@ -202,6 +202,10 @@ function buildAdminUserRecord(user: User | null, profile: ProfileRow | null, fal
   };
 }
 
+function resolveLookupEmail(user: User | null, profile: ProfileRow | null, fallbackEmail: string): string {
+  return normalizeOptionalText(user?.email) ?? normalizeOptionalText(profile?.email) ?? fallbackEmail;
+}
+
 async function findLookupContextByEmail(
   email: string,
 ): Promise<{ authUser: User | null; profile: ProfileRow | null; normalizedEmail: string }> {
@@ -215,15 +219,37 @@ async function findLookupContextByEmail(
     };
   }
 
-  let profile = await findProfileRowByEmail(normalizedEmail);
-  let authUser = profile ? await findAuthUserById(profile.id) : null;
+  const profileByEmail = await findProfileRowByEmail(normalizedEmail);
+  let authUser = profileByEmail ? await findAuthUserById(profileByEmail.id) : null;
 
   if (!authUser) {
     authUser = await findAuthUserByEmail(normalizedEmail);
   }
 
-  if (!profile && authUser) {
-    profile = await getProfileRow(authUser.id);
+  let profile = profileByEmail;
+
+  if (authUser) {
+    const profileByUserId = await getProfileRow(authUser.id);
+
+    if (profileByUserId) {
+      if (profileByEmail && profileByEmail.id !== profileByUserId.id) {
+        logger.warn("Admin user lookup found conflicting profiles for the same email", {
+          category: "security",
+          service: "supabase",
+          userId: authUser.id,
+        });
+      }
+
+      profile = profileByUserId;
+    } else if (profileByEmail && profileByEmail.id !== authUser.id) {
+      logger.warn("Admin user lookup ignored an email-matched profile owned by a different user", {
+        category: "security",
+        service: "supabase",
+        userId: authUser.id,
+      });
+
+      profile = null;
+    }
   }
 
   return {
@@ -330,9 +356,22 @@ export async function listCurrentAdminUsers(limit = 12): Promise<AdminUserRecord
 }
 
 export async function promoteUserToAdminByEmail(email: string): Promise<AdminUserPromotionResult> {
-  const { authUser, profile, normalizedEmail } = await findLookupContextByEmail(email);
-  const resolvedEmail =
-    normalizeOptionalText(authUser?.email) ?? normalizeOptionalText(profile?.email) ?? normalizedEmail;
+  const lookupContext = await findLookupContextByEmail(email);
+  const { authUser, normalizedEmail } = lookupContext;
+  let { profile } = lookupContext;
+  let resolvedEmail = resolveLookupEmail(authUser, profile, normalizedEmail);
+
+  if (authUser && (!profile || profile.id !== authUser.id)) {
+    profile = await ensureProfileRowForAuthUser(authUser);
+
+    if (!profile) {
+      throw new Error(
+        `Auth user ${authUser.id} (${resolvedEmail}) was found, but a matching profile row could not be created or loaded for admin promotion.`
+      );
+    }
+
+    resolvedEmail = resolveLookupEmail(authUser, profile, normalizedEmail);
+  }
 
   if (profile?.role === "admin") {
     return {
@@ -358,25 +397,7 @@ export async function promoteUserToAdminByEmail(email: string): Promise<AdminUse
     };
   }
 
-  const repairedProfile = await ensureProfileRowForAuthUser(authUser);
-
-  if (!repairedProfile) {
-    throw new Error("Profile repair did not create a profile row for the target user.");
-  }
-
-  if (repairedProfile.role === "admin") {
-    return {
-      status: "already_admin",
-      email: normalizeOptionalText(authUser.email) ?? repairedProfile.email,
-      userId: repairedProfile.id,
-    };
-  }
-
-  await updateProfileRoleToAdmin(repairedProfile.id, normalizeOptionalText(authUser.email) ?? repairedProfile.email);
-
-  return {
-    status: "promoted",
-    email: normalizeOptionalText(authUser.email) ?? repairedProfile.email,
-    userId: repairedProfile.id,
-  };
+  throw new Error(
+    `Admin promotion could not continue for ${normalizedEmail} because the auth lookup completed without a promotable profile row.`
+  );
 }
