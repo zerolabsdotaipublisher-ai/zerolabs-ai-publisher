@@ -7,31 +7,48 @@ import { logger } from "@/lib/observability";
 import { normalizeAdminUserEmailInput, promoteUserToAdminByEmail } from "@/lib/admin/users";
 import { requireAdminUser } from "@/lib/supabase/auth";
 
-function redirectToUsersPage(params: Record<string, string>): never {
-  const searchParams = new URLSearchParams(params);
+function redirectToUsersPage(params: Record<string, string | undefined>): never {
+  const searchParams = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(params)) {
+    if (value) {
+      searchParams.set(key, value);
+    }
+  }
+
   redirect(`${routes.adminUsers}?${searchParams.toString()}`);
 }
 
 export async function promoteAdminUserAction(formData: FormData): Promise<void> {
+  const requestId = crypto.randomUUID();
   const rawEmail = formData.get("email");
   const email = typeof rawEmail === "string" ? normalizeAdminUserEmailInput(rawEmail) : "";
 
   if (!email) {
-    redirectToUsersPage({ result: "invalid-email" });
+    redirectToUsersPage({ result: "invalid-email", requestId });
   }
 
   const { user, isAdmin } = await requireAdminUser();
 
   if (!user || !isAdmin) {
-    redirectToUsersPage({ result: "unauthorized", email });
+    logger.warn("Admin promotion rejected because the current user is not authorized", {
+      category: "security",
+      service: "supabase",
+      requestId,
+      userId: user?.id,
+      targetEmail: email,
+      diagnosticCategory: "admin-promotion-unauthorized",
+    });
+
+    redirectToUsersPage({ result: "unauthorized", email, requestId });
   }
 
-  let result: Awaited<ReturnType<typeof promoteUserToAdminByEmail>>;
+  let attempt: Awaited<ReturnType<typeof promoteUserToAdminByEmail>>;
 
   try {
-    result = await promoteUserToAdminByEmail(email);
+    attempt = await promoteUserToAdminByEmail(email, requestId);
 
-    if (result.status === "promoted") {
+    if (attempt.result.status === "promoted") {
       revalidatePath(routes.adminDashboard);
       revalidatePath(routes.adminDeployments);
       revalidatePath(routes.adminAnalytics);
@@ -42,23 +59,36 @@ export async function promoteAdminUserAction(formData: FormData): Promise<void> 
     logger.error("Admin user promotion failed", {
       category: "error",
       service: "supabase",
+      requestId,
       userId: user?.id,
+      targetEmail: email,
       error: {
         message: error instanceof Error ? error.message : String(error),
         name: "AdminUserPromotionError",
       },
     });
 
-    redirectToUsersPage({ result: "failed", email });
+    redirectToUsersPage({ result: "role-update-failed", email, requestId });
   }
 
-  if (result.status === "promoted") {
-    redirectToUsersPage({ result: "promoted", email: result.email });
-  }
+  logger.info("Admin user promotion completed", {
+    category: attempt.result.status === "promoted" ? "security" : "error",
+    service: "supabase",
+    requestId,
+    userId: user.id,
+    targetEmail: attempt.result.email,
+    result: attempt.result.status,
+    serviceRoleStatus: attempt.diagnostics.serviceRole.status,
+    authReadsStatus: attempt.diagnostics.authReads.status,
+    profileReadsStatus: attempt.diagnostics.profileReads.status,
+    targetExistsInAuth: attempt.diagnostics.targetUser?.existsInAuth ?? undefined,
+    targetExistsInProfile: attempt.diagnostics.targetUser?.existsInProfile ?? undefined,
+    suspectedIssue: attempt.diagnostics.suspectedIssue,
+  });
 
-  if (result.status === "already_admin") {
-    redirectToUsersPage({ result: "already-admin", email: result.email });
-  }
-
-  redirectToUsersPage({ result: "no-user", email: result.email });
+  redirectToUsersPage({
+    result: attempt.result.status,
+    email: attempt.result.email,
+    requestId,
+  });
 }

@@ -4,7 +4,11 @@ import type { User } from "@supabase/supabase-js";
 import type { AdminUserRecord } from "@/lib/admin/data";
 import { getProfile, syncProfileFromAuthUser, type ProfileRole } from "@/lib/supabase/profile";
 import { logger } from "@/lib/observability";
-import { getSupabaseServiceClient } from "@/lib/supabase/server";
+import {
+  getSupabaseServiceClient,
+  inspectSupabaseServiceRoleConfiguration,
+  type SupabaseServiceRoleInspection,
+} from "@/lib/supabase/server";
 
 const AUTH_USERS_PAGE_SIZE = 200;
 const AUTH_USERS_MAX_PAGES = 25;
@@ -19,11 +23,44 @@ type ProfileRow = {
 
 export type AdminUserPromotionResult =
   | { status: "promoted"; email: string; userId: string }
-  | { status: "already_admin"; email: string; userId: string }
-  | { status: "no_user"; email: string };
+  | { status: "already-admin"; email: string; userId: string }
+  | { status: "no-user"; email: string }
+  | { status: "service-role-missing"; email: string }
+  | { status: "service-role-invalid"; email: string }
+  | { status: "profile-repair-failed"; email: string }
+  | { status: "role-update-failed"; email: string };
 
 export interface AdminUserLookupRecord extends AdminUserRecord {
   fullName: string | null;
+}
+
+export interface AdminUsersDiagnostics {
+  requestId: string;
+  serviceRole: {
+    status: SupabaseServiceRoleInspection["status"];
+    configuredProjectRef: string | null;
+    keyProjectRef: string | null;
+    roleClaim: string | null;
+  };
+  authReads: {
+    status: "ok" | "failed" | "unknown";
+  };
+  profileReads: {
+    status: "ok" | "empty" | "failed" | "unknown";
+    totalUsers: number | null;
+    currentAdmins: number | null;
+  };
+  targetUser: {
+    email: string | null;
+    existsInAuth: boolean | null;
+    existsInProfile: boolean | null;
+  } | null;
+  suspectedIssue: "none" | "service-role-missing" | "service-role-invalid" | "wrong-project" | "profiles-empty";
+}
+
+export interface AdminUserPromotionAttempt {
+  result: AdminUserPromotionResult;
+  diagnostics: AdminUsersDiagnostics;
 }
 
 export function normalizeAdminUserEmailInput(value: string | null | undefined): string {
@@ -61,6 +98,81 @@ function getAuthUserAvatarUrl(user: User): string | null {
 
 function normalizeEmailAddress(value: string): string {
   return normalizeAdminUserEmailInput(value);
+}
+
+function createAdminUsersDiagnostics(
+  requestId: string,
+  inspection: SupabaseServiceRoleInspection
+): AdminUsersDiagnostics {
+  return {
+    requestId,
+    serviceRole: {
+      status: inspection.status,
+      configuredProjectRef: inspection.configuredProjectRef,
+      keyProjectRef: inspection.keyProjectRef,
+      roleClaim: inspection.roleClaim,
+    },
+    authReads: {
+      status: inspection.status === "ready" ? "failed" : "unknown",
+    },
+    profileReads: {
+      status: inspection.status === "ready" ? "failed" : "unknown",
+      totalUsers: null,
+      currentAdmins: null,
+    },
+    targetUser: null,
+    suspectedIssue:
+      inspection.status === "missing"
+        ? "service-role-missing"
+        : inspection.status === "wrong-project"
+          ? "wrong-project"
+          : inspection.status === "invalid"
+            ? "service-role-invalid"
+            : "none",
+  };
+}
+
+function mapServiceRoleStatusToPromotionResult(
+  status: SupabaseServiceRoleInspection["status"]
+): "service-role-missing" | "service-role-invalid" | null {
+  if (status === "missing") {
+    return "service-role-missing";
+  }
+
+  if (status === "invalid" || status === "wrong-project") {
+    return "service-role-invalid";
+  }
+
+  return null;
+}
+
+function normalizeSafeErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function logAdminDiagnosticWarning(
+  message: string,
+  diagnostics: AdminUsersDiagnostics,
+  extra?: Record<string, unknown>
+): void {
+  logger.warn(message, {
+    category: "error",
+    service: "supabase",
+    requestId: diagnostics.requestId,
+    serviceRoleStatus: diagnostics.serviceRole.status,
+    configuredProjectRef: diagnostics.serviceRole.configuredProjectRef,
+    keyProjectRef: diagnostics.serviceRole.keyProjectRef,
+    roleClaim: diagnostics.serviceRole.roleClaim,
+    authReadsStatus: diagnostics.authReads.status,
+    profileReadsStatus: diagnostics.profileReads.status,
+    profileTotalUsers: diagnostics.profileReads.totalUsers,
+    profileCurrentAdmins: diagnostics.profileReads.currentAdmins,
+    targetEmail: diagnostics.targetUser?.email ?? undefined,
+    targetExistsInAuth: diagnostics.targetUser?.existsInAuth ?? undefined,
+    targetExistsInProfile: diagnostics.targetUser?.existsInProfile ?? undefined,
+    suspectedIssue: diagnostics.suspectedIssue,
+    ...extra,
+  });
 }
 
 function summarizeUserStatus(user: User): string {
@@ -315,89 +427,372 @@ async function updateProfileRoleToAdmin(profileId: string, email: string): Promi
   }
 }
 
-export async function findAdminUserRecordByEmail(email: string): Promise<AdminUserLookupRecord | null> {
-  const { authUser, profile, normalizedEmail } = await findLookupContextByEmail(email);
+async function getProfileCounts(): Promise<{ totalUsers: number; currentAdmins: number }> {
+  const supabase = getSupabaseServiceClient();
+  const [totalUsersResult, currentAdminsResult] = await Promise.all([
+    supabase.from("profiles").select("id", { count: "exact", head: true }),
+    supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "admin"),
+  ]);
 
-  if (!authUser && !profile) {
-    return null;
+  if (totalUsersResult.error) {
+    throw new Error(totalUsersResult.error.message);
   }
 
-  return buildAdminUserRecord(authUser, profile, normalizedEmail);
+  if (currentAdminsResult.error) {
+    throw new Error(currentAdminsResult.error.message);
+  }
+
+  return {
+    totalUsers: totalUsersResult.count ?? 0,
+    currentAdmins: currentAdminsResult.count ?? 0,
+  };
 }
 
-export async function listCurrentAdminUsers(limit = 12): Promise<AdminUserRecord[]> {
+async function verifyAuthAdminReadAccess(): Promise<void> {
   const supabase = getSupabaseServiceClient();
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("id, email, role, full_name, created_at")
-    .eq("role", "admin")
-    .order("created_at", { ascending: false })
-    .limit(limit);
+  const { error } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1 });
 
   if (error) {
-    logger.warn("Admin admin-user listing fell back to a safe empty state", {
+    throw new Error(error.message);
+  }
+}
+
+export async function getAdminUsersDiagnostics(
+  email?: string,
+  requestId = crypto.randomUUID()
+): Promise<AdminUsersDiagnostics> {
+  const inspection = inspectSupabaseServiceRoleConfiguration();
+  const diagnostics = createAdminUsersDiagnostics(requestId, inspection);
+  const normalizedEmail = normalizeEmailAddress(email ?? "");
+
+  if (normalizedEmail) {
+    diagnostics.targetUser = {
+      email: normalizedEmail,
+      existsInAuth: null,
+      existsInProfile: null,
+    };
+  }
+
+  const serviceRoleResult = mapServiceRoleStatusToPromotionResult(inspection.status);
+  if (serviceRoleResult) {
+    logAdminDiagnosticWarning("Admin users diagnostics detected a service-role configuration issue", diagnostics, {
+      diagnosticCategory: "admin-service-role-diagnostics",
+    });
+    return diagnostics;
+  }
+
+  try {
+    await verifyAuthAdminReadAccess();
+    diagnostics.authReads.status = "ok";
+  } catch (error) {
+    diagnostics.authReads.status = "failed";
+    diagnostics.suspectedIssue = "service-role-invalid";
+
+    logAdminDiagnosticWarning("Admin auth diagnostics failed", diagnostics, {
+      diagnosticCategory: "admin-auth-read-failed",
+      error: {
+        message: normalizeSafeErrorMessage(error),
+        name: "AdminAuthDiagnosticsWarning",
+      },
+    });
+
+    return diagnostics;
+  }
+
+  try {
+    const counts = await getProfileCounts();
+    diagnostics.profileReads.status = counts.totalUsers > 0 || counts.currentAdmins > 0 ? "ok" : "empty";
+    diagnostics.profileReads.totalUsers = counts.totalUsers;
+    diagnostics.profileReads.currentAdmins = counts.currentAdmins;
+
+    if (diagnostics.profileReads.status === "empty") {
+      diagnostics.suspectedIssue = "profiles-empty";
+
+      logAdminDiagnosticWarning("Admin users diagnostics found empty profile counts", diagnostics, {
+        diagnosticCategory: "admin-profile-counts-empty",
+      });
+    }
+  } catch (error) {
+    diagnostics.profileReads.status = "failed";
+
+    logAdminDiagnosticWarning("Admin profile diagnostics failed", diagnostics, {
+      diagnosticCategory: "admin-profile-read-failed",
+      error: {
+        message: normalizeSafeErrorMessage(error),
+        name: "AdminProfileDiagnosticsWarning",
+      },
+    });
+
+    return diagnostics;
+  }
+
+  if (!normalizedEmail) {
+    return diagnostics;
+  }
+
+  try {
+    const lookupContext = await findLookupContextByEmail(normalizedEmail);
+    diagnostics.targetUser = {
+      email: normalizedEmail,
+      existsInAuth: Boolean(lookupContext.authUser),
+      existsInProfile: Boolean(lookupContext.profile),
+    };
+  } catch (error) {
+    logAdminDiagnosticWarning("Admin target-user diagnostics failed", diagnostics, {
+      diagnosticCategory: "admin-target-user-read-failed",
+      error: {
+        message: normalizeSafeErrorMessage(error),
+        name: "AdminTargetDiagnosticsWarning",
+      },
+    });
+  }
+
+  return diagnostics;
+}
+
+export async function findAdminUserRecordByEmail(email: string): Promise<AdminUserLookupRecord | null> {
+  try {
+    const { authUser, profile, normalizedEmail } = await findLookupContextByEmail(email);
+
+    if (!authUser && !profile) {
+      return null;
+    }
+
+    return buildAdminUserRecord(authUser, profile, normalizedEmail);
+  } catch (error) {
+    logger.warn("Admin user lookup fell back to a safe null state", {
       category: "error",
       service: "supabase",
       error: {
-        message: error.message,
+        message: normalizeSafeErrorMessage(error),
+        name: "AdminUserLookupWarning",
+      },
+    });
+    return null;
+  }
+}
+
+export async function listCurrentAdminUsers(limit = 12): Promise<AdminUserRecord[]> {
+  try {
+    const supabase = getSupabaseServiceClient();
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, email, role, full_name, created_at")
+      .eq("role", "admin")
+      .order("created_at", { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      logger.warn("Admin admin-user listing fell back to a safe empty state", {
+        category: "error",
+        service: "supabase",
+        error: {
+          message: error.message,
+          name: "AdminListUsersWarning",
+        },
+      });
+      return [];
+    }
+
+    return ((data as ProfileRow[] | null) ?? []).map((profile) => ({
+      id: profile.id,
+      email: profile.email,
+      role: "admin",
+      createdAt: profile.created_at,
+      status: "Admin access granted",
+    }));
+  } catch (error) {
+    logger.warn("Admin admin-user listing failed before the query could complete", {
+      category: "error",
+      service: "supabase",
+      error: {
+        message: normalizeSafeErrorMessage(error),
         name: "AdminListUsersWarning",
       },
     });
     return [];
   }
-
-  return ((data as ProfileRow[] | null) ?? []).map((profile) => ({
-    id: profile.id,
-    email: profile.email,
-    role: "admin",
-    createdAt: profile.created_at,
-    status: "Admin access granted",
-  }));
 }
 
-export async function promoteUserToAdminByEmail(email: string): Promise<AdminUserPromotionResult> {
+export async function promoteUserToAdminByEmail(
+  email: string,
+  requestId = crypto.randomUUID()
+): Promise<AdminUserPromotionAttempt> {
+  const diagnostics = await getAdminUsersDiagnostics(email, requestId);
+  const normalizedTargetEmail = normalizeEmailAddress(email);
+  const serviceRoleResult = mapServiceRoleStatusToPromotionResult(diagnostics.serviceRole.status);
+
+  if (serviceRoleResult) {
+    logAdminDiagnosticWarning("Admin promotion blocked by service-role diagnostics", diagnostics, {
+      diagnosticCategory: "admin-promotion-service-role-blocked",
+    });
+
+    return {
+      result: {
+        status: serviceRoleResult,
+        email: normalizedTargetEmail,
+      },
+      diagnostics,
+    };
+  }
+
   const lookupContext = await findLookupContextByEmail(email);
-  const { authUser, normalizedEmail } = lookupContext;
+  const { authUser, normalizedEmail: lookupEmail } = lookupContext;
   let { profile } = lookupContext;
-  let resolvedEmail = resolveLookupEmail(authUser, profile, normalizedEmail);
+  let resolvedEmail = resolveLookupEmail(authUser, profile, lookupEmail);
 
   if (authUser && (!profile || profile.id !== authUser.id)) {
-    profile = await ensureProfileRowForAuthUser(authUser);
+    try {
+      profile = await ensureProfileRowForAuthUser(authUser);
+    } catch (error) {
+      logAdminDiagnosticWarning("Admin promotion failed while repairing a missing profile", diagnostics, {
+        diagnosticCategory: "admin-promotion-profile-repair-failed",
+        targetEmail: resolvedEmail,
+        error: {
+          message: normalizeSafeErrorMessage(error),
+          name: "AdminProfileRepairWarning",
+        },
+      });
 
-    if (!profile) {
-      throw new Error(
-        `Auth user ${authUser.id} (${resolvedEmail}) was found, but a matching profile row could not be created or loaded for admin promotion.`
-      );
+      return {
+        result: {
+          status: "profile-repair-failed",
+          email: resolvedEmail,
+        },
+        diagnostics: {
+          ...diagnostics,
+          targetUser: {
+            email: lookupEmail,
+            existsInAuth: true,
+            existsInProfile: false,
+          },
+        },
+      };
     }
 
-    resolvedEmail = resolveLookupEmail(authUser, profile, normalizedEmail);
+    if (!profile) {
+      logAdminDiagnosticWarning("Admin promotion could not load a repaired profile row", diagnostics, {
+        diagnosticCategory: "admin-promotion-profile-repair-missing",
+        targetEmail: resolvedEmail,
+      });
+
+      return {
+        result: {
+          status: "profile-repair-failed",
+          email: resolvedEmail,
+        },
+        diagnostics: {
+          ...diagnostics,
+          targetUser: {
+            email: lookupEmail,
+            existsInAuth: true,
+            existsInProfile: false,
+          },
+        },
+      };
+    }
+
+    resolvedEmail = resolveLookupEmail(authUser, profile, lookupEmail);
   }
 
   if (profile?.role === "admin") {
     return {
-      status: "already_admin",
-      email: resolvedEmail,
-      userId: profile.id,
+      result: {
+        status: "already-admin",
+        email: resolvedEmail,
+        userId: profile.id,
+      },
+      diagnostics: {
+        ...diagnostics,
+        targetUser: {
+          email: resolvedEmail,
+          existsInAuth: Boolean(authUser),
+          existsInProfile: true,
+        },
+      },
     };
   }
 
   if (profile) {
-    await updateProfileRoleToAdmin(profile.id, resolvedEmail);
+    try {
+      await updateProfileRoleToAdmin(profile.id, resolvedEmail);
+    } catch (error) {
+      logAdminDiagnosticWarning("Admin promotion failed during role update", diagnostics, {
+        diagnosticCategory: "admin-promotion-role-update-failed",
+        targetEmail: resolvedEmail,
+        error: {
+          message: normalizeSafeErrorMessage(error),
+          name: "AdminRoleUpdateWarning",
+        },
+      });
+
+      return {
+        result: {
+          status: "role-update-failed",
+          email: resolvedEmail,
+        },
+        diagnostics: {
+          ...diagnostics,
+          targetUser: {
+            email: resolvedEmail,
+            existsInAuth: Boolean(authUser),
+            existsInProfile: true,
+          },
+        },
+      };
+    }
+
     return {
-      status: "promoted",
-      email: resolvedEmail,
-      userId: profile.id,
+      result: {
+        status: "promoted",
+        email: resolvedEmail,
+        userId: profile.id,
+      },
+      diagnostics: {
+        ...diagnostics,
+        targetUser: {
+          email: resolvedEmail,
+          existsInAuth: Boolean(authUser),
+          existsInProfile: true,
+        },
+      },
     };
   }
 
   if (!authUser) {
     return {
-      status: "no_user",
-      email: normalizedEmail,
+      result: {
+        status: "no-user",
+        email: lookupEmail,
+      },
+      diagnostics: {
+        ...diagnostics,
+        targetUser: {
+          email: lookupEmail,
+          existsInAuth: false,
+          existsInProfile: Boolean(lookupContext.profile),
+        },
+      },
     };
   }
 
-  throw new Error(
-    `Admin promotion could not continue for ${normalizedEmail} because the auth lookup completed without a promotable profile row.`
-  );
+  logAdminDiagnosticWarning("Admin promotion ended without a promotable profile row", diagnostics, {
+    diagnosticCategory: "admin-promotion-no-promotable-profile",
+    targetEmail: resolvedEmail,
+  });
+
+  return {
+    result: {
+      status: "profile-repair-failed",
+      email: resolvedEmail,
+    },
+    diagnostics: {
+      ...diagnostics,
+      targetUser: {
+        email: resolvedEmail,
+        existsInAuth: true,
+        existsInProfile: false,
+      },
+    },
+  };
 }

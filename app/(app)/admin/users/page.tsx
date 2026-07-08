@@ -1,6 +1,11 @@
 import { routes } from "@/config/routes";
 import { formatAdminDate, getAdminDashboardData, listAdminUsers } from "@/lib/admin/data";
-import { findAdminUserRecordByEmail, listCurrentAdminUsers, normalizeAdminUserEmailInput } from "@/lib/admin/users";
+import {
+  findAdminUserRecordByEmail,
+  getAdminUsersDiagnostics,
+  listCurrentAdminUsers,
+  normalizeAdminUserEmailInput,
+} from "@/lib/admin/users";
 import { promoteAdminUserAction } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -33,6 +38,30 @@ function getResultMessage(result: string | undefined, email: string | undefined)
         title: "No existing account found",
         detail: "No existing account found for this email. Ask the user to sign up first.",
       };
+    case "service-role-missing":
+      return {
+        tone: "error",
+        title: "Service-role key missing",
+        detail: "Admin promotion is blocked because the server-side Supabase service-role key is missing.",
+      };
+    case "service-role-invalid":
+      return {
+        tone: "error",
+        title: "Service-role configuration invalid",
+        detail: "Admin promotion is blocked because the server-side Supabase service-role key is invalid or pointed at a different project.",
+      };
+    case "profile-repair-failed":
+      return {
+        tone: "error",
+        title: "Profile repair failed",
+        detail: `${email ?? "That account"} exists in Auth, but the matching profile row could not be created or loaded safely.`,
+      };
+    case "role-update-failed":
+      return {
+        tone: "error",
+        title: "Role update failed",
+        detail: `${email ?? "That account"} was found, but the admin role update could not be completed safely.`,
+      };
     case "unauthorized":
       return {
         tone: "error",
@@ -45,15 +74,13 @@ function getResultMessage(result: string | undefined, email: string | undefined)
         title: "Enter a valid email",
         detail: "Provide the email address of an existing user account before submitting the form.",
       };
-    case "failed":
-      return {
-        tone: "error",
-        title: "Promotion failed",
-        detail: "The admin role update could not be completed safely. Please try again.",
-      };
     default:
       return null;
   }
+}
+
+function formatDiagnosticStatus(value: string): string {
+  return value.replace(/-/g, " ");
 }
 
 export default async function AdminUsersPage({ searchParams }: PageProps) {
@@ -61,12 +88,14 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
   const query = normalizeAdminUserEmailInput(queryParams.query);
   const result = queryParams.result;
   const resultEmail = normalizeAdminUserEmailInput(queryParams.email);
+  const requestId = queryParams.requestId;
   const feedback = getResultMessage(result, resultEmail || query);
-  const [dashboard, users, currentAdmins, lookupUser] = await Promise.all([
+  const [dashboard, users, currentAdmins, lookupUser, diagnostics] = await Promise.all([
     getAdminDashboardData(),
     listAdminUsers(24),
     listCurrentAdminUsers(12),
     query ? findAdminUserRecordByEmail(query) : Promise.resolve(null),
+    getAdminUsersDiagnostics(query || resultEmail || undefined),
   ]);
 
   return (
@@ -104,8 +133,60 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
         <div className={`admin-form-message admin-form-message-${feedback.tone}`} role="status" aria-live="polite">
           <strong>{feedback.title}</strong>
           <p>{feedback.detail}</p>
+          {requestId ? <p>Request ID: {requestId}</p> : null}
         </div>
       ) : null}
+
+      <section className="admin-panel" aria-label="Admin diagnostics">
+        <header className="admin-panel-header">
+          <div>
+            <span className="admin-panel-kicker">Diagnostics</span>
+            <h2>Safe admin diagnostics</h2>
+            <p>These checks stay server-side and surface only safe configuration categories.</p>
+          </div>
+        </header>
+
+        <div className="admin-content-grid">
+          <div className="admin-surface-card">
+            <span className="admin-surface-label">Service role</span>
+            <strong>{formatDiagnosticStatus(diagnostics.serviceRole.status)}</strong>
+            <p>
+              Project match:{" "}
+              {diagnostics.serviceRole.keyProjectRef && diagnostics.serviceRole.configuredProjectRef
+                ? diagnostics.serviceRole.keyProjectRef === diagnostics.serviceRole.configuredProjectRef
+                  ? "matches public project"
+                  : "mismatch"
+                : "unknown"}
+            </p>
+            <p>Role claim: {diagnostics.serviceRole.roleClaim ?? "unknown"}</p>
+          </div>
+
+          <div className="admin-surface-card">
+            <span className="admin-surface-label">Profile reads</span>
+            <strong>{diagnostics.profileReads.status}</strong>
+            <p>Total users: {diagnostics.profileReads.totalUsers ?? "unknown"}</p>
+            <p>Current admins: {diagnostics.profileReads.currentAdmins ?? "unknown"}</p>
+          </div>
+
+          <div className="admin-surface-card">
+            <span className="admin-surface-label">Auth diagnostics</span>
+            <strong>{diagnostics.authReads.status}</strong>
+            <p>Suspected issue: {formatDiagnosticStatus(diagnostics.suspectedIssue)}</p>
+            <p>Request ID: {diagnostics.requestId}</p>
+          </div>
+        </div>
+
+        {diagnostics.targetUser ? (
+          <div className="admin-empty-state">
+            <strong>Target user diagnostics for {diagnostics.targetUser.email}</strong>
+            <p>Exists in Auth: {diagnostics.targetUser.existsInAuth === null ? "unknown" : diagnostics.targetUser.existsInAuth ? "yes" : "no"}</p>
+            <p>
+              Exists in profile:{" "}
+              {diagnostics.targetUser.existsInProfile === null ? "unknown" : diagnostics.targetUser.existsInProfile ? "yes" : "no"}
+            </p>
+          </div>
+        ) : null}
+      </section>
 
       <div className="admin-content-grid">
         <section className="admin-panel" aria-label="Promote user to admin">
@@ -184,7 +265,11 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
             ) : (
               <div className="admin-empty-state">
                 <strong>No existing account found for {query}.</strong>
-                <p>No existing account found for this email. Ask the user to sign up first.</p>
+                <p>
+                  {diagnostics.targetUser?.existsInAuth
+                    ? "Auth has this user, but the matching profile row is missing or unreadable."
+                    : "No existing account found for this email. Ask the user to sign up first."}
+                </p>
               </div>
             )
           ) : (
