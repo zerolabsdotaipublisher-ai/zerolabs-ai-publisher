@@ -637,9 +637,9 @@ export async function promoteUserToAdminByEmail(
   }
 
   const lookupContext = await findLookupContextByEmail(email);
-  const { authUser, normalizedEmail: lookupEmail } = lookupContext;
+  const { authUser, normalizedEmail: contextEmail } = lookupContext;
   let { profile } = lookupContext;
-  let resolvedEmail = resolveLookupEmail(authUser, profile, lookupEmail);
+  let resolvedEmail = resolveLookupEmail(authUser, profile, contextEmail);
 
   if (authUser && (!profile || profile.id !== authUser.id)) {
     try {
@@ -662,7 +662,7 @@ export async function promoteUserToAdminByEmail(
         diagnostics: {
           ...diagnostics,
           targetUser: {
-            email: lookupEmail,
+            email: contextEmail,
             existsInAuth: true,
             existsInProfile: false,
           },
@@ -684,7 +684,7 @@ export async function promoteUserToAdminByEmail(
         diagnostics: {
           ...diagnostics,
           targetUser: {
-            email: lookupEmail,
+            email: contextEmail,
             existsInAuth: true,
             existsInProfile: false,
           },
@@ -692,7 +692,7 @@ export async function promoteUserToAdminByEmail(
       };
     }
 
-    resolvedEmail = resolveLookupEmail(authUser, profile, lookupEmail);
+    resolvedEmail = resolveLookupEmail(authUser, profile, contextEmail);
   }
 
   if (profile?.role === "admin") {
@@ -763,12 +763,12 @@ export async function promoteUserToAdminByEmail(
     return {
       result: {
         status: "no-user",
-        email: lookupEmail,
+        email: contextEmail,
       },
       diagnostics: {
         ...diagnostics,
         targetUser: {
-          email: lookupEmail,
+          email: contextEmail,
           existsInAuth: false,
           existsInProfile: Boolean(lookupContext.profile),
         },

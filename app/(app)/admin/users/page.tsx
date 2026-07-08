@@ -83,12 +83,28 @@ function formatDiagnosticStatus(value: string): string {
   return value.replace(/-/g, " ");
 }
 
+function normalizeRequestId(value: string | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value) ? value : null;
+}
+
+function formatBooleanStatus(value: boolean | null): string {
+  if (value === null) {
+    return "unknown";
+  }
+
+  return value ? "yes" : "no";
+}
+
 export default async function AdminUsersPage({ searchParams }: PageProps) {
   const queryParams = searchParams ? await searchParams : {};
   const query = normalizeAdminUserEmailInput(queryParams.query);
   const result = queryParams.result;
   const resultEmail = normalizeAdminUserEmailInput(queryParams.email);
-  const requestId = queryParams.requestId;
+  const requestId = normalizeRequestId(queryParams.requestId);
   const feedback = getResultMessage(result, resultEmail || query);
   const [dashboard, users, currentAdmins, lookupUser, diagnostics] = await Promise.all([
     getAdminDashboardData(),
@@ -179,11 +195,8 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
         {diagnostics.targetUser ? (
           <div className="admin-empty-state">
             <strong>Target user diagnostics for {diagnostics.targetUser.email}</strong>
-            <p>Exists in Auth: {diagnostics.targetUser.existsInAuth === null ? "unknown" : diagnostics.targetUser.existsInAuth ? "yes" : "no"}</p>
-            <p>
-              Exists in profile:{" "}
-              {diagnostics.targetUser.existsInProfile === null ? "unknown" : diagnostics.targetUser.existsInProfile ? "yes" : "no"}
-            </p>
+            <p>Exists in Auth: {formatBooleanStatus(diagnostics.targetUser.existsInAuth)}</p>
+            <p>Exists in profile: {formatBooleanStatus(diagnostics.targetUser.existsInProfile)}</p>
           </div>
         ) : null}
       </section>
