@@ -10,6 +10,8 @@ import { promoteAdminUserAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
+const UUID_V4_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 type PageProps = {
   searchParams?: Promise<Record<string, string | undefined>>;
 };
@@ -88,7 +90,7 @@ function normalizeRequestId(value: string | undefined): string | null {
     return null;
   }
 
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value) ? value : null;
+  return UUID_V4_PATTERN.test(value) ? value : null;
 }
 
 function formatBooleanStatus(value: boolean | null): string {

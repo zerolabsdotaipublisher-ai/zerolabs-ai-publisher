@@ -501,9 +501,20 @@ export async function getAdminUsersDiagnostics(
 
   try {
     const counts = await getProfileCounts();
-    diagnostics.profileReads.status = counts.totalUsers > 0 || counts.currentAdmins > 0 ? "ok" : "empty";
     diagnostics.profileReads.totalUsers = counts.totalUsers;
     diagnostics.profileReads.currentAdmins = counts.currentAdmins;
+
+    if (counts.currentAdmins > counts.totalUsers) {
+      diagnostics.profileReads.status = "failed";
+
+      logAdminDiagnosticWarning("Admin users diagnostics found inconsistent profile counts", diagnostics, {
+        diagnosticCategory: "admin-profile-counts-inconsistent",
+      });
+
+      return diagnostics;
+    }
+
+    diagnostics.profileReads.status = counts.totalUsers > 0 ? "ok" : "empty";
 
     if (diagnostics.profileReads.status === "empty") {
       diagnostics.suspectedIssue = "profiles-empty";
