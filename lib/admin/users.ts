@@ -38,9 +38,12 @@ export interface AdminUsersDiagnostics {
   requestId: string;
   serviceRole: {
     status: SupabaseServiceRoleInspection["status"];
-    configuredProjectRef: string | null;
-    keyProjectRef: string | null;
+    publicProjectRef: string | null;
+    serviceRoleProjectRef: string | null;
     roleClaim: string | null;
+    keyFormat: SupabaseServiceRoleInspection["keyFormat"];
+    environment: SupabaseServiceRoleInspection["environment"];
+    message: string | null;
   };
   authReads: {
     status: "ok" | "failed" | "unknown";
@@ -108,15 +111,18 @@ function createAdminUsersDiagnostics(
     requestId,
     serviceRole: {
       status: inspection.status,
-      configuredProjectRef: inspection.configuredProjectRef,
-      keyProjectRef: inspection.keyProjectRef,
+      publicProjectRef: inspection.publicProjectRef,
+      serviceRoleProjectRef: inspection.serviceRoleProjectRef,
       roleClaim: inspection.roleClaim,
+      keyFormat: inspection.keyFormat,
+      environment: inspection.environment,
+      message: inspection.message,
     },
     authReads: {
-      status: inspection.status === "ready" ? "failed" : "unknown",
+      status: "unknown",
     },
     profileReads: {
-      status: inspection.status === "ready" ? "failed" : "unknown",
+      status: "unknown",
       totalUsers: null,
       currentAdmins: null,
     },
@@ -160,9 +166,11 @@ function logAdminDiagnosticWarning(
     service: "supabase",
     requestId: diagnostics.requestId,
     serviceRoleStatus: diagnostics.serviceRole.status,
-    configuredProjectRef: diagnostics.serviceRole.configuredProjectRef,
-    keyProjectRef: diagnostics.serviceRole.keyProjectRef,
+    publicProjectRef: diagnostics.serviceRole.publicProjectRef,
+    serviceRoleProjectRef: diagnostics.serviceRole.serviceRoleProjectRef,
     roleClaim: diagnostics.serviceRole.roleClaim,
+    keyFormat: diagnostics.serviceRole.keyFormat,
+    environment: diagnostics.serviceRole.environment,
     authReadsStatus: diagnostics.authReads.status,
     profileReadsStatus: diagnostics.profileReads.status,
     profileTotalUsers: diagnostics.profileReads.totalUsers,
@@ -641,6 +649,20 @@ export async function promoteUserToAdminByEmail(
     return {
       result: {
         status: serviceRoleResult,
+        email: normalizedTargetEmail,
+      },
+      diagnostics,
+    };
+  }
+
+  if (diagnostics.authReads.status === "failed" && diagnostics.suspectedIssue === "service-role-invalid") {
+    logAdminDiagnosticWarning("Admin promotion blocked after auth diagnostics failed", diagnostics, {
+      diagnosticCategory: "admin-promotion-auth-read-blocked",
+    });
+
+    return {
+      result: {
+        status: "service-role-invalid",
         email: normalizedTargetEmail,
       },
       diagnostics,

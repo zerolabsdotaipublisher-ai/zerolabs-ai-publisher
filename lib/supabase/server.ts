@@ -1,15 +1,19 @@
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { config } from "@/config";
+import { config, type RuntimeEnvironment } from "@/config";
 
 export type SupabaseServiceRoleStatus = "ready" | "missing" | "invalid" | "wrong-project";
+export type SupabaseServiceRoleKeyFormat = "legacy-jwt" | "sb-secret" | "invalid" | "missing";
 
 export interface SupabaseServiceRoleInspection {
   status: SupabaseServiceRoleStatus;
-  configuredProjectRef: string | null;
-  keyProjectRef: string | null;
+  publicProjectRef: string | null;
+  serviceRoleProjectRef: string | null;
   roleClaim: string | null;
+  keyFormat: SupabaseServiceRoleKeyFormat;
+  environment: RuntimeEnvironment;
+  message: string | null;
 }
 
 export class SupabaseServiceRoleError extends Error {
@@ -33,6 +37,16 @@ function readString(value: unknown): string | null {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
 }
 
+function normalizeProjectRef(value: string | null | undefined): string | null {
+  const input = readString(value)?.toLowerCase();
+
+  if (!input || !/^[a-z0-9]{20}$/.test(input)) {
+    return null;
+  }
+
+  return input;
+}
+
 function decodeJwtPayload(token: string): Record<string, unknown> | null {
   const segments = token.split(".");
 
@@ -52,7 +66,7 @@ function decodeJwtPayload(token: string): Record<string, unknown> | null {
   }
 }
 
-function extractProjectRef(value: string | null | undefined): string | null {
+function extractProjectRefFromUrl(value: string | null | undefined): string | null {
   const input = readString(value);
 
   if (!input) {
@@ -64,62 +78,135 @@ function extractProjectRef(value: string | null | undefined): string | null {
     const hostname = url.hostname.trim().toLowerCase();
     const [subdomain] = hostname.split(".");
 
-    return subdomain || null;
+    return normalizeProjectRef(subdomain);
   } catch {
-    return null;
+    return normalizeProjectRef(input);
   }
 }
 
+function detectServiceRoleKeyFormat(value: string | null): SupabaseServiceRoleKeyFormat {
+  if (!value) {
+    return "missing";
+  }
+
+  if (value.startsWith("sb_secret_")) {
+    return "sb-secret";
+  }
+
+  if (value.startsWith("eyJ") || value.split(".").length === 3) {
+    return "legacy-jwt";
+  }
+
+  return "invalid";
+}
+
+function buildWrongProjectMessage(
+  publicProjectRef: string,
+  serviceRoleProjectRef: string,
+): string {
+  return `Vercel is reading a service-role key for ${serviceRoleProjectRef}, but NEXT_PUBLIC_SUPABASE_URL points to ${publicProjectRef}. Update the Vercel variable for the environment currently being tested.`;
+}
+
+function createInspection(
+  status: SupabaseServiceRoleStatus,
+  {
+    publicProjectRef,
+    serviceRoleProjectRef = null,
+    roleClaim = null,
+    keyFormat,
+    environment,
+    message = null,
+  }: {
+    publicProjectRef: string | null;
+    serviceRoleProjectRef?: string | null;
+    roleClaim?: string | null;
+    keyFormat: SupabaseServiceRoleKeyFormat;
+    environment: RuntimeEnvironment;
+    message?: string | null;
+  },
+): SupabaseServiceRoleInspection {
+  return {
+    status,
+    publicProjectRef,
+    serviceRoleProjectRef,
+    roleClaim,
+    keyFormat,
+    environment,
+    message,
+  };
+}
+
 export function inspectSupabaseServiceRoleConfiguration(): SupabaseServiceRoleInspection {
-  const configuredProjectRef = extractProjectRef(config.services.supabase.url);
-  const serviceRole = readString(process.env.SUPABASE_SERVICE_ROLE_KEY ?? config.services.supabase.serviceRole);
+  const publicProjectRef = extractProjectRefFromUrl(config.services.supabase.url);
+  const serviceRole = readString(config.services.supabase.serviceRole);
+  const keyFormat = detectServiceRoleKeyFormat(serviceRole);
+  const environment = config.app.environment;
 
   if (!serviceRole || serviceRole === "your_supabase_service_role_key") {
-    return {
-      status: "missing",
-      configuredProjectRef,
-      keyProjectRef: null,
-      roleClaim: null,
-    };
+    return createInspection("missing", {
+      publicProjectRef,
+      keyFormat: "missing",
+      environment,
+    });
+  }
+
+  if (keyFormat === "invalid") {
+    return createInspection("invalid", {
+      publicProjectRef,
+      keyFormat,
+      environment,
+    });
+  }
+
+  if (keyFormat === "sb-secret") {
+    return createInspection("ready", {
+      publicProjectRef,
+      keyFormat,
+      environment,
+    });
   }
 
   const payload = decodeJwtPayload(serviceRole);
   if (!payload) {
-    return {
-      status: "invalid",
-      configuredProjectRef,
-      keyProjectRef: null,
-      roleClaim: null,
-    };
+    return createInspection("invalid", {
+      publicProjectRef,
+      keyFormat,
+      environment,
+    });
   }
 
   const roleClaim = readString(payload.role);
-  const keyProjectRef = extractProjectRef(readString(payload.iss)) ?? readString(payload.ref);
+  const serviceRoleProjectRef =
+    extractProjectRefFromUrl(readString(payload.iss)) ?? normalizeProjectRef(readString(payload.ref));
 
   if (roleClaim !== "service_role") {
-    return {
-      status: "invalid",
-      configuredProjectRef,
-      keyProjectRef,
+    return createInspection("invalid", {
+      publicProjectRef,
+      serviceRoleProjectRef,
       roleClaim,
-    };
+      keyFormat,
+      environment,
+    });
   }
 
-  if (configuredProjectRef && keyProjectRef && configuredProjectRef !== keyProjectRef) {
-    return {
-      status: "wrong-project",
-      configuredProjectRef,
-      keyProjectRef,
+  if (publicProjectRef && serviceRoleProjectRef && publicProjectRef !== serviceRoleProjectRef) {
+    return createInspection("wrong-project", {
+      publicProjectRef,
+      serviceRoleProjectRef,
       roleClaim,
-    };
+      keyFormat,
+      environment,
+      message: buildWrongProjectMessage(publicProjectRef, serviceRoleProjectRef),
+    });
   }
 
-  return {
-    status: "ready",
-    configuredProjectRef,
-    keyProjectRef,
+  return createInspection("ready", {
+    publicProjectRef,
+    serviceRoleProjectRef,
     roleClaim,
-  };
+    keyFormat,
+    environment,
+  });
 }
 
 export async function getSupabaseServerClient(): Promise<SupabaseClient> {
@@ -150,9 +237,7 @@ export function getSupabaseServiceClient(): SupabaseClient {
     throw new SupabaseServiceRoleError(inspection.status);
   }
 
-  const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY ?? config.services.supabase.serviceRole;
-
-  return createClient(config.services.supabase.url, serviceRole, {
+  return createClient(config.services.supabase.url, config.services.supabase.serviceRole, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }

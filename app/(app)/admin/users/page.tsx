@@ -101,6 +101,14 @@ function formatBooleanStatus(value: boolean | null): string {
   return value ? "yes" : "no";
 }
 
+function formatProjectMatch(publicProjectRef: string | null, serviceRoleProjectRef: string | null): string {
+  if (!publicProjectRef || !serviceRoleProjectRef) {
+    return "unknown";
+  }
+
+  return publicProjectRef === serviceRoleProjectRef ? "matches public project" : "mismatch";
+}
+
 export default async function AdminUsersPage({ searchParams }: PageProps) {
   const queryParams = searchParams ? await searchParams : {};
   const query = normalizeAdminUserEmailInput(queryParams.query);
@@ -168,15 +176,19 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
           <div className="admin-surface-card">
             <span className="admin-surface-label">Service role</span>
             <strong>{formatDiagnosticStatus(diagnostics.serviceRole.status)}</strong>
+            <p>Environment: {diagnostics.serviceRole.environment}</p>
+            <p>Key format: {diagnostics.serviceRole.keyFormat}</p>
+            <p>Public URL project ref: {diagnostics.serviceRole.publicProjectRef ?? "unknown"}</p>
+            <p>Service role JWT ref: {diagnostics.serviceRole.serviceRoleProjectRef ?? "unknown"}</p>
             <p>
               Project match:{" "}
-              {diagnostics.serviceRole.keyProjectRef && diagnostics.serviceRole.configuredProjectRef
-                ? diagnostics.serviceRole.keyProjectRef === diagnostics.serviceRole.configuredProjectRef
-                  ? "matches public project"
-                  : "mismatch"
-                : "unknown"}
+              {formatProjectMatch(
+                diagnostics.serviceRole.publicProjectRef,
+                diagnostics.serviceRole.serviceRoleProjectRef
+              )}
             </p>
             <p>Role claim: {diagnostics.serviceRole.roleClaim ?? "unknown"}</p>
+            {diagnostics.serviceRole.message ? <p>{diagnostics.serviceRole.message}</p> : null}
           </div>
 
           <div className="admin-surface-card">

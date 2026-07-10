@@ -20,19 +20,51 @@
  */
 export type RuntimeEnvironment = "development" | "preview" | "production";
 
+function stripWrappingQuotes(value: string): string {
+  if (value.length < 2) {
+    return value;
+  }
+
+  const startsWithDoubleQuote = value.startsWith('"') && value.endsWith('"');
+  const startsWithSingleQuote = value.startsWith("'") && value.endsWith("'");
+
+  if (!startsWithDoubleQuote && !startsWithSingleQuote) {
+    return value;
+  }
+
+  return value.slice(1, -1);
+}
+
+function normalizeEnvValue(value: string | undefined): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  const normalized = stripWrappingQuotes(trimmed).trim();
+  return normalized.length > 0 ? normalized : undefined;
+}
+
 function required(key: string, value: string | undefined): string {
-  if (!value) {
+  const normalized = normalizeEnvValue(value);
+
+  if (!normalized) {
     throw new Error(
       `Missing required environment variable: ${key}\n` +
         `Copy .env.example to .env.local and set a value for ${key}.\n` +
         `See docs/environment-variables.md for the full reference.`
     );
   }
-  return value;
+
+  return normalized;
 }
 
 function optional(value: string | undefined, fallback?: string): string | undefined {
-  return value !== undefined && value !== "" ? value : fallback;
+  return normalizeEnvValue(value) ?? fallback;
 }
 
 function optionalPositiveInteger(value: string | undefined, fallback: number): number {
@@ -48,8 +80,11 @@ function optionalBoolean(value: string | undefined, fallback = false): boolean {
 }
 
 function parseCsvList(value: string | undefined): string[] | undefined {
-  if (!value) return undefined;
-  const entries = value
+  const normalizedValue = normalizeEnvValue(value);
+
+  if (!normalizedValue) return undefined;
+
+  const entries = normalizedValue
     .split(",")
     .map((entry) => entry.trim())
     .filter(Boolean);
@@ -242,7 +277,7 @@ export const env = {
 export function validateEnv(): void {
   if (typeof window !== "undefined") return;
 
-  const missing = REQUIRED_VARS.filter((key) => !process.env[key]);
+  const missing = REQUIRED_VARS.filter((key) => !normalizeEnvValue(process.env[key]));
 
   if (missing.length > 0) {
     throw new Error(
