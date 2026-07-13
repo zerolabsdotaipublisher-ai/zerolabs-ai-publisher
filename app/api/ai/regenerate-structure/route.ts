@@ -27,10 +27,10 @@ import { type NextRequest, NextResponse } from "next/server";
 import { getServerUser } from "@/lib/supabase/server";
 import { getWebsiteStructure, updateWebsiteStructure } from "@/lib/ai/structure/storage";
 import { regenerateWebsiteStructure } from "@/lib/ai/structure/regeneration";
-import { storeWebsiteNavigation } from "@/lib/ai/navigation";
-import { generateWebsiteSeo, storeWebsiteSeoMetadata } from "@/lib/ai/seo";
+import { generateWebsiteSeo } from "@/lib/ai/seo";
 import { createRequestId } from "@/lib/observability";
 import type { WebsiteGenerationInput } from "@/lib/ai/prompts/types";
+import { persistNonCriticalGenerationArtifacts } from "@/lib/generation/persistence";
 import {
   createGenerationRouteErrorResponse,
   createLoggedGenerationFailureResponse,
@@ -51,9 +51,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       requestId,
       status: 401,
       diagnosticCode: "UNAUTHORIZED",
-      stage: "auth",
+      failedStage: "auth",
+      safeErrorCategory: "session-expired",
       source: "route_guard",
-      body: { error: "Unauthorized" },
     });
   }
 
@@ -67,10 +67,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       requestId,
       status: 400,
       diagnosticCode: "INVALID_JSON",
-      stage: "input",
+      failedStage: "payload-validation",
+      safeErrorCategory: "payload-invalid",
       source: "route_guard",
       userId: user.id,
-      body: { error: "Invalid JSON body" },
     });
   }
 
@@ -80,10 +80,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       requestId,
       status: 400,
       diagnosticCode: "STRUCTURE_ID_REQUIRED",
-      stage: "input",
+      failedStage: "retry-state",
+      safeErrorCategory: "retry-state-invalid",
       source: "route_guard",
       userId: user.id,
-      body: { error: "structureId is required" },
     });
   }
 
@@ -95,11 +95,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       requestId,
       status: 404,
       diagnosticCode: "STRUCTURE_NOT_FOUND",
-      stage: "lookup",
+      failedStage: "retry-state",
+      safeErrorCategory: "retry-state-invalid",
       source: "route_guard",
       structureId: body.structureId,
       userId: user.id,
-      body: { error: "Structure not found" },
     });
   }
 
@@ -116,19 +116,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       { version: result.structure.version },
     );
     const updated = await updateWebsiteStructure(seoResult.mappedStructure);
-    await storeWebsiteNavigation({
-      structureId: updated.id,
+    await persistNonCriticalGenerationArtifacts({
+      structure: updated,
       userId: user.id,
-      navigation: updated.navigation,
-      version: updated.version,
-      createdAt: updated.generatedAt,
-      updatedAt: updated.updatedAt,
-    });
-    await storeWebsiteSeoMetadata({
-      ...seoResult.seo,
-      structureId: updated.id,
-      version: updated.version,
-      updatedAt: updated.updatedAt,
+      requestId,
+      seo: {
+        ...seoResult.seo,
+        structureId: updated.id,
+        version: updated.version,
+        updatedAt: updated.updatedAt,
+      },
     });
 
     return NextResponse.json(

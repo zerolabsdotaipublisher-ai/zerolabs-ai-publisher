@@ -1,18 +1,20 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { getServerUser } from "@/lib/supabase/server";
 import { getWebsiteStructure, updateWebsiteStructure } from "@/lib/ai/structure/storage";
-import { storeWebsiteNavigation } from "@/lib/ai/navigation";
-import { createRequestId } from "@/lib/observability";
+import { createRequestId, logger } from "@/lib/observability";
 import { listOwnedContentLibraryPage } from "@/lib/content/library";
 import {
   regenerateWebsiteContent,
-  storeWebsiteGeneratedContent,
   type ContentGenerationOptions,
 } from "@/lib/ai/content";
-import { generateWebsiteSeo, storeWebsiteSeoMetadata } from "@/lib/ai/seo";
+import { generateWebsiteSeo } from "@/lib/ai/seo";
 import type { WebsiteGenerationInput } from "@/lib/ai/prompts/types";
 import { toRevisionWorkflowIdMap } from "@/lib/revisions/model";
 import { recordContentRevisionAction } from "@/lib/revisions/workflow";
+import {
+  createGenerationVersionSnapshot,
+  persistNonCriticalGenerationArtifacts,
+} from "@/lib/generation/persistence";
 import {
   createGenerationRouteErrorResponse,
   createLoggedGenerationFailureResponse,
@@ -34,9 +36,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       requestId,
       status: 401,
       diagnosticCode: "UNAUTHORIZED",
-      stage: "auth",
+      failedStage: "auth",
+      safeErrorCategory: "session-expired",
       source: "route_guard",
-      body: { error: "Unauthorized" },
     });
   }
 
@@ -50,10 +52,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       requestId,
       status: 400,
       diagnosticCode: "INVALID_JSON",
-      stage: "input",
+      failedStage: "payload-validation",
+      safeErrorCategory: "payload-invalid",
       source: "route_guard",
       userId: user.id,
-      body: { error: "Invalid JSON body" },
     });
   }
 
@@ -63,10 +65,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       requestId,
       status: 400,
       diagnosticCode: "STRUCTURE_ID_REQUIRED",
-      stage: "input",
+      failedStage: "retry-state",
+      safeErrorCategory: "retry-state-invalid",
       source: "route_guard",
       userId: user.id,
-      body: { error: "structureId is required" },
     });
   }
 
@@ -78,11 +80,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       requestId,
       status: 404,
       diagnosticCode: "STRUCTURE_NOT_FOUND",
-      stage: "lookup",
+      failedStage: "retry-state",
+      safeErrorCategory: "retry-state-invalid",
       source: "route_guard",
       structureId: body.structureId,
       userId: user.id,
-      body: { error: "Structure not found" },
     });
   }
 
@@ -104,58 +106,76 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       },
     );
 
-    await storeWebsiteGeneratedContent(result.content);
     const updatedStructure = await updateWebsiteStructure(seoResult.mappedStructure);
-    await storeWebsiteNavigation({
-      structureId: updatedStructure.id,
+    const versionId = await createGenerationVersionSnapshot({
+      structure: updatedStructure,
       userId: user.id,
-      navigation: updatedStructure.navigation,
-      version: updatedStructure.version,
-      createdAt: updatedStructure.generatedAt,
-      updatedAt: updatedStructure.updatedAt,
+      requestId,
     });
-    await storeWebsiteSeoMetadata({
-      ...seoResult.seo,
-      structureId: updatedStructure.id,
-      version: updatedStructure.version,
-      updatedAt: updatedStructure.updatedAt,
+    await persistNonCriticalGenerationArtifacts({
+      structure: updatedStructure,
+      userId: user.id,
+      requestId,
+      content: result.content,
+      seo: {
+        ...seoResult.seo,
+        structureId: updatedStructure.id,
+        version: updatedStructure.version,
+        updatedAt: updatedStructure.updatedAt,
+      },
     });
-    const library = await listOwnedContentLibraryPage(user.id, {
-      page: 1,
-      perPage: 5000,
-      search: undefined,
-      type: "website_page",
-      status: "all",
-      websiteId: body.structureId,
-      sort: "updated_desc",
-    });
-    const targetPages = new Set(body.options?.pages ?? []);
-    const targetItems = library.items.filter((item) =>
-      !item.linkedWebsite?.structureId
-        ? false
-        : targetPages.size === 0
-          ? true
-          : (item.pageSlug ? targetPages.has(item.pageSlug) : false),
-    );
-    await Promise.all(
-      targetItems.map((item) =>
-        recordContentRevisionAction({
-          userId: user.id,
-          contentId: item.id,
-          actionType: "ai_regenerate",
-          relatedWorkflowIds: toRevisionWorkflowIdMap(),
-          metadata: {
-            structureId: body.structureId,
-            pageSlug: item.pageSlug,
-          },
-        }),
-      ),
-    );
+    try {
+      const library = await listOwnedContentLibraryPage(user.id, {
+        page: 1,
+        perPage: 5000,
+        search: undefined,
+        type: "website_page",
+        status: "all",
+        websiteId: body.structureId,
+        sort: "updated_desc",
+      });
+      const targetPages = new Set(body.options?.pages ?? []);
+      const targetItems = library.items.filter((item) =>
+        !item.linkedWebsite?.structureId
+          ? false
+          : targetPages.size === 0
+            ? true
+            : (item.pageSlug ? targetPages.has(item.pageSlug) : false),
+      );
+      await Promise.all(
+        targetItems.map((item) =>
+          recordContentRevisionAction({
+            userId: user.id,
+            contentId: item.id,
+            actionType: "ai_regenerate",
+            relatedWorkflowIds: toRevisionWorkflowIdMap(),
+            metadata: {
+              structureId: body.structureId,
+              pageSlug: item.pageSlug,
+            },
+          }),
+        ),
+      );
+    } catch (error) {
+      logger.warn("regenerated content follow-up audit skipped", {
+        category: "error",
+        service: "supabase",
+        requestId,
+        structureId: body.structureId,
+        failedStage: "database-save",
+        safeErrorCategory: "database-save-failed",
+        error: {
+          name: "RegenerateContentFollowUpWarning",
+          message: error instanceof Error ? error.message : "Unknown error",
+        },
+      });
+    }
 
     return NextResponse.json(
       {
         content: result.content,
         structure: updatedStructure,
+        versionId,
         seo: seoResult.seo,
         usedFallback: result.usedFallback || seoResult.usedFallback,
         validationErrors: [...result.validationErrors, ...seoResult.validationErrors],

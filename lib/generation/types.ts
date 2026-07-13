@@ -1,4 +1,8 @@
 import type { WebsiteWizardInput } from "@/lib/wizard";
+import type {
+  GenerationFailedStage,
+  GenerationSafeErrorCategory,
+} from "./diagnostics";
 
 export type GenerationStage = "preparing" | "structure" | "content" | "finalizing";
 export type GenerationRunStatus = "idle" | "validating" | "running" | "success" | "error";
@@ -24,6 +28,8 @@ export interface GenerationInterfaceResult {
   error?: string;
   diagnosticCode?: GenerationDiagnosticCode;
   requestId?: string;
+  failedStage?: GenerationFailedStage;
+  safeErrorCategory?: GenerationSafeErrorCategory;
 }
 
 export interface GenerationInterfaceState {
@@ -50,6 +56,8 @@ export interface GenerationSubmissionFailure {
   generatedSitePath?: string;
   diagnosticCode?: GenerationDiagnosticCode;
   requestId?: string;
+  failedStage?: GenerationFailedStage;
+  safeErrorCategory?: GenerationSafeErrorCategory;
 }
 
 export type GenerationSubmissionResult =

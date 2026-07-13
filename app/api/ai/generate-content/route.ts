@@ -1,16 +1,18 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { getServerUser } from "@/lib/supabase/server";
 import { getWebsiteStructure, updateWebsiteStructure } from "@/lib/ai/structure/storage";
-import { storeWebsiteNavigation } from "@/lib/ai/navigation";
 import { createRequestId } from "@/lib/observability";
 import {
   generateWebsiteContent,
-  storeWebsiteGeneratedContent,
   type ContentGenerationOptions,
 } from "@/lib/ai/content";
-import { generateWebsiteSeo, storeWebsiteSeoMetadata } from "@/lib/ai/seo";
+import { generateWebsiteSeo } from "@/lib/ai/seo";
 import type { WebsiteGenerationInput } from "@/lib/ai/prompts/types";
 import { sanitizeInput, validateWebsiteGenerationInput } from "@/lib/ai/prompts/schemas";
+import {
+  createGenerationVersionSnapshot,
+  persistNonCriticalGenerationArtifacts,
+} from "@/lib/generation/persistence";
 import {
   createGenerationRouteErrorResponse,
   createLoggedGenerationFailureResponse,
@@ -32,9 +34,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       requestId,
       status: 401,
       diagnosticCode: "UNAUTHORIZED",
-      stage: "auth",
+      failedStage: "auth",
+      safeErrorCategory: "session-expired",
       source: "route_guard",
-      body: { error: "Unauthorized" },
     });
   }
 
@@ -48,10 +50,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       requestId,
       status: 400,
       diagnosticCode: "INVALID_JSON",
-      stage: "input",
+      failedStage: "payload-validation",
+      safeErrorCategory: "payload-invalid",
       source: "route_guard",
       userId: user.id,
-      body: { error: "Invalid JSON body" },
     });
   }
 
@@ -61,10 +63,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       requestId,
       status: 400,
       diagnosticCode: "STRUCTURE_ID_REQUIRED",
-      stage: "input",
+      failedStage: "retry-state",
+      safeErrorCategory: "retry-state-invalid",
       source: "route_guard",
       userId: user.id,
-      body: { error: "structureId is required" },
     });
   }
 
@@ -76,11 +78,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       requestId,
       status: 404,
       diagnosticCode: "STRUCTURE_NOT_FOUND",
-      stage: "lookup",
+      failedStage: "retry-state",
+      safeErrorCategory: "retry-state-invalid",
       source: "route_guard",
       structureId: body.structureId,
       userId: user.id,
-      body: { error: "Structure not found" },
     });
   }
 
@@ -96,13 +98,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       requestId,
       status: 422,
       diagnosticCode: "INVALID_INPUT",
-      stage: "input",
+      failedStage: "payload-validation",
+      safeErrorCategory: "payload-invalid",
       source: "route_guard",
       structureId: body.structureId,
       userId: user.id,
       websiteType: input.websiteType,
       details: inputErrors,
-      body: { error: "Invalid input", details: inputErrors },
     });
   }
 
@@ -112,27 +114,30 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       version: result.mappedStructure.version,
       pages: body.options?.pages,
     });
-    await storeWebsiteGeneratedContent(result.content);
     const updatedStructure = await updateWebsiteStructure(seoResult.mappedStructure);
-    await storeWebsiteNavigation({
-      structureId: updatedStructure.id,
+    const versionId = await createGenerationVersionSnapshot({
+      structure: updatedStructure,
       userId: user.id,
-      navigation: updatedStructure.navigation,
-      version: updatedStructure.version,
-      createdAt: updatedStructure.generatedAt,
-      updatedAt: updatedStructure.updatedAt,
+      requestId,
     });
-    await storeWebsiteSeoMetadata({
-      ...seoResult.seo,
-      structureId: updatedStructure.id,
-      version: updatedStructure.version,
-      updatedAt: updatedStructure.updatedAt,
+    await persistNonCriticalGenerationArtifacts({
+      structure: updatedStructure,
+      userId: user.id,
+      requestId,
+      content: result.content,
+      seo: {
+        ...seoResult.seo,
+        structureId: updatedStructure.id,
+        version: updatedStructure.version,
+        updatedAt: updatedStructure.updatedAt,
+      },
     });
 
     return NextResponse.json(
       {
         content: result.content,
         structure: updatedStructure,
+        versionId,
         seo: seoResult.seo,
         usedFallback: result.usedFallback || seoResult.usedFallback,
         validationErrors: [...result.validationErrors, ...seoResult.validationErrors],

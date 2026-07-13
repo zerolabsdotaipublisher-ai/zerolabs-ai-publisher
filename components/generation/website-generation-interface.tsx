@@ -18,7 +18,9 @@ import {
   validateGenerationInput,
   WIZARD_STORAGE_KEY,
   type GenerationDiagnosticCode,
+  type GenerationFailedStage,
   type GenerationInterfaceState,
+  type GenerationSafeErrorCategory,
 } from "@/lib/generation";
 import type { WebsiteWizardInput, WebsiteWizardInputPatch } from "@/lib/wizard";
 import { GenerationInputPanel } from "./generation-input-panel";
@@ -49,6 +51,28 @@ const SAFE_DIAGNOSTIC_CODES: GenerationDiagnosticCode[] = [
   "RETRY_UNAVAILABLE",
 ];
 
+const SAFE_FAILED_STAGES: GenerationFailedStage[] = [
+  "auth",
+  "payload-validation",
+  "openai-config",
+  "openai-request",
+  "openai-response-parse",
+  "database-save",
+  "retry-state",
+];
+
+const SAFE_ERROR_CATEGORIES: GenerationSafeErrorCategory[] = [
+  "session-expired",
+  "payload-invalid",
+  "ai-not-configured",
+  "ai-rate-limited",
+  "ai-request-failed",
+  "ai-response-invalid",
+  "database-save-failed",
+  "retry-state-invalid",
+  "internal",
+];
+
 function normalizeGenerationStage(value: unknown): GenerationInterfaceState["stage"] {
   return value === "preparing" || value === "structure" || value === "content" || value === "finalizing"
     ? value
@@ -75,6 +99,16 @@ function normalizeGenerationResult(value: unknown): GenerationInterfaceState["re
     SAFE_DIAGNOSTIC_CODES.includes(value.diagnosticCode as GenerationDiagnosticCode)
       ? (value.diagnosticCode as GenerationDiagnosticCode)
       : undefined;
+  const failedStage =
+    typeof value.failedStage === "string" &&
+    SAFE_FAILED_STAGES.includes(value.failedStage as GenerationFailedStage)
+      ? (value.failedStage as GenerationFailedStage)
+      : undefined;
+  const safeErrorCategory =
+    typeof value.safeErrorCategory === "string" &&
+    SAFE_ERROR_CATEGORIES.includes(value.safeErrorCategory as GenerationSafeErrorCategory)
+      ? (value.safeErrorCategory as GenerationSafeErrorCategory)
+      : undefined;
 
   return {
     structureId: typeof value.structureId === "string" ? value.structureId : undefined,
@@ -83,6 +117,8 @@ function normalizeGenerationResult(value: unknown): GenerationInterfaceState["re
     error: typeof value.error === "string" ? value.error : undefined,
     diagnosticCode,
     requestId: typeof value.requestId === "string" ? value.requestId : undefined,
+    failedStage,
+    safeErrorCategory,
   };
 }
 
@@ -189,6 +225,8 @@ export function WebsiteGenerationInterface({
       error: undefined,
       diagnosticCode: undefined,
       requestId: undefined,
+      failedStage: undefined,
+      safeErrorCategory: undefined,
     };
   }
 
@@ -216,6 +254,8 @@ export function WebsiteGenerationInterface({
         error: "Retry is unavailable because no saved valid generation input was found. Review the inputs, then generate again.",
         diagnosticCode: "RETRY_UNAVAILABLE",
         requestId: undefined,
+        failedStage: "retry-state",
+        safeErrorCategory: "retry-state-invalid",
       },
       isEditingInputs: true,
     }));
@@ -289,6 +329,8 @@ export function WebsiteGenerationInterface({
             error: result.error,
             diagnosticCode: result.diagnosticCode,
             requestId: result.requestId,
+            failedStage: result.failedStage,
+            safeErrorCategory: result.safeErrorCategory,
           },
           isEditingInputs: true,
         }));
@@ -310,6 +352,8 @@ export function WebsiteGenerationInterface({
           completedAt: new Date().toISOString(),
           diagnosticCode: undefined,
           requestId: undefined,
+          failedStage: undefined,
+          safeErrorCategory: undefined,
         },
         isEditingInputs: false,
       }));
