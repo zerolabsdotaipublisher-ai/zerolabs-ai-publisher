@@ -1,18 +1,11 @@
 import { NextResponse } from "next/server";
+import {
+  GENERATION_GENERIC_FAILURE_MESSAGE,
+  resolveGenerationSafeMessage,
+  type GenerationFailedStage,
+  type GenerationSafeErrorCategory,
+} from "@/lib/generation/diagnostics";
 import { logger, normalizeError } from "@/lib/observability";
-
-const RATE_LIMIT_MESSAGE =
-  "Generation is temporarily rate-limited. Please wait a moment, then try again.";
-const OPENAI_AUTH_MESSAGE =
-  "Generation is temporarily unavailable because the AI generation configuration is missing or invalid.";
-const OPENAI_REQUEST_MESSAGE =
-  "Generation request was rejected by the AI provider. Please review your inputs and try again.";
-const STORAGE_NOT_READY_MESSAGE =
-  "Website generation is temporarily unavailable because storage is not ready. Please try again later.";
-const STORAGE_FAILURE_MESSAGE =
-  "Website generation could not save progress right now. Please try again in a moment.";
-const GENERIC_FAILURE_MESSAGE =
-  "Generation could not be completed right now. Please review your inputs or try again in a moment.";
 
 export type RouteDiagnosticCode =
   | "UNAUTHORIZED"
@@ -28,33 +21,23 @@ export type RouteDiagnosticCode =
   | "SUPABASE_STORAGE_ERROR"
   | "GENERATION_INTERNAL_ERROR";
 
-type DiagnosticService = "api" | "openai" | "supabase";
-type GenerationFailureStage = "auth" | "input" | "lookup" | "generation";
+type DiagnosticService = "api" | "openai" | "supabase" | "versions";
 type GenerationFailureSource = "route_guard" | "exception";
-type ProviderErrorCategory =
-  | "request_validation"
-  | "not_found"
-  | "rate_limit"
-  | "auth"
-  | "request_rejected"
-  | "upstream"
-  | "schema_missing"
-  | "storage"
-  | "internal";
 
 interface ErrorLike {
   code?: unknown;
   details?: unknown;
   hint?: unknown;
   message?: unknown;
+  name?: unknown;
 }
 
 interface ClassifiedGenerationRouteError {
   status: number;
-  message: string;
   diagnosticCode: RouteDiagnosticCode;
   service: DiagnosticService;
-  providerErrorCategory: ProviderErrorCategory;
+  failedStage: GenerationFailedStage;
+  safeErrorCategory: GenerationSafeErrorCategory;
   backendCode?: string;
   backendDetails?: string;
   backendHint?: string;
@@ -65,7 +48,9 @@ interface DiagnosticResponseArgs {
   requestId: string;
   status: number;
   diagnosticCode: RouteDiagnosticCode;
-  body: Record<string, unknown>;
+  failedStage: GenerationFailedStage;
+  safeErrorCategory: GenerationSafeErrorCategory;
+  body?: Record<string, unknown>;
 }
 
 interface GenerationRouteErrorArgs {
@@ -81,13 +66,11 @@ interface LoggedGenerationFailureResponseArgs extends DiagnosticResponseArgs {
   route: string;
   service?: DiagnosticService;
   category?: "security" | "error";
-  stage: GenerationFailureStage;
   source: GenerationFailureSource;
   structureId?: string;
   userId?: string;
   websiteType?: string;
   details?: string[];
-  providerErrorCategory?: ProviderErrorCategory;
 }
 
 function logGenerationFailure(args: {
@@ -97,13 +80,13 @@ function logGenerationFailure(args: {
   diagnosticCode: RouteDiagnosticCode;
   service: DiagnosticService;
   category: "security" | "error";
-  stage: GenerationFailureStage;
+  failedStage: GenerationFailedStage;
   source: GenerationFailureSource;
   structureId?: string;
   userId?: string;
   websiteType?: string;
   details?: string[];
-  providerErrorCategory: ProviderErrorCategory;
+  safeErrorCategory: GenerationSafeErrorCategory;
   error?: ReturnType<typeof normalizeError>;
   upstreamStatus?: number;
   backendCode?: string;
@@ -118,10 +101,10 @@ function logGenerationFailure(args: {
     route: args.route,
     requestId: args.requestId,
     status: args.status,
-    stage: args.stage,
+    failedStage: args.failedStage,
     source: args.source,
     diagnosticCode: args.diagnosticCode,
-    providerErrorCategory: args.providerErrorCategory,
+    safeErrorCategory: args.safeErrorCategory,
     structureId: args.structureId,
     userId: args.userId,
     websiteType: args.websiteType,
@@ -136,7 +119,7 @@ function logGenerationFailure(args: {
 }
 
 function readString(value: unknown): string | undefined {
-  return typeof value === "string" && value.trim() ? value : undefined;
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
 
 function asErrorLike(err: unknown): ErrorLike | null {
@@ -163,6 +146,34 @@ function isSupabaseCode(code: string | undefined): boolean {
   }
 
   return code.startsWith("PGRST") || /^[0-9A-Z]{5}$/.test(code);
+}
+
+function isOpenAiConfigError(message: string): boolean {
+  const normalized = message.toLowerCase();
+
+  return (
+    normalized.includes("generation configuration") ||
+    normalized.includes("openai configuration") ||
+    normalized.includes("openai api key") ||
+    normalized.includes("openai model") ||
+    normalized.includes("missing or invalid")
+  );
+}
+
+function isOpenAiResponseParseError(message: string): boolean {
+  const normalized = message.toLowerCase();
+
+  return (
+    normalized.includes("openai returned empty") ||
+    normalized.includes("empty seo content")
+  );
+}
+
+function isSupabaseServiceRoleError(err: ErrorLike | null, message: string): boolean {
+  return (
+    readString(err?.name) === "SupabaseServiceRoleError" ||
+    message.toLowerCase().includes("supabase service-role configuration")
+  );
 }
 
 function isSchemaMissing(args: {
@@ -196,20 +207,14 @@ function classifyGenerationRouteError(err: unknown): ClassifiedGenerationRouteEr
   const backendDetails = readString(errorLike?.details);
   const backendHint = readString(errorLike?.hint);
   const openAiStatus = parseOpenAiStatus(rawMessage);
-  const normalizedMessage = rawMessage.toLowerCase();
 
-  if (
-    normalizedMessage.includes("generation configuration") ||
-    normalizedMessage.includes("openai configuration") ||
-    normalizedMessage.includes("openai api key") ||
-    normalizedMessage.includes("openai model")
-  ) {
+  if (isOpenAiConfigError(rawMessage)) {
     return {
       status: 503,
-      message: OPENAI_AUTH_MESSAGE,
       diagnosticCode: "OPENAI_AUTH_INVALID",
       service: "openai",
-      providerErrorCategory: "auth",
+      failedStage: "openai-config",
+      safeErrorCategory: "ai-not-configured",
       backendCode,
       backendDetails,
       backendHint,
@@ -219,21 +224,21 @@ function classifyGenerationRouteError(err: unknown): ClassifiedGenerationRouteEr
   if (openAiStatus === 429) {
     return {
       status: 429,
-      message: RATE_LIMIT_MESSAGE,
       diagnosticCode: "OPENAI_RATE_LIMITED",
       service: "openai",
-      providerErrorCategory: "rate_limit",
+      failedStage: "openai-request",
+      safeErrorCategory: "ai-rate-limited",
       upstreamStatus: openAiStatus,
     };
   }
 
   if (openAiStatus === 401 || openAiStatus === 403) {
     return {
-      status: 502,
-      message: OPENAI_AUTH_MESSAGE,
+      status: 503,
       diagnosticCode: "OPENAI_AUTH_INVALID",
       service: "openai",
-      providerErrorCategory: "auth",
+      failedStage: "openai-config",
+      safeErrorCategory: "ai-not-configured",
       upstreamStatus: openAiStatus,
     };
   }
@@ -241,22 +246,48 @@ function classifyGenerationRouteError(err: unknown): ClassifiedGenerationRouteEr
   if (openAiStatus === 400 || openAiStatus === 404) {
     return {
       status: 502,
-      message: OPENAI_REQUEST_MESSAGE,
       diagnosticCode: "OPENAI_REQUEST_REJECTED",
       service: "openai",
-      providerErrorCategory: "request_rejected",
+      failedStage: "openai-request",
+      safeErrorCategory: "ai-request-failed",
       upstreamStatus: openAiStatus,
     };
   }
 
-  if (typeof openAiStatus === "number" || /OpenAI returned empty/i.test(rawMessage)) {
+  if (typeof openAiStatus === "number") {
     return {
       status: 502,
-      message: GENERIC_FAILURE_MESSAGE,
       diagnosticCode: "OPENAI_UPSTREAM_ERROR",
       service: "openai",
-      providerErrorCategory: "upstream",
+      failedStage: "openai-request",
+      safeErrorCategory: "ai-request-failed",
       upstreamStatus: openAiStatus,
+    };
+  }
+
+  if (isOpenAiResponseParseError(rawMessage)) {
+    return {
+      status: 502,
+      diagnosticCode: "OPENAI_UPSTREAM_ERROR",
+      service: "openai",
+      failedStage: "openai-response-parse",
+      safeErrorCategory: "ai-response-invalid",
+      backendCode,
+      backendDetails,
+      backendHint,
+    };
+  }
+
+  if (isSupabaseServiceRoleError(errorLike, rawMessage)) {
+    return {
+      status: 503,
+      diagnosticCode: "SUPABASE_STORAGE_ERROR",
+      service: "supabase",
+      failedStage: "database-save",
+      safeErrorCategory: "database-save-failed",
+      backendCode,
+      backendDetails,
+      backendHint,
     };
   }
 
@@ -270,10 +301,10 @@ function classifyGenerationRouteError(err: unknown): ClassifiedGenerationRouteEr
   ) {
     return {
       status: 503,
-      message: STORAGE_NOT_READY_MESSAGE,
       diagnosticCode: "SUPABASE_SCHEMA_MISSING",
       service: "supabase",
-      providerErrorCategory: "schema_missing",
+      failedStage: "database-save",
+      safeErrorCategory: "database-save-failed",
       backendCode,
       backendDetails,
       backendHint,
@@ -283,10 +314,10 @@ function classifyGenerationRouteError(err: unknown): ClassifiedGenerationRouteEr
   if (isSupabaseCode(backendCode)) {
     return {
       status: 500,
-      message: STORAGE_FAILURE_MESSAGE,
       diagnosticCode: "SUPABASE_STORAGE_ERROR",
       service: "supabase",
-      providerErrorCategory: "storage",
+      failedStage: "database-save",
+      safeErrorCategory: "database-save-failed",
       backendCode,
       backendDetails,
       backendHint,
@@ -295,10 +326,10 @@ function classifyGenerationRouteError(err: unknown): ClassifiedGenerationRouteEr
 
   return {
     status: 500,
-    message: GENERIC_FAILURE_MESSAGE,
     diagnosticCode: "GENERATION_INTERNAL_ERROR",
     service: "api",
-    providerErrorCategory: "internal",
+    failedStage: "openai-request",
+    safeErrorCategory: "internal",
     backendCode,
     backendDetails,
     backendHint,
@@ -306,11 +337,25 @@ function classifyGenerationRouteError(err: unknown): ClassifiedGenerationRouteEr
 }
 
 export function createDiagnosticResponse(args: DiagnosticResponseArgs): NextResponse {
+  const safeMessage = resolveGenerationSafeMessage({
+    diagnosticCode: args.diagnosticCode,
+    failedStage: args.failedStage,
+    safeErrorCategory: args.safeErrorCategory,
+    fallback:
+      readString(args.body?.["message"]) ??
+      readString(args.body?.["error"]) ??
+      GENERATION_GENERIC_FAILURE_MESSAGE,
+  });
+
   return NextResponse.json(
     {
-      ...args.body,
+      ...(args.body ?? {}),
+      error: safeMessage,
+      message: safeMessage,
       diagnosticCode: args.diagnosticCode,
       requestId: args.requestId,
+      failedStage: args.failedStage,
+      safeErrorCategory: args.safeErrorCategory,
     },
     {
       status: args.status,
@@ -331,21 +376,13 @@ export function createLoggedGenerationFailureResponse(
     diagnosticCode: args.diagnosticCode,
     service: args.service ?? "api",
     category: args.category ?? (args.status === 401 ? "security" : "error"),
-    stage: args.stage,
+    failedStage: args.failedStage,
     source: args.source,
     structureId: args.structureId,
     userId: args.userId,
     websiteType: args.websiteType,
     details: args.details,
-    providerErrorCategory:
-      args.providerErrorCategory ??
-      (args.diagnosticCode === "INVALID_INPUT" || args.diagnosticCode === "INVALID_JSON"
-        ? "request_validation"
-        : args.diagnosticCode === "STRUCTURE_NOT_FOUND"
-          ? "not_found"
-          : args.diagnosticCode === "UNAUTHORIZED"
-            ? "auth"
-            : "internal"),
+    safeErrorCategory: args.safeErrorCategory,
   });
 
   return createDiagnosticResponse(args);
@@ -362,12 +399,12 @@ export function createGenerationRouteErrorResponse(
     diagnosticCode: classified.diagnosticCode,
     service: classified.service,
     category: "error",
-    stage: "generation",
+    failedStage: classified.failedStage,
     source: "exception",
     structureId: args.structureId,
     userId: args.userId,
     websiteType: args.websiteType,
-    providerErrorCategory: classified.providerErrorCategory,
+    safeErrorCategory: classified.safeErrorCategory,
     upstreamStatus: classified.upstreamStatus,
     backendCode: classified.backendCode,
     backendDetails: classified.backendDetails,
@@ -379,9 +416,7 @@ export function createGenerationRouteErrorResponse(
     requestId: args.requestId,
     status: classified.status,
     diagnosticCode: classified.diagnosticCode,
-    body: {
-      error: classified.message,
-      message: classified.message,
-    },
+    failedStage: classified.failedStage,
+    safeErrorCategory: classified.safeErrorCategory,
   });
 }

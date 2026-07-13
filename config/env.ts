@@ -101,7 +101,6 @@ const REQUIRED_VARS = [
   "NEXT_PUBLIC_SUPABASE_URL",
   "NEXT_PUBLIC_SUPABASE_ANON_KEY",
   "SUPABASE_SERVICE_ROLE_KEY",
-  "OPENAI_API_KEY",
 ] as const;
 
 const vercelApiToken = process.env.VERCEL_API_TOKEN ?? process.env.PIPELINE_VERCEL_TOKEN;
@@ -156,10 +155,10 @@ export const env = {
     directUrl: optional(process.env.DIRECT_URL),
   },
 
-  /** OpenAI — AI content generation (required) */
+  /** OpenAI — AI content generation (validated at route/service use) */
   openai: {
-    /** Server-side only — do not expose to browser */
-    apiKey: required("OPENAI_API_KEY", process.env.OPENAI_API_KEY),
+    /** Server-side only — validated at request-time for safe AI route failures */
+    apiKey: optional(process.env.OPENAI_API_KEY, "") ?? "",
     model: process.env.OPENAI_MODEL ?? "gpt-4o",
   },
 

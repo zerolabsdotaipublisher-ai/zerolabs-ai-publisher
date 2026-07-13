@@ -19,14 +19,14 @@ import { type NextRequest, NextResponse } from "next/server";
 import { getServerUser } from "@/lib/supabase/server";
 import { generateWebsiteStructure } from "@/lib/ai/structure/generator";
 import { storeWebsiteStructure } from "@/lib/ai/structure/storage";
-import { storeWebsiteNavigation } from "@/lib/ai/navigation";
-import { generateWebsiteSeo, storeWebsiteSeoMetadata } from "@/lib/ai/seo";
+import { generateWebsiteSeo } from "@/lib/ai/seo";
 import {
   validateWebsiteGenerationInput,
   sanitizeInput,
 } from "@/lib/ai/prompts/schemas";
 import { createRequestId } from "@/lib/observability";
 import type { WebsiteGenerationInput } from "@/lib/ai/prompts/types";
+import { persistNonCriticalGenerationArtifacts } from "@/lib/generation/persistence";
 import {
   createGenerationRouteErrorResponse,
   createLoggedGenerationFailureResponse,
@@ -42,9 +42,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       requestId,
       status: 401,
       diagnosticCode: "UNAUTHORIZED",
-      stage: "auth",
+      failedStage: "auth",
+      safeErrorCategory: "session-expired",
       source: "route_guard",
-      body: { error: "Unauthorized" },
     });
   }
 
@@ -58,10 +58,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       requestId,
       status: 400,
       diagnosticCode: "INVALID_JSON",
-      stage: "input",
+      failedStage: "payload-validation",
+      safeErrorCategory: "payload-invalid",
       source: "route_guard",
       userId: user.id,
-      body: { error: "Invalid JSON body" },
     });
   }
 
@@ -74,12 +74,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       requestId,
       status: 422,
       diagnosticCode: "INVALID_INPUT",
-      stage: "input",
+      failedStage: "payload-validation",
+      safeErrorCategory: "payload-invalid",
       source: "route_guard",
       userId: user.id,
       websiteType: input.websiteType,
       details: validationErrors,
-      body: { error: "Invalid input", details: validationErrors },
     });
   }
 
@@ -89,19 +89,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       version: result.structure.version,
     });
     const stored = await storeWebsiteStructure(seoResult.mappedStructure);
-    await storeWebsiteNavigation({
-      structureId: stored.id,
+    await persistNonCriticalGenerationArtifacts({
+      structure: stored,
       userId: user.id,
-      navigation: stored.navigation,
-      version: stored.version,
-      createdAt: stored.generatedAt,
-      updatedAt: stored.updatedAt,
-    });
-    await storeWebsiteSeoMetadata({
-      ...seoResult.seo,
-      structureId: stored.id,
-      version: stored.version,
-      updatedAt: stored.updatedAt,
+      requestId,
+      seo: {
+        ...seoResult.seo,
+        structureId: stored.id,
+        version: stored.version,
+        updatedAt: stored.updatedAt,
+      },
     });
 
     return NextResponse.json(

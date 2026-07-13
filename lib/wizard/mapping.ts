@@ -5,6 +5,10 @@ import type {
   WebsiteGenerationInput,
 } from "@/lib/ai/prompts/types";
 import type { GenerationDiagnosticCode } from "@/lib/generation/types";
+import type {
+  GenerationFailedStage,
+  GenerationSafeErrorCategory,
+} from "@/lib/generation/diagnostics";
 import { sanitizeInput } from "@/lib/ai/prompts/schemas";
 import { createGeneratedWebsiteBrief } from "./identity";
 import { inferWebsiteTypeFromPages, normalizeDesignConfig } from "./schemas";
@@ -155,6 +159,8 @@ export interface StructureGenerationResponse {
   details?: string[];
   diagnosticCode?: GenerationDiagnosticCode;
   requestId?: string;
+  failedStage?: GenerationFailedStage;
+  safeErrorCategory?: GenerationSafeErrorCategory;
 }
 
 export interface ContentGenerationResponse {
@@ -165,4 +171,6 @@ export interface ContentGenerationResponse {
   details?: string[];
   diagnosticCode?: GenerationDiagnosticCode;
   requestId?: string;
+  failedStage?: GenerationFailedStage;
+  safeErrorCategory?: GenerationSafeErrorCategory;
 }

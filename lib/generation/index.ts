@@ -5,3 +5,4 @@ export * from "./submit";
 export * from "./tracking";
 export * from "./mapping";
 export * from "./scenarios";
+export * from "./diagnostics";
