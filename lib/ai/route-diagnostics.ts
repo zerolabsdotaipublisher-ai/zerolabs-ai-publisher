@@ -192,10 +192,14 @@ function isSchemaMissing(args: {
     .toLowerCase();
 
   return (
+    args.backendCode === "PGRST204" ||
     args.backendCode === "PGRST205" ||
+    args.backendCode === "42703" ||
     args.backendCode === "42P01" ||
     searchable.includes("schema cache") ||
+    searchable.includes("could not find the column") ||
     searchable.includes("could not find the table") ||
+    (searchable.includes("column") && searchable.includes("does not exist")) ||
     (searchable.includes("relation") && searchable.includes("does not exist"))
   );
 }
