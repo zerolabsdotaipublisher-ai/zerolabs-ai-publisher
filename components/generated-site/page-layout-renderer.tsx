@@ -12,15 +12,18 @@ function getRenderableSections(
   page: WebsitePage,
   layoutPage?: PageLayoutModel,
 ): WebsiteSection[] {
-  if (!layoutPage) {
-    return page.sections
+  const pageSections = Array.isArray(page.sections) ? page.sections : [];
+  const sectionLayouts = layoutPage?.sectionLayouts ?? [];
+
+  if (!layoutPage || sectionLayouts.length === 0) {
+    return pageSections
       .filter((section) => section.visible)
       .sort((a, b) => a.order - b.order);
   }
 
-  const byId = new Map(page.sections.map((section) => [section.id, section]));
+  const byId = new Map(pageSections.map((section) => [section.id, section]));
 
-  return layoutPage.sectionLayouts
+  return sectionLayouts
     .filter((node) => node.visible)
     .map((node) => byId.get(node.sectionId))
     .filter((section): section is WebsiteSection => Boolean(section));
@@ -38,9 +41,9 @@ export function PageLayoutRenderer({ page, layoutPage }: PageLayoutRendererProps
       data-page-type={page.type}
       data-slug={page.slug}
       data-layout-template={layoutPage?.templateName}
-      data-layout-style={layoutPage?.metadata.layoutStyleTag}
-      data-layout-spacing-scale={layoutPage?.metadata.spacingScale}
-      data-layout-emphasis={layoutPage?.metadata.emphasisPattern}
+      data-layout-style={layoutPage?.metadata?.layoutStyleTag}
+      data-layout-spacing-scale={layoutPage?.metadata?.spacingScale}
+      data-layout-emphasis={layoutPage?.metadata?.emphasisPattern}
     >
       {visibleSections.map((section) => (
         <SectionLayoutShell key={section.id} node={layoutBySectionId.get(section.id)}>

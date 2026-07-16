@@ -1,8 +1,5 @@
-import Link from "next/link";
-import { SiteThemeToggle } from "@/components/theme/site-theme-toggle";
 import { routes } from "@/config/routes";
 import { Renderer } from "@/components/generated-site/renderer";
-import { PublishControls } from "@/components/publish/publish-controls";
 import {
   createPreviewRefreshKey,
   getPreviewDeviceClass,
@@ -13,16 +10,27 @@ import {
 } from "@/lib/preview";
 import { PreviewDeviceSwitcher } from "./preview-device-switcher";
 import { PreviewPageNavigation } from "./preview-page-navigation";
-import { PreviewShareActions } from "./preview-share-actions";
 import { PreviewToolbar } from "./preview-toolbar";
+import { PreviewClientBoundary } from "./preview-client-boundary";
+import { PreviewOwnerControls } from "./preview-owner-controls";
+import { PreviewToolbarActions } from "./preview-toolbar-actions";
 
 interface WebsitePreviewShellProps {
   model: WebsitePreviewModel;
+  requestId?: string;
 }
 
-export function WebsitePreviewShell({ model }: WebsitePreviewShellProps) {
+export function WebsitePreviewShell({ model, requestId }: WebsitePreviewShellProps) {
   const pageSlug = model.currentPageSlug;
   const currentDeviceMode = model.currentDeviceMode;
+  const layoutPages = model.structure.layout?.pages ?? [];
+  const currentLayoutPage =
+    layoutPages.find((page) => page.pageSlug === pageSlug) ?? layoutPages[0];
+  const previewTheme = currentLayoutPage?.metadata?.themeMode ?? "system";
+  const previewStyle = model.structure.styleConfig?.style;
+  const previewTone = model.structure.styleConfig?.tone;
+  const previewTitle = model.structure.siteTitle || "Untitled site";
+  const previewWebsiteType = model.structure.websiteType || "website";
 
   function buildHref(changes: Partial<Record<(typeof PREVIEW_QUERY_KEYS)[keyof typeof PREVIEW_QUERY_KEYS], string | undefined>>): string {
     const query = new URLSearchParams();
@@ -48,12 +56,15 @@ export function WebsitePreviewShell({ model }: WebsitePreviewShellProps) {
     tablet: buildHref({ [PREVIEW_QUERY_KEYS.device]: "tablet" }),
     mobile: buildHref({ [PREVIEW_QUERY_KEYS.device]: "mobile" }),
   };
+  const refreshHref = buildHref({
+    [PREVIEW_QUERY_KEYS.refresh]: createPreviewRefreshKey(),
+  });
 
   return (
     <main id="main-content" className="preview-shell">
       <PreviewToolbar
-        title={`${model.structure.siteTitle} preview`}
-        subtitle={`${model.accessLevel === "owner" ? "Owner" : "Shared"} preview / ${model.structure.websiteType}`}
+        title={`${previewTitle} preview`}
+        subtitle={`${model.accessLevel === "owner" ? "Owner" : "Shared"} preview / ${previewWebsiteType}`}
         controls={
           <>
             <PreviewPageNavigation
@@ -68,23 +79,24 @@ export function WebsitePreviewShell({ model }: WebsitePreviewShellProps) {
           </>
         }
         actions={
-          <>
-            <SiteThemeToggle className="theme-toggle-button theme-toggle-button-preview" />
-            <Link
-              href={buildHref({
-                [PREVIEW_QUERY_KEYS.refresh]: createPreviewRefreshKey(),
-              })}
-              className="wizard-button-secondary"
-            >
-              Refresh preview
-            </Link>
-            <PreviewShareActions
+          <PreviewClientBoundary
+            requestId={requestId}
+            boundaryName="preview-toolbar-actions"
+            structureId={model.structure.id}
+            fallback={
+              <p className="preview-share-caption">
+                Interactive preview controls are temporarily unavailable.
+              </p>
+            }
+          >
+            <PreviewToolbarActions
+              refreshHref={refreshHref}
               structureId={model.structure.id}
               canShare={model.permissions.canShare}
               sharedPreviewPath={model.sharedPreviewPath}
               sharedPreviewExpiresAt={model.sharedPreviewExpiresAt}
             />
-          </>
+          </PreviewClientBoundary>
         }
         links={[
           ...(model.accessLevel === "owner"
@@ -100,15 +112,28 @@ export function WebsitePreviewShell({ model }: WebsitePreviewShellProps) {
         ]}
       />
       {model.accessLevel === "owner" ? (
-        <PublishControls structure={model.structure} context="preview" />
+        <PreviewClientBoundary
+          requestId={requestId}
+          boundaryName="preview-owner-controls"
+          structureId={model.structure.id}
+          fallback={
+            <section className="publish-controls" aria-label="Publish controls">
+              <p className="publish-warning">
+                Publish controls are temporarily unavailable in preview.
+              </p>
+            </section>
+          }
+        >
+          <PreviewOwnerControls structure={model.structure} />
+        </PreviewClientBoundary>
       ) : null}
 
       <div
         className={`preview-canvas ${getPreviewDeviceClass(currentDeviceMode)}`}
         data-preview-device={currentDeviceMode}
-        data-preview-style={model.structure.styleConfig.style}
-        data-preview-tone={model.structure.styleConfig.tone}
-        data-preview-theme={model.structure.layout?.pages[0]?.metadata.themeMode || "system"}
+        data-preview-style={previewStyle}
+        data-preview-tone={previewTone}
+        data-preview-theme={previewTheme}
       >
         <div className="preview-canvas-frame">
           <Renderer

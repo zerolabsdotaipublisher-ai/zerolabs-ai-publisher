@@ -1,4 +1,5 @@
 import type { WebsiteSection } from "@/lib/ai/structure/types";
+import { toWebsiteAssetRenderableUrl } from "@/lib/website-asset-retrieval/urls";
 
 // ---------------------------------------------------------------------------
 // Section content shape helpers
@@ -217,11 +218,38 @@ interface ArticlePageReferencesContent {
   references?: ArticleReferenceItem[];
 }
 
+function asContentObject<T extends object>(value: unknown): T {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {} as T;
+  }
+
+  return value as T;
+}
+
+function asArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : [];
+}
+
+function formatDateLabel(value: string | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return date.toLocaleDateString();
+}
+
 // ---------------------------------------------------------------------------
 // Section sub-renderers
 // ---------------------------------------------------------------------------
 
 function HeroSectionView({ content }: { content: HeroContent }) {
+  const image = asContentObject<NonNullable<HeroContent["image"]>>(content.image);
+
   return (
     <section className="gs-section gs-hero" id="hero">
       {content.eyebrow ? <p className="gs-hero-eyebrow">{content.eyebrow}</p> : null}
@@ -230,18 +258,18 @@ function HeroSectionView({ content }: { content: HeroContent }) {
         <p className="gs-hero-subheadline">{content.subheadline}</p>
       )}
       {content.supportingCopy ? <p className="gs-about-body">{content.supportingCopy}</p> : null}
-      {content.variant === "with-image" && content.image ? (
+      {content.variant === "with-image" && (image.src || image.alt || image.promptHint) ? (
         <div className="gs-service-item">
-          {content.image.src ? (
+          {image.src ? (
             <img
               className="gs-component gs-component-image"
-              src={content.image.src}
-              alt={content.image.alt || content.headline || content.subheadline || "Hero image"}
+              src={toWebsiteAssetRenderableUrl(image.src)}
+              alt={image.alt || content.headline || content.subheadline || "Hero image"}
             />
           ) : null}
-          <strong className="gs-service-name">{content.image.alt}</strong>
-          {content.image.promptHint ? (
-            <p className="gs-service-description">{content.image.promptHint}</p>
+          <strong className="gs-service-name">{image.alt}</strong>
+          {image.promptHint ? (
+            <p className="gs-service-description">{image.promptHint}</p>
           ) : null}
         </div>
       ) : null}
@@ -262,6 +290,10 @@ function HeroSectionView({ content }: { content: HeroContent }) {
 }
 
 function AboutSectionView({ content }: { content: AboutContent }) {
+  const paragraphs = asArray<string>(content.paragraphs);
+  const items = asArray<NonNullable<AboutContent["items"]>[number]>(content.items);
+  const bullets = asArray<string>(content.bullets);
+
   return (
     <section className="gs-section gs-about" id="about">
       {content.headline && (
@@ -270,14 +302,14 @@ function AboutSectionView({ content }: { content: AboutContent }) {
       {content.subheadline ? <p className="gs-hero-subheadline">{content.subheadline}</p> : null}
       {content.description ? <p className="gs-about-body">{content.description}</p> : null}
       {content.body && <p className="gs-about-body">{content.body}</p>}
-      {(content.paragraphs ?? []).map((paragraph, index) => (
+      {paragraphs.map((paragraph, index) => (
         <p key={index} className="gs-about-body">
           {paragraph}
         </p>
       ))}
-      {content.items?.length ? (
+      {items.length ? (
         <ul className="gs-services-list">
-          {content.items.map((item, index) => (
+          {items.map((item, index) => (
             <li key={index} className="gs-service-item">
               <strong className="gs-service-name">{item.title}</strong>
               <p className="gs-service-description">{item.description}</p>
@@ -285,9 +317,9 @@ function AboutSectionView({ content }: { content: AboutContent }) {
           ))}
         </ul>
       ) : null}
-      {content.bullets?.length ? (
+      {bullets.length ? (
         <ul className="gs-services-list">
-          {content.bullets.map((bullet, index) => (
+          {bullets.map((bullet, index) => (
             <li key={index} className="gs-service-item">
               {bullet}
             </li>
@@ -299,6 +331,9 @@ function AboutSectionView({ content }: { content: AboutContent }) {
 }
 
 function ServicesSectionView({ content }: { content: ServicesContent }) {
+  const items = asArray<ServiceItem>(content.items);
+  const bullets = asArray<string>(content.bullets);
+
   return (
     <section className="gs-section gs-services" id="services">
       {content.headline && (
@@ -306,9 +341,9 @@ function ServicesSectionView({ content }: { content: ServicesContent }) {
       )}
       {content.subheadline ? <p className="gs-hero-subheadline">{content.subheadline}</p> : null}
       {content.description ? <p className="gs-about-body">{content.description}</p> : null}
-      {content.items && content.items.length > 0 && (
+      {items.length > 0 && (
         <ul className="gs-services-list">
-          {content.items.map((item, i) => (
+          {items.map((item, i) => (
             <li key={i} className="gs-service-item">
               <strong className="gs-service-name">{item.name}</strong>
               <p className="gs-service-description">{item.description}</p>
@@ -316,9 +351,9 @@ function ServicesSectionView({ content }: { content: ServicesContent }) {
           ))}
         </ul>
       )}
-      {content.bullets?.length ? (
+      {bullets.length ? (
         <ul className="gs-services-list">
-          {content.bullets.map((bullet, index) => (
+          {bullets.map((bullet, index) => (
             <li key={index} className="gs-service-item">
               {bullet}
             </li>
@@ -336,14 +371,17 @@ function MarketingListSectionView({
   content: MarketingListContent;
   sectionId: string;
 }) {
+  const items = asArray<MarketingListItem>(content.items);
+  const bullets = asArray<string>(content.bullets);
+
   return (
     <section className="gs-section gs-services" id={sectionId}>
       {content.headline ? <h2 className="gs-section-headline">{content.headline}</h2> : null}
       {content.subheadline ? <p className="gs-hero-subheadline">{content.subheadline}</p> : null}
       {content.description ? <p className="gs-about-body">{content.description}</p> : null}
-      {(content.items ?? []).length ? (
+      {items.length ? (
         <ul className="gs-services-list">
-          {(content.items ?? []).map((item, index) => (
+          {items.map((item, index) => (
             <li key={index} className="gs-service-item">
               {item.eyebrow ? <p className="gs-footer-blurb">{item.eyebrow}</p> : null}
               <strong className="gs-service-name">{item.title}</strong>
@@ -352,9 +390,9 @@ function MarketingListSectionView({
           ))}
         </ul>
       ) : null}
-      {content.bullets?.length ? (
+      {bullets.length ? (
         <ul className="gs-services-list">
-          {content.bullets.map((bullet, index) => (
+          {bullets.map((bullet, index) => (
             <li key={index} className="gs-service-item">
               {bullet}
             </li>
@@ -370,7 +408,8 @@ function TestimonialsSectionView({
 }: {
   content: TestimonialsContent;
 }) {
-  if (!content.items || content.items.length === 0) return null;
+  const items = asArray<TestimonialItem>(content.items);
+  if (items.length === 0) return null;
 
   return (
     <section className="gs-section gs-testimonials" id="testimonials">
@@ -378,7 +417,7 @@ function TestimonialsSectionView({
         <h2 className="gs-section-headline">{content.headline}</h2>
       )}
       <ul className="gs-testimonials-list">
-        {content.items.map((item, i) => (
+        {items.map((item, i) => (
           <li key={i} className="gs-testimonial-item">
             <blockquote className="gs-testimonial-quote">
               {item.quote}
@@ -422,14 +461,15 @@ function CtaSectionView({ content }: { content: CtaContent }) {
 }
 
 function FaqSectionView({ content }: { content: FaqContent }) {
-  if (!content.items?.length) return null;
+  const items = asArray<NonNullable<FaqContent["items"]>[number]>(content.items);
+  if (!items.length) return null;
 
   return (
     <section className="gs-section gs-about" id="faq">
       {content.headline ? <h2 className="gs-section-headline">{content.headline}</h2> : null}
       {content.subheadline ? <p className="gs-hero-subheadline">{content.subheadline}</p> : null}
       <ul className="gs-services-list">
-        {content.items.map((item, index) => (
+        {items.map((item, index) => (
           <li key={index} className="gs-service-item">
             <strong className="gs-service-name">{item.question}</strong>
             <p className="gs-service-description">{item.answer}</p>
@@ -441,14 +481,18 @@ function FaqSectionView({ content }: { content: FaqContent }) {
 }
 
 function PricingSectionView({ content }: { content: PricingContent }) {
-  if (!content.tiers?.length) return null;
+  const tiers = asArray<NonNullable<PricingContent["tiers"]>[number]>(content.tiers);
+  if (!tiers.length) return null;
 
   return (
     <section className="gs-section gs-services" id="pricing">
       {content.headline ? <h2 className="gs-section-headline">{content.headline}</h2> : null}
       {content.subheadline ? <p className="gs-hero-subheadline">{content.subheadline}</p> : null}
       <ul className="gs-services-list">
-        {content.tiers.map((tier, index) => (
+        {tiers.map((tier, index) => {
+          const features = asArray<string>(tier.features);
+
+          return (
           <li key={index} className="gs-service-item">
             <strong className="gs-service-name">
               {tier.name} — {tier.price}
@@ -456,7 +500,7 @@ function PricingSectionView({ content }: { content: PricingContent }) {
             </strong>
             <p className="gs-service-description">{tier.description}</p>
             <ul className="gs-services-list">
-              {tier.features.map((feature, featureIndex) => (
+              {features.map((feature, featureIndex) => (
                 <li key={featureIndex} className="gs-service-item">
                   {feature}
                 </li>
@@ -466,7 +510,8 @@ function PricingSectionView({ content }: { content: PricingContent }) {
               {tier.ctaText}
             </a>
           </li>
-        ))}
+          );
+        })}
       </ul>
       {content.guaranteeLine ? <p className="gs-footer-blurb">{content.guaranteeLine}</p> : null}
       {content.disclaimer ? <p className="gs-footer-legal">{content.disclaimer}</p> : null}
@@ -475,14 +520,16 @@ function PricingSectionView({ content }: { content: PricingContent }) {
 }
 
 function ContactSectionView({ content }: { content: ContactContent }) {
+  const channels = asArray<ContactChannel>(content.channels);
+
   return (
     <section className="gs-section gs-contact" id="contact">
       {content.headline && (
         <h2 className="gs-section-headline">{content.headline}</h2>
       )}
-      {content.channels && content.channels.length > 0 && (
+      {channels.length > 0 && (
         <ul className="gs-contact-channels">
-          {content.channels.map((channel, i) => (
+          {channels.map((channel, i) => (
             <li key={i} className="gs-contact-channel">
               <span className="gs-contact-label">{channel.label}:</span>{" "}
               <span className="gs-contact-value">{channel.value}</span>
@@ -508,11 +555,13 @@ function FooterSectionView({ content }: { content: FooterContent }) {
 }
 
 function BlogIndexSectionView({ content }: { content: BlogIndexContent }) {
+  const posts = asArray<BlogIndexPost>(content.posts);
+
   return (
     <section className="gs-section gs-blog-index">
       {content.headline ? <h2 className="gs-section-headline">{content.headline}</h2> : null}
       <div className="gs-blog-index-list">
-        {(content.posts ?? []).map((post) => (
+        {posts.map((post) => (
           <article key={post.id} className="gs-blog-card">
             <h3 className="gs-blog-card-title">
               <a href={`?page=${encodeURIComponent(post.slug)}`}>{post.title}</a>
@@ -662,72 +711,74 @@ interface SectionRendererProps {
  * sub-renderer based on `section.type`.
  */
 export function SectionRenderer({ section }: SectionRendererProps) {
+  const content = asContentObject<Record<string, unknown>>(section.content);
+
   if (section.type === "custom") {
-    const customKind = (section.content as { kind?: string }).kind;
+    const customKind = typeof content.kind === "string" ? content.kind : undefined;
     if (customKind === "blog-index") {
-      return <BlogIndexSectionView content={section.content as BlogIndexContent} />;
+      return <BlogIndexSectionView content={content as BlogIndexContent} />;
     }
     if (customKind === "blog-post-header") {
-      return <BlogPostHeaderSectionView content={section.content as BlogPostHeaderContent} />;
+      return <BlogPostHeaderSectionView content={content as BlogPostHeaderContent} />;
     }
     if (customKind === "blog-post-body") {
-      return <BlogPostBodySectionView content={section.content as BlogPostBodyContent} />;
+      return <BlogPostBodySectionView content={content as BlogPostBodyContent} />;
     }
     if (customKind === "article-index") {
-      return <BlogIndexSectionView content={section.content as BlogIndexContent} />;
+      return <BlogIndexSectionView content={content as BlogIndexContent} />;
     }
     if (customKind === "article-page-header") {
-      return <ArticlePageHeaderSectionView content={section.content as ArticlePageHeaderContent} />;
+      return <ArticlePageHeaderSectionView content={content as ArticlePageHeaderContent} />;
     }
     if (customKind === "article-page-body") {
-      return <ArticlePageBodySectionView content={section.content as ArticlePageBodyContent} />;
+      return <ArticlePageBodySectionView content={content as ArticlePageBodyContent} />;
     }
     if (customKind === "article-page-references") {
-      return <ArticlePageReferencesSectionView content={section.content as ArticlePageReferencesContent} />;
+      return <ArticlePageReferencesSectionView content={content as ArticlePageReferencesContent} />;
     }
   }
 
   switch (section.type) {
     case "hero":
-      return <HeroSectionView content={section.content as HeroContent} />;
+      return <HeroSectionView content={content as HeroContent} />;
     case "about":
-      return <AboutSectionView content={section.content as AboutContent} />;
+      return <AboutSectionView content={content as AboutContent} />;
     case "services":
       return (
-        <ServicesSectionView content={section.content as ServicesContent} />
+        <ServicesSectionView content={content as ServicesContent} />
       );
     case "features":
       return (
         <MarketingListSectionView
-          content={section.content as MarketingListContent}
+          content={content as MarketingListContent}
           sectionId="features"
         />
       );
     case "benefits":
       return (
         <MarketingListSectionView
-          content={section.content as MarketingListContent}
+          content={content as MarketingListContent}
           sectionId="benefits"
         />
       );
     case "testimonials":
       return (
         <TestimonialsSectionView
-          content={section.content as TestimonialsContent}
+          content={content as TestimonialsContent}
         />
       );
     case "faq":
-      return <FaqSectionView content={section.content as FaqContent} />;
+      return <FaqSectionView content={content as FaqContent} />;
     case "cta":
-      return <CtaSectionView content={section.content as CtaContent} />;
+      return <CtaSectionView content={content as CtaContent} />;
     case "pricing":
-      return <PricingSectionView content={section.content as PricingContent} />;
+      return <PricingSectionView content={content as PricingContent} />;
     case "contact":
       return (
-        <ContactSectionView content={section.content as ContactContent} />
+        <ContactSectionView content={content as ContactContent} />
       );
     case "footer":
-      return <FooterSectionView content={section.content as FooterContent} />;
+      return <FooterSectionView content={content as FooterContent} />;
     default:
       return null;
   }

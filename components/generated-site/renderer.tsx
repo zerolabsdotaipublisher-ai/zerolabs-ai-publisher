@@ -20,10 +20,13 @@ interface RendererProps {
  */
 export function Renderer({ structure, pageSlug = "/", strictRoute = false }: RendererProps) {
   const resolved = resolveWebsitePageByPath(structure, pageSlug);
-  const page = resolved.page ?? (strictRoute ? undefined : structure.pages[0]);
+  const pages = Array.isArray(structure.pages) ? structure.pages : [];
+  const page = resolved.page ?? (strictRoute ? undefined : pages[0]);
+  const layoutPages = structure.layout?.pages ?? [];
+  const footerItems = Array.isArray(structure.navigation?.footer) ? structure.navigation.footer : [];
   const layoutPage =
-    structure.layout?.pages.find((p) => p.pageSlug === (page?.slug ?? pageSlug)) ??
-    structure.layout?.pages[0];
+    layoutPages.find((layoutPage) => layoutPage.pageSlug === (page?.slug ?? pageSlug)) ??
+    layoutPages[0];
 
   if (!page) {
     return (
@@ -52,17 +55,17 @@ export function Renderer({ structure, pageSlug = "/", strictRoute = false }: Ren
       <main className="gs-site-main">
         <PageRenderer page={page} layoutPage={layoutPage} />
       </main>
-      {structure.navigation.footer && structure.navigation.footer.length > 0 ? (
+      {footerItems.length > 0 ? (
         <footer className="gs-site-footer-nav" aria-label="Footer navigation">
           <ul className="gs-site-nav-list">
-            {structure.navigation.footer.map((item) => (
+            {footerItems.map((item) => (
               <li key={item.pageId ?? item.href} className="gs-site-nav-item">
                 <a
                   className="gs-site-nav-link"
                   href={
-                    item.href.startsWith("/")
+                    typeof item.href === "string" && item.href.startsWith("/")
                       ? `?page=${encodeURIComponent(item.href)}`
-                      : item.href
+                      : item.href || "#"
                   }
                 >
                   {item.label}

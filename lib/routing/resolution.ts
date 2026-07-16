@@ -16,7 +16,9 @@ export function resolveWebsiteRoute(config: WebsiteRoutingConfig | undefined, pa
   }
 
   const normalizedPath = normalizePath(path);
-  const route = config.routes.find((candidate) => candidate.path === normalizedPath);
+  const routes = Array.isArray(config.routes) ? config.routes : [];
+  const redirects = Array.isArray(config.redirects) ? config.redirects : [];
+  const route = routes.find((candidate) => candidate.path === normalizedPath);
   if (route) {
     return {
       kind: "page",
@@ -24,7 +26,7 @@ export function resolveWebsiteRoute(config: WebsiteRoutingConfig | undefined, pa
     };
   }
 
-  const redirect = config.redirects.find((candidate) => candidate.fromPath === normalizedPath);
+  const redirect = redirects.find((candidate) => candidate.fromPath === normalizedPath);
   if (redirect) {
     return {
       kind: "redirect",
@@ -42,6 +44,7 @@ export function resolveWebsitePageByPath(
   path: string,
 ): { page?: WebsiteStructure["pages"][number]; route?: WebsiteRouteRecord; redirectTo?: string } {
   const resolved = resolveWebsiteRoute(structure.routing, path);
+  const pages = Array.isArray(structure.pages) ? structure.pages : [];
 
   if (resolved.kind === "redirect") {
     return {
@@ -52,12 +55,12 @@ export function resolveWebsitePageByPath(
   if (resolved.kind === "page") {
     return {
       route: resolved.route,
-      page: structure.pages.find((page) => page.id === resolved.route.pageId),
+      page: pages.find((page) => page.id === resolved.route.pageId),
     };
   }
 
   const normalized = normalizePath(path);
-  const fallbackPage = structure.pages.find((page) => normalizePath(page.slug) === normalized);
+  const fallbackPage = pages.find((page) => normalizePath(page.slug) === normalized);
   return {
     page: fallbackPage,
     route: fallbackPage

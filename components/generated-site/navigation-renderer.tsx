@@ -13,16 +13,18 @@ export function NavigationRenderer({
   navigation,
   activePath,
 }: NavigationRendererProps) {
+  const primaryItems = Array.isArray(navigation?.primary) ? navigation.primary : [];
+
   return (
     <nav className="gs-site-nav" aria-label="Primary navigation">
-      <span className="gs-site-brand">{siteTitle}</span>
+      <span className="gs-site-brand">{siteTitle || "Untitled site"}</span>
       <NavigationMenu
-        items={navigation.primary}
+        items={primaryItems}
         activePath={activePath}
         ariaLabel="Primary navigation"
       />
       <MobileNavigation
-        items={navigation.primary}
+        items={primaryItems}
         activePath={activePath}
       />
     </nav>
