@@ -27,6 +27,24 @@ interface PublishControlsProps {
 
 const PUBLISH_STATUS_POLL_INTERVAL_MS = 15_000;
 
+function getInitialPublishingStatus(structure: WebsiteStructure) {
+  try {
+    return {
+      status: buildPublishingStatusFromStructure(structure),
+      error: undefined,
+    };
+  } catch (error) {
+    console.error("Failed to build publishing status for preview controls", {
+      structureId: structure.id,
+      error,
+    });
+    return {
+      status: undefined,
+      error: "Publishing controls are temporarily unavailable for this preview.",
+    };
+  }
+}
+
 export function PublishControls({ structure, hasUnsavedChanges = false, context }: PublishControlsProps) {
   const [website, setWebsite] = useState<WebsiteStructure>(structure);
   const [loading, setLoading] = useState(false);
@@ -46,20 +64,15 @@ export function PublishControls({ structure, hasUnsavedChanges = false, context 
     setStatusSnapshot(undefined);
   }, [structure]);
 
-  const localStatus = useMemo(() => buildPublishingStatusFromStructure(website), [website]);
+  const localStatusState = useMemo(() => getInitialPublishingStatus(website), [website]);
+  const localStatus = localStatusState.status;
   const status = statusSnapshot ?? localStatus;
-  const detection = status.detection;
-  const validation = status.validation;
-
-  const action: PublishAction = status.action.publishAction;
-  const buttonLabel = status.action.publishActionLabel;
-
-  const blockedByUnsaved = context === "editor" && hasUnsavedChanges;
-  const blockedByValidation = !validation.eligible;
-  const blockedBecauseNoUpdates = action === "update" && !status.hasUnpublishedChanges;
-  const blockedByStatus = !status.action.canTriggerPublishAction;
 
   useEffect(() => {
+    if (!localStatus) {
+      return;
+    }
+
     let active = true;
 
     async function loadStatus(silent = true) {
@@ -109,7 +122,30 @@ export function PublishControls({ structure, hasUnsavedChanges = false, context 
         clearInterval(intervalId);
       }
     };
-  }, [website.id]);
+  }, [localStatus, website.id]);
+
+  if (!status) {
+    return (
+      <section className="publish-controls" aria-label="Publish controls">
+        <div className="publish-controls-header">
+          <h2>Publication</h2>
+        </div>
+        <PublishErrorState message={localStatusState.error || "Publishing controls are unavailable."} />
+      </section>
+    );
+  }
+
+  const resolvedStatus = status;
+  const detection = resolvedStatus.detection;
+  const validation = resolvedStatus.validation;
+
+  const action: PublishAction = resolvedStatus.action.publishAction;
+  const buttonLabel = resolvedStatus.action.publishActionLabel;
+
+  const blockedByUnsaved = context === "editor" && hasUnsavedChanges;
+  const blockedByValidation = !validation.eligible;
+  const blockedBecauseNoUpdates = action === "update" && !resolvedStatus.hasUnpublishedChanges;
+  const blockedByStatus = !resolvedStatus.action.canTriggerPublishAction;
 
   async function sendPublishRequest(selectedAction: PublishAction) {
     setLoading(true);
@@ -276,8 +312,8 @@ export function PublishControls({ structure, hasUnsavedChanges = false, context 
       return;
     }
 
-    if (blockedByStatus && status.action.disableReason) {
-      setErrorMessage(status.action.disableReason);
+    if (blockedByStatus && resolvedStatus.action.disableReason) {
+      setErrorMessage(resolvedStatus.action.disableReason);
       return;
     }
 
@@ -302,10 +338,10 @@ export function PublishControls({ structure, hasUnsavedChanges = false, context 
       <div className="publish-controls-header">
         <h2>Publication</h2>
       </div>
-      <PublishStatusSummary status={status} loading={statusLoading} error={statusError} />
+      <PublishStatusSummary status={resolvedStatus} loading={statusLoading} error={statusError} />
 
       {blockedByUnsaved ? <p className="publish-warning">You have unsaved edits. Save draft first.</p> : null}
-      {blockedByStatus && status.action.disableReason ? <p className="publish-warning">{status.action.disableReason}</p> : null}
+      {blockedByStatus && resolvedStatus.action.disableReason ? <p className="publish-warning">{resolvedStatus.action.disableReason}</p> : null}
       {blockedByValidation ? (
         <ul className="publish-validation-errors">
           {validation.errors.map((error) => (
@@ -333,16 +369,16 @@ export function PublishControls({ structure, hasUnsavedChanges = false, context 
       {errorMessage ? <PublishErrorState message={errorMessage} onRetry={detection.hasFailedUpdate ? handleRetry : undefined} /> : null}
 
       <LiveLinkCard
-        liveUrl={status.liveUrl}
-        lastPublishedAt={status.timestamps.lastPublishedAt}
-        lastDraftUpdatedAt={status.timestamps.lastDraftUpdatedAt}
+        liveUrl={resolvedStatus.liveUrl}
+        lastPublishedAt={resolvedStatus.timestamps.lastPublishedAt}
+        lastDraftUpdatedAt={resolvedStatus.timestamps.lastDraftUpdatedAt}
       />
-      <ManualOverrideStatus status={status} />
+      <ManualOverrideStatus status={resolvedStatus} />
 
       <PublishConfirmationDialog
         open={confirmOpen}
         action={action}
-        hasUnpublishedChanges={status.hasUnpublishedChanges}
+        hasUnpublishedChanges={resolvedStatus.hasUnpublishedChanges}
         hasUnsavedChanges={hasUnsavedChanges}
         onCancel={() => setConfirmOpen(false)}
         onConfirm={() => {

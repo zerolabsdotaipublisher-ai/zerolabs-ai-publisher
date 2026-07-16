@@ -170,7 +170,7 @@ export function toWebsiteMediaLibraryApiRecord(item: WebsiteMediaLibraryItem, pe
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
     assetId: item.id,
-    assetRenderEndpoint: `/api/website-assets/${encoded}`,
+    assetRenderEndpoint: `/api/website-assets/${encoded}/url`,
     assetUrlEndpoint: `/api/website-assets/${encoded}/url`,
     previewEndpoint: `/api/website-media-library/${encoded}/preview`,
     deleteEndpoint: `/api/website-media-library/${encoded}/delete`,

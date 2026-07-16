@@ -16,6 +16,25 @@ export function buildWebsiteAssetUrlPath(assetId: string): string {
   return `${buildWebsiteAssetRenderPath(assetId)}/url`;
 }
 
+export function toWebsiteAssetRenderableUrl(value: string): string {
+  if (!isWebsiteAssetPath(value)) {
+    return value;
+  }
+
+  const isAbsolute = value.startsWith("http://") || value.startsWith("https://");
+  const url = isAbsolute ? new URL(value) : new URL(value, "http://localhost");
+
+  if (/^\/api\/website-assets\/[^/]+\/url$/i.test(url.pathname)) {
+    return isAbsolute ? url.toString() : `${url.pathname}${url.search}`;
+  }
+
+  if (/^\/api\/website-assets\/[^/]+$/i.test(url.pathname)) {
+    url.pathname = `${url.pathname}/url`;
+  }
+
+  return isAbsolute ? url.toString() : `${url.pathname}${url.search}`;
+}
+
 export function isWebsiteAssetPath(value: string): boolean {
   return value.startsWith("/api/website-assets/") || /^https?:\/\/[^/]+\/api\/website-assets\//.test(value);
 }
@@ -25,9 +44,10 @@ export function appendWebsiteAssetQueryContext(value: string, context: WebsiteAs
     return value;
   }
 
-  const url = value.startsWith("http://") || value.startsWith("https://")
-    ? new URL(value)
-    : new URL(value, "http://localhost");
+  const renderableValue = toWebsiteAssetRenderableUrl(value);
+  const url = renderableValue.startsWith("http://") || renderableValue.startsWith("https://")
+    ? new URL(renderableValue)
+    : new URL(renderableValue, "http://localhost");
 
   if (context.previewToken) {
     url.searchParams.set("previewToken", context.previewToken);
@@ -35,7 +55,7 @@ export function appendWebsiteAssetQueryContext(value: string, context: WebsiteAs
     url.searchParams.delete("previewToken");
   }
 
-  return value.startsWith("http://") || value.startsWith("https://")
+  return renderableValue.startsWith("http://") || renderableValue.startsWith("https://")
     ? url.toString()
     : `${url.pathname}${url.search}`;
 }

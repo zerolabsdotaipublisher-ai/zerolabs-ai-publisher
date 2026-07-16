@@ -7,7 +7,11 @@ interface NavigationMenuProps {
   ariaLabel: string;
 }
 
-function toRenderedHref(href: string): string {
+function toRenderedHref(href?: string): string {
+  if (!href) {
+    return "#";
+  }
+
   if (href.startsWith("#")) {
     return href;
   }
@@ -22,7 +26,7 @@ export function NavigationMenu({
   activePath,
   ariaLabel,
 }: NavigationMenuProps) {
-  const states = withNavigationActiveState(items, activePath);
+  const states = withNavigationActiveState(Array.isArray(items) ? items : [], activePath);
 
   return (
     <ul className="gs-site-nav-list" aria-label={ariaLabel}>

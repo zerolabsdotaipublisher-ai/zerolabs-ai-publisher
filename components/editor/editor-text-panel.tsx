@@ -66,7 +66,10 @@ export function EditorTextPanel({ websiteId, pageId, section, onChange }: Editor
           if (!mediaFieldPath) {
             return;
           }
-          const selectedUrl = payload.item.assetRenderEndpoint || payload.previewUrl;
+          const selectedUrl =
+            payload.item.assetUrlEndpoint ||
+            payload.previewUrl ||
+            payload.item.assetRenderEndpoint;
           if (!selectedUrl) {
             setMediaInsertError("The selected website asset URL was not available. Please try selecting the item again.");
             return;

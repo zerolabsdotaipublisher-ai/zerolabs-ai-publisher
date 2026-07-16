@@ -27,10 +27,50 @@ import {
 } from "@/lib/scheduling";
 import { summarizeWebsiteVersionComparison } from "@/lib/versions/compare";
 import { listWebsiteVersions } from "@/lib/versions/storage";
+import { logger } from "@/lib/observability";
 
 interface PageProps {
   params: Promise<{ id: string }>;
   searchParams?: Promise<{ page?: string }>;
+}
+
+function describeOptionalDataError(error: unknown): string {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+
+  return "Unknown error";
+}
+
+async function loadOptionalGeneratedSiteData<T>(args: {
+  area: string;
+  structureId: string;
+  userId: string;
+  fallback: T;
+  load: () => Promise<T>;
+}): Promise<{ value: T; issue?: string }> {
+  try {
+    return {
+      value: await args.load(),
+    };
+  } catch (error) {
+    logger.warn("Generated site optional data unavailable", {
+      category: "error",
+      service: "generated-site",
+      structureId: args.structureId,
+      userId: args.userId,
+      area: args.area,
+      error: {
+        name: "GeneratedSiteOptionalDataWarning",
+        message: describeOptionalDataError(error),
+      },
+    });
+
+    return {
+      value: args.fallback,
+      issue: args.area,
+    };
+  }
 }
 
 export async function generateMetadata({
@@ -51,7 +91,14 @@ export async function generateMetadata({
     return {};
   }
 
-  const seo = await getWebsiteSeoMetadata(id, user.id);
+  const seoResult = await loadOptionalGeneratedSiteData({
+    area: "seo metadata",
+    structureId: id,
+    userId: user.id,
+    fallback: null,
+    load: () => getWebsiteSeoMetadata(id, user.id),
+  });
+  const seo = seoResult.value;
   const page = resolveWebsitePageByPath(structure, pageSlug).page ?? structure.pages[0];
   const pageSeo = page
     ? seo?.pages.find((candidate) => candidate.pageSlug === page.slug)
@@ -102,26 +149,135 @@ export default async function GeneratedSitePage({ params, searchParams }: PagePr
     notFound();
   }
   const publication = buildPublishingStatusFromStructure(structure);
-  const versions = await listWebsiteVersions(id, user.id);
-  const [schedule, socialPosts, socialSchedules, socialHistoryResult, socialAccounts, socialAccountProviders] =
-    await Promise.all([
-    getOwnedContentScheduleByStructureId(id, user.id),
-    listSocialPostsByStructureId(id, user.id),
-    listOwnedSocialSchedules(user.id, { structureId: id }),
-    listOwnedSocialPublishHistoryJobs(user.id, { page: 1, perPage: 20, platform: undefined, status: undefined }),
-    listSocialAccountConnections(user.id),
-    Promise.resolve(listSocialAccountProviders()),
+  const [
+    versionsResult,
+    scheduleResult,
+    socialPostsResult,
+    socialSchedulesResult,
+    socialHistoryResult,
+    socialAccountsResult,
+  ] = await Promise.all([
+    loadOptionalGeneratedSiteData({
+      area: "version history",
+      structureId: id,
+      userId: user.id,
+      fallback: [],
+      load: () => listWebsiteVersions(id, user.id),
+    }),
+    loadOptionalGeneratedSiteData({
+      area: "content scheduling",
+      structureId: id,
+      userId: user.id,
+      fallback: null,
+      load: () => getOwnedContentScheduleByStructureId(id, user.id),
+    }),
+    loadOptionalGeneratedSiteData({
+      area: "social posts",
+      structureId: id,
+      userId: user.id,
+      fallback: [],
+      load: () => listSocialPostsByStructureId(id, user.id),
+    }),
+    loadOptionalGeneratedSiteData({
+      area: "social schedules",
+      structureId: id,
+      userId: user.id,
+      fallback: [],
+      load: () => listOwnedSocialSchedules(user.id, { structureId: id }),
+    }),
+    loadOptionalGeneratedSiteData({
+      area: "social publish history",
+      structureId: id,
+      userId: user.id,
+      fallback: { items: [], page: 1, perPage: 20, total: 0 },
+      load: () =>
+        listOwnedSocialPublishHistoryJobs(user.id, {
+          page: 1,
+          perPage: 20,
+          platform: undefined,
+          status: undefined,
+        }),
+    }),
+    loadOptionalGeneratedSiteData({
+      area: "social account connections",
+      structureId: id,
+      userId: user.id,
+      fallback: [],
+      load: () => listSocialAccountConnections(user.id),
+    }),
   ]);
-  const [scheduleRuns, socialScheduleDetails] = await Promise.all([
-    schedule ? listOwnedContentScheduleRuns(schedule.id, user.id, 10) : Promise.resolve([]),
-    Promise.all(
-      socialSchedules.map(async (socialSchedule) => ({
-        ...socialSchedule,
-        runs: await listOwnedSocialScheduleRuns(socialSchedule.id, user.id, 10),
-        events: await listOwnedSocialScheduleEvents(socialSchedule.id, user.id, 10),
-      })),
+  const socialAccountProviders = listSocialAccountProviders();
+  const schedule = scheduleResult.value;
+  const socialSchedules = socialSchedulesResult.value;
+  const scheduleRunsResult = schedule
+    ? await loadOptionalGeneratedSiteData({
+        area: "content schedule activity",
+        structureId: id,
+        userId: user.id,
+        fallback: [],
+        load: () => listOwnedContentScheduleRuns(schedule.id, user.id, 10),
+      })
+    : { value: [] as Awaited<ReturnType<typeof listOwnedContentScheduleRuns>>, issue: undefined };
+  const socialScheduleResults = await Promise.all(
+    socialSchedules.map(async (socialSchedule) => {
+      try {
+        const [runs, events] = await Promise.all([
+          listOwnedSocialScheduleRuns(socialSchedule.id, user.id, 10),
+          listOwnedSocialScheduleEvents(socialSchedule.id, user.id, 10),
+        ]);
+
+        return {
+          detail: {
+            ...socialSchedule,
+            runs,
+            events,
+          },
+          issue: false,
+        };
+      } catch (error) {
+        logger.warn("Generated site social schedule activity unavailable", {
+          category: "error",
+          service: "generated-site",
+          structureId: id,
+          userId: user.id,
+          scheduleId: socialSchedule.id,
+          error: {
+            name: "GeneratedSiteSocialScheduleActivityWarning",
+            message: describeOptionalDataError(error),
+          },
+        });
+
+        return {
+          detail: {
+            ...socialSchedule,
+            runs: [],
+            events: [],
+          },
+          issue: true,
+        };
+      }
+    }),
+  );
+  const socialScheduleDetails = socialScheduleResults.map((result) => result.detail);
+  const socialScheduleActivityIssue = socialScheduleResults.some((result) => result.issue);
+  const versions = versionsResult.value;
+  const socialPosts = socialPostsResult.value;
+  const socialHistoryItems = socialHistoryResult.value.items;
+  const socialAccounts = socialAccountsResult.value;
+  const optionalDataIssues = Array.from(
+    new Set(
+      [
+        versionsResult.issue,
+        scheduleResult.issue,
+        scheduleRunsResult.issue,
+        socialPostsResult.issue,
+        socialSchedulesResult.issue,
+        socialHistoryResult.issue,
+        socialAccountsResult.issue,
+        socialScheduleActivityIssue ? "social schedule activity" : undefined,
+      ].filter((issue): issue is string => Boolean(issue)),
     ),
-  ]);
+  );
   const versionEntries = versions.map((version) => ({
     id: version.id,
     versionNumber: version.versionNumber,
@@ -149,17 +305,25 @@ export default async function GeneratedSitePage({ params, searchParams }: PagePr
         <PublishStatusSummary status={publication} compact />
         <ManualOverrideStatus status={publication} />
       </div>
+      {optionalDataIssues.length > 0 ? (
+        <section className="wizard-step-panel" aria-live="polite">
+          <p>
+            Some management panels are temporarily unavailable: {optionalDataIssues.join(", ")}.
+            The website preview is still available below.
+          </p>
+        </section>
+      ) : null}
       <ContentSchedulePanel
         structureId={structure.id}
         websiteType={structure.websiteType}
         initialSchedule={schedule}
-        initialRuns={scheduleRuns}
+        initialRuns={scheduleRunsResult.value}
       />
       <SocialSchedulePanel
         structureId={structure.id}
         socialPosts={socialPosts}
         initialSchedules={socialScheduleDetails}
-        initialHistory={socialHistoryResult.items}
+        initialHistory={socialHistoryItems}
         initialAccounts={socialAccounts}
         initialAccountProviders={socialAccountProviders}
       />

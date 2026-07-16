@@ -1,4 +1,5 @@
 import type { WebsiteComponent } from "@/lib/ai/structure/types";
+import { toWebsiteAssetRenderableUrl } from "@/lib/website-asset-retrieval/urls";
 
 interface ComponentRendererProps {
   component: WebsiteComponent;
@@ -38,7 +39,7 @@ export function ComponentRenderer({ component }: ComponentRendererProps) {
       return (
         <img
           className="gs-component gs-component-image"
-          src={component.props.src}
+          src={toWebsiteAssetRenderableUrl(component.props.src)}
           alt={alt}
         />
       );
