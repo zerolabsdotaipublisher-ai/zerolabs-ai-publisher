@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { getServerUser } from "@/lib/supabase/server";
+import { repairWebsiteStructureNavigation } from "@/lib/ai/structure/render-normalization";
 import { getWebsiteStructure, updateWebsiteStructure } from "@/lib/ai/structure/storage";
 import { createRequestId } from "@/lib/observability";
 import {
@@ -13,6 +14,7 @@ import {
   createGenerationVersionSnapshot,
   persistNonCriticalGenerationArtifacts,
 } from "@/lib/generation/persistence";
+import { withRegeneratedWebsiteRouting } from "@/lib/routing";
 import {
   createGenerationRouteErrorResponse,
   createLoggedGenerationFailureResponse,
@@ -114,7 +116,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       version: result.mappedStructure.version,
       pages: body.options?.pages,
     });
-    const updatedStructure = await updateWebsiteStructure(seoResult.mappedStructure);
+    const repaired = repairWebsiteStructureNavigation(seoResult.mappedStructure);
+    const routed = withRegeneratedWebsiteRouting(repaired, repaired.updatedAt);
+    const updatedStructure = await updateWebsiteStructure(routed.structure);
     const versionId = await createGenerationVersionSnapshot({
       structure: updatedStructure,
       userId: user.id,

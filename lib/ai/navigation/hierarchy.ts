@@ -9,12 +9,8 @@ import type {
 } from "./types";
 
 function mergePageSeeds(context: NavigationGenerationContext): NavigationPageSeed[] {
-  const defaults = createDefaultPageSeeds(context.websiteType);
-  const existingSlugs = new Set(context.pages.map((page) => page.slug));
-  const mergedBase = [
-    ...context.pages,
-    ...defaults.filter((page) => !existingSlugs.has(page.slug)),
-  ];
+  const mergedBase =
+    context.pages.length > 0 ? context.pages : createDefaultPageSeeds(context.websiteType);
 
   return mergedBase.map((page, index) => ({
     ...page,

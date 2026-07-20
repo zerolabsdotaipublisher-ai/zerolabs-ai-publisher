@@ -37,6 +37,7 @@ export function ComponentRenderer({ component }: ComponentRendererProps) {
       }
       const alt = typeof component.props.alt === "string" ? component.props.alt : "";
       return (
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           className="gs-component gs-component-image"
           src={toWebsiteAssetRenderableUrl(component.props.src)}
