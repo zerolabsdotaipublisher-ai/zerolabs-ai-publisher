@@ -230,61 +230,61 @@ function asArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : [];
 }
 
-function formatDateLabel(value: string | undefined): string | null {
-  if (!value) {
-    return null;
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return null;
-  }
-
-  return date.toLocaleDateString();
-}
-
 // ---------------------------------------------------------------------------
 // Section sub-renderers
 // ---------------------------------------------------------------------------
 
 function HeroSectionView({ content }: { content: HeroContent }) {
   const image = asContentObject<NonNullable<HeroContent["image"]>>(content.image);
+  const hasRenderableImage = Boolean(image.src);
+  const hasMediaPanel =
+    content.variant === "with-image" && (hasRenderableImage || image.alt || image.promptHint);
 
   return (
     <section className="gs-section gs-hero" id="hero">
-      {content.eyebrow ? <p className="gs-hero-eyebrow">{content.eyebrow}</p> : null}
-      <h1 className="gs-hero-headline">{content.headline}</h1>
-      {content.subheadline && (
-        <p className="gs-hero-subheadline">{content.subheadline}</p>
-      )}
-      {content.supportingCopy ? <p className="gs-about-body">{content.supportingCopy}</p> : null}
-      {content.variant === "with-image" && (image.src || image.alt || image.promptHint) ? (
-        <div className="gs-service-item">
-          {image.src ? (
+      <div className="gs-hero-copy">
+        {content.eyebrow ? <p className="gs-hero-eyebrow">{content.eyebrow}</p> : null}
+        <h1 className="gs-hero-headline">{content.headline}</h1>
+        {content.subheadline ? <p className="gs-hero-subheadline">{content.subheadline}</p> : null}
+        {content.supportingCopy ? <p className="gs-about-body">{content.supportingCopy}</p> : null}
+        <div className="gs-hero-actions">
+          {content.primaryCta && (
+            <a className="gs-btn gs-btn-primary" href={content.ctaHref || "#contact"}>
+              {content.primaryCta}
+            </a>
+          )}
+          {content.secondaryCta && (
+            <a className="gs-btn gs-btn-secondary" href="#about">
+              {content.secondaryCta}
+            </a>
+          )}
+        </div>
+      </div>
+      {hasMediaPanel ? (
+        <div className={`gs-hero-media${hasRenderableImage ? " has-image" : " is-placeholder"}`}>
+          {hasRenderableImage ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               className="gs-component gs-component-image"
-              src={toWebsiteAssetRenderableUrl(image.src)}
+              src={toWebsiteAssetRenderableUrl(image.src!)}
               alt={image.alt || content.headline || content.subheadline || "Hero image"}
             />
-          ) : null}
-          <strong className="gs-service-name">{image.alt}</strong>
-          {image.promptHint ? (
-            <p className="gs-service-description">{image.promptHint}</p>
-          ) : null}
+          ) : (
+            <div className="gs-hero-media-placeholder" aria-hidden="true">
+              <span className="gs-hero-media-orb gs-hero-media-orb-primary" />
+              <span className="gs-hero-media-orb gs-hero-media-orb-secondary" />
+              <span className="gs-hero-media-grid" />
+            </div>
+          )}
+          <div className="gs-hero-media-caption">
+            {image.alt ? <strong className="gs-service-name">{image.alt}</strong> : null}
+            {image.promptHint ? <p className="gs-service-description">{image.promptHint}</p> : null}
+            {!hasRenderableImage && !image.alt && !image.promptHint ? (
+              <p className="gs-service-description">Illustration placeholder</p>
+            ) : null}
+          </div>
         </div>
       ) : null}
-      <div className="gs-hero-actions">
-        {content.primaryCta && (
-          <a className="gs-btn gs-btn-primary" href={content.ctaHref || "#contact"}>
-            {content.primaryCta}
-          </a>
-        )}
-        {content.secondaryCta && (
-          <a className="gs-btn gs-btn-secondary" href="#about">
-            {content.secondaryCta}
-          </a>
-        )}
-      </div>
     </section>
   );
 }

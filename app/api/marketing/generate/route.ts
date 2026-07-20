@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { getServerUser } from "@/lib/supabase/server";
+import { repairWebsiteStructureNavigation } from "@/lib/ai/structure/render-normalization";
 import { getWebsiteStructure, updateWebsiteStructure } from "@/lib/ai/structure/storage";
 import { storeWebsiteNavigation } from "@/lib/ai/navigation";
 import { logger } from "@/lib/observability";
@@ -11,6 +12,7 @@ import {
 import { generateWebsiteSeo, storeWebsiteSeoMetadata } from "@/lib/ai/seo";
 import type { WebsiteGenerationInput } from "@/lib/ai/prompts/types";
 import { sanitizeInput, validateWebsiteGenerationInput } from "@/lib/ai/prompts/schemas";
+import { withRegeneratedWebsiteRouting } from "@/lib/routing";
 
 interface GenerateMarketingBody {
   structureId: string;
@@ -64,7 +66,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       pages: options?.pages,
     });
     await storeWebsiteGeneratedContent(result.content);
-    const updatedStructure = await updateWebsiteStructure(seoResult.mappedStructure);
+    const repaired = repairWebsiteStructureNavigation(seoResult.mappedStructure);
+    const routed = withRegeneratedWebsiteRouting(repaired, repaired.updatedAt);
+    const updatedStructure = await updateWebsiteStructure(routed.structure);
     await storeWebsiteNavigation({
       structureId: updatedStructure.id,
       userId: user.id,

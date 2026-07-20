@@ -18,6 +18,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { getServerUser } from "@/lib/supabase/server";
 import { generateWebsiteStructure } from "@/lib/ai/structure/generator";
+import { repairWebsiteStructureNavigation } from "@/lib/ai/structure/render-normalization";
 import { storeWebsiteStructure } from "@/lib/ai/structure/storage";
 import { generateWebsiteSeo } from "@/lib/ai/seo";
 import {
@@ -27,6 +28,7 @@ import {
 import { createRequestId } from "@/lib/observability";
 import type { WebsiteGenerationInput } from "@/lib/ai/prompts/types";
 import { persistNonCriticalGenerationArtifacts } from "@/lib/generation/persistence";
+import { withRegeneratedWebsiteRouting } from "@/lib/routing";
 import {
   createGenerationRouteErrorResponse,
   createLoggedGenerationFailureResponse,
@@ -88,7 +90,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const seoResult = await generateWebsiteSeo(input, result.structure, user.id, {
       version: result.structure.version,
     });
-    const stored = await storeWebsiteStructure(seoResult.mappedStructure);
+    const repaired = repairWebsiteStructureNavigation(seoResult.mappedStructure);
+    const routed = withRegeneratedWebsiteRouting(repaired, repaired.updatedAt);
+    const stored = await storeWebsiteStructure(routed.structure);
     await persistNonCriticalGenerationArtifacts({
       structure: stored,
       userId: user.id,

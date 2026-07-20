@@ -22,11 +22,16 @@ function getRenderableSections(
   }
 
   const byId = new Map(pageSections.map((section) => [section.id, section]));
-
-  return sectionLayouts
+  const layoutSections = sectionLayouts
     .filter((node) => node.visible)
     .map((node) => byId.get(node.sectionId))
     .filter((section): section is WebsiteSection => Boolean(section));
+  const layoutSectionIds = new Set(layoutSections.map((section) => section.id));
+  const orphanedSections = pageSections
+    .filter((section) => section.visible && !layoutSectionIds.has(section.id))
+    .sort((a, b) => a.order - b.order);
+
+  return [...layoutSections, ...orphanedSections];
 }
 
 export function PageLayoutRenderer({ page, layoutPage }: PageLayoutRendererProps) {

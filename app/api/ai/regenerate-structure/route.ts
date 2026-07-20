@@ -25,12 +25,14 @@
 
 import { type NextRequest, NextResponse } from "next/server";
 import { getServerUser } from "@/lib/supabase/server";
+import { repairWebsiteStructureNavigation } from "@/lib/ai/structure/render-normalization";
 import { getWebsiteStructure, updateWebsiteStructure } from "@/lib/ai/structure/storage";
 import { regenerateWebsiteStructure } from "@/lib/ai/structure/regeneration";
 import { generateWebsiteSeo } from "@/lib/ai/seo";
 import { createRequestId } from "@/lib/observability";
 import type { WebsiteGenerationInput } from "@/lib/ai/prompts/types";
 import { persistNonCriticalGenerationArtifacts } from "@/lib/generation/persistence";
+import { withRegeneratedWebsiteRouting } from "@/lib/routing";
 import {
   createGenerationRouteErrorResponse,
   createLoggedGenerationFailureResponse,
@@ -115,7 +117,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       user.id,
       { version: result.structure.version },
     );
-    const updated = await updateWebsiteStructure(seoResult.mappedStructure);
+    const repaired = repairWebsiteStructureNavigation(seoResult.mappedStructure);
+    const routed = withRegeneratedWebsiteRouting(repaired, repaired.updatedAt);
+    const updated = await updateWebsiteStructure(routed.structure);
     await persistNonCriticalGenerationArtifacts({
       structure: updated,
       userId: user.id,
