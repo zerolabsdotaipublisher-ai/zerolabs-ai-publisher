@@ -23,7 +23,7 @@ export function PreviewToolbarActions({
     <>
       <SiteThemeToggle className="theme-toggle-button theme-toggle-button-preview" />
       <Link href={refreshHref} className="wizard-button-secondary">
-        Refresh preview
+        Refresh
       </Link>
       <PreviewShareActions
         structureId={structureId}

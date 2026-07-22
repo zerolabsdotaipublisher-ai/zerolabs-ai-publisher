@@ -4,12 +4,14 @@ import { NavigationMenu } from "./navigation-menu";
 
 interface NavigationRendererProps {
   siteTitle: string;
+  tagline?: string;
   navigation: WebsiteNavigation;
   activePath: string;
 }
 
 export function NavigationRenderer({
   siteTitle,
+  tagline,
   navigation,
   activePath,
 }: NavigationRendererProps) {
@@ -17,7 +19,10 @@ export function NavigationRenderer({
 
   return (
     <nav className="gs-site-nav" aria-label="Primary navigation">
-      <span className="gs-site-brand">{siteTitle || "Untitled site"}</span>
+      <div className="gs-site-brand-stack">
+        <span className="gs-site-brand">{siteTitle || "Untitled site"}</span>
+        {tagline ? <span className="gs-site-tagline">{tagline}</span> : null}
+      </div>
       <NavigationMenu
         items={primaryItems}
         activePath={activePath}

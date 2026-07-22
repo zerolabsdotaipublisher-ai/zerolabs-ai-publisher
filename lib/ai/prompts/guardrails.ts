@@ -5,6 +5,7 @@ export const PROMPT_GUARDRAILS: string[] = [
   "Preserve user-provided facts exactly when reused.",
   "Keep copy concise, specific, and website-appropriate.",
   "Avoid filler, gibberish, or TODO placeholders.",
+  "If the input is sparse or obviously test-like, infer a credible sample scenario from website type instead of echoing placeholder text.",
   "Avoid unsafe, discriminatory, or off-brand language.",
   "Return machine-readable JSON only when JSON output is requested.",
 ];

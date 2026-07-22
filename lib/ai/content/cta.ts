@@ -1,20 +1,23 @@
 import type { WebsiteGenerationInput } from "../prompts/types";
+import { resolveWebsiteGenerationInput } from "../default-inputs";
 import type { CtaSectionContent } from "./types";
 
 export function createCtaFallback(input: WebsiteGenerationInput): CtaSectionContent {
+  const resolvedInput = resolveWebsiteGenerationInput(input).input;
+
   return {
-    variant: input.websiteType === "landing-page" ? "banner" : "block",
-    headline: `Ready to move forward with ${input.brandName}?`,
-    supportingLine: `Start with a focused conversation tailored to ${input.targetAudience}.`,
-    ctaText: input.primaryCta,
+    variant: resolvedInput.websiteType === "landing-page" ? "banner" : "block",
+    headline: `Ready to move forward with ${resolvedInput.brandName}?`,
+    supportingLine: `Start with a focused conversation tailored to ${resolvedInput.targetAudience}.`,
+    ctaText: resolvedInput.primaryCta,
     ctaHref: "#contact",
-    secondaryCtaText: "See how it works",
+    secondaryCtaText: "View the details",
     secondaryCtaHref: "#services",
-    urgencyLabel: "Limited availability",
-    audience: input.targetAudience,
-    tone: input.tone,
+    urgencyLabel: "Clear scope. Practical next steps.",
+    audience: resolvedInput.targetAudience,
+    tone: resolvedInput.tone,
     density: "medium",
-    goal: input.primaryCta,
+    goal: resolvedInput.primaryCta,
   };
 }
 

@@ -27,8 +27,12 @@ export function PreviewShareActions({
   const [error, setError] = useState<string | undefined>();
 
   const resolvedShareUrl = useMemo(() => {
-    if (shareUrl) return shareUrl;
-    if (!sharedPreviewPath || typeof window === "undefined") return undefined;
+    if (shareUrl) {
+      return shareUrl;
+    }
+    if (!sharedPreviewPath || typeof window === "undefined") {
+      return undefined;
+    }
     return new URL(sharedPreviewPath, window.location.origin).toString();
   }, [shareUrl, sharedPreviewPath]);
 
@@ -71,28 +75,49 @@ export function PreviewShareActions({
   }
 
   if (!canShare) {
-    return (
-      <p className="preview-share-caption">
-        Shared preview mode is read-only.
-      </p>
-    );
+    return <p className="preview-share-caption">Shared preview mode is read-only.</p>;
   }
 
   return (
     <div className="preview-share-actions">
-      <button type="button" className="wizard-button-secondary" onClick={() => void handleCreateShareLink()} disabled={isLoading}>
-        {isLoading ? "Creating share link…" : "Create share link"}
+      <button
+        type="button"
+        className="wizard-button-secondary"
+        onClick={() => void handleCreateShareLink()}
+        disabled={isLoading}
+      >
+        {isLoading ? "Creating share link..." : "Create share link"}
       </button>
       {resolvedShareUrl ? (
-        <button type="button" className="wizard-button-secondary" onClick={() => void copyToClipboard(resolvedShareUrl)}>
-          Copy share link
-        </button>
+        <>
+          <button
+            type="button"
+            className="wizard-button-secondary"
+            onClick={() => void copyToClipboard(resolvedShareUrl)}
+          >
+            Copy share link
+          </button>
+          <a
+            className="preview-share-link"
+            href={resolvedShareUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Open shared preview
+          </a>
+        </>
       ) : null}
-      {resolvedShareUrl ? <p className="preview-share-caption">{resolvedShareUrl}</p> : null}
-      {resolvedExpiresAt ? (
-        <p className="preview-share-caption">Expires: {new Date(resolvedExpiresAt).toLocaleString()}</p>
+      {resolvedShareUrl || resolvedExpiresAt || error ? (
+        <div className="preview-share-status" role="status" aria-live="polite">
+          {resolvedShareUrl ? <p className="preview-share-caption">Share link ready.</p> : null}
+          {resolvedExpiresAt ? (
+            <p className="preview-share-caption">
+              Expires {new Date(resolvedExpiresAt).toLocaleString()}
+            </p>
+          ) : null}
+          {error ? <p className="preview-share-caption">{error}</p> : null}
+        </div>
       ) : null}
-      {error ? <p className="preview-share-caption">{error}</p> : null}
     </div>
   );
 }

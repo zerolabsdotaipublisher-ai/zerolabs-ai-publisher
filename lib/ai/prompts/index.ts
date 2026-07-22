@@ -15,6 +15,7 @@ import type {
   WebsiteSectionName,
 } from "./types";
 import { READABILITY_RULES, resolveStyleGuidance, resolveToneGuidance } from "./variables";
+import { resolveWebsiteGenerationInput } from "../default-inputs";
 
 const SECTION_BUILDERS: Record<
   WebsiteSectionName,
@@ -48,7 +49,8 @@ export function buildWebsitePrompt(
   rawInput: WebsiteGenerationInput,
   options?: PromptBuildOptions,
 ): string {
-  const input = sanitizeInput(rawInput);
+  const sanitizedInput = sanitizeInput(rawInput);
+  const input = resolveWebsiteGenerationInput(sanitizedInput).input;
   const errors = validateWebsiteGenerationInput(input);
 
   if (errors.length) {
@@ -82,7 +84,8 @@ export function buildSectionPrompt(
   section: WebsiteSectionName,
   rawInput: WebsiteGenerationInput,
 ): string {
-  const input = sanitizeInput(rawInput);
+  const sanitizedInput = sanitizeInput(rawInput);
+  const input = resolveWebsiteGenerationInput(sanitizedInput).input;
   const builder = SECTION_BUILDERS[section];
 
   if (!builder) {
@@ -102,7 +105,8 @@ export function buildPromptBundle(
   rawInput: WebsiteGenerationInput,
   options?: PromptBuildOptions,
 ): PromptBundle {
-  const input = sanitizeInput(rawInput);
+  const sanitizedInput = sanitizeInput(rawInput);
+  const input = resolveWebsiteGenerationInput(sanitizedInput).input;
   const includeSections = resolveSectionList(input, options);
 
   const sectionPrompts = includeSections.reduce<

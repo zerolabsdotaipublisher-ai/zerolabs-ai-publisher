@@ -3,6 +3,7 @@ import {
   resolveStyleGuidance,
   resolveToneGuidance,
 } from "../prompts";
+import { resolveWebsiteGenerationInput } from "../default-inputs";
 import { contentOutputContractJson } from "./schemas";
 import { contentGuardrailPrompt } from "./guardrails";
 import type {
@@ -84,9 +85,11 @@ export function buildWebsiteContentPrompt({
   densityPreset,
   options,
 }: ContentPromptArgs): string {
-  const promptBundle = buildPromptBundle(input, { compact: true });
-  const audience = options?.audienceOverride?.trim() || input.targetAudience;
-  const conversionGoal = options?.conversionGoal?.trim() || input.primaryCta;
+  const resolvedInput = resolveWebsiteGenerationInput(input);
+  const effectiveInput = resolvedInput.input;
+  const promptBundle = buildPromptBundle(effectiveInput, { compact: true });
+  const audience = options?.audienceOverride?.trim() || effectiveInput.targetAudience;
+  const conversionGoal = options?.conversionGoal?.trim() || effectiveInput.primaryCta;
 
   return [
     "You are generating website content for Zero Labs AI Publisher.",
@@ -97,18 +100,23 @@ export function buildWebsiteContentPrompt({
     promptBundle.corePrompt,
     "",
     "TONE AND STYLE OVERRIDES:",
-    `- ${resolveToneGuidance(input)}`,
-    `- ${resolveStyleGuidance(input)}`,
+    `- ${resolveToneGuidance(effectiveInput)}`,
+    `- ${resolveStyleGuidance(effectiveInput)}`,
     `- ${lengthInstruction(lengthPreset)}`,
     `- ${densityInstruction(densityPreset)}`,
     `- Target audience: ${audience}`,
     `- Primary conversion goal: ${conversionGoal}`,
+    ...(resolvedInput.usedFallbackDefaults
+      ? [
+          "- Sparse or test-like fields were normalized into a realistic sample scenario. Do not repeat placeholder-like source text.",
+        ]
+      : []),
     "",
     "MARKETING SECTION TEMPLATES:",
     sectionTemplateInstructions(options),
     "",
     "CONTENT GUARDRAILS:",
-    contentGuardrailPrompt(input),
+    contentGuardrailPrompt(effectiveInput),
     "- Keep the copy persuasive, concrete, and conversion-aware rather than generic.",
     "- Testimonials and social proof must stay clearly synthetic unless supplied in the input.",
     "- Pricing must be safe placeholder packaging when explicit commercial data is unavailable.",

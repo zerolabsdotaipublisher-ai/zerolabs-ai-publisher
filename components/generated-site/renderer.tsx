@@ -51,6 +51,7 @@ export function Renderer({ structure, pageSlug = "/", strictRoute = false }: Ren
       <header className="gs-site-header">
         <NavigationRenderer
           siteTitle={normalizedStructure.siteTitle}
+          tagline={normalizedStructure.tagline}
           navigation={normalizedStructure.navigation}
           activePath={page.slug}
         />
@@ -63,22 +64,25 @@ export function Renderer({ structure, pageSlug = "/", strictRoute = false }: Ren
       </main>
       {footerItems.length > 0 ? (
         <footer className="gs-site-footer-nav" aria-label="Footer navigation">
-          <ul className="gs-site-nav-list">
-            {footerItems.map((item) => (
-              <li key={item.pageId ?? item.href} className="gs-site-nav-item">
-                <a
-                  className="gs-site-nav-link"
-                  href={
-                    typeof item.href === "string" && item.href.startsWith("/")
-                      ? `?page=${encodeURIComponent(item.href)}`
-                      : item.href || "#"
-                  }
-                >
-                  {item.label}
-                </a>
-              </li>
-            ))}
-          </ul>
+          <div className="gs-site-footer-nav-inner">
+            <span className="gs-site-footer-nav-label">Explore</span>
+            <ul className="gs-site-nav-list">
+              {footerItems.map((item) => (
+                <li key={item.pageId ?? item.href} className="gs-site-nav-item">
+                  <a
+                    className="gs-site-nav-link"
+                    href={
+                      typeof item.href === "string" && item.href.startsWith("/")
+                        ? `?page=${encodeURIComponent(item.href)}`
+                        : item.href || "#"
+                    }
+                  >
+                    {item.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
         </footer>
       ) : null}
     </div>
