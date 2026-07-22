@@ -45,7 +45,12 @@ export const OUTPUT_CONTRACT_EXAMPLE: WebsiteGenerationOutput = {
     },
     testimonials: {
       headline: "Client feedback",
-      items: [{ quote: "Specific positive outcome.", author: "Client Name" }],
+      items: [
+        {
+          quote: "The final page made the offer easier to understand and easier to act on.",
+          author: "Jordan P.",
+        },
+      ],
     },
     cta: {
       headline: "Ready to begin?",
@@ -57,7 +62,7 @@ export const OUTPUT_CONTRACT_EXAMPLE: WebsiteGenerationOutput = {
     },
     footer: {
       shortBlurb: "One-line brand summary.",
-      legalText: "© Brand Name",
+      legalText: "Copyright Brand Name",
     },
   },
   seo: {

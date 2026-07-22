@@ -438,6 +438,7 @@ export function WebsiteBuilderPreviewPanel({
   const previewBodyColor = activePage
     ? resolvePreviewTextColor(activePage.typography.bodyColor, "rgba(248, 249, 250, 0.9)")
     : "rgba(248, 249, 250, 0.9)";
+  const previewAccentColor = activePage?.background.secondaryColor || activePage?.background.primaryColor || "#ade6cd";
   const currentStage =
     generationStageDetails.find((stage) => stage.id === state.stage) ?? generationStageDetails[0];
   const showMissingRequirements = workflowStatus.label === "Not ready" && readinessErrors.length > 0;
@@ -689,33 +690,50 @@ export function WebsiteBuilderPreviewPanel({
                   )}
                 </p>
 
-                <div className="website-preview-mini-frame">
-                  <div className="website-preview-mini-nav">
-                    <span className="website-preview-mini-pill" />
-                    <span className="website-preview-mini-pill" />
-                    <span className="website-preview-mini-pill is-short" />
+                <div className="website-preview-scene">
+                  <div className="website-preview-mini-frame">
+                    <div className="website-preview-mini-nav">
+                      <span className="website-preview-mini-pill" />
+                      <span className="website-preview-mini-pill" />
+                      <span className="website-preview-mini-pill is-short" />
+                    </div>
+                    <span
+                      className="website-preview-mini-heading"
+                      style={{ background: previewHeadingColor }}
+                    />
+                    <span
+                      className="website-preview-mini-line is-wide"
+                      style={{ background: previewBodyColor }}
+                    />
+                    <span
+                      className="website-preview-mini-line"
+                      style={{ background: previewBodyColor }}
+                    />
+                    <div className="website-preview-mini-grid">
+                      <span style={{ background: previewBodyColor }} />
+                      <span style={{ background: previewBodyColor }} />
+                      <span style={{ background: previewBodyColor }} />
+                    </div>
+                    <span
+                      className="website-preview-mini-accent"
+                      style={{ background: previewHeadingColor }}
+                    />
                   </div>
-                  <span
-                    className="website-preview-mini-heading"
-                    style={{ background: previewHeadingColor }}
-                  />
-                  <span
-                    className="website-preview-mini-line is-wide"
-                    style={{ background: previewBodyColor }}
-                  />
-                  <span
-                    className="website-preview-mini-line"
-                    style={{ background: previewBodyColor }}
-                  />
-                  <div className="website-preview-mini-grid">
-                    <span style={{ background: previewBodyColor }} />
-                    <span style={{ background: previewBodyColor }} />
-                    <span style={{ background: previewBodyColor }} />
+
+                  <div className="website-preview-side-panel" aria-hidden="true">
+                    <span className="website-preview-side-label">Style direction</span>
+                    <strong>{pageLayout}</strong>
+                    <p>{`${pageBackground} / ${headingScale}`}</p>
+                    <div className="website-preview-side-swatches">
+                      <span style={{ background: activePage.background.primaryColor }} />
+                      <span style={{ background: previewAccentColor }} />
+                      <span style={{ background: activePage.headings.headingColor }} />
+                    </div>
+                    <div className="website-preview-side-copy">
+                      <span>{activePage.typography.fontMood}</span>
+                      <span>{activePage.typography.bodyFont}</span>
+                    </div>
                   </div>
-                  <span
-                    className="website-preview-mini-accent"
-                    style={{ background: previewHeadingColor }}
-                  />
                 </div>
               </div>
             </div>

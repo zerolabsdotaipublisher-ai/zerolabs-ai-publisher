@@ -1,64 +1,75 @@
 import type { WebsiteGenerationInput } from "../prompts/types";
+import { resolveWebsiteGenerationInput } from "../default-inputs";
 import type {
   InformationalSectionContent,
   ServicesSectionContent,
 } from "./types";
 
 function defaultParagraphs(input: WebsiteGenerationInput): string[] {
+  const resolvedInput = resolveWebsiteGenerationInput(input).input;
+
   return [
-    `${input.brandName} helps ${input.targetAudience} with focused delivery and measurable outcomes.`,
-    `We combine strategy and execution so each engagement maps directly to business goals.`,
+    `${resolvedInput.brandName} helps ${resolvedInput.targetAudience} with focused delivery and measurable outcomes.`,
+    "Each engagement is shaped around clear scope, practical communication, and work that is easy to act on.",
   ];
 }
 
 export function createAboutFallback(
   input: WebsiteGenerationInput,
 ): InformationalSectionContent {
+  const resolvedInput = resolveWebsiteGenerationInput(input).input;
+
   return {
     variant: "stacked",
-    headline: `Why ${input.brandName}`,
-    subheadline: "A practical partner for growth",
-    description: input.description,
-    paragraphs: defaultParagraphs(input),
+    headline: `Why ${resolvedInput.brandName}`,
+    subheadline: "Clear thinking. Reliable execution.",
+    description: resolvedInput.description,
+    paragraphs: defaultParagraphs(resolvedInput),
     bullets: ["Clear scope", "Transparent communication", "Outcome-focused work"],
     items: [
       {
         title: "Audience fit",
-        description: `Designed for ${input.targetAudience} with practical, conversion-aware positioning.`,
+        description: `Designed for ${resolvedInput.targetAudience} with practical, conversion-aware positioning.`,
       },
       {
         title: "Working style",
-        description: "Strategic thinking, fast delivery, and clear next steps.",
+        description: "Strategic thinking, steady delivery, and clear next steps from the first review onward.",
+      },
+      {
+        title: "What clients get",
+        description: "A sharper message, a cleaner structure, and momentum that keeps the next decision easy.",
       },
     ],
-    audience: input.targetAudience,
-    tone: input.tone,
+    audience: resolvedInput.targetAudience,
+    tone: resolvedInput.tone,
     density: "medium",
-    goal: input.primaryCta,
+    goal: resolvedInput.primaryCta,
   };
 }
 
 export function createServicesFallback(
   input: WebsiteGenerationInput,
 ): ServicesSectionContent {
+  const resolvedInput = resolveWebsiteGenerationInput(input).input;
+
   return {
     variant: "grid",
     headline: "Services",
     subheadline: "Built around your priorities",
-    description: `Offerings tailored to ${input.targetAudience}.`,
+    description: `Offerings tailored to ${resolvedInput.targetAudience}.`,
     paragraphs: [
-      `Our services are designed to help ${input.targetAudience} move faster with confidence.`,
+      `${resolvedInput.brandName} keeps each offer focused on clear outcomes, efficient delivery, and steady communication.`,
     ],
-    bullets: input.services.slice(0, 6),
-    items: input.services.slice(0, 6).map((service) => ({
+    bullets: resolvedInput.services.slice(0, 6),
+    items: resolvedInput.services.slice(0, 6).map((service) => ({
       name: service,
-      description: `Delivered with clear milestones and practical implementation support.`,
+      description: `Delivered with clear milestones, practical implementation support, and a scope that stays easy to understand.`,
       descriptor: "Outcome-driven",
     })),
-    audience: input.targetAudience,
-    tone: input.tone,
+    audience: resolvedInput.targetAudience,
+    tone: resolvedInput.tone,
     density: "medium",
-    goal: input.primaryCta,
+    goal: resolvedInput.primaryCta,
   };
 }
 
@@ -66,12 +77,14 @@ export function createInformationalFallback(
   label: string,
   input: WebsiteGenerationInput,
 ): InformationalSectionContent {
+  const resolvedInput = resolveWebsiteGenerationInput(input).input;
+
   return {
     variant: label === "How it works" ? "stacked" : "grid",
     headline: label,
-    subheadline: `Built for ${input.targetAudience}`,
-    description: input.description,
-    paragraphs: defaultParagraphs(input),
+    subheadline: `Built for ${resolvedInput.targetAudience}`,
+    description: resolvedInput.description,
+    paragraphs: defaultParagraphs(resolvedInput),
     bullets: [
       "Clear positioning",
       "Practical execution",
@@ -80,17 +93,21 @@ export function createInformationalFallback(
     items: [
       {
         title: `${label} that stay practical`,
-        description: `${input.brandName} keeps the message clear for ${input.targetAudience}.`,
+        description: `${resolvedInput.brandName} keeps the message clear for ${resolvedInput.targetAudience}.`,
       },
       {
         title: "Designed for conversion",
-        description: "Every section should make the next action easier to take.",
+        description: "Every section should make the next action easier to take without overexplaining the offer.",
+      },
+      {
+        title: "Ready for real use",
+        description: "The default copy is structured to feel publishable, not like a temporary placeholder block.",
       },
     ],
-    audience: input.targetAudience,
-    tone: input.tone,
+    audience: resolvedInput.targetAudience,
+    tone: resolvedInput.tone,
     density: "medium",
-    goal: input.primaryCta,
+    goal: resolvedInput.primaryCta,
   };
 }
 

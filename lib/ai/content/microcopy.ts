@@ -1,16 +1,19 @@
 import type { WebsiteGenerationInput } from "../prompts/types";
+import { resolveWebsiteGenerationInput } from "../default-inputs";
 import type { MicrocopyContent } from "./types";
 
 export function createMicrocopyFallback(
   input: WebsiteGenerationInput,
 ): MicrocopyContent {
+  const resolvedInput = resolveWebsiteGenerationInput(input).input;
+
   return {
-    primaryButtonLabel: input.primaryCta,
+    primaryButtonLabel: resolvedInput.primaryCta,
     secondaryButtonLabel: "Explore services",
     trustIndicator: "No obligation, clear next steps",
-    helperText: `Designed for ${input.targetAudience}`,
+    helperText: `Designed for ${resolvedInput.targetAudience}`,
     descriptor: "Trusted by results-focused teams",
-    shortTagline: input.description.slice(0, 80),
+    shortTagline: resolvedInput.description.slice(0, 80),
     bullets: ["Fast response", "Clear scope", "Practical outcomes"],
   };
 }

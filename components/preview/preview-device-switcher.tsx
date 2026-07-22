@@ -19,7 +19,7 @@ export function PreviewDeviceSwitcher({ value, links }: PreviewDeviceSwitcherPro
             href={links[mode]}
             className={mode === value ? "is-active" : undefined}
           >
-            {mode}
+            {mode.charAt(0).toUpperCase() + mode.slice(1)}
           </Link>
         ))}
       </div>

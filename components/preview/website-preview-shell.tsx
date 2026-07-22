@@ -23,14 +23,33 @@ interface WebsitePreviewShellProps {
 export function WebsitePreviewShell({ model, requestId }: WebsitePreviewShellProps) {
   const pageSlug = model.currentPageSlug;
   const currentDeviceMode = model.currentDeviceMode;
+  const currentPage = model.pages.find((page) => page.slug === pageSlug) ?? model.pages[0];
+  const currentPageIndex = Math.max(
+    model.pages.findIndex((page) => page.slug === currentPage?.slug),
+    0,
+  );
   const layoutPages = model.structure.layout?.pages ?? [];
   const currentLayoutPage =
     layoutPages.find((page) => page.pageSlug === pageSlug) ?? layoutPages[0];
-  const previewTheme = currentLayoutPage?.metadata?.themeMode ?? "system";
+  const previewTheme = currentLayoutPage?.metadata?.themeMode ?? "auto";
   const previewStyle = model.structure.styleConfig?.style;
   const previewTone = model.structure.styleConfig?.tone;
   const previewTitle = model.structure.siteTitle || "Untitled site";
   const previewWebsiteType = model.structure.websiteType || "website";
+  const previewAccessLabel = model.accessLevel === "owner" ? "Owner preview" : "Shared preview";
+  const previewThemeLabel =
+    previewTheme === "auto"
+      ? "System theme"
+      : `${previewTheme.charAt(0).toUpperCase()}${previewTheme.slice(1)} theme`;
+  const previewStyleLabel = previewStyle
+    ? `${previewStyle.charAt(0).toUpperCase()}${previewStyle.slice(1)} style`
+    : "Default style";
+  const previewToneLabel = previewTone
+    ? `${previewTone.charAt(0).toUpperCase()}${previewTone.slice(1)} tone`
+    : "Default tone";
+  const deviceLabel = `${currentDeviceMode.charAt(0).toUpperCase()}${currentDeviceMode.slice(1)} frame`;
+  const pageCountLabel = `${currentPageIndex + 1} of ${model.pages.length} page${model.pages.length === 1 ? "" : "s"}`;
+  const currentPagePath = currentPage?.slug || pageSlug;
 
   function buildHref(changes: Partial<Record<(typeof PREVIEW_QUERY_KEYS)[keyof typeof PREVIEW_QUERY_KEYS], string | undefined>>): string {
     const query = new URLSearchParams();
@@ -63,8 +82,22 @@ export function WebsitePreviewShell({ model, requestId }: WebsitePreviewShellPro
   return (
     <main id="main-content" className="preview-shell">
       <PreviewToolbar
-        title={`${previewTitle} preview`}
-        subtitle={`${model.accessLevel === "owner" ? "Owner" : "Shared"} preview / ${previewWebsiteType}`}
+        eyebrow={model.accessLevel === "owner" ? "Preview workspace" : "Shared preview"}
+        title={previewTitle}
+        subtitle={
+          model.structure.tagline ||
+          `${currentPage?.title || "Current page"} / ${previewWebsiteType}`
+        }
+        meta={
+          <div className="preview-toolbar-pills" aria-label="Preview details">
+            <span className="preview-toolbar-pill is-strong">{currentPage?.title || "Current page"}</span>
+            <span className="preview-toolbar-pill">{currentPagePath}</span>
+            <span className="preview-toolbar-pill">{pageCountLabel}</span>
+            <span className="preview-toolbar-pill">{deviceLabel}</span>
+            <span className="preview-toolbar-pill">{previewStyleLabel}</span>
+            <span className="preview-toolbar-pill">{previewToneLabel}</span>
+          </div>
+        }
         controls={
           <>
             <PreviewPageNavigation
@@ -100,17 +133,55 @@ export function WebsitePreviewShell({ model, requestId }: WebsitePreviewShellPro
         }
         links={[
           ...(model.accessLevel === "owner"
-            ? [{ label: "Open editor", href: routes.editorSite(model.structure.id) }]
+            ? [{ label: "Edit site", href: routes.editorSite(model.structure.id) }]
             : []),
           {
-            label: "Open generated-site route",
+            label: "Standalone view",
             href: model.generatedSitePath,
           },
           ...(model.permissions.canRegenerate
-            ? [{ label: "Return to generation", href: routes.generateWebsite }]
+            ? [{ label: "Generation workspace", href: routes.generateWebsite }]
             : []),
         ]}
       />
+      <div
+        className={`preview-canvas ${getPreviewDeviceClass(currentDeviceMode)}`}
+        data-preview-device={currentDeviceMode}
+        data-preview-style={previewStyle}
+        data-preview-tone={previewTone}
+        data-preview-theme={previewTheme}
+      >
+        <div className="preview-canvas-surface">
+          <div className="preview-canvas-browser" aria-hidden="true">
+            <div className="preview-canvas-browser-dots">
+              <span />
+              <span />
+              <span />
+            </div>
+            <div className="preview-canvas-urlbar">
+              <span className="preview-canvas-url-origin">{previewTitle}</span>
+              <span className="preview-canvas-url-path">{currentPagePath}</span>
+            </div>
+            <div className="preview-canvas-browser-meta">
+              <span>{deviceLabel}</span>
+              <span>{currentPage?.title || "Current page"}</span>
+            </div>
+          </div>
+          <div className="preview-canvas-frame">
+            <Renderer
+              key={getPreviewRendererKey(pageSlug, currentDeviceMode, model.refreshKey)}
+              structure={model.structure}
+              pageSlug={pageSlug}
+            />
+          </div>
+          <div className="preview-canvas-status" aria-hidden="true">
+            <span>{previewAccessLabel}</span>
+            <span>{previewThemeLabel}</span>
+            <span>{pageCountLabel}</span>
+          </div>
+        </div>
+      </div>
+
       {model.accessLevel === "owner" ? (
         <PreviewClientBoundary
           requestId={requestId}
@@ -127,22 +198,6 @@ export function WebsitePreviewShell({ model, requestId }: WebsitePreviewShellPro
           <PreviewOwnerControls structure={model.structure} />
         </PreviewClientBoundary>
       ) : null}
-
-      <div
-        className={`preview-canvas ${getPreviewDeviceClass(currentDeviceMode)}`}
-        data-preview-device={currentDeviceMode}
-        data-preview-style={previewStyle}
-        data-preview-tone={previewTone}
-        data-preview-theme={previewTheme}
-      >
-        <div className="preview-canvas-frame">
-          <Renderer
-            key={getPreviewRendererKey(pageSlug, currentDeviceMode, model.refreshKey)}
-            structure={model.structure}
-            pageSlug={pageSlug}
-          />
-        </div>
-      </div>
     </main>
   );
 }

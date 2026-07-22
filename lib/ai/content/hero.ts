@@ -1,27 +1,30 @@
 import type { WebsiteGenerationInput } from "../prompts/types";
+import { resolveWebsiteGenerationInput } from "../default-inputs";
 import type { HeroSectionContent } from "./types";
 
 export function createHeroFallback(input: WebsiteGenerationInput): HeroSectionContent {
+  const resolvedInput = resolveWebsiteGenerationInput(input).input;
+
   return {
-    variant: input.websiteType === "landing-page" ? "with-image" : "text-only",
-    eyebrow: `Built for ${input.targetAudience}`,
-    headline: `${input.brandName}: ${input.services[0] ?? "Trusted solutions"}`,
-    subheadline: `Built for ${input.targetAudience} with clear outcomes and practical execution.`,
-    supportingCopy: input.description,
-    primaryCta: input.primaryCta,
+    variant: resolvedInput.websiteType === "landing-page" ? "with-image" : "text-only",
+    eyebrow: `Built for ${resolvedInput.targetAudience}`,
+    headline: `${resolvedInput.brandName}: ${resolvedInput.services[0] ?? "Trusted solutions"}`,
+    subheadline: `Built for ${resolvedInput.targetAudience} with clear outcomes and practical execution.`,
+    supportingCopy: resolvedInput.description,
+    primaryCta: resolvedInput.primaryCta,
     secondaryCta: "Learn more",
     ctaHref: "#contact",
     image:
-      input.websiteType === "landing-page"
+      resolvedInput.websiteType === "landing-page"
         ? {
-            alt: `${input.brandName} hero illustration placeholder`,
-            promptHint: `${input.brandName} serving ${input.targetAudience}`,
+            alt: `${resolvedInput.brandName} hero illustration`,
+            promptHint: `${resolvedInput.brandName} serving ${resolvedInput.targetAudience}`,
           }
         : undefined,
-    audience: input.targetAudience,
-    tone: input.tone,
+    audience: resolvedInput.targetAudience,
+    tone: resolvedInput.tone,
     density: "medium",
-    goal: input.primaryCta,
+    goal: resolvedInput.primaryCta,
   };
 }
 

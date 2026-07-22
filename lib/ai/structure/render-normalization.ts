@@ -1,5 +1,6 @@
 import { generateValidatedWebsiteNavigation } from "../navigation/generator";
 import type { WebsiteNavigation } from "../navigation/types";
+import { resolveWebsiteGenerationInput } from "../default-inputs";
 import type { SectionType, WebsitePage, WebsiteSection, WebsiteStructure } from "./types";
 
 const MARKETING_WEBSITE_TYPES = new Set<WebsiteStructure["websiteType"]>([
@@ -30,6 +31,12 @@ interface RenderFallbackContext {
   targetAudience: string;
   primaryCta: string;
   services: string[];
+  sampleTestimonials: Array<{
+    quote: string;
+    author: string;
+    role: string;
+    company?: string;
+  }>;
   email?: string;
   phone?: string;
   location?: string;
@@ -97,7 +104,8 @@ function titleCaseSlug(value: string): string {
 }
 
 function createFallbackContext(structure: WebsiteStructure): RenderFallbackContext {
-  const sourceInput = structure.sourceInput;
+  const resolvedInput = resolveWebsiteGenerationInput(structure.sourceInput);
+  const sourceInput = resolvedInput.input;
   const brandName = readString(sourceInput.brandName) ?? structure.siteTitle ?? "Your brand";
   const tagline =
     readString(structure.tagline) ??
@@ -117,6 +125,7 @@ function createFallbackContext(structure: WebsiteStructure): RenderFallbackConte
     targetAudience,
     primaryCta,
     services: services.length > 0 ? services : ["Strategy", "Execution", "Optimization"],
+    sampleTestimonials: resolvedInput.profile.sampleTestimonials,
     email: readString(sourceInput.contactInfo?.email),
     phone: readString(sourceInput.contactInfo?.phone),
     location: readString(sourceInput.contactInfo?.location),
@@ -351,15 +360,13 @@ function normalizeTestimonialsContent(
     items:
       items.length > 0
         ? items
-        : [
-            {
-              quote: "Clear process and strong communication from start to finish.",
-              author: "Example Client",
-              role: "Placeholder testimonial",
-              company: context.siteTitle,
-              isPlaceholder: true,
-            },
-          ],
+        : context.sampleTestimonials.slice(0, 2).map((testimonial) => ({
+            quote: testimonial.quote,
+            author: testimonial.author,
+            role: testimonial.role,
+            company: testimonial.company,
+            isPlaceholder: true,
+          })),
   };
 }
 

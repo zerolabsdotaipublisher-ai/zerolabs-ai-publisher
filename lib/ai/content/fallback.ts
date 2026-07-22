@@ -1,3 +1,4 @@
+import { resolveWebsiteGenerationInput } from "../default-inputs";
 import type { WebsiteGenerationInput } from "../prompts/types";
 import type {
   ContentSectionType,
@@ -27,7 +28,9 @@ function sectionRequested(
 }
 
 function fallbackTestimonials(input: WebsiteGenerationInput): TestimonialsSectionContent {
-  const provided = input.testimonials?.slice(0, 3) ?? [];
+  const resolvedInput = resolveWebsiteGenerationInput(input);
+  const effectiveInput = resolvedInput.input;
+  const provided = effectiveInput.testimonials?.slice(0, 3) ?? [];
 
   if (provided.length > 0) {
     return {
@@ -40,58 +43,64 @@ function fallbackTestimonials(input: WebsiteGenerationInput): TestimonialsSectio
         role: testimonial.role,
         isPlaceholder: false,
       })),
-      audience: input.targetAudience,
-      tone: input.tone,
+      audience: effectiveInput.targetAudience,
+      tone: effectiveInput.tone,
       density: "medium" as const,
-      goal: input.primaryCta,
+      goal: effectiveInput.primaryCta,
     };
   }
 
+  const sampleItems = resolvedInput.profile.sampleTestimonials.slice(0, 2);
+
   return {
-    variant: "quote-grid",
+    variant: sampleItems.length > 1 ? "quote-grid" : "single-quote",
     headline: "Client feedback",
-    subheadline: "Representative outcomes",
-    items: [
-      {
-        quote: "Clear process and strong communication from start to finish.",
-        author: "Example Client",
-        role: "Placeholder testimonial",
-        company: "Synthetic social proof",
-        isPlaceholder: true,
-      },
-    ],
-    audience: input.targetAudience,
-    tone: input.tone,
+    subheadline: "Representative outcomes from recent work",
+    items: sampleItems.map((testimonial) => ({
+      quote: testimonial.quote,
+      author: testimonial.author,
+      role: testimonial.role,
+      company: testimonial.company,
+      isPlaceholder: true,
+    })),
+    audience: effectiveInput.targetAudience,
+    tone: effectiveInput.tone,
     density: "medium" as const,
-    goal: input.primaryCta,
+    goal: effectiveInput.primaryCta,
   };
 }
 
 function fallbackContact(input: WebsiteGenerationInput) {
+  const resolvedInput = resolveWebsiteGenerationInput(input).input;
   const channels = [
-    input.contactInfo?.email
-      ? { label: "Email", value: input.contactInfo.email }
+    resolvedInput.contactInfo?.email
+      ? { label: "Email", value: resolvedInput.contactInfo.email }
       : null,
-    input.contactInfo?.phone
-      ? { label: "Phone", value: input.contactInfo.phone }
+    resolvedInput.contactInfo?.phone
+      ? { label: "Phone", value: resolvedInput.contactInfo.phone }
       : null,
-    input.contactInfo?.location
-      ? { label: "Location", value: input.contactInfo.location }
+    resolvedInput.contactInfo?.location
+      ? { label: "Location", value: resolvedInput.contactInfo.location }
       : null,
   ].filter(Boolean) as Array<{ label: string; value: string }>;
 
   return {
     headline: "Contact",
-    subheadline: `Tell us what you need and we'll map next steps quickly.`,
-    channels: channels.length > 0 ? channels : [{ label: "Email", value: "hello@example.com" }],
+    subheadline: "Tell us what you need and we will map next steps quickly.",
+    channels:
+      channels.length > 0
+        ? channels
+        : [{ label: "Availability", value: "Available by appointment and responsive by email." }],
     helperText: "Response within one business day.",
   };
 }
 
 export function createFooterFallback(input: WebsiteGenerationInput) {
+  const resolvedInput = resolveWebsiteGenerationInput(input).input;
+
   return {
-    shortBlurb: `${input.brandName} helps ${input.targetAudience} with practical, high-impact work.`,
-    legalText: `© ${new Date().getFullYear()} ${input.brandName}`,
+    shortBlurb: `${resolvedInput.brandName} helps ${resolvedInput.targetAudience} with practical, high-impact work.`,
+    legalText: `Copyright ${new Date().getFullYear()} ${resolvedInput.brandName}`,
     trustIndicators: ["Privacy-minded", "No inflated promises"],
   };
 }
@@ -101,9 +110,10 @@ export function createFallbackPageContent(
   input: WebsiteGenerationInput,
   allowedSections?: ContentSectionType[],
 ): GeneratedPageContent {
-  const hero = normalizeHeroSectionContent(undefined, input);
-  const about = normalizeInformationalSection(undefined, createAboutFallback(input));
-  const services = normalizeServicesSection(undefined, input);
+  const resolvedInput = resolveWebsiteGenerationInput(input).input;
+  const hero = normalizeHeroSectionContent(undefined, resolvedInput);
+  const about = normalizeInformationalSection(undefined, createAboutFallback(resolvedInput));
+  const services = normalizeServicesSection(undefined, resolvedInput);
 
   const sections: GeneratedPageContent["sections"] = {};
   if (sectionRequested("hero", allowedSections)) sections.hero = hero;
@@ -112,59 +122,59 @@ export function createFallbackPageContent(
   if (sectionRequested("features", allowedSections)) {
     sections.features = normalizeInformationalSection(
       undefined,
-      createInformationalFallback("Key features", input),
+      createInformationalFallback("Key features", resolvedInput),
     );
   }
   if (sectionRequested("process", allowedSections)) {
     sections.process = normalizeInformationalSection(
       undefined,
-      createInformationalFallback("How it works", input),
+      createInformationalFallback("How it works", resolvedInput),
     );
   }
   if (sectionRequested("benefits", allowedSections)) {
     sections.benefits = normalizeInformationalSection(
       undefined,
-      createInformationalFallback("Benefits", input),
+      createInformationalFallback("Benefits", resolvedInput),
     );
   }
   if (sectionRequested("testimonials", allowedSections)) {
-    sections.testimonials = fallbackTestimonials(input);
+    sections.testimonials = fallbackTestimonials(resolvedInput);
   }
   if (sectionRequested("faq", allowedSections)) {
     sections.faq = {
       variant: "expanded",
       headline: "Frequently asked questions",
-      subheadline: `Answers for ${input.targetAudience} before they commit.`,
+      subheadline: `Answers for ${resolvedInput.targetAudience} before they commit.`,
       items: [
         {
           question: "How do we get started?",
-          answer: "Start with a short discovery call and we will define scope and outcomes.",
+          answer: "Start with a short discovery call and we will define scope, priorities, and outcomes together.",
         },
         {
           question: "What does engagement look like?",
-          answer: "Clear milestones, transparent communication, and practical deliverables.",
+          answer: "Clear milestones, transparent communication, and practical deliverables that keep momentum visible.",
         },
       ],
-      audience: input.targetAudience,
-      tone: input.tone,
+      audience: resolvedInput.targetAudience,
+      tone: resolvedInput.tone,
       density: "medium",
-      goal: input.primaryCta,
+      goal: resolvedInput.primaryCta,
     };
   }
   if (sectionRequested("cta", allowedSections)) {
-    sections.cta = normalizeCtaSection(createCtaFallback(input), input);
+    sections.cta = normalizeCtaSection(createCtaFallback(resolvedInput), resolvedInput);
   }
   if (sectionRequested("pricing", allowedSections)) {
-    sections.pricing = normalizePricingSection(createPricingFallback(input), input);
+    sections.pricing = normalizePricingSection(createPricingFallback(resolvedInput), resolvedInput);
   }
   if (sectionRequested("contact", allowedSections)) {
-    sections.contact = fallbackContact(input);
+    sections.contact = fallbackContact(resolvedInput);
   }
   if (sectionRequested("footer", allowedSections)) {
-    sections.footer = createFooterFallback(input);
+    sections.footer = createFooterFallback(resolvedInput);
   }
   if (sectionRequested("microcopy", allowedSections)) {
-    sections.microcopy = normalizeMicrocopy(createMicrocopyFallback(input), input);
+    sections.microcopy = normalizeMicrocopy(createMicrocopyFallback(resolvedInput), resolvedInput);
   }
 
   return {
@@ -173,7 +183,7 @@ export function createFallbackPageContent(
     messaging: {
       pageHeadline: hero.headline,
       pageSubheadline: hero.subheadline,
-      valueProposition: input.description,
+      valueProposition: resolvedInput.description,
     },
     sections,
   };

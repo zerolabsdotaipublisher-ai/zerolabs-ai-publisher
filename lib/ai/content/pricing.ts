@@ -1,9 +1,11 @@
+import { resolveWebsiteGenerationInput } from "../default-inputs";
 import type { WebsiteGenerationInput } from "../prompts/types";
 import type { PricingSectionContent } from "./types";
 
 export function createPricingFallback(
   input: WebsiteGenerationInput,
 ): PricingSectionContent {
+  const resolvedInput = resolveWebsiteGenerationInput(input).input;
   const baseTiers = [
     {
       name: "Starter",
@@ -15,7 +17,7 @@ export function createPricingFallback(
         "Essential marketing sections",
         "Conversion-ready CTA copy",
       ],
-      ctaText: input.primaryCta,
+      ctaText: resolvedInput.primaryCta,
       isFeatured: false,
     },
     {
@@ -46,19 +48,19 @@ export function createPricingFallback(
   ];
 
   const tiers =
-    input.websiteType === "landing-page" ? baseTiers.slice(0, 2) : baseTiers;
+    resolvedInput.websiteType === "landing-page" ? baseTiers.slice(0, 2) : baseTiers;
 
   return {
     variant: tiers.length === 2 ? "two-tier" : "three-tier",
     headline: "Pricing built for clear next steps",
-    subheadline: `Simple options for ${input.targetAudience} to choose the right fit.`,
+    subheadline: `Simple options for ${resolvedInput.targetAudience} to choose the right fit.`,
     tiers,
     guaranteeLine: "Transparent scope. No inflated promises.",
-    disclaimer: "Illustrative pricing placeholders — update before publishing live offers.",
-    audience: input.targetAudience,
-    tone: input.tone,
+    disclaimer: "Illustrative pricing only. Update before publishing live offers.",
+    audience: resolvedInput.targetAudience,
+    tone: resolvedInput.tone,
     density: "medium",
-    goal: input.primaryCta,
+    goal: resolvedInput.primaryCta,
   };
 }
 

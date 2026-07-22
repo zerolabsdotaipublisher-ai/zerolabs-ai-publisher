@@ -7,34 +7,54 @@
  * safe, generic copy that cannot be mistaken for real brand content.
  */
 
-import type { WebsiteGenerationOutput } from "../prompts/types";
-import type { WebsiteType } from "./types";
+import { getSampleWebsiteProfile, isWeakInputText } from "../default-inputs";
+import type { WebsiteGenerationOutput, WebsiteType } from "../prompts/types";
 import { getWebsiteTemplate } from "./templates";
 
-// ---------------------------------------------------------------------------
-// Section-level fallback content
-// ---------------------------------------------------------------------------
+function resolveBrandName(websiteType: WebsiteType, brandName: string): string {
+  return isWeakInputText(brandName)
+    ? getSampleWebsiteProfile(websiteType).brandName
+    : brandName.trim();
+}
 
-const FALLBACK_HERO = {
-  headline: "Welcome",
-  subheadline: "We are ready to help you.",
-  primaryCta: "Get started",
-};
+function createFallbackHero(websiteType: WebsiteType, brandName: string) {
+  const profile = getSampleWebsiteProfile(websiteType);
 
-const FALLBACK_ABOUT = {
-  headline: "About Us",
-  body: "We are passionate about delivering great results for our clients.",
-};
+  return {
+    headline: `${brandName}: ${profile.services[0]}`,
+    subheadline: profile.description,
+    primaryCta: profile.primaryCta,
+  };
+}
 
-const FALLBACK_SERVICES = {
-  headline: "What We Offer",
-  items: [{ name: "Our Service", description: "We provide excellent services." }],
-};
+function createFallbackAbout(websiteType: WebsiteType, brandName: string) {
+  const profile = getSampleWebsiteProfile(websiteType);
 
+  return {
+    headline: `Why ${brandName}`,
+    body: `${brandName} serves ${profile.targetAudience} with a clear offer, practical communication, and work that is easy to act on.`,
+  };
+}
 
-const FALLBACK_FOOTER = {
-  shortBlurb: "Thank you for visiting.",
-};
+function createFallbackServices(websiteType: WebsiteType) {
+  const profile = getSampleWebsiteProfile(websiteType);
+
+  return {
+    headline: "What we offer",
+    items: profile.services.map((service) => ({
+      name: service,
+      description: "Delivered with clear scope, reliable communication, and practical next steps.",
+    })),
+  };
+}
+
+function createFallbackFooter(websiteType: WebsiteType, brandName: string) {
+  const profile = getSampleWebsiteProfile(websiteType);
+
+  return {
+    shortBlurb: `${brandName} helps ${profile.targetAudience} with practical, high-impact work.`,
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -53,24 +73,26 @@ export function applyFallbacks(
   brandName: string,
 ): WebsiteGenerationOutput {
   const template = getWebsiteTemplate(websiteType);
+  const safeBrandName = resolveBrandName(websiteType, brandName);
+  const profile = getSampleWebsiteProfile(websiteType);
 
   return {
     websiteType,
-    siteTitle: partial.siteTitle ?? brandName,
+    siteTitle: partial.siteTitle ?? safeBrandName,
     tagline: partial.tagline ?? template.defaultTagline,
     sections: {
-      hero: partial.sections?.hero ?? FALLBACK_HERO,
-      about: partial.sections?.about ?? FALLBACK_ABOUT,
-      services: partial.sections?.services ?? FALLBACK_SERVICES,
+      hero: partial.sections?.hero ?? createFallbackHero(websiteType, safeBrandName),
+      about: partial.sections?.about ?? createFallbackAbout(websiteType, safeBrandName),
+      services: partial.sections?.services ?? createFallbackServices(websiteType),
       testimonials: partial.sections?.testimonials,
       cta: partial.sections?.cta,
       contact: partial.sections?.contact,
-      footer: partial.sections?.footer ?? FALLBACK_FOOTER,
+      footer: partial.sections?.footer ?? createFallbackFooter(websiteType, safeBrandName),
     },
     seo: partial.seo ?? {
-      title: `${brandName} | ${template.defaultTagline}`,
-      description: `${brandName} — ${template.defaultTagline}`,
-      keywords: [brandName.toLowerCase().replace(/\s+/g, "-")],
+      title: `${safeBrandName} | ${template.defaultTagline}`,
+      description: `${safeBrandName} - ${profile.description}`,
+      keywords: [safeBrandName.toLowerCase().replace(/\s+/g, "-")],
     },
     styleHints: partial.styleHints ?? {
       tone: "professional",
