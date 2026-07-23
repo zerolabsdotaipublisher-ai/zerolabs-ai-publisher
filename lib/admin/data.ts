@@ -1,13 +1,16 @@
 import "server-only";
 
 import type { User } from "@supabase/supabase-js";
-import type { ProfileRole } from "@/lib/supabase/profile";
+import type { WebsiteStructure } from "@/lib/ai/structure";
+import { buildPublishingStatusFromStructure, type PublishingStatusUiState } from "@/lib/publish/status";
 import { logger } from "@/lib/observability";
+import type { ProfileRole } from "@/lib/supabase/profile";
 import { getSupabaseServiceClient } from "@/lib/supabase/server";
 
 const FALLBACK_UNAVAILABLE_LABEL = "Unavailable";
 const DEFAULT_RECENT_RECORD_LIMIT = 12;
 const AUTH_USERS_PAGE_SIZE = 100;
+const ADMIN_WEBSITE_DRAFT_STATUSES = ["draft", "generated", "edited", "scheduled"] as const;
 
 type ProfileRow = {
   id: string;
@@ -24,6 +27,8 @@ type WebsiteRow = {
   status: string | null;
   generated_at: string | null;
   updated_at: string | null;
+  deleted_at: string | null;
+  structure: WebsiteStructure | null;
 };
 
 type PublishJobRow = {
@@ -70,9 +75,13 @@ export interface AdminWebsiteRecord {
   title: string;
   ownerEmail: string;
   status: string;
+  state: PublishingStatusUiState | "unknown";
+  structureStatus: string;
   websiteType: string;
   createdAt: string | null;
   updatedAt: string | null;
+  liveUrl: string | null;
+  lastPublishedAt: string | null;
 }
 
 export interface AdminActivityItem {
@@ -94,14 +103,24 @@ export interface AdminDashboardData {
   users: {
     total: number;
     admins: number;
+    standard: number;
     recentSignups: number;
+    recentGrowth: number;
     records: AdminUserRecord[];
+    isAvailable: boolean;
   };
   websites: {
     total: number;
-    published: number;
+    live: number;
     drafts: number;
+    archived: number;
+    deleted: number;
+    versions: number;
+    liveVersions: number;
+    recentGenerations: number;
     records: AdminWebsiteRecord[];
+    isAvailable: boolean;
+    versionsAvailable: boolean;
   };
   monitoring: {
     failedJobs: number;
@@ -109,11 +128,15 @@ export interface AdminDashboardData {
     systemTone: AdminTone;
     alerts: AdminAlertItem[];
     recentActivity: AdminActivityItem[];
+    isAvailable: boolean;
   };
   analytics: {
-    websiteGenerationVolume: number;
-    publishingActivity: number;
-    userGrowth: number;
+    generatedLast30Days: number;
+    versionsStored: number;
+    liveVersions: number;
+    versionActivityLast30Days: number;
+    userGrowthLast30Days: number;
+    internalMetricsAvailable: boolean;
   };
 }
 
@@ -122,14 +145,24 @@ function createEmptyAdminDashboardData(): AdminDashboardData {
     users: {
       total: 0,
       admins: 0,
+      standard: 0,
       recentSignups: 0,
+      recentGrowth: 0,
       records: [],
+      isAvailable: false,
     },
     websites: {
       total: 0,
-      published: 0,
+      live: 0,
       drafts: 0,
+      archived: 0,
+      deleted: 0,
+      versions: 0,
+      liveVersions: 0,
+      recentGenerations: 0,
       records: [],
+      isAvailable: false,
+      versionsAvailable: false,
     },
     monitoring: {
       failedJobs: 0,
@@ -144,11 +177,15 @@ function createEmptyAdminDashboardData(): AdminDashboardData {
         },
       ],
       recentActivity: [],
+      isAvailable: false,
     },
     analytics: {
-      websiteGenerationVolume: 0,
-      publishingActivity: 0,
-      userGrowth: 0,
+      generatedLast30Days: 0,
+      versionsStored: 0,
+      liveVersions: 0,
+      versionActivityLast30Days: 0,
+      userGrowthLast30Days: 0,
+      internalMetricsAvailable: false,
     },
   };
 }
@@ -179,15 +216,6 @@ function parseTimestamp(value: string | null | undefined): number {
   return Number.isNaN(parsed) ? 0 : parsed;
 }
 
-function countItemsSince(values: Array<{ createdAt: string | null }>, days: number): number {
-  if (values.length === 0) {
-    return 0;
-  }
-
-  const threshold = Date.now() - days * 24 * 60 * 60 * 1000;
-  return values.filter((value) => parseTimestamp(value.createdAt) >= threshold).length;
-}
-
 function summarizeUserStatus(user?: User): string {
   if (!user) {
     return FALLBACK_UNAVAILABLE_LABEL;
@@ -216,7 +244,14 @@ function toToneFromStatus(status: string | null | undefined): AdminTone {
   return "info";
 }
 
-async function safeRows<T>(scope: string, operation: () => Promise<{ data: T[] | null; error: { message: string } | null }>): Promise<T[]> {
+function createIsoThreshold(days: number): string {
+  return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+}
+
+async function safeRows<T>(
+  scope: string,
+  operation: () => Promise<{ data: T[] | null; error: { message: string } | null }>,
+): Promise<T[]> {
   return withAdminFallback(scope, [], async () => {
     const { data, error } = await operation();
 
@@ -229,7 +264,10 @@ async function safeRows<T>(scope: string, operation: () => Promise<{ data: T[] |
   });
 }
 
-async function safeCount(scope: string, operation: () => Promise<{ count: number | null; error: { message: string } | null }>): Promise<SafeCountResult> {
+async function safeCount(
+  scope: string,
+  operation: () => Promise<{ count: number | null; error: { message: string } | null }>,
+): Promise<SafeCountResult> {
   return withAdminFallback(scope, { value: 0, isAvailable: false }, async () => {
     const { count, error } = await operation();
 
@@ -277,7 +315,11 @@ async function listAuthUsers(limit = 100): Promise<User[]> {
 async function listProfileRows(limit = 100): Promise<ProfileRow[]> {
   return safeRows("listProfileRows", async () => {
     const supabase = getSupabaseServiceClient();
-    return await supabase.from("profiles").select("id, email, role, created_at").order("created_at", { ascending: false }).limit(limit);
+    return await supabase
+      .from("profiles")
+      .select("id, email, role, created_at")
+      .order("created_at", { ascending: false })
+      .limit(limit);
   });
 }
 
@@ -299,9 +341,10 @@ async function listRecentWebsiteRows(limit = DEFAULT_RECENT_RECORD_LIMIT): Promi
     const supabase = getSupabaseServiceClient();
     return await supabase
       .from("website_structures")
-      .select("id, user_id, site_title, website_type, status, generated_at, updated_at")
+      .select("id, user_id, site_title, website_type, status, generated_at, updated_at, deleted_at, structure")
       .is("deleted_at", null)
-      .order("generated_at", { ascending: false })
+      .neq("status", "deleted")
+      .order("updated_at", { ascending: false })
       .limit(limit);
   });
 }
@@ -328,7 +371,39 @@ async function listRecentScheduleRuns(limit = 6): Promise<ScheduleRunRow[]> {
   });
 }
 
-async function getUserCounts(): Promise<{ total: number; admins: number }> {
+async function countProfilesCreatedSince(days: number): Promise<SafeCountResult> {
+  const threshold = createIsoThreshold(days);
+
+  return safeCount(`countProfilesCreatedSince.${days}`, async () => {
+    const supabase = getSupabaseServiceClient();
+    return await supabase.from("profiles").select("id", { count: "exact", head: true }).gte("created_at", threshold);
+  });
+}
+
+async function countWebsiteStructuresGeneratedSince(days: number): Promise<SafeCountResult> {
+  const threshold = createIsoThreshold(days);
+
+  return safeCount(`countWebsiteStructuresGeneratedSince.${days}`, async () => {
+    const supabase = getSupabaseServiceClient();
+    return await supabase
+      .from("website_structures")
+      .select("id", { count: "exact", head: true })
+      .is("deleted_at", null)
+      .neq("status", "deleted")
+      .gte("generated_at", threshold);
+  });
+}
+
+async function countWebsiteVersionsCreatedSince(days: number): Promise<SafeCountResult> {
+  const threshold = createIsoThreshold(days);
+
+  return safeCount(`countWebsiteVersionsCreatedSince.${days}`, async () => {
+    const supabase = getSupabaseServiceClient();
+    return await supabase.from("website_versions").select("id", { count: "exact", head: true }).gte("created_at", threshold);
+  });
+}
+
+async function getUserCounts(): Promise<{ total: number; admins: number; isAvailable: boolean }> {
   const [total, admins] = await Promise.all([
     safeCount("getUserCounts.total", async () => {
       const supabase = getSupabaseServiceClient();
@@ -343,29 +418,81 @@ async function getUserCounts(): Promise<{ total: number; admins: number }> {
   return {
     total: total.value,
     admins: admins.value,
+    isAvailable: total.isAvailable && admins.isAvailable,
   };
 }
 
-async function getWebsiteCounts(): Promise<{ total: number; published: number; drafts: number }> {
-  const [total, published, drafts] = await Promise.all([
+async function getWebsiteCounts(): Promise<{
+  total: number;
+  live: number;
+  drafts: number;
+  archived: number;
+  deleted: number;
+  versions: number;
+  liveVersions: number;
+  isAvailable: boolean;
+  versionsAvailable: boolean;
+}> {
+  const [total, live, drafts, archived, deleted, versions, liveVersions] = await Promise.all([
     safeCount("getWebsiteCounts.total", async () => {
       const supabase = getSupabaseServiceClient();
-      return await supabase.from("website_structures").select("id", { count: "exact", head: true }).is("deleted_at", null);
+      return await supabase
+        .from("website_structures")
+        .select("id", { count: "exact", head: true })
+        .is("deleted_at", null)
+        .neq("status", "deleted");
     }),
-    safeCount("getWebsiteCounts.published", async () => {
+    safeCount("getWebsiteCounts.live", async () => {
       const supabase = getSupabaseServiceClient();
-      return await supabase.from("website_structures").select("id", { count: "exact", head: true }).is("deleted_at", null).eq("status", "published");
+      return await supabase
+        .from("website_structures")
+        .select("id", { count: "exact", head: true })
+        .is("deleted_at", null)
+        .eq("status", "published");
     }),
     safeCount("getWebsiteCounts.drafts", async () => {
       const supabase = getSupabaseServiceClient();
-      return await supabase.from("website_structures").select("id", { count: "exact", head: true }).is("deleted_at", null).eq("status", "draft");
+      return await supabase
+        .from("website_structures")
+        .select("id", { count: "exact", head: true })
+        .is("deleted_at", null)
+        .in("status", [...ADMIN_WEBSITE_DRAFT_STATUSES]);
+    }),
+    safeCount("getWebsiteCounts.archived", async () => {
+      const supabase = getSupabaseServiceClient();
+      return await supabase
+        .from("website_structures")
+        .select("id", { count: "exact", head: true })
+        .is("deleted_at", null)
+        .eq("status", "archived");
+    }),
+    safeCount("getWebsiteCounts.deleted", async () => {
+      const supabase = getSupabaseServiceClient();
+      return await supabase
+        .from("website_structures")
+        .select("id", { count: "exact", head: true })
+        .or("deleted_at.not.is.null,status.eq.deleted");
+    }),
+    safeCount("getWebsiteCounts.versions", async () => {
+      const supabase = getSupabaseServiceClient();
+      return await supabase.from("website_versions").select("id", { count: "exact", head: true });
+    }),
+    safeCount("getWebsiteCounts.liveVersions", async () => {
+      const supabase = getSupabaseServiceClient();
+      return await supabase.from("website_versions").select("id", { count: "exact", head: true }).eq("is_live", true);
     }),
   ]);
 
   return {
     total: total.value,
-    published: published.value,
+    live: live.value,
     drafts: drafts.value,
+    archived: archived.value,
+    deleted: deleted.value,
+    versions: versions.value,
+    liveVersions: liveVersions.value,
+    isAvailable: total.isAvailable && live.isAvailable && drafts.isAvailable && archived.isAvailable,
+    versionsAvailable: versions.isAvailable && liveVersions.isAvailable,
   };
 }
 
@@ -387,6 +514,18 @@ async function getMonitoringCounts(): Promise<MonitoringCounts> {
     totalFailed: failedPublishJobs.value + failedScheduleRuns.value,
     isAvailable: failedPublishJobs.isAvailable || failedScheduleRuns.isAvailable,
   };
+}
+
+function formatAdminLabel(value: string | null | undefined): string {
+  if (!value) {
+    return FALLBACK_UNAVAILABLE_LABEL;
+  }
+
+  return value
+    .split(/[_\s-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 }
 
 function mergeUsers(authUsers: User[], profiles: ProfileRow[]): AdminUserRecord[] {
@@ -421,16 +560,68 @@ function mergeUsers(authUsers: User[], profiles: ProfileRow[]): AdminUserRecord[
   return mergedUsers.sort((left, right) => parseTimestamp(right.createdAt) - parseTimestamp(left.createdAt));
 }
 
+function resolveWebsiteStatus(row: WebsiteRow): {
+  label: string;
+  state: PublishingStatusUiState | "unknown";
+  liveUrl: string | null;
+  lastPublishedAt: string | null;
+} {
+  if (!row.structure) {
+    return {
+      label: formatAdminLabel(row.status),
+      state: "unknown",
+      liveUrl: null,
+      lastPublishedAt: null,
+    };
+  }
+
+  try {
+    const publishStatus = buildPublishingStatusFromStructure(row.structure);
+
+    return {
+      label: publishStatus.uiLabel,
+      state: publishStatus.uiState,
+      liveUrl: publishStatus.liveUrl ?? null,
+      lastPublishedAt: publishStatus.timestamps.lastPublishedAt ?? null,
+    };
+  } catch (error) {
+    logger.warn("Admin website status mapping fell back to raw structure status", {
+      category: "error",
+      service: "dashboard",
+      structureId: row.id,
+      error: {
+        message: error instanceof Error ? error.message : String(error),
+        name: "AdminWebsiteStatusFallbackWarning",
+      },
+    });
+
+    return {
+      label: formatAdminLabel(row.status),
+      state: "unknown",
+      liveUrl: null,
+      lastPublishedAt: null,
+    };
+  }
+}
+
 function mapWebsites(rows: WebsiteRow[], emailMap: Map<string, string>): AdminWebsiteRecord[] {
-  return rows.map((row) => ({
-    id: row.id,
-    title: row.site_title ?? FALLBACK_UNAVAILABLE_LABEL,
-    ownerEmail: emailMap.get(row.user_id) ?? FALLBACK_UNAVAILABLE_LABEL,
-    status: row.status ?? FALLBACK_UNAVAILABLE_LABEL,
-    websiteType: row.website_type ?? FALLBACK_UNAVAILABLE_LABEL,
-    createdAt: row.generated_at,
-    updatedAt: row.updated_at,
-  }));
+  return rows.map((row) => {
+    const status = resolveWebsiteStatus(row);
+
+    return {
+      id: row.id,
+      title: row.site_title ?? FALLBACK_UNAVAILABLE_LABEL,
+      ownerEmail: emailMap.get(row.user_id) ?? FALLBACK_UNAVAILABLE_LABEL,
+      status: status.label,
+      state: status.state,
+      structureStatus: row.status ?? FALLBACK_UNAVAILABLE_LABEL,
+      websiteType: row.website_type ?? FALLBACK_UNAVAILABLE_LABEL,
+      createdAt: row.generated_at,
+      updatedAt: row.updated_at,
+      liveUrl: status.liveUrl,
+      lastPublishedAt: status.lastPublishedAt,
+    };
+  });
 }
 
 function buildAlerts(monitoringCounts: MonitoringCounts): { alerts: AdminAlertItem[]; systemStatus: string; systemTone: AdminTone } {
@@ -499,9 +690,9 @@ function buildRecentActivity(
   const websiteActivity: AdminActivityItem[] = websites.slice(0, 4).map((website) => ({
     id: `website-${website.id}`,
     title: `${website.title} updated`,
-    detail: `${website.websiteType} website · ${website.status} · ${website.ownerEmail}`,
+    detail: `${website.websiteType} website / ${website.status} / ${website.ownerEmail}`,
     timestamp: website.updatedAt ?? website.createdAt,
-    tone: website.status === "published" ? "info" : "warning",
+    tone: website.state === "live" ? "info" : website.state === "failed" ? "error" : "warning",
   }));
 
   const publishActivity: AdminActivityItem[] = publishJobs.map((job) => ({
@@ -542,10 +733,26 @@ export async function listAdminWebsites(limit = 25): Promise<AdminWebsiteRecord[
 
 export async function getAdminDashboardData(): Promise<AdminDashboardData> {
   return withAdminFallback("getAdminDashboardData", createEmptyAdminDashboardData(), async () => {
-    const [users, userCounts, websiteCounts, websiteRows, monitoringCounts, publishJobs, scheduleRuns] = await Promise.all([
+    const [
+      users,
+      userCounts,
+      recentSignups,
+      recentUserGrowth,
+      websiteCounts,
+      recentWebsiteGenerations,
+      recentVersionActivity,
+      websiteRows,
+      monitoringCounts,
+      publishJobs,
+      scheduleRuns,
+    ] = await Promise.all([
       listAdminUsers(100),
       getUserCounts(),
+      countProfilesCreatedSince(7),
+      countProfilesCreatedSince(30),
       getWebsiteCounts(),
+      countWebsiteStructuresGeneratedSince(30),
+      countWebsiteVersionsCreatedSince(30),
       listRecentWebsiteRows(100),
       getMonitoringCounts(),
       listRecentPublishJobs(4),
@@ -560,14 +767,24 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
       users: {
         total: userCounts.total,
         admins: userCounts.admins,
-        recentSignups: countItemsSince(users, 7),
+        standard: Math.max(userCounts.total - userCounts.admins, 0),
+        recentSignups: recentSignups.value,
+        recentGrowth: recentUserGrowth.value,
         records: users.slice(0, 6),
+        isAvailable: userCounts.isAvailable,
       },
       websites: {
         total: websiteCounts.total,
-        published: websiteCounts.published,
+        live: websiteCounts.live,
         drafts: websiteCounts.drafts,
+        archived: websiteCounts.archived,
+        deleted: websiteCounts.deleted,
+        versions: websiteCounts.versions,
+        liveVersions: websiteCounts.liveVersions,
+        recentGenerations: recentWebsiteGenerations.value,
         records: websites.slice(0, 8),
+        isAvailable: websiteCounts.isAvailable,
+        versionsAvailable: websiteCounts.versionsAvailable,
       },
       monitoring: {
         failedJobs: monitoringCounts.totalFailed,
@@ -575,11 +792,21 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
         systemTone: alertsSummary.systemTone,
         alerts: alertsSummary.alerts,
         recentActivity: buildRecentActivity(websites, publishJobs, scheduleRuns),
+        isAvailable: monitoringCounts.isAvailable,
       },
       analytics: {
-        websiteGenerationVolume: countItemsSince(websites.map((website) => ({ createdAt: website.createdAt })), 30),
-        publishingActivity: websiteCounts.published,
-        userGrowth: countItemsSince(users, 30),
+        generatedLast30Days: recentWebsiteGenerations.value,
+        versionsStored: websiteCounts.versions,
+        liveVersions: websiteCounts.liveVersions,
+        versionActivityLast30Days: recentVersionActivity.value,
+        userGrowthLast30Days: recentUserGrowth.value,
+        internalMetricsAvailable:
+          recentWebsiteGenerations.isAvailable ||
+          recentVersionActivity.isAvailable ||
+          recentUserGrowth.isAvailable ||
+          userCounts.isAvailable ||
+          websiteCounts.isAvailable ||
+          websiteCounts.versionsAvailable,
       },
     };
   });

@@ -146,12 +146,12 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
         <article className="admin-stat-card">
           <span className="admin-stat-label">Current admins</span>
           <strong className="admin-stat-value">{renderMetric(dashboard.users.admins)}</strong>
-          <span className="admin-stat-hint">Admin access is enforced server-side</span>
+          <span className="admin-stat-hint">{renderMetric(dashboard.users.standard)} standard users in public.profiles</span>
         </article>
         <article className="admin-stat-card">
-          <span className="admin-stat-label">Published websites</span>
-          <strong className="admin-stat-value">{renderMetric(dashboard.websites.published)}</strong>
-          <span className="admin-stat-hint">Customer dashboard behavior remains unchanged</span>
+          <span className="admin-stat-label">Live websites</span>
+          <strong className="admin-stat-value">{renderMetric(dashboard.websites.live)}</strong>
+          <span className="admin-stat-hint">Counts come from public.website_structures</span>
         </article>
       </div>
 
@@ -184,7 +184,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
               Project match:{" "}
               {formatProjectMatch(
                 diagnostics.serviceRole.publicProjectRef,
-                diagnostics.serviceRole.serviceRoleProjectRef
+                diagnostics.serviceRole.serviceRoleProjectRef,
               )}
             </p>
             <p>Role claim: {diagnostics.serviceRole.roleClaim ?? "unknown"}</p>
@@ -284,9 +284,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
                 <span className="admin-surface-label">Search result</span>
                 <strong>{lookupUser.email}</strong>
                 <p>{lookupUser.fullName ?? "Name unavailable"}</p>
-                <p>
-                  Role: {lookupUser.role} · {lookupUser.status}
-                </p>
+                <p>Role: {lookupUser.role} / {lookupUser.status}</p>
                 <p>Created {formatAdminDate(lookupUser.createdAt)}</p>
               </div>
             ) : (
@@ -354,7 +352,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
                   <div>
                     <strong>{record.email}</strong>
                     <p>
-                      {record.role} · {record.status}
+                      {record.role} / {record.status}
                     </p>
                   </div>
                   <span className="admin-list-meta">Created {formatAdminDate(record.createdAt)}</span>
