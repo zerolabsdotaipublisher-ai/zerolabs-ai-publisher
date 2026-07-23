@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { routes } from "@/config/routes";
 import { formatAdminDate } from "@/lib/admin/data";
-import { formatVercelState, getVercelIntegrationOverview } from "@/lib/admin/vercel";
+import { formatVercelState, getVercelIntegrationOverview, type VercelIntegrationOverview } from "@/lib/admin/vercel";
 
 export const dynamic = "force-dynamic";
 
@@ -19,9 +19,69 @@ function getDeploymentBadgeClass(state: string): string {
   return "admin-badge";
 }
 
+function getLatestDeploymentHeading(vercel: VercelIntegrationOverview): string {
+  if (vercel.latestDeployment) {
+    return vercel.latestDeployment.name;
+  }
+
+  if (vercel.status.connectionState === "missing") {
+    return "Vercel integration not configured";
+  }
+
+  if (vercel.status.connectionState === "error") {
+    return "Deployment data unavailable";
+  }
+
+  return "No deployment records returned";
+}
+
+function getDeploymentDetailsReason(vercel: VercelIntegrationOverview): string {
+  if (vercel.latestDeployment) {
+    return "The latest deployment did not include a public or inspect URL.";
+  }
+
+  if (vercel.status.connectionState === "missing") {
+    return "Configure VERCEL_API_TOKEN and VERCEL_PROJECT_ID on the server to load deployment details.";
+  }
+
+  if (vercel.status.connectionState === "error") {
+    return "The Vercel API response could not be loaded safely. Verify token scope, project ID, and optional team ID.";
+  }
+
+  return "The configured project did not return any deployment records yet.";
+}
+
+function renderExternalAction(params: {
+  href: string | null;
+  label: string;
+  variant?: "primary" | "secondary";
+  reason?: string;
+}): React.ReactNode {
+  const className =
+    params.variant === "secondary"
+      ? "admin-page-action-link admin-page-action-link-secondary"
+      : "admin-page-action-link";
+
+  if (params.href) {
+    return (
+      <a href={params.href} target="_blank" rel="noreferrer" className={className}>
+        {params.label}
+      </a>
+    );
+  }
+
+  return (
+    <span className={`${className} admin-page-action-link-disabled`} aria-disabled="true" title={params.reason}>
+      {params.label}
+    </span>
+  );
+}
+
 export default async function AdminDeploymentsPage() {
   const vercel = await getVercelIntegrationOverview();
   const latestDeployment = vercel.latestDeployment;
+  const latestDeploymentHref = latestDeployment?.inspectUrl ?? latestDeployment?.url ?? null;
+  const latestDeploymentReason = getDeploymentDetailsReason(vercel);
 
   return (
     <section className="admin-page-shell" aria-label="Admin deployments page">
@@ -30,8 +90,8 @@ export default async function AdminDeploymentsPage() {
           <span className="admin-page-kicker">Vercel integration</span>
           <h1>Deployments</h1>
           <p>
-            Latest deployment records are fetched server-side only when the Vercel integration is configured. No API
-            tokens are exposed to the browser.
+            Deployment records are fetched server-side only when the Vercel integration is configured. No API tokens
+            are exposed to the browser.
           </p>
         </div>
       </header>
@@ -42,9 +102,22 @@ export default async function AdminDeploymentsPage() {
             <div>
               <span className="admin-panel-kicker">Latest deployment</span>
               <h2>Current deployment status</h2>
-              <p>Deployment name, URL, state, created date, branch, and commit details from the configured project.</p>
+              <p>Deployment name, URL, state, branch, and commit details from the configured Vercel project.</p>
+            </div>
+            <div className="admin-link-row">
+              {renderExternalAction({
+                href: latestDeployment?.url ?? null,
+                label: "Open deployment",
+              })}
+              {renderExternalAction({
+                href: latestDeployment?.inspectUrl ?? null,
+                label: "Inspect in Vercel",
+                variant: "secondary",
+              })}
             </div>
           </header>
+
+          {!latestDeploymentHref ? <p className="admin-action-note">{latestDeploymentReason}</p> : null}
 
           {latestDeployment ? (
             <div className="admin-surface-card admin-surface-card-large">
@@ -75,31 +148,11 @@ export default async function AdminDeploymentsPage() {
                   <dd>{latestDeployment.target ?? "Unavailable"}</dd>
                 </div>
               </dl>
-              <div className="admin-link-row">
-                {latestDeployment.url ? (
-                  <a href={latestDeployment.url} target="_blank" rel="noreferrer" className="admin-page-action-link">
-                    Open deployment
-                  </a>
-                ) : null}
-                {latestDeployment.inspectUrl ? (
-                  <a
-                    href={latestDeployment.inspectUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="admin-page-action-link admin-page-action-link-secondary"
-                  >
-                    Inspect in Vercel
-                  </a>
-                ) : null}
-              </div>
             </div>
           ) : (
             <div className="admin-empty-state">
-              <strong>Vercel integration is not configured yet.</strong>
-              <p>
-                Add <code>VERCEL_API_TOKEN</code> and <code>VERCEL_PROJECT_ID</code> on the server to load deployment
-                details here.
-              </p>
+              <strong>{getLatestDeploymentHeading(vercel)}</strong>
+              <p>{vercel.status.message}</p>
             </div>
           )}
 
@@ -110,30 +163,34 @@ export default async function AdminDeploymentsPage() {
                 <p>Recent deployment events returned from Vercel.</p>
               </div>
               <ul className="admin-list">
-                {vercel.deployments.map((deployment) => (
-                  <li key={deployment.id} className="admin-list-item">
-                    <div>
-                      <strong>{deployment.name}</strong>
-                      <p>
-                        {formatVercelState(deployment.state)}
-                        {deployment.branch ? ` · ${deployment.branch}` : ""}
-                        {deployment.commitSha ? ` · ${deployment.commitSha.slice(0, 7)}` : ""}
-                      </p>
-                    </div>
-                    <div className="admin-list-meta">
-                      <span>{formatAdminDate(deployment.createdAt)}</span>
-                      {deployment.inspectUrl ? (
-                        <a href={deployment.inspectUrl} target="_blank" rel="noreferrer" className="admin-inline-link">
-                          Inspect
-                        </a>
-                      ) : deployment.url ? (
-                        <a href={deployment.url} target="_blank" rel="noreferrer" className="admin-inline-link">
-                          Open
-                        </a>
-                      ) : null}
-                    </div>
-                  </li>
-                ))}
+                {vercel.deployments.map((deployment) => {
+                  const deploymentHref = deployment.inspectUrl ?? deployment.url;
+
+                  return (
+                    <li key={deployment.id} className="admin-list-item">
+                      <div>
+                        <strong>{deployment.name}</strong>
+                        <p>
+                          {formatVercelState(deployment.state)}
+                          {deployment.branch ? ` / ${deployment.branch}` : ""}
+                          {deployment.commitSha ? ` / ${deployment.commitSha.slice(0, 7)}` : ""}
+                        </p>
+                      </div>
+                      <div className="admin-list-meta">
+                        <span>{formatAdminDate(deployment.createdAt)}</span>
+                        {deploymentHref ? (
+                          <a href={deploymentHref} target="_blank" rel="noreferrer" className="admin-inline-link">
+                            Open
+                          </a>
+                        ) : (
+                          <span className="admin-inline-link admin-page-action-link-disabled" aria-disabled="true">
+                            Open
+                          </span>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           ) : null}
@@ -160,13 +217,23 @@ export default async function AdminDeploymentsPage() {
             ))}
           </ul>
 
-          <div className="admin-empty-state">
-            <strong>Setup guidance</strong>
-            <p>
-              Configure <code>VERCEL_API_TOKEN</code>, <code>VERCEL_PROJECT_ID</code>, and optionally{" "}
-              <code>VERCEL_TEAM_ID</code> on the server. The legacy <code>PIPELINE_VERCEL_*</code> aliases also work.
-            </p>
-          </div>
+          {vercel.project ? (
+            <div className="admin-surface-card">
+              <span className="admin-surface-label">Configured project</span>
+              <strong>{vercel.project.name}</strong>
+              <p>Production branch: {vercel.project.productionBranch ?? "Unavailable"}</p>
+              <p>Framework: {vercel.project.framework ?? "Unavailable"}</p>
+              <p>Node version: {vercel.project.nodeVersion ?? "Unavailable"}</p>
+            </div>
+          ) : (
+            <div className="admin-empty-state">
+              <strong>Setup guidance</strong>
+              <p>
+                Configure <code>VERCEL_API_TOKEN</code>, <code>VERCEL_PROJECT_ID</code>, and optionally{" "}
+                <code>VERCEL_TEAM_ID</code> on the server. The legacy <code>PIPELINE_VERCEL_*</code> aliases also work.
+              </p>
+            </div>
+          )}
 
           <div className="admin-link-row">
             <Link href={routes.adminAnalytics} className="admin-page-action-link admin-page-action-link-secondary">

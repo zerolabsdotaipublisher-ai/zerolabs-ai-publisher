@@ -39,6 +39,8 @@ export interface VercelProjectSummary {
 
 export interface VercelAnalyticsSummary {
   available: boolean;
+  configured: boolean;
+  statusLabel: string;
   message: string;
 }
 
@@ -49,10 +51,12 @@ export interface VercelIntegrationOverview {
     apiTokenConfigured: boolean;
     projectConfigured: boolean;
     teamConfigured: boolean;
+    missingEnvironmentVariables: string[];
     message: string;
   };
   project: VercelProjectSummary | null;
   latestDeployment: VercelDeploymentSummary | null;
+  deploymentDetailsHref: string | null;
   deployments: VercelDeploymentSummary[];
   analytics: VercelAnalyticsSummary;
   checks: VercelIntegrationCheck[];
@@ -160,6 +164,20 @@ function resolveVercelContext(): VercelApiContext {
   };
 }
 
+function resolveMissingEnvironmentVariables(context: VercelApiContext): string[] {
+  const missingVariables: string[] = [];
+
+  if (!context.token) {
+    missingVariables.push("VERCEL_API_TOKEN or PIPELINE_VERCEL_TOKEN");
+  }
+
+  if (!context.projectId) {
+    missingVariables.push("VERCEL_PROJECT_ID or PIPELINE_VERCEL_PROJECT_ID");
+  }
+
+  return missingVariables;
+}
+
 async function fetchVercelJson<T>(
   context: VercelApiContext,
   path: string,
@@ -258,8 +276,10 @@ function createChecks(params: {
   apiTokenConfigured: boolean;
   projectConfigured: boolean;
   teamConfigured: boolean;
-  analyticsAvailable: boolean;
-  deploymentsAvailable: boolean;
+  deploymentsStatus: VercelCheckStatus;
+  deploymentsDetail: string;
+  analyticsStatus: VercelCheckStatus;
+  analyticsDetail: string;
 }): VercelIntegrationCheck[] {
   return [
     {
@@ -289,18 +309,14 @@ function createChecks(params: {
     {
       id: "deployments",
       label: "Deployment data",
-      status: params.deploymentsAvailable ? "available" : "unavailable",
-      detail: params.deploymentsAvailable
-        ? "Recent deployment data is available to the admin dashboard."
-        : "Recent deployment data could not be loaded yet.",
+      status: params.deploymentsStatus,
+      detail: params.deploymentsDetail,
     },
     {
       id: "analytics",
-      label: "Analytics availability",
-      status: params.analyticsAvailable ? "available" : "unavailable",
-      detail: params.analyticsAvailable
-        ? "Project analytics or Speed Insights metadata is available."
-        : "Analytics will appear once Vercel integration is configured.",
+      label: "Analytics readiness",
+      status: params.analyticsStatus,
+      detail: params.analyticsDetail,
     },
   ];
 }
@@ -324,8 +340,14 @@ export async function getVercelIntegrationOverview(): Promise<VercelIntegrationO
   const projectConfigured = Boolean(context.projectId);
   const teamConfigured = Boolean(context.teamId);
   const isConfigured = apiTokenConfigured && projectConfigured;
+  const missingEnvironmentVariables = resolveMissingEnvironmentVariables(context);
 
   if (!isConfigured) {
+    const setupMessage =
+      missingEnvironmentVariables.length > 0
+        ? `Vercel integration requires ${missingEnvironmentVariables.join(" and ")} on the server.`
+        : "Vercel integration is not configured yet.";
+
     return {
       status: {
         isConfigured,
@@ -333,21 +355,27 @@ export async function getVercelIntegrationOverview(): Promise<VercelIntegrationO
         apiTokenConfigured,
         projectConfigured,
         teamConfigured,
-        message: "Vercel integration is not configured yet.",
+        missingEnvironmentVariables,
+        message: setupMessage,
       },
       project: null,
       latestDeployment: null,
+      deploymentDetailsHref: null,
       deployments: [],
       analytics: {
         available: false,
-        message: "Analytics will appear once Vercel integration is configured.",
+        configured: false,
+        statusLabel: "Setup required",
+        message: "Traffic analytics is unavailable until the Vercel server integration is configured.",
       },
       checks: createChecks({
         apiTokenConfigured,
         projectConfigured,
         teamConfigured,
-        analyticsAvailable: false,
-        deploymentsAvailable: false,
+        deploymentsStatus: "missing",
+        deploymentsDetail: setupMessage,
+        analyticsStatus: "missing",
+        analyticsDetail: "Traffic analytics cannot be evaluated until the Vercel server integration is configured.",
       }),
       fetchedAt: null,
     };
@@ -368,9 +396,6 @@ export async function getVercelIntegrationOverview(): Promise<VercelIntegrationO
           .sort((left, right) => parseSortableTime(right.createdAt) - parseSortableTime(left.createdAt))
       : [];
 
-    const analyticsAvailable =
-      hasAnalyticsFeature(projectResponse.analytics) || hasAnalyticsFeature(projectResponse.speedInsights);
-
     const project: VercelProjectSummary = {
       id: readString(projectResponse.id) ?? context.projectId ?? "unknown-project",
       name: readString(projectResponse.name) ?? "Configured Vercel project",
@@ -381,6 +406,17 @@ export async function getVercelIntegrationOverview(): Promise<VercelIntegrationO
       speedInsightsEnabled: hasAnalyticsFeature(projectResponse.speedInsights),
     };
 
+    const analyticsConfigured = project.analyticsEnabled || project.speedInsightsEnabled;
+    const latestDeployment = deployments[0] ?? null;
+    const deploymentDetailsHref = latestDeployment?.inspectUrl ?? latestDeployment?.url ?? null;
+    const deploymentsDetail =
+      deployments.length > 0
+        ? "Recent deployment data is available to the admin dashboard."
+        : "Vercel is connected, but no deployment records were returned for the configured project yet.";
+    const analyticsMessage = analyticsConfigured
+      ? "Project metadata shows Analytics or Speed Insights enabled, but this dashboard does not pull traffic metrics yet."
+      : "Traffic analytics is not configured for the connected Vercel project.";
+
     return {
       status: {
         isConfigured,
@@ -388,23 +424,30 @@ export async function getVercelIntegrationOverview(): Promise<VercelIntegrationO
         apiTokenConfigured,
         projectConfigured,
         teamConfigured,
-        message: "Vercel integration is connected.",
+        missingEnvironmentVariables,
+        message:
+          deployments.length > 0
+            ? "Vercel integration is connected for deployment reads."
+            : "Vercel integration is connected, but no deployment records are available yet.",
       },
       project,
-      latestDeployment: deployments[0] ?? null,
+      latestDeployment,
+      deploymentDetailsHref,
       deployments,
       analytics: {
-        available: analyticsAvailable,
-        message: analyticsAvailable
-          ? "Analytics metadata is available from the configured Vercel project."
-          : "Analytics will appear once Vercel integration is configured.",
+        available: false,
+        configured: analyticsConfigured,
+        statusLabel: "Not configured",
+        message: analyticsMessage,
       },
       checks: createChecks({
         apiTokenConfigured,
         projectConfigured,
         teamConfigured,
-        analyticsAvailable,
-        deploymentsAvailable: deployments.length > 0,
+        deploymentsStatus: deployments.length > 0 ? "available" : "unavailable",
+        deploymentsDetail,
+        analyticsStatus: analyticsConfigured ? "configured" : "unavailable",
+        analyticsDetail: analyticsMessage,
       }),
       fetchedAt: new Date().toISOString(),
     };
@@ -418,6 +461,9 @@ export async function getVercelIntegrationOverview(): Promise<VercelIntegrationO
       },
     });
 
+    const connectionMessage =
+      "Vercel is configured, but the API response could not be loaded safely. Verify token scope, project ID, and optional team ID.";
+
     return {
       status: {
         isConfigured,
@@ -425,21 +471,27 @@ export async function getVercelIntegrationOverview(): Promise<VercelIntegrationO
         apiTokenConfigured,
         projectConfigured,
         teamConfigured,
-        message: "Vercel integration is configured, but the API response could not be loaded safely.",
+        missingEnvironmentVariables,
+        message: connectionMessage,
       },
       project: null,
       latestDeployment: null,
+      deploymentDetailsHref: null,
       deployments: [],
       analytics: {
         available: false,
-        message: "Analytics will appear once Vercel integration is configured.",
+        configured: false,
+        statusLabel: "Unavailable",
+        message: "Traffic analytics could not be evaluated because the Vercel API request failed safely.",
       },
       checks: createChecks({
         apiTokenConfigured,
         projectConfigured,
         teamConfigured,
-        analyticsAvailable: false,
-        deploymentsAvailable: false,
+        deploymentsStatus: "unavailable",
+        deploymentsDetail: connectionMessage,
+        analyticsStatus: "unavailable",
+        analyticsDetail: "Traffic analytics could not be evaluated because the Vercel API request failed safely.",
       }),
       fetchedAt: null,
     };

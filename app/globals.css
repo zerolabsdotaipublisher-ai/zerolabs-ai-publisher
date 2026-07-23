@@ -9030,6 +9030,26 @@ html[data-theme="dark"] .generation-shell {
   background: color-mix(in srgb, var(--surface) 92%, transparent);
 }
 
+.admin-page-action-link-disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.admin-page-action-link-disabled:hover,
+.admin-page-action-link-disabled:focus-visible {
+  outline: none;
+  border-color: var(--border-strong);
+  box-shadow: none;
+  transform: none;
+}
+
+.admin-action-note {
+  margin: -0.2rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
 .admin-sidebar-nav {
   display: grid;
   gap: 0.7rem;

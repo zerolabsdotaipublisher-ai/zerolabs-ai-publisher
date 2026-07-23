@@ -7,7 +7,7 @@ import { requireAdminUser } from "@/lib/supabase/auth";
 export const dynamic = "force-dynamic";
 
 function renderMetric(value: number): string {
-  return String(value);
+  return new Intl.NumberFormat("en-US").format(value);
 }
 
 async function loadAdminWebsitesView() {
@@ -74,8 +74,11 @@ export default async function AdminWebsitesPage() {
 
         <aside className="dashboard-welcome-card" aria-label="Admin websites summary">
           <span className="dashboard-welcome-label">Website summary</span>
-          <strong>{renderMetric(dashboard.websites.total)} created websites</strong>
-          <p>{renderMetric(dashboard.websites.published)} published · {renderMetric(dashboard.websites.drafts)} drafts</p>
+          <strong>{renderMetric(dashboard.websites.total)} generated website records</strong>
+          <p>
+            {renderMetric(dashboard.websites.live)} live / {renderMetric(dashboard.websites.drafts)} draft /{" "}
+            {renderMetric(dashboard.websites.versions)} stored versions
+          </p>
         </aside>
       </header>
 
@@ -92,8 +95,8 @@ export default async function AdminWebsitesPage() {
             {websites.map((website) => (
               <li key={website.id}>
                 <strong>{website.title}</strong>
-                <span>{website.websiteType} · {website.status} · {website.ownerEmail}</span>
-                <span>Created {formatAdminDate(website.createdAt)} · Updated {formatAdminDate(website.updatedAt)}</span>
+                <span>{website.websiteType} / {website.status} / {website.ownerEmail}</span>
+                <span>Created {formatAdminDate(website.createdAt)} / Updated {formatAdminDate(website.updatedAt)}</span>
               </li>
             ))}
           </ul>
