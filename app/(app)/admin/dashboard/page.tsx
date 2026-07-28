@@ -142,7 +142,7 @@ export default async function AdminDashboardPage() {
   const latestDeployment = vercel.latestDeployment;
   const deploymentDetailsReason = getDeploymentDetailsReason(vercel);
   const deploymentUrlReason = getDeploymentUrlReason(vercel);
-  const noVercelDataYet = analytics.vercel.diagnosticCodes.includes("no-data");
+  const noVercelDataYet = analytics.vercel.diagnosticCodes.includes("no-data-yet");
   const vercelMetricsReachable = analytics.vercel.available || noVercelDataYet;
   const serviceChecks = [
     { label: "Supabase", value: "Configured" },
@@ -305,7 +305,7 @@ export default async function AdminDashboardPage() {
                   ? analytics.vercel.visitorsLast30Days !== null
                     ? `${renderMetric(analytics.vercel.visitorsLast30Days)} visitors in the last 30 days.`
                     : "Real Vercel Web Analytics totals are available for the last 30 days."
-                  : analytics.vercel.message}
+                  : analytics.vercel.actionItems[0] ?? analytics.vercel.message}
               </p>
             </article>
             <article className="admin-surface-card">

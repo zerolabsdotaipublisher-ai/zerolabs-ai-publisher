@@ -69,8 +69,10 @@ export default async function AdminAnalyticsPage() {
   const internalMetricsAvailable = dashboard.analytics.internalMetricsAvailable;
   const analyticsDiagnostics = vercel.diagnostics.filter((diagnostic) => diagnostic.code !== "logs-unavailable");
   const analyticsChecks = vercel.checks.filter((check) => check.id !== "logs");
-  const noVercelDataYet = analytics.vercel.diagnosticCodes.includes("no-data");
+  const noVercelDataYet = analytics.vercel.diagnosticCodes.includes("no-data-yet");
   const vercelMetricsReachable = analytics.vercel.available || noVercelDataYet;
+  const instrumentationReady =
+    analytics.vercel.instrumentation.packageInstalled && analytics.vercel.instrumentation.componentRendered;
 
   return (
     <section className="admin-page-shell" aria-label="Admin analytics page">
@@ -159,6 +161,18 @@ export default async function AdminAnalyticsPage() {
               <p>{analytics.vercel.message}</p>
             </article>
             <article className="admin-surface-card">
+              <span className="admin-surface-label">Instrumentation</span>
+              <strong>{instrumentationReady ? "Installed and rendered" : "Missing analytics wiring"}</strong>
+              <p>
+                {analytics.vercel.instrumentation.packageInstalled
+                  ? `@vercel/analytics ${analytics.vercel.instrumentation.packageVersion ?? ""}`.trim()
+                  : "@vercel/analytics is not installed."}{" "}
+                {analytics.vercel.instrumentation.componentRendered
+                  ? `The root layout renders the analytics component from ${analytics.vercel.instrumentation.componentLocation}.`
+                  : `The root layout does not currently render <Analytics /> in ${analytics.vercel.instrumentation.componentLocation}.`}
+              </p>
+            </article>
+            <article className="admin-surface-card">
               <span className="admin-surface-label">Last 7 days</span>
               <strong>
                 {renderMetricValue(analytics.vercel.visitsLast7Days, vercelMetricsReachable, noVercelDataYet ? "No data" : "Not returned")}
@@ -183,9 +197,30 @@ export default async function AdminAnalyticsPage() {
             <article className="admin-surface-card">
               <span className="admin-surface-label">Project metadata</span>
               <strong>{vercel.project?.analyticsEnabled ? "Web Analytics reported" : "Web Analytics not reported"}</strong>
-              <p>Project metadata is informative only. Traffic values above are shown only when the live query returned data.</p>
+              <p>
+                {vercel.project?.speedInsightsEnabled
+                  ? "Speed Insights is also reported enabled."
+                  : "Speed Insights is not currently reported enabled."}{" "}
+                Project metadata stays informative only; live query results still determine whether real traffic is shown.
+              </p>
             </article>
           </div>
+
+          {analytics.vercel.actionItems.length > 0 ? (
+            <div className="admin-list-shell">
+              <div className="admin-list-heading">
+                <h3>Recommended next steps</h3>
+                <p>Only actions that match the current Vercel analytics diagnosis are listed here.</p>
+              </div>
+              <ul className="admin-check-list">
+                {analytics.vercel.actionItems.map((item) => (
+                  <li key={item} className="admin-check">
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
 
           {analytics.vercel.hasAnyTrafficData ? (
             <div className="admin-list-shell">

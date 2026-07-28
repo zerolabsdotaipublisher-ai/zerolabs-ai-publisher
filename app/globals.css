@@ -1885,6 +1885,127 @@ html[data-theme="dark"] .auth-panel-list {
   }
 }
 
+@media (min-width: 768px) and (max-width: 1260px) {
+  .app-nav-admin {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: clamp(0.35rem, 1.2vw, 0.65rem);
+    position: relative;
+    overflow: visible;
+  }
+
+  .app-nav-admin .app-nav-brand-link,
+  .app-nav-admin .app-nav-links {
+    display: none;
+  }
+
+  .app-nav-admin .app-nav-actions {
+    display: flex;
+    flex: 1 1 auto;
+    flex-wrap: nowrap;
+    min-width: 0;
+    justify-content: flex-end;
+    gap: clamp(0.3rem, 1vw, 0.55rem);
+    overflow: hidden;
+  }
+
+  .app-nav-admin .app-nav-actions > * {
+    min-width: 0;
+  }
+
+  .app-nav-admin .app-nav-mobile-trigger {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(173, 230, 205, 0.18);
+    border-radius: 9999px;
+    background: rgba(248, 249, 250, 0.04);
+    box-shadow: 0 0 22px rgba(31, 111, 95, 0.1);
+    min-width: clamp(2.4rem, 5vw, 2.8rem);
+    min-height: clamp(2.4rem, 5vw, 2.8rem);
+    padding: clamp(0.45rem, 1vw, 0.6rem);
+    cursor: pointer;
+  }
+
+  .app-nav-admin .app-nav-mobile-trigger-icon {
+    width: clamp(1rem, 2vw, 1.2rem);
+    height: clamp(1rem, 2vw, 1.2rem);
+  }
+
+  .app-nav-admin .app-nav-actions .app-nav-user {
+    flex: 1 1 auto;
+    max-width: none;
+    min-width: 0;
+    padding: clamp(0.5rem, 1vw, 0.68rem) clamp(0.55rem, 1vw, 0.75rem);
+    font-size: clamp(0.66rem, 0.78vw, 0.8rem);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .app-nav-admin .app-nav-actions .app-nav-signout-group {
+    flex: 0 0 auto;
+    min-width: 0;
+    align-items: flex-end;
+    gap: 0.3rem;
+  }
+
+  .app-nav-admin .app-nav-actions .app-nav-signout {
+    min-height: clamp(2.4rem, 5vw, 2.75rem);
+    padding-block: clamp(0.5rem, 1vw, 0.68rem);
+    padding-inline: clamp(0.55rem, 1vw, 0.8rem);
+    font-size: clamp(0.68rem, 0.82vw, 0.8rem);
+  }
+
+  .app-nav-admin .app-nav-mobile-menu {
+    position: absolute;
+    top: calc(100% + 0.6rem);
+    left: 0;
+    right: 0;
+    z-index: 100;
+    display: grid;
+    gap: 0.55rem;
+    padding: 0.85rem;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    max-height: min(70vh, calc(100dvh - 6rem));
+    overflow-y: auto;
+    border: 1px solid rgba(173, 230, 205, 0.16);
+    border-radius: 1.25rem;
+    background: rgba(6, 26, 20, 0.98);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(18px);
+  }
+
+  .app-nav-admin .app-nav-mobile-menu[hidden] {
+    display: none;
+  }
+
+  .app-nav-admin .app-nav-mobile-menu .app-nav-link,
+  .app-nav-admin .app-nav-mobile-menu .app-nav-user,
+  .app-nav-admin .app-nav-mobile-menu .app-nav-signout,
+  .app-nav-admin .app-nav-mobile-menu .app-nav-error {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    text-align: center;
+  }
+
+  .app-nav-admin .app-nav-mobile-menu .app-nav-user {
+    display: block;
+    white-space: normal;
+    overflow-wrap: break-word;
+  }
+
+  .app-nav-admin .app-nav-mobile-menu .app-nav-signout-group {
+    align-items: stretch;
+  }
+}
+
 .profile-page,
 .profile-section,
 .wizard-shell,
@@ -8897,9 +9018,6 @@ html[data-theme="dark"] .generation-shell {
   display: grid;
   min-width: 0;
   gap: 0.9rem;
-  max-block-size: calc(100svh - clamp(1rem, 2vw, 1.5rem));
-  overflow: auto;
-  overscroll-behavior: contain;
   padding: clamp(1rem, 2vw, 1.2rem);
 }
 
