@@ -20,6 +20,16 @@ const customerNavLinks = [
   { href: routes.profile, label: "Profile" },
 ];
 
+const adminWorkspaceNavLinks = [
+  { href: routes.adminDashboard, label: "Dashboard" },
+  { href: routes.adminDeployments, label: "Deployments" },
+  { href: routes.adminAnalytics, label: "Analytics" },
+  { href: routes.adminWebsites, label: "Websites" },
+  { href: routes.adminUsers, label: "Admin users" },
+  { href: routes.createWebsite, label: "Create website" },
+  { href: routes.profile, label: "Profile" },
+];
+
 const adminNavLink = { href: routes.adminDashboard, label: "Admin" };
 
 interface AppNavigationProps {
@@ -45,8 +55,13 @@ export function AppNavigation({ userDisplayName, userEmail, userRole }: AppNavig
   const { theme } = useTheme();
   const mobileMenuId = "app-navigation-mobile-menu";
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const navLinks = userRole === "admin" ? [...customerNavLinks, adminNavLink] : customerNavLinks;
-  const dashboardHref = routes.dashboard;
+  const isAdminWorkspace = userRole === "admin" && (pathname === routes.admin || pathname.startsWith(`${routes.admin}/`));
+  const navLinks = isAdminWorkspace
+    ? adminWorkspaceNavLinks
+    : userRole === "admin"
+      ? [...customerNavLinks, adminNavLink]
+      : customerNavLinks;
+  const dashboardHref = isAdminWorkspace ? routes.adminDashboard : routes.dashboard;
   const mobileMenuLabel = isMobileMenuOpen ? "Close dashboard menu" : "Open dashboard menu";
   const toggleMobileMenu = () => setIsMobileMenuOpen((open) => !open);
   const closeMobileMenu = useCallback(() => setIsMobileMenuOpen(false), []);
@@ -94,11 +109,11 @@ export function AppNavigation({ userDisplayName, userEmail, userRole }: AppNavig
 
   return (
     <header className="app-header">
-      <nav className="app-nav app-container" aria-label="Primary">
+      <nav className={`app-nav app-container${isAdminWorkspace ? " app-nav-admin" : ""}`} aria-label="Primary">
         <Link
           href={dashboardHref}
           className="app-nav-brand app-nav-brand-link"
-          aria-label="Open Zero Labs AI Publisher dashboard"
+          aria-label={isAdminWorkspace ? "Open Zero Labs AI Publisher admin dashboard" : "Open Zero Labs AI Publisher dashboard"}
         >
           {renderBrandLogo()}
         </Link>

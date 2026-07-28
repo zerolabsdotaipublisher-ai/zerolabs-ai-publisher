@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import "./globals.css";
+import { VercelAnalyticsTracker } from "@/components/analytics/vercel-analytics";
 import { getPublicConfig } from "@/config";
 import { AuthProvider } from "@/providers/auth-provider";
 import { ThemeProvider } from "@/providers/theme-provider";
@@ -40,6 +41,7 @@ export default function RootLayout({
             {children}
           </AuthProvider>
         </ThemeProvider>
+        <VercelAnalyticsTracker />
       </body>
     </html>
   );
