@@ -1,7 +1,7 @@
 import { AdminActionLink } from "@/components/admin/admin-action-link";
 import { AdminDiagnostics } from "@/components/admin/admin-diagnostics";
 import { routes } from "@/config/routes";
-import { getAdminDashboardData } from "@/lib/admin/data";
+import { buildAdminAnalyticsModel, getAdminDashboardData } from "@/lib/admin/data";
 import { getVercelIntegrationOverview } from "@/lib/admin/vercel";
 
 export const dynamic = "force-dynamic";
@@ -10,19 +10,67 @@ function renderMetric(value: number): string {
   return new Intl.NumberFormat("en-US").format(value);
 }
 
-function renderMetricValue(value: number, isAvailable: boolean): string {
-  return isAvailable ? renderMetric(value) : "Unavailable";
+function renderMetricValue(value: number | null, isAvailable: boolean, emptyLabel = "Not returned"): string {
+  if (!isAvailable) {
+    return "Unavailable";
+  }
+
+  if (value === null) {
+    return emptyLabel;
+  }
+
+  return renderMetric(value);
+}
+
+function renderPercent(value: number | null): string {
+  if (value === null) {
+    return "Share unavailable";
+  }
+
+  return `${(value * 100).toFixed(value >= 0.1 ? 0 : 1)}% of 30-day traffic`;
+}
+
+function renderBreakdownCard(params: {
+  title: string;
+  available: boolean;
+  message: string;
+  rows: Array<{ id: string; label: string; value: number; visitors: number | null; share: number | null }>;
+}) {
+  return (
+    <article className="admin-surface-card">
+      <span className="admin-surface-label">{params.title}</span>
+      {params.available ? (
+        <ul className="admin-list">
+          {params.rows.map((row) => (
+            <li key={row.id} className="admin-list-item">
+              <div>
+                <strong>{row.label}</strong>
+                <p>
+                  {renderPercent(row.share)}
+                  {row.visitors !== null ? ` / ${renderMetric(row.visitors)} visitors` : ""}
+                </p>
+              </div>
+              <div className="admin-list-meta">
+                <strong>{renderMetric(row.value)}</strong>
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>{params.message}</p>
+      )}
+    </article>
+  );
 }
 
 export default async function AdminAnalyticsPage() {
   const [dashboard, vercel] = await Promise.all([getAdminDashboardData(), getVercelIntegrationOverview()]);
+  const analytics = buildAdminAnalyticsModel({ dashboard, vercel });
   const internalMetricsAvailable = dashboard.analytics.internalMetricsAvailable;
-  const analyticsProjectState = vercel.project
-    ? vercel.project.analyticsEnabled || vercel.project.speedInsightsEnabled
-      ? "Reported by Vercel project metadata"
-      : "Not reported by Vercel project metadata"
-    : "Project metadata unavailable";
   const analyticsDiagnostics = vercel.diagnostics.filter((diagnostic) => diagnostic.code !== "logs-unavailable");
+  const analyticsChecks = vercel.checks.filter((check) => check.id !== "logs");
+  const noVercelDataYet = analytics.vercel.diagnosticCodes.includes("no-data");
+  const vercelMetricsReachable = analytics.vercel.available || noVercelDataYet;
 
   return (
     <section className="admin-page-shell" aria-label="Admin analytics page">
@@ -31,13 +79,34 @@ export default async function AdminAnalyticsPage() {
           <span className="admin-page-kicker">Analytics</span>
           <h1>Admin Analytics</h1>
           <p>
-            This page reports real internal platform counts from Supabase and labels external traffic analytics
-            availability honestly when no live Vercel traffic metrics are wired in.
+            Vercel Web Analytics traffic metrics are queried server-side only when available. Internal Supabase counts
+            remain visible alongside an honest Vercel no-data, disabled, or access-limited state.
           </p>
         </div>
       </header>
 
       <div className="admin-stat-grid" aria-label="Analytics summary cards">
+        <article className="admin-stat-card">
+          <span className="admin-stat-label">Vercel visits / page views (7 days)</span>
+          <strong className="admin-stat-value">
+            {renderMetricValue(analytics.vercel.visitsLast7Days, vercelMetricsReachable, noVercelDataYet ? "No data" : "Not returned")}
+          </strong>
+          <span className="admin-stat-hint">{analytics.vercel.last7Days.label} summary from Vercel Web Analytics</span>
+        </article>
+        <article className="admin-stat-card">
+          <span className="admin-stat-label">Vercel visits / page views (30 days)</span>
+          <strong className="admin-stat-value">
+            {renderMetricValue(analytics.vercel.visitsLast30Days, vercelMetricsReachable, noVercelDataYet ? "No data" : "Not returned")}
+          </strong>
+          <span className="admin-stat-hint">{analytics.vercel.last30Days.label} summary from Vercel Web Analytics</span>
+        </article>
+        <article className="admin-stat-card">
+          <span className="admin-stat-label">Vercel visitors (30 days)</span>
+          <strong className="admin-stat-value">
+            {renderMetricValue(analytics.vercel.visitorsLast30Days, vercelMetricsReachable, noVercelDataYet ? "No data" : "Not returned")}
+          </strong>
+          <span className="admin-stat-hint">Shown only when Vercel returns a distinct visitors metric</span>
+        </article>
         <article className="admin-stat-card">
           <span className="admin-stat-label">Generated websites</span>
           <strong className="admin-stat-value">
@@ -50,42 +119,34 @@ export default async function AdminAnalyticsPage() {
           <strong className="admin-stat-value">
             {renderMetricValue(dashboard.analytics.versionsStored, dashboard.websites.versionsAvailable)}
           </strong>
-          <span className="admin-stat-hint">Total records currently stored in website_versions</span>
+          <span className="admin-stat-hint">Total rows currently stored in website_versions</span>
         </article>
         <article className="admin-stat-card">
           <span className="admin-stat-label">Live websites</span>
-          <strong className="admin-stat-value">{renderMetricValue(dashboard.websites.live, dashboard.websites.isAvailable)}</strong>
+          <strong className="admin-stat-value">
+            {renderMetricValue(dashboard.websites.live, dashboard.websites.isAvailable)}
+          </strong>
           <span className="admin-stat-hint">Website structure rows currently marked published</span>
-        </article>
-        <article className="admin-stat-card">
-          <span className="admin-stat-label">Admin users</span>
-          <strong className="admin-stat-value">{renderMetricValue(dashboard.users.admins, dashboard.users.isAvailable)}</strong>
-          <span className="admin-stat-hint">Role count from public.profiles</span>
-        </article>
-        <article className="admin-stat-card">
-          <span className="admin-stat-label">Standard users</span>
-          <strong className="admin-stat-value">{renderMetricValue(dashboard.users.standard, dashboard.users.isAvailable)}</strong>
-          <span className="admin-stat-hint">Non-admin profile records currently tracked</span>
         </article>
       </div>
 
       <div className="admin-page-grid">
-        <section className="admin-panel" aria-label="Analytics status">
+        <section className="admin-panel" aria-label="Vercel Web Analytics">
           <header className="admin-panel-header">
             <div>
-              <span className="admin-panel-kicker">Platform metrics</span>
-              <h2>Current admin analytics foundation</h2>
+              <span className="admin-panel-kicker">Vercel Web Analytics</span>
+              <h2>Real traffic metrics when Vercel returns them</h2>
               <p>
-                Internal counts are real. Visitor or traffic numbers are not fabricated when the external analytics
-                source is unavailable or not yet implemented here.
+                The admin panel now queries Vercel Web Analytics server-side and only renders totals or grouped
+                breakdowns that Vercel actually returned for the configured project.
               </p>
             </div>
             <div className="admin-link-row">
               <AdminActionLink href={routes.adminDeployments} label="View deployments" target="internal" variant="secondary" />
               <AdminActionLink
-                href={vercel.analytics.dashboardHref}
+                href={analytics.vercel.dashboardHref}
                 label="Open in Vercel"
-                reason={vercel.analytics.message}
+                reason={analytics.vercel.message}
                 showReasonWhenDisabled
               />
             </div>
@@ -93,46 +154,124 @@ export default async function AdminAnalyticsPage() {
 
           <div className="admin-overview-grid">
             <article className="admin-surface-card">
-              <span className="admin-surface-label">Recent generation activity</span>
-              <strong>{renderMetricValue(dashboard.analytics.generatedLast30Days, internalMetricsAvailable)}</strong>
-              <p>Website structures generated in the last 30 days.</p>
+              <span className="admin-surface-label">Analytics status</span>
+              <strong>{analytics.vercel.statusLabel}</strong>
+              <p>{analytics.vercel.message}</p>
             </article>
             <article className="admin-surface-card">
-              <span className="admin-surface-label">Version activity</span>
-              <strong>{renderMetricValue(dashboard.analytics.versionActivityLast30Days, dashboard.websites.versionsAvailable)}</strong>
-              <p>Version rows created in the last 30 days.</p>
+              <span className="admin-surface-label">Last 7 days</span>
+              <strong>
+                {renderMetricValue(analytics.vercel.visitsLast7Days, vercelMetricsReachable, noVercelDataYet ? "No data" : "Not returned")}
+              </strong>
+              <p>
+                {analytics.vercel.visitorsLast7Days !== null
+                  ? `${renderMetric(analytics.vercel.visitorsLast7Days)} visitors`
+                  : "Visitors metric not returned separately for this window."}
+              </p>
             </article>
             <article className="admin-surface-card">
-              <span className="admin-surface-label">Live website records</span>
-              <strong>{renderMetricValue(dashboard.websites.live, dashboard.websites.isAvailable)}</strong>
-              <p>Website structure rows currently marked published.</p>
+              <span className="admin-surface-label">Last 30 days</span>
+              <strong>
+                {renderMetricValue(analytics.vercel.visitsLast30Days, vercelMetricsReachable, noVercelDataYet ? "No data" : "Not returned")}
+              </strong>
+              <p>
+                {analytics.vercel.visitorsLast30Days !== null
+                  ? `${renderMetric(analytics.vercel.visitorsLast30Days)} visitors`
+                  : "Visitors metric not returned separately for this window."}
+              </p>
             </article>
             <article className="admin-surface-card">
-              <span className="admin-surface-label">Traffic analytics</span>
-              <strong>{vercel.analytics.statusLabel}</strong>
-              <p>{vercel.analytics.message}</p>
+              <span className="admin-surface-label">Project metadata</span>
+              <strong>{vercel.project?.analyticsEnabled ? "Web Analytics reported" : "Web Analytics not reported"}</strong>
+              <p>Project metadata is informative only. Traffic values above are shown only when the live query returned data.</p>
             </article>
-            <article className="admin-surface-card">
-              <span className="admin-surface-label">Project analytics metadata</span>
-              <strong>{analyticsProjectState}</strong>
-              <p>Reported from Vercel project metadata, not fabricated traffic counts.</p>
-            </article>
+          </div>
+
+          {analytics.vercel.hasAnyTrafficData ? (
+            <div className="admin-list-shell">
+              <div className="admin-list-heading">
+                <h3>Daily traffic trend</h3>
+                <p>Recent daily traffic buckets returned from Vercel for the last 7 days.</p>
+              </div>
+              {analytics.vercel.last7Days.daily.length > 0 ? (
+                <ul className="admin-list">
+                  {analytics.vercel.last7Days.daily.map((point) => (
+                    <li key={point.id} className="admin-list-item">
+                      <div>
+                        <strong>{point.label}</strong>
+                        <p>
+                          {point.visitors !== null
+                            ? `${renderMetric(point.visitors)} visitors`
+                            : "Visitors metric not returned separately for this day."}
+                        </p>
+                      </div>
+                      <div className="admin-list-meta">
+                        <strong>{renderMetricValue(point.pageViews ?? point.visits, true)}</strong>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="admin-empty-state">
+                  <strong>No daily trend returned.</strong>
+                  <p>Vercel returned totals for this project, but no daily grouped rows were available for the last 7 days.</p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="admin-empty-state">
+              <strong>{noVercelDataYet ? "No Vercel Web Analytics data available yet." : analytics.vercel.statusLabel}</strong>
+              <p>{analytics.vercel.message}</p>
+            </div>
+          )}
+
+          <div className="admin-overview-grid">
+            {renderBreakdownCard({
+              title: analytics.vercel.topPages.label,
+              available: analytics.vercel.topPages.available,
+              message: analytics.vercel.topPages.message,
+              rows: analytics.vercel.topPages.rows,
+            })}
+            {renderBreakdownCard({
+              title: analytics.vercel.referrers.label,
+              available: analytics.vercel.referrers.available,
+              message: analytics.vercel.referrers.message,
+              rows: analytics.vercel.referrers.rows,
+            })}
+            {renderBreakdownCard({
+              title: analytics.vercel.countries.label,
+              available: analytics.vercel.countries.available,
+              message: analytics.vercel.countries.message,
+              rows: analytics.vercel.countries.rows,
+            })}
+            {renderBreakdownCard({
+              title: analytics.vercel.devices.label,
+              available: analytics.vercel.devices.available,
+              message: analytics.vercel.devices.message,
+              rows: analytics.vercel.devices.rows,
+            })}
+            {renderBreakdownCard({
+              title: analytics.vercel.browsers.label,
+              available: analytics.vercel.browsers.available,
+              message: analytics.vercel.browsers.message,
+              rows: analytics.vercel.browsers.rows,
+            })}
           </div>
         </section>
 
-        <section className="admin-panel" aria-label="Analytics readiness">
+        <section className="admin-panel" aria-label="Analytics readiness and internal metrics">
           <header className="admin-panel-header">
             <div>
               <span className="admin-panel-kicker">Readiness</span>
-              <h2>External analytics readiness</h2>
-              <p>Safe status checks for the current Vercel integration and the internal count sources.</p>
+              <h2>Safe diagnostics and internal counts</h2>
+              <p>External analytics reads stay honest, and the internal Supabase counts remain available independently.</p>
             </div>
           </header>
 
           <AdminDiagnostics diagnostics={analyticsDiagnostics} />
 
           <ul className="admin-check-list">
-            {vercel.checks.map((check) => (
+            {analyticsChecks.map((check) => (
               <li
                 key={check.id}
                 className={`admin-check${check.status === "missing" || check.status === "unavailable" ? " admin-check-warning" : ""}`}
@@ -146,7 +285,7 @@ export default async function AdminAnalyticsPage() {
           <div className="admin-list-shell">
             <div className="admin-list-heading">
               <h3>Internal metric sources</h3>
-              <p>These counts stay inside the product database and do not rely on external traffic analytics.</p>
+              <p>These counts stay inside the product database and do not depend on Vercel traffic analytics.</p>
             </div>
             <ul className="admin-key-value-list">
               <li>
@@ -166,14 +305,6 @@ export default async function AdminAnalyticsPage() {
                 <strong>{renderMetricValue(dashboard.analytics.userGrowthLast30Days, dashboard.users.isAvailable)}</strong>
               </li>
             </ul>
-          </div>
-
-          <div className="admin-empty-state">
-            <strong>No fake traffic analytics</strong>
-            <p>
-              Until this admin panel is wired to a real Vercel traffic analytics endpoint, it shows only internal
-              Supabase counts plus external readiness details.
-            </p>
           </div>
         </section>
       </div>

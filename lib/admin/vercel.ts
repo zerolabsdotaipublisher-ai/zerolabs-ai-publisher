@@ -6,6 +6,13 @@ import { logger } from "@/lib/observability";
 const REQUEST_TIMEOUT_MS = 10_000;
 const RECENT_DEPLOYMENTS_LIMIT = 6;
 const RECENT_DEPLOYMENT_EVENT_LIMIT = 24;
+const ANALYTICS_BREAKDOWN_LIMIT = 5;
+
+type AnalyticsWindowKey = "last7Days" | "last30Days";
+type AnalyticsBreakdownKey = "topPages" | "referrers" | "countries" | "devices" | "browsers";
+type AnalyticsGroupParamKey = "groupBy" | "by";
+type AnalyticsRangeVariantId = "from-to-iso" | "since-until-iso" | "from-to-ms" | "since-until-ms";
+type AnalyticsDimensionKey = "day" | "route" | "referrer" | "country" | "device" | "browser";
 
 export type VercelCheckStatus = "configured" | "missing" | "available" | "unavailable" | "optional";
 export type VercelConnectionState = "connected" | "missing" | "error";
@@ -14,9 +21,14 @@ export type VercelDiagnosticCode =
   | "missing-project-id"
   | "missing-team-id"
   | "unauthorized"
+  | "forbidden"
   | "rate-limited"
   | "logs-unavailable"
   | "analytics-unavailable"
+  | "analytics-disabled"
+  | "no-data"
+  | "unsupported-endpoint"
+  | "provider-error"
   | "no-deployments";
 export type VercelDiagnosticTone = "info" | "warning" | "error";
 
@@ -76,6 +88,41 @@ export interface VercelLogsSummary {
   diagnosticCodes: VercelDiagnosticCode[];
 }
 
+export interface VercelAnalyticsSeriesPoint {
+  id: string;
+  date: string | null;
+  label: string;
+  visits: number | null;
+  pageViews: number | null;
+  visitors: number | null;
+}
+
+export interface VercelAnalyticsWindowSummary {
+  key: AnalyticsWindowKey;
+  label: string;
+  from: string;
+  to: string;
+  visits: number | null;
+  pageViews: number | null;
+  visitors: number | null;
+  daily: VercelAnalyticsSeriesPoint[];
+}
+
+export interface VercelAnalyticsBreakdownRow {
+  id: string;
+  label: string;
+  value: number;
+  visitors: number | null;
+  share: number | null;
+}
+
+export interface VercelAnalyticsBreakdownSummary {
+  label: string;
+  available: boolean;
+  message: string;
+  rows: VercelAnalyticsBreakdownRow[];
+}
+
 export interface VercelAnalyticsSummary {
   available: boolean;
   configured: boolean;
@@ -83,6 +130,14 @@ export interface VercelAnalyticsSummary {
   message: string;
   dashboardHref: string | null;
   diagnosticCodes: VercelDiagnosticCode[];
+  last7Days: VercelAnalyticsWindowSummary;
+  last30Days: VercelAnalyticsWindowSummary;
+  topPages: VercelAnalyticsBreakdownSummary;
+  referrers: VercelAnalyticsBreakdownSummary;
+  countries: VercelAnalyticsBreakdownSummary;
+  devices: VercelAnalyticsBreakdownSummary;
+  browsers: VercelAnalyticsBreakdownSummary;
+  fetchedAt: string | null;
 }
 
 export interface VercelIntegrationOverview {
@@ -148,6 +203,57 @@ type VercelApiErrorDetails = {
   code: string | null;
 };
 
+type AnalyticsTimeRange = {
+  key: AnalyticsWindowKey;
+  label: string;
+  from: string;
+  to: string;
+};
+
+type AnalyticsRangeVariant = {
+  id: AnalyticsRangeVariantId;
+  params: Record<string, string | number | undefined>;
+};
+
+type AnalyticsDimensionSpec = {
+  key: AnalyticsDimensionKey;
+  label: string;
+  apiValues: string[];
+  responseKeys: string[];
+};
+
+type AnalyticsMetricSet = {
+  visits: number | null;
+  pageViews: number | null;
+  visitors: number | null;
+  primary: number | null;
+};
+
+type AnalyticsCountOutcome =
+  | { status: "success"; metrics: AnalyticsMetricSet; rangeVariantId: AnalyticsRangeVariantId }
+  | { status: "empty" }
+  | { status: "failure"; code: VercelDiagnosticCode; message: string };
+
+type AnalyticsSeriesOutcome =
+  | {
+      status: "success";
+      points: VercelAnalyticsSeriesPoint[];
+      rangeVariantId: AnalyticsRangeVariantId;
+      groupParamKey: AnalyticsGroupParamKey;
+    }
+  | { status: "empty" }
+  | { status: "failure"; code: VercelDiagnosticCode; message: string };
+
+type AnalyticsBreakdownOutcome =
+  | {
+      status: "success";
+      rows: VercelAnalyticsBreakdownRow[];
+      rangeVariantId: AnalyticsRangeVariantId;
+      groupParamKey: AnalyticsGroupParamKey;
+    }
+  | { status: "empty" }
+  | { status: "failure"; code: VercelDiagnosticCode; message: string };
+
 class VercelApiError extends Error {
   readonly statusCode: number;
   readonly code: string | null;
@@ -159,6 +265,46 @@ class VercelApiError extends Error {
     this.code = code;
   }
 }
+
+const ANALYTICS_BREAKDOWN_SPECS: Record<AnalyticsBreakdownKey, AnalyticsDimensionSpec> = {
+  topPages: {
+    key: "route",
+    label: "Top pages",
+    apiValues: ["route", "requestPath"],
+    responseKeys: ["route", "requestPath", "path", "pathname", "request_path"],
+  },
+  referrers: {
+    key: "referrer",
+    label: "Referrers",
+    apiValues: ["referrer", "referrerHostname"],
+    responseKeys: ["referrer", "referrerHostname", "referrer_hostname", "source"],
+  },
+  countries: {
+    key: "country",
+    label: "Countries",
+    apiValues: ["country"],
+    responseKeys: ["country", "countryCode", "countryName", "country_code"],
+  },
+  devices: {
+    key: "device",
+    label: "Devices",
+    apiValues: ["device", "deviceType"],
+    responseKeys: ["device", "deviceType", "device_type"],
+  },
+  browsers: {
+    key: "browser",
+    label: "Browsers",
+    apiValues: ["browser", "browserName"],
+    responseKeys: ["browser", "browserName", "browser_name"],
+  },
+};
+
+const ANALYTICS_DAY_SPEC: AnalyticsDimensionSpec = {
+  key: "day",
+  label: "Daily trend",
+  apiValues: ["day"],
+  responseKeys: ["day", "date", "bucket", "time", "timestamp"],
+};
 
 function parseSortableTime(value: string | null): number {
   if (!value) {
@@ -524,7 +670,7 @@ function buildBaseDiagnostics(params: {
         code: "missing-project-id",
         tone: "error",
         label: "Missing Vercel project ID",
-        detail: "Set VERCEL_PROJECT_ID or PIPELINE_VERCEL_PROJECT_ID so deployment reads target the correct Vercel project.",
+        detail: "Set VERCEL_PROJECT_ID or PIPELINE_VERCEL_PROJECT_ID so deployment and analytics reads target the correct Vercel project.",
       }),
     );
   }
@@ -536,7 +682,7 @@ function buildBaseDiagnostics(params: {
         code: "missing-team-id",
         tone: "warning",
         label: "Team scope not configured",
-        detail: "Team-scoped Vercel API calls can remain incomplete until VERCEL_TEAM_ID is set. Personal-account reads may still work.",
+        detail: "Team-owned Vercel projects can require VERCEL_TEAM_ID. Without it, project, deployment, or analytics reads may remain incomplete.",
       }),
     );
   }
@@ -557,6 +703,672 @@ function buildLogsUnavailableSummary(params: {
     dashboardHref: params.dashboardHref,
     diagnosticCodes: params.diagnosticCodes,
   };
+}
+
+function createAnalyticsTimeRange(key: AnalyticsWindowKey, label: string, days: number): AnalyticsTimeRange {
+  const to = new Date();
+  const from = new Date(to.getTime() - days * 24 * 60 * 60 * 1000);
+
+  return {
+    key,
+    label,
+    from: from.toISOString(),
+    to: to.toISOString(),
+  };
+}
+
+function createAnalyticsRangeVariants(range: AnalyticsTimeRange): AnalyticsRangeVariant[] {
+  const fromMs = Date.parse(range.from);
+  const toMs = Date.parse(range.to);
+
+  return [
+    { id: "from-to-iso", params: { from: range.from, to: range.to } },
+    { id: "since-until-iso", params: { since: range.from, until: range.to } },
+    { id: "from-to-ms", params: { from: fromMs, to: toMs } },
+    { id: "since-until-ms", params: { since: fromMs, until: toMs } },
+  ];
+}
+
+function createEmptyAnalyticsWindow(range: AnalyticsTimeRange): VercelAnalyticsWindowSummary {
+  return {
+    key: range.key,
+    label: range.label,
+    from: range.from,
+    to: range.to,
+    visits: null,
+    pageViews: null,
+    visitors: null,
+    daily: [],
+  };
+}
+
+function createEmptyAnalyticsBreakdown(label: string, message: string): VercelAnalyticsBreakdownSummary {
+  return {
+    label,
+    available: false,
+    message,
+    rows: [],
+  };
+}
+
+function buildAnalyticsUnavailableSummary(params: {
+  configured: boolean;
+  statusLabel: string;
+  message: string;
+  dashboardHref: string | null;
+  diagnosticCodes: VercelDiagnosticCode[];
+}): VercelAnalyticsSummary {
+  const last7Days = createAnalyticsTimeRange("last7Days", "Last 7 days", 7);
+  const last30Days = createAnalyticsTimeRange("last30Days", "Last 30 days", 30);
+
+  return {
+    available: false,
+    configured: params.configured,
+    statusLabel: params.statusLabel,
+    message: params.message,
+    dashboardHref: params.dashboardHref,
+    diagnosticCodes: params.diagnosticCodes,
+    last7Days: createEmptyAnalyticsWindow(last7Days),
+    last30Days: createEmptyAnalyticsWindow(last30Days),
+    topPages: createEmptyAnalyticsBreakdown("Top pages", params.message),
+    referrers: createEmptyAnalyticsBreakdown("Referrers", params.message),
+    countries: createEmptyAnalyticsBreakdown("Countries", params.message),
+    devices: createEmptyAnalyticsBreakdown("Devices", params.message),
+    browsers: createEmptyAnalyticsBreakdown("Browsers", params.message),
+    fetchedAt: null,
+  };
+}
+
+function readMetricFromSources(
+  sources: Array<Record<string, unknown> | null>,
+  keys: string[],
+): number | null {
+  for (const source of sources) {
+    if (!source) {
+      continue;
+    }
+
+    for (const key of keys) {
+      const value = readNumber(source[key]);
+      if (value !== null) {
+        return value;
+      }
+    }
+  }
+
+  return null;
+}
+
+function extractAnalyticsMetrics(value: unknown): AnalyticsMetricSet {
+  const directNumber = readNumber(value);
+
+  if (directNumber !== null) {
+    return {
+      visits: directNumber,
+      pageViews: directNumber,
+      visitors: null,
+      primary: directNumber,
+    };
+  }
+
+  const record = readRecord(value);
+  if (!record) {
+    return {
+      visits: null,
+      pageViews: null,
+      visitors: null,
+      primary: null,
+    };
+  }
+
+  const sources = [
+    record,
+    readRecord(record.metrics),
+    readRecord(record.values),
+    readRecord(record.totals),
+    readRecord(record.data),
+  ];
+
+  const visits = readMetricFromSources(sources, ["visits", "visitCount", "views", "pageViews", "pageviews", "count", "value", "total"]);
+  const pageViews = readMetricFromSources(sources, ["pageViews", "pageviews", "views", "visits", "count", "value", "total"]) ?? visits;
+  const visitors = readMetricFromSources(sources, ["visitors", "uniqueVisitors", "unique_visitors", "unique"]);
+  const primary = pageViews ?? visits ?? visitors;
+
+  return {
+    visits: visits ?? pageViews,
+    pageViews,
+    visitors,
+    primary,
+  };
+}
+
+function normalizeAnalyticsRowsResponse(value: unknown): unknown[] {
+  if (Array.isArray(value)) {
+    return value;
+  }
+
+  const record = readRecord(value);
+  return readArray(record?.data) ?? readArray(record?.rows) ?? readArray(record?.results) ?? readArray(record?.buckets) ?? [];
+}
+
+function parseAnalyticsCountResponse(value: unknown): AnalyticsMetricSet | null {
+  const metrics = extractAnalyticsMetrics(value);
+  if (metrics.primary !== null || metrics.visitors !== null) {
+    return metrics;
+  }
+
+  const rows = normalizeAnalyticsRowsResponse(value);
+  if (rows.length === 1) {
+    const rowMetrics = extractAnalyticsMetrics(rows[0]);
+    if (rowMetrics.primary !== null || rowMetrics.visitors !== null) {
+      return rowMetrics;
+    }
+  }
+
+  return null;
+}
+
+function isAnalyticsResponseEmpty(value: unknown): boolean {
+  if (value === null || value === undefined) {
+    return true;
+  }
+
+  if (Array.isArray(value)) {
+    return value.length === 0;
+  }
+
+  const record = readRecord(value);
+  if (!record) {
+    return false;
+  }
+
+  const rows = normalizeAnalyticsRowsResponse(record);
+  return Object.keys(record).length === 0 || rows.length === 0;
+}
+
+function mapAnalyticsError(error: unknown, fallback: string): { code: VercelDiagnosticCode; message: string } {
+  if (error instanceof VercelApiError) {
+    if (error.statusCode === 401) {
+      return {
+        code: "unauthorized",
+        message: "The configured token cannot read Vercel Web Analytics for this project.",
+      };
+    }
+
+    if (error.statusCode === 403 || error.code === "forbidden") {
+      return {
+        code: "forbidden",
+        message: "The configured token does not have permission to read Vercel Web Analytics for this project.",
+      };
+    }
+
+    if (error.statusCode === 429 || error.code === "rate_limited") {
+      return {
+        code: "rate-limited",
+        message: "The Vercel Web Analytics request was rate-limited.",
+      };
+    }
+
+    if (error.statusCode === 404 || error.statusCode === 405 || error.code === "not_found") {
+      return {
+        code: "unsupported-endpoint",
+        message: "The Vercel Web Analytics query endpoint is unavailable for this project or token scope.",
+      };
+    }
+
+    if (error.statusCode === 400 || error.statusCode === 422) {
+      return {
+        code: "provider-error",
+        message: "Vercel Web Analytics rejected the server-side query parameters for this request.",
+      };
+    }
+  }
+
+  return {
+    code: "provider-error",
+    message: fallback,
+  };
+}
+
+function shouldRetryAnalyticsVariant(error: unknown): boolean {
+  if (!(error instanceof VercelApiError)) {
+    return false;
+  }
+
+  return error.statusCode === 400 || error.statusCode === 422;
+}
+
+function prioritizeRangeVariants(
+  variants: AnalyticsRangeVariant[],
+  preferredId?: AnalyticsRangeVariantId,
+): AnalyticsRangeVariant[] {
+  if (!preferredId) {
+    return variants;
+  }
+
+  return [
+    ...variants.filter((variant) => variant.id === preferredId),
+    ...variants.filter((variant) => variant.id !== preferredId),
+  ];
+}
+
+function prioritizeGroupParamKeys(preferredKey?: AnalyticsGroupParamKey): AnalyticsGroupParamKey[] {
+  const keys: AnalyticsGroupParamKey[] = ["groupBy", "by"];
+  if (!preferredKey) {
+    return keys;
+  }
+
+  return [preferredKey, ...keys.filter((key) => key !== preferredKey)];
+}
+
+async function fetchAnalyticsCountForRange(
+  context: VercelApiContext,
+  range: AnalyticsTimeRange,
+): Promise<AnalyticsCountOutcome> {
+  let lastProviderError: unknown = null;
+
+  for (const variant of createAnalyticsRangeVariants(range)) {
+    try {
+      const response = await fetchVercelJson<unknown>(context, "/v1/query/web-analytics/visits/count", {
+        projectId: context.projectId,
+        ...variant.params,
+      });
+      const metrics = parseAnalyticsCountResponse(response);
+
+      if (metrics) {
+        return {
+          status: "success",
+          metrics,
+          rangeVariantId: variant.id,
+        };
+      }
+
+      if (isAnalyticsResponseEmpty(response)) {
+        return { status: "empty" };
+      }
+
+      logger.warn("Vercel analytics count response could not be normalized", {
+        category: "error",
+        service: "vercel",
+        keys: Object.keys(readRecord(response) ?? {}),
+      });
+      return {
+        status: "failure",
+        code: "provider-error",
+        message: "Vercel Web Analytics returned a count response that could not be normalized safely.",
+      };
+    } catch (error) {
+      if (shouldRetryAnalyticsVariant(error)) {
+        lastProviderError = error;
+        continue;
+      }
+
+      const mapped = mapAnalyticsError(
+        error,
+        "Vercel Web Analytics count data could not be loaded safely for this admin view.",
+      );
+      return {
+        status: "failure",
+        code: mapped.code,
+        message: mapped.message,
+      };
+    }
+  }
+
+  if (lastProviderError) {
+    const mapped = mapAnalyticsError(
+      lastProviderError,
+      "Vercel Web Analytics count data could not be loaded safely for this admin view.",
+    );
+    return {
+      status: "failure",
+      code: mapped.code,
+      message: mapped.message,
+    };
+  }
+
+  return {
+    status: "failure",
+    code: "provider-error",
+    message: "Vercel Web Analytics count data could not be loaded safely for this admin view.",
+  };
+}
+
+function readAnalyticsDimensionValue(record: Record<string, unknown>, keys: string[]): string | null {
+  const sources = [record, readRecord(record.dimensions), readRecord(record.dimension), readRecord(record.group)];
+
+  for (const source of sources) {
+    if (!source) {
+      continue;
+    }
+
+    for (const key of keys) {
+      const value = readString(source[key]);
+      if (value) {
+        return value;
+      }
+    }
+  }
+
+  for (const source of sources) {
+    if (!source) {
+      continue;
+    }
+
+    for (const [key, rawValue] of Object.entries(source)) {
+      if (key === "id" || key === "slug" || key === "label") {
+        continue;
+      }
+
+      const value = readString(rawValue);
+      if (value) {
+        return value;
+      }
+    }
+  }
+
+  return null;
+}
+
+function formatAnalyticsDimensionLabel(spec: AnalyticsDimensionSpec, rawValue: string | null): string | null {
+  if (!rawValue) {
+    return null;
+  }
+
+  if (spec.key === "route") {
+    return rawValue;
+  }
+
+  if (spec.key === "referrer") {
+    const normalized = rawValue.toLowerCase();
+    if (normalized === "direct" || normalized === "(direct)" || normalized === "none") {
+      return "Direct / unknown";
+    }
+
+    return rawValue;
+  }
+
+  if (spec.key === "country" && /^[a-z]{2}$/i.test(rawValue)) {
+    return rawValue.toUpperCase();
+  }
+
+  return formatVercelState(rawValue);
+}
+
+function createAnalyticsBreakdownRow(
+  spec: AnalyticsDimensionSpec,
+  value: unknown,
+  index: number,
+  total: number | null,
+): VercelAnalyticsBreakdownRow | null {
+  const record = readRecord(value);
+  if (!record) {
+    return null;
+  }
+
+  const metrics = extractAnalyticsMetrics(record);
+  const rowValue = metrics.primary;
+  if (rowValue === null) {
+    return null;
+  }
+
+  const rawLabel = readAnalyticsDimensionValue(record, spec.responseKeys) ?? readString(record.label) ?? readString(record.name);
+  const label = formatAnalyticsDimensionLabel(spec, rawLabel);
+
+  if (!label) {
+    return null;
+  }
+
+  return {
+    id: `${spec.key}-${index}-${label}`,
+    label,
+    value: rowValue,
+    visitors: metrics.visitors,
+    share: total && total > 0 ? rowValue / total : null,
+  };
+}
+
+function formatAnalyticsDateLabel(value: string | null): string {
+  if (!value) {
+    return "Unknown day";
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+  }).format(date);
+}
+
+function createAnalyticsSeriesPoint(value: unknown, index: number): VercelAnalyticsSeriesPoint | null {
+  const record = readRecord(value);
+  if (!record) {
+    return null;
+  }
+
+  const metrics = extractAnalyticsMetrics(record);
+  if (metrics.primary === null && metrics.visitors === null) {
+    return null;
+  }
+
+  const rawDate =
+    readAnalyticsDimensionValue(record, ANALYTICS_DAY_SPEC.responseKeys) ??
+    readString(record.label) ??
+    readString(record.name);
+  const date = toIsoString(rawDate) ?? rawDate;
+
+  return {
+    id: `day-${index}-${date ?? index}`,
+    date,
+    label: formatAnalyticsDateLabel(date ?? rawDate),
+    visits: metrics.visits,
+    pageViews: metrics.pageViews,
+    visitors: metrics.visitors,
+  };
+}
+
+async function fetchAnalyticsSeriesForRange(
+  context: VercelApiContext,
+  range: AnalyticsTimeRange,
+  preferredRangeVariantId?: AnalyticsRangeVariantId,
+  preferredGroupParamKey?: AnalyticsGroupParamKey,
+): Promise<AnalyticsSeriesOutcome> {
+  let lastProviderError: unknown = null;
+  const rangeVariants = prioritizeRangeVariants(createAnalyticsRangeVariants(range), preferredRangeVariantId);
+  const groupParamKeys = prioritizeGroupParamKeys(preferredGroupParamKey);
+
+  for (const variant of rangeVariants) {
+    for (const groupParamKey of groupParamKeys) {
+      for (const apiValue of ANALYTICS_DAY_SPEC.apiValues) {
+        try {
+          const response = await fetchVercelJson<unknown>(context, "/v1/query/web-analytics/visits/aggregate", {
+            projectId: context.projectId,
+            limit: 7,
+            ...variant.params,
+            [groupParamKey]: apiValue,
+          });
+          const points = normalizeAnalyticsRowsResponse(response)
+            .map((entry, index) => createAnalyticsSeriesPoint(entry, index))
+            .filter((entry): entry is VercelAnalyticsSeriesPoint => Boolean(entry))
+            .sort((left, right) => parseSortableTime(left.date) - parseSortableTime(right.date));
+
+          if (points.length > 0) {
+            return {
+              status: "success",
+              points,
+              rangeVariantId: variant.id,
+              groupParamKey,
+            };
+          }
+
+          if (isAnalyticsResponseEmpty(response)) {
+            return { status: "empty" };
+          }
+        } catch (error) {
+          if (shouldRetryAnalyticsVariant(error)) {
+            lastProviderError = error;
+            continue;
+          }
+
+          const mapped = mapAnalyticsError(
+            error,
+            "Vercel Web Analytics daily trend data could not be loaded safely for this admin view.",
+          );
+          return {
+            status: "failure",
+            code: mapped.code,
+            message: mapped.message,
+          };
+        }
+      }
+    }
+  }
+
+  if (lastProviderError) {
+    const mapped = mapAnalyticsError(
+      lastProviderError,
+      "Vercel Web Analytics daily trend data could not be loaded safely for this admin view.",
+    );
+    return {
+      status: "failure",
+      code: mapped.code,
+      message: mapped.message,
+    };
+  }
+
+  return {
+    status: "failure",
+    code: "provider-error",
+    message: "Vercel Web Analytics daily trend data could not be loaded safely for this admin view.",
+  };
+}
+
+async function fetchAnalyticsBreakdownForRange(
+  context: VercelApiContext,
+  range: AnalyticsTimeRange,
+  spec: AnalyticsDimensionSpec,
+  total: number | null,
+  preferredRangeVariantId?: AnalyticsRangeVariantId,
+  preferredGroupParamKey?: AnalyticsGroupParamKey,
+): Promise<AnalyticsBreakdownOutcome> {
+  let lastProviderError: unknown = null;
+  const rangeVariants = prioritizeRangeVariants(createAnalyticsRangeVariants(range), preferredRangeVariantId);
+  const groupParamKeys = prioritizeGroupParamKeys(preferredGroupParamKey);
+
+  for (const variant of rangeVariants) {
+    for (const groupParamKey of groupParamKeys) {
+      for (const apiValue of spec.apiValues) {
+        try {
+          const response = await fetchVercelJson<unknown>(context, "/v1/query/web-analytics/visits/aggregate", {
+            projectId: context.projectId,
+            limit: ANALYTICS_BREAKDOWN_LIMIT,
+            ...variant.params,
+            [groupParamKey]: apiValue,
+          });
+          const rows = normalizeAnalyticsRowsResponse(response)
+            .map((entry, index) => createAnalyticsBreakdownRow(spec, entry, index, total))
+            .filter((entry): entry is VercelAnalyticsBreakdownRow => Boolean(entry))
+            .sort((left, right) => right.value - left.value)
+            .slice(0, ANALYTICS_BREAKDOWN_LIMIT);
+
+          if (rows.length > 0) {
+            return {
+              status: "success",
+              rows,
+              rangeVariantId: variant.id,
+              groupParamKey,
+            };
+          }
+
+          if (isAnalyticsResponseEmpty(response)) {
+            return { status: "empty" };
+          }
+        } catch (error) {
+          if (shouldRetryAnalyticsVariant(error)) {
+            lastProviderError = error;
+            continue;
+          }
+
+          const mapped = mapAnalyticsError(
+            error,
+            `Vercel Web Analytics ${spec.label.toLowerCase()} data could not be loaded safely for this admin view.`,
+          );
+          return {
+            status: "failure",
+            code: mapped.code,
+            message: mapped.message,
+          };
+        }
+      }
+    }
+  }
+
+  if (lastProviderError) {
+    const mapped = mapAnalyticsError(
+      lastProviderError,
+      `Vercel Web Analytics ${spec.label.toLowerCase()} data could not be loaded safely for this admin view.`,
+    );
+    return {
+      status: "failure",
+      code: mapped.code,
+      message: mapped.message,
+    };
+  }
+
+  return {
+    status: "failure",
+    code: "provider-error",
+    message: `Vercel Web Analytics ${spec.label.toLowerCase()} data could not be loaded safely for this admin view.`,
+  };
+}
+
+function createBreakdownSummary(
+  label: string,
+  outcome: AnalyticsBreakdownOutcome,
+  emptyMessage: string,
+): VercelAnalyticsBreakdownSummary {
+  if (outcome.status === "success") {
+    return {
+      label,
+      available: true,
+      message: `${label} loaded from Vercel Web Analytics.`,
+      rows: outcome.rows,
+    };
+  }
+
+  if (outcome.status === "empty") {
+    return createEmptyAnalyticsBreakdown(label, emptyMessage);
+  }
+
+  return createEmptyAnalyticsBreakdown(label, outcome.message);
+}
+
+function hasWindowTraffic(window: VercelAnalyticsWindowSummary): boolean {
+  return Boolean((window.pageViews ?? window.visits ?? 0) > 0 || (window.visitors ?? 0) > 0);
+}
+
+function buildWindowFromOutcome(
+  range: AnalyticsTimeRange,
+  outcome: AnalyticsCountOutcome,
+  series: AnalyticsSeriesOutcome,
+): VercelAnalyticsWindowSummary {
+  const window = createEmptyAnalyticsWindow(range);
+
+  if (outcome.status === "success") {
+    window.visits = outcome.metrics.visits;
+    window.pageViews = outcome.metrics.pageViews;
+    window.visitors = outcome.metrics.visitors;
+  }
+
+  if (series.status === "success") {
+    window.daily = series.points;
+  }
+
+  return window;
 }
 
 async function getDeploymentLogsSummary(
@@ -599,11 +1411,19 @@ async function getDeploymentLogsSummary(
     };
   } catch (error) {
     if (error instanceof VercelApiError) {
-      if (error.statusCode === 401 || error.statusCode === 403 || error.code === "forbidden") {
+      if (error.statusCode === 401) {
         return buildLogsUnavailableSummary({
           message: "Logs unavailable from API because the configured token cannot read deployment events for this project.",
           dashboardHref: latestDeployment.inspectUrl,
           diagnosticCodes: ["unauthorized", "logs-unavailable"],
+        });
+      }
+
+      if (error.statusCode === 403 || error.code === "forbidden") {
+        return buildLogsUnavailableSummary({
+          message: "Logs unavailable from API because the configured token does not have permission to read deployment events for this project.",
+          dashboardHref: latestDeployment.inspectUrl,
+          diagnosticCodes: ["forbidden", "logs-unavailable"],
         });
       }
 
@@ -624,41 +1444,226 @@ async function getDeploymentLogsSummary(
   }
 }
 
-function buildAnalyticsSummary(params: {
+async function getVercelAnalyticsSummary(params: {
+  context: VercelApiContext;
   project: VercelProjectSummary | null;
-  deploymentDashboardHref: string | null;
-}): VercelAnalyticsSummary {
+  dashboardHref: string | null;
+}): Promise<VercelAnalyticsSummary> {
   if (!params.project) {
-    return {
-      available: false,
+    return buildAnalyticsUnavailableSummary({
       configured: false,
       statusLabel: "Traffic analytics unavailable",
       message: "Traffic analytics availability could not be evaluated because the Vercel project metadata was not loaded safely.",
-      dashboardHref: params.deploymentDashboardHref,
-      diagnosticCodes: ["analytics-unavailable"],
-    };
+      dashboardHref: params.dashboardHref,
+      diagnosticCodes: ["provider-error"],
+    });
   }
 
-  const configured = params.project.analyticsEnabled || params.project.speedInsightsEnabled;
+  const last7Range = createAnalyticsTimeRange("last7Days", "Last 7 days", 7);
+  const last30Range = createAnalyticsTimeRange("last30Days", "Last 30 days", 30);
+  const [last7Count, last30Count] = await Promise.all([
+    fetchAnalyticsCountForRange(params.context, last7Range),
+    fetchAnalyticsCountForRange(params.context, last30Range),
+  ]);
 
-  if (!configured) {
+  const diagnosticCodes = new Set<VercelDiagnosticCode>();
+  const countFailures = [last7Count, last30Count].filter(
+    (outcome): outcome is Extract<AnalyticsCountOutcome, { status: "failure" }> => outcome.status === "failure",
+  );
+
+  for (const failure of countFailures) {
+    diagnosticCodes.add(failure.code);
+  }
+
+  const preferredRangeVariantId =
+    last30Count.status === "success"
+      ? last30Count.rangeVariantId
+      : last7Count.status === "success"
+        ? last7Count.rangeVariantId
+        : undefined;
+
+  const shouldQuerySeries = last7Count.status === "success" && (last7Count.metrics.primary ?? last7Count.metrics.visitors ?? 0) > 0;
+  const last7Series = shouldQuerySeries
+    ? await fetchAnalyticsSeriesForRange(params.context, last7Range, preferredRangeVariantId)
+    : ({ status: "empty" } as const);
+
+  const preferredSeriesGroupParamKey = last7Series.status === "success" ? last7Series.groupParamKey : undefined;
+  const preferredSeriesRangeVariantId =
+    last7Series.status === "success" ? last7Series.rangeVariantId : preferredRangeVariantId;
+
+  const shouldQueryBreakdowns = last30Count.status === "success" && (last30Count.metrics.primary ?? last30Count.metrics.visitors ?? 0) > 0;
+  const breakdownOutcomes = shouldQueryBreakdowns
+    ? await Promise.all([
+        fetchAnalyticsBreakdownForRange(
+          params.context,
+          last30Range,
+          ANALYTICS_BREAKDOWN_SPECS.topPages,
+          last30Count.metrics.primary,
+          preferredSeriesRangeVariantId,
+          preferredSeriesGroupParamKey,
+        ),
+        fetchAnalyticsBreakdownForRange(
+          params.context,
+          last30Range,
+          ANALYTICS_BREAKDOWN_SPECS.referrers,
+          last30Count.metrics.primary,
+          preferredSeriesRangeVariantId,
+          preferredSeriesGroupParamKey,
+        ),
+        fetchAnalyticsBreakdownForRange(
+          params.context,
+          last30Range,
+          ANALYTICS_BREAKDOWN_SPECS.countries,
+          last30Count.metrics.primary,
+          preferredSeriesRangeVariantId,
+          preferredSeriesGroupParamKey,
+        ),
+        fetchAnalyticsBreakdownForRange(
+          params.context,
+          last30Range,
+          ANALYTICS_BREAKDOWN_SPECS.devices,
+          last30Count.metrics.primary,
+          preferredSeriesRangeVariantId,
+          preferredSeriesGroupParamKey,
+        ),
+        fetchAnalyticsBreakdownForRange(
+          params.context,
+          last30Range,
+          ANALYTICS_BREAKDOWN_SPECS.browsers,
+          last30Count.metrics.primary,
+          preferredSeriesRangeVariantId,
+          preferredSeriesGroupParamKey,
+        ),
+      ])
+    : ([
+        { status: "empty" },
+        { status: "empty" },
+        { status: "empty" },
+        { status: "empty" },
+        { status: "empty" },
+      ] as const);
+
+  if (last7Series.status === "failure" && countFailures.length === 0) {
+    diagnosticCodes.add(last7Series.code);
+  }
+
+  const [topPagesOutcome, referrersOutcome, countriesOutcome, devicesOutcome, browsersOutcome] = breakdownOutcomes;
+  const last7Days = buildWindowFromOutcome(last7Range, last7Count, last7Series);
+  const last30Days = buildWindowFromOutcome(last30Range, last30Count, { status: "empty" });
+  const topPages = createBreakdownSummary(
+    ANALYTICS_BREAKDOWN_SPECS.topPages.label,
+    topPagesOutcome,
+    "No page-level Vercel Web Analytics data was returned for the selected time window.",
+  );
+  const referrers = createBreakdownSummary(
+    ANALYTICS_BREAKDOWN_SPECS.referrers.label,
+    referrersOutcome,
+    "No referrer data was returned for the selected time window.",
+  );
+  const countries = createBreakdownSummary(
+    ANALYTICS_BREAKDOWN_SPECS.countries.label,
+    countriesOutcome,
+    "No country data was returned for the selected time window.",
+  );
+  const devices = createBreakdownSummary(
+    ANALYTICS_BREAKDOWN_SPECS.devices.label,
+    devicesOutcome,
+    "No device data was returned for the selected time window.",
+  );
+  const browsers = createBreakdownSummary(
+    ANALYTICS_BREAKDOWN_SPECS.browsers.label,
+    browsersOutcome,
+    "No browser data was returned for the selected time window.",
+  );
+
+  const hasTrafficData =
+    hasWindowTraffic(last7Days) ||
+    hasWindowTraffic(last30Days) ||
+    topPages.available ||
+    referrers.available ||
+    countries.available ||
+    devices.available ||
+    browsers.available;
+
+  if (!hasTrafficData) {
+    const configured = params.project.analyticsEnabled;
+
+    if (!configured) {
+      diagnosticCodes.add("analytics-disabled");
+      return {
+        ...buildAnalyticsUnavailableSummary({
+          configured: false,
+          statusLabel: "Web Analytics not reported by project",
+          message: "The connected Vercel project does not currently report Web Analytics enabled.",
+          dashboardHref: params.dashboardHref,
+          diagnosticCodes: [...diagnosticCodes],
+        }),
+        last7Days,
+        last30Days,
+      };
+    }
+
+    if (countFailures.length > 0) {
+      const firstFailure = countFailures[0];
+      return {
+        ...buildAnalyticsUnavailableSummary({
+          configured: true,
+          statusLabel:
+            firstFailure.code === "unauthorized"
+              ? "Web Analytics unauthorized"
+              : firstFailure.code === "forbidden"
+                ? "Web Analytics forbidden"
+                : firstFailure.code === "rate-limited"
+                  ? "Web Analytics rate-limited"
+                  : firstFailure.code === "unsupported-endpoint"
+                    ? "Web Analytics query unsupported"
+                    : "Web Analytics unavailable",
+          message: firstFailure.message,
+          dashboardHref: params.dashboardHref,
+          diagnosticCodes: [...diagnosticCodes],
+        }),
+        last7Days,
+        last30Days,
+      };
+    }
+
+    diagnosticCodes.add("no-data");
     return {
-      available: false,
-      configured: false,
-      statusLabel: "Traffic analytics not configured",
-      message: "The connected Vercel project does not currently report Web Analytics or Speed Insights enabled.",
-      dashboardHref: params.deploymentDashboardHref,
-      diagnosticCodes: ["analytics-unavailable"],
+      ...buildAnalyticsUnavailableSummary({
+        configured: true,
+        statusLabel: "No Vercel Web Analytics data yet",
+        message: "No Vercel Web Analytics data available yet.",
+        dashboardHref: params.dashboardHref,
+        diagnosticCodes: [...diagnosticCodes],
+      }),
+      last7Days,
+      last30Days,
+      topPages,
+      referrers,
+      countries,
+      devices,
+      browsers,
     };
   }
 
   return {
-    available: false,
-    configured: true,
-    statusLabel: "Traffic analytics unavailable",
-    message: "The project reports Vercel Analytics or Speed Insights enabled, but this admin panel does not query Vercel traffic metrics yet.",
-    dashboardHref: params.deploymentDashboardHref,
-    diagnosticCodes: ["analytics-unavailable"],
+    available: true,
+    configured: params.project.analyticsEnabled || hasTrafficData,
+    statusLabel: "Vercel Web Analytics available",
+    message:
+      topPages.available || referrers.available || countries.available || devices.available || browsers.available
+        ? "Real Vercel Web Analytics metrics were loaded server-side for this project."
+        : "Real Vercel Web Analytics totals were loaded server-side, but grouped breakdowns were not returned for this project.",
+    dashboardHref: params.dashboardHref,
+    diagnosticCodes: [...diagnosticCodes],
+    last7Days,
+    last30Days,
+    topPages,
+    referrers,
+    countries,
+    devices,
+    browsers,
+    fetchedAt: new Date().toISOString(),
   };
 }
 
@@ -712,7 +1717,7 @@ function createChecks(params: {
     },
     {
       id: "analytics",
-      label: "Analytics readiness",
+      label: "Web Analytics",
       status: params.analyticsStatus,
       detail: params.analyticsDetail,
     },
@@ -746,14 +1751,13 @@ function buildFallbackOverview(params: {
       dashboardHref: null,
       diagnosticCodes: ["logs-unavailable"],
     }),
-    analytics: {
-      available: false,
+    analytics: buildAnalyticsUnavailableSummary({
       configured: false,
       statusLabel: "Traffic analytics unavailable",
       message: "Traffic analytics is unavailable until the Vercel deployment integration is configured.",
       dashboardHref: null,
-      diagnosticCodes: ["analytics-unavailable"],
-    },
+      diagnosticCodes: ["missing-token", "missing-project-id"],
+    }),
     checks: createChecks({
       apiTokenConfigured: params.apiTokenConfigured,
       projectConfigured: params.projectConfigured,
@@ -763,7 +1767,7 @@ function buildFallbackOverview(params: {
       logsStatus: "unavailable",
       logsDetail: "Deployment events cannot be queried until the Vercel integration is configured.",
       analyticsStatus: "missing",
-      analyticsDetail: "Traffic analytics cannot be evaluated until the Vercel deployment integration is configured.",
+      analyticsDetail: "Vercel Web Analytics cannot be queried until the server-side Vercel integration is configured.",
     }),
     diagnostics: params.diagnostics,
     fetchedAt: null,
@@ -799,14 +1803,13 @@ function buildConnectionErrorOverview(params: {
       dashboardHref: null,
       diagnosticCodes: ["logs-unavailable"],
     }),
-    analytics: {
-      available: false,
+    analytics: buildAnalyticsUnavailableSummary({
       configured: false,
       statusLabel: "Traffic analytics unavailable",
       message: "Traffic analytics could not be evaluated because the Vercel API request failed safely.",
       dashboardHref: null,
-      diagnosticCodes: ["analytics-unavailable"],
-    },
+      diagnosticCodes: ["provider-error"],
+    }),
     checks: createChecks({
       apiTokenConfigured: params.apiTokenConfigured,
       projectConfigured: params.projectConfigured,
@@ -816,11 +1819,108 @@ function buildConnectionErrorOverview(params: {
       logsStatus: "unavailable",
       logsDetail: "Deployment events could not be queried because the Vercel API request failed safely.",
       analyticsStatus: "unavailable",
-      analyticsDetail: "Traffic analytics could not be evaluated because the Vercel API request failed safely.",
+      analyticsDetail: "Vercel Web Analytics could not be evaluated because the Vercel API request failed safely.",
     }),
     diagnostics: params.diagnostics,
     fetchedAt: null,
   };
+}
+
+function createDiagnosticFromCode(
+  code: VercelDiagnosticCode,
+  params: { logs: VercelLogsSummary; analytics: VercelAnalyticsSummary },
+): VercelIntegrationDiagnostic | null {
+  if (code === "logs-unavailable") {
+    return createDiagnostic({
+      code,
+      tone: "warning",
+      label: "Deployment logs unavailable",
+      detail: params.logs.message,
+    });
+  }
+
+  if (code === "missing-team-id") {
+    return createDiagnostic({
+      code,
+      tone: "warning",
+      label: "Team scope not configured",
+      detail: "Team-owned Vercel projects can require VERCEL_TEAM_ID for deployment and analytics reads.",
+    });
+  }
+
+  if (code === "unauthorized") {
+    return createDiagnostic({
+      code,
+      tone: "error",
+      label: "Unauthorized Vercel access",
+      detail: "The configured token cannot read one or more required Vercel admin resources for this project.",
+    });
+  }
+
+  if (code === "forbidden") {
+    return createDiagnostic({
+      code,
+      tone: "error",
+      label: "Forbidden Vercel access",
+      detail: "The configured token can reach Vercel, but it does not have permission to read the requested resource for this project.",
+    });
+  }
+
+  if (code === "rate-limited") {
+    return createDiagnostic({
+      code,
+      tone: "warning",
+      label: "Vercel API rate-limited",
+      detail: "Vercel limited one of the admin API reads. Retry after the current rate-limit window resets.",
+    });
+  }
+
+  if (code === "analytics-disabled") {
+    return createDiagnostic({
+      code,
+      tone: "info",
+      label: "Web Analytics not reported by project",
+      detail: "The connected Vercel project does not currently report Web Analytics enabled.",
+    });
+  }
+
+  if (code === "no-data") {
+    return createDiagnostic({
+      code,
+      tone: "info",
+      label: "No Vercel analytics data yet",
+      detail: "Vercel Web Analytics is reachable, but the selected time window did not return traffic data yet.",
+    });
+  }
+
+  if (code === "unsupported-endpoint") {
+    return createDiagnostic({
+      code,
+      tone: "warning",
+      label: "Web Analytics query unsupported",
+      detail: "The Vercel Web Analytics query endpoints did not accept the current server-side request for this project.",
+    });
+  }
+
+  if (code === "provider-error" || code === "analytics-unavailable") {
+    return createDiagnostic({
+      code,
+      tone: "warning",
+      label: "Web Analytics unavailable",
+      detail: params.analytics.message,
+    });
+  }
+
+  if (code === "no-deployments") {
+    return createDiagnostic({
+      code,
+      tone: "warning",
+      label: "No deployments returned",
+      detail: "No deployment records are available yet, so deployment-event summaries cannot be loaded.",
+    });
+  }
+
+  return null;
 }
 
 export function formatVercelState(state: string | null | undefined): string {
@@ -915,11 +2015,14 @@ export async function getVercelIntegrationOverview(): Promise<VercelIntegrationO
 
     const latestDeployment = deployments[0] ?? null;
     const deploymentDetailsHref = latestDeployment?.inspectUrl ?? null;
-    const logs = await getDeploymentLogsSummary(context, latestDeployment);
-    const analytics = buildAnalyticsSummary({
-      project,
-      deploymentDashboardHref: latestDeployment?.inspectUrl ?? null,
-    });
+    const [logs, analytics] = await Promise.all([
+      getDeploymentLogsSummary(context, latestDeployment),
+      getVercelAnalyticsSummary({
+        context,
+        project,
+        dashboardHref: latestDeployment?.inspectUrl ?? null,
+      }),
+    ]);
 
     const diagnostics = [...baseDiagnostics];
 
@@ -935,67 +2038,20 @@ export async function getVercelIntegrationOverview(): Promise<VercelIntegrationO
       );
     }
 
-    for (const code of logs.diagnosticCodes) {
-      if (code === "logs-unavailable") {
-        pushUniqueDiagnostic(
-          diagnostics,
-          createDiagnostic({
-            code,
-            tone: "warning",
-            label: "Deployment logs unavailable",
-            detail: logs.message,
-          }),
-        );
-      }
+    const diagnosticCodes = new Set<VercelDiagnosticCode>([
+      ...logs.diagnosticCodes,
+      ...analytics.diagnosticCodes,
+      ...baseDiagnostics.map((entry) => entry.code),
+    ]);
 
-      if (code === "unauthorized") {
-        pushUniqueDiagnostic(
-          diagnostics,
-          createDiagnostic({
-            code,
-            tone: "error",
-            label: "Unauthorized Vercel access",
-            detail: "The configured token can reach Vercel, but it cannot read all requested deployment details for this project.",
-          }),
-        );
-      }
-
-      if (code === "rate-limited") {
-        pushUniqueDiagnostic(
-          diagnostics,
-          createDiagnostic({
-            code,
-            tone: "warning",
-            label: "Vercel API rate-limited",
-            detail: "Vercel limited one of the admin API reads. Retry after the rate-limit window resets.",
-          }),
-        );
-      }
-
-      if (code === "no-deployments") {
-        pushUniqueDiagnostic(
-          diagnostics,
-          createDiagnostic({
-            code,
-            tone: "warning",
-            label: "No deployments returned",
-            detail: "No deployment records are available yet, so deployment-event summaries cannot be loaded.",
-          }),
-        );
-      }
+    if (deployments.length === 0) {
+      diagnosticCodes.add("no-deployments");
     }
 
-    for (const code of analytics.diagnosticCodes) {
-      if (code === "analytics-unavailable") {
-        pushUniqueDiagnostic(
-          diagnostics,
-          createDiagnostic({
-            code,
-            tone: analytics.configured ? "warning" : "info",
-            label: analytics.configured ? "Analytics configured but unavailable" : "Analytics unavailable",
-            detail: analytics.message,
-          }),
-        );
+    for (const code of diagnosticCodes) {
+      const diagnostic = createDiagnosticFromCode(code, { logs, analytics });
+      if (diagnostic) {
+        pushUniqueDiagnostic(diagnostics, diagnostic);
       }
     }
 
@@ -1050,7 +2106,7 @@ export async function getVercelIntegrationOverview(): Promise<VercelIntegrationO
     const diagnostics = [...baseDiagnostics];
 
     if (error instanceof VercelApiError) {
-      if (error.statusCode === 401 || error.statusCode === 403 || error.code === "forbidden") {
+      if (error.statusCode === 401) {
         pushUniqueDiagnostic(
           diagnostics,
           createDiagnostic({
@@ -1058,6 +2114,18 @@ export async function getVercelIntegrationOverview(): Promise<VercelIntegrationO
             tone: "error",
             label: "Unauthorized Vercel access",
             detail: "The configured token cannot read the Vercel project or deployment records for this admin view.",
+          }),
+        );
+      }
+
+      if (error.statusCode === 403 || error.code === "forbidden") {
+        pushUniqueDiagnostic(
+          diagnostics,
+          createDiagnostic({
+            code: "forbidden",
+            tone: "error",
+            label: "Forbidden Vercel access",
+            detail: "The configured token can reach Vercel, but it cannot read the Vercel project or deployment records for this admin view.",
           }),
         );
       }
@@ -1087,10 +2155,10 @@ export async function getVercelIntegrationOverview(): Promise<VercelIntegrationO
     pushUniqueDiagnostic(
       diagnostics,
       createDiagnostic({
-        code: "analytics-unavailable",
+        code: "provider-error",
         tone: "warning",
-        label: "Analytics unavailable",
-        detail: "Traffic analytics readiness could not be evaluated because the base Vercel request failed safely.",
+        label: "Web Analytics unavailable",
+        detail: "Vercel Web Analytics could not be evaluated because the base Vercel request failed safely.",
       }),
     );
 

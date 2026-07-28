@@ -2,7 +2,7 @@ import Link from "next/link";
 import { AdminActionLink } from "@/components/admin/admin-action-link";
 import { AdminDiagnostics } from "@/components/admin/admin-diagnostics";
 import { config, routes } from "@/config";
-import { formatAdminDate, formatAdminDateTime, getAdminDashboardData } from "@/lib/admin/data";
+import { buildAdminAnalyticsModel, formatAdminDate, formatAdminDateTime, getAdminDashboardData } from "@/lib/admin/data";
 import {
   formatVercelDuration,
   formatVercelState,
@@ -40,6 +40,18 @@ function renderMetric(value: number): string {
 
 function renderMetricValue(value: number, isAvailable: boolean): string {
   return isAvailable ? renderMetric(value) : "Unavailable";
+}
+
+function renderNullableMetricValue(value: number | null, isAvailable: boolean, emptyLabel = "Not returned"): string {
+  if (!isAvailable) {
+    return "Unavailable";
+  }
+
+  if (value === null) {
+    return emptyLabel;
+  }
+
+  return renderMetric(value);
 }
 
 function formatDeploymentUrl(value: string | null | undefined): string {
@@ -126,9 +138,12 @@ function getDeploymentUrlReason(vercel: VercelIntegrationOverview): string {
 
 export default async function AdminDashboardPage() {
   const [dashboard, vercel] = await Promise.all([getAdminDashboardData(), getVercelIntegrationOverview()]);
+  const analytics = buildAdminAnalyticsModel({ dashboard, vercel });
   const latestDeployment = vercel.latestDeployment;
   const deploymentDetailsReason = getDeploymentDetailsReason(vercel);
   const deploymentUrlReason = getDeploymentUrlReason(vercel);
+  const noVercelDataYet = analytics.vercel.diagnosticCodes.includes("no-data");
+  const vercelMetricsReachable = analytics.vercel.available || noVercelDataYet;
   const serviceChecks = [
     { label: "Supabase", value: "Configured" },
     { label: "Media provider", value: config.services.media.provider },
@@ -187,6 +202,17 @@ export default async function AdminDashboardPage() {
             {dashboard.users.isAvailable
               ? `${renderMetric(dashboard.users.standard)} standard users from public.profiles`
               : "Profile counts are unavailable right now."}
+          </span>
+        </article>
+        <article className="admin-stat-card">
+          <span className="admin-stat-label">Vercel traffic (30 days)</span>
+          <strong className="admin-stat-value">
+            {renderNullableMetricValue(analytics.vercel.visitsLast30Days, vercelMetricsReachable, noVercelDataYet ? "No data" : "Not returned")}
+          </strong>
+          <span className="admin-stat-hint">
+            {analytics.vercel.visitorsLast30Days !== null
+              ? `${renderMetric(analytics.vercel.visitorsLast30Days)} visitors`
+              : analytics.vercel.message}
           </span>
         </article>
         <article className="admin-stat-card">
@@ -269,8 +295,18 @@ export default async function AdminDashboardPage() {
             </article>
             <article className="admin-surface-card">
               <span className="admin-surface-label">Traffic analytics</span>
-              <strong>{vercel.analytics.statusLabel}</strong>
-              <p>{vercel.analytics.message}</p>
+              <strong>
+                {analytics.vercel.hasAnyTrafficData
+                  ? renderNullableMetricValue(analytics.vercel.visitsLast30Days, true)
+                  : analytics.vercel.statusLabel}
+              </strong>
+              <p>
+                {analytics.vercel.hasAnyTrafficData
+                  ? analytics.vercel.visitorsLast30Days !== null
+                    ? `${renderMetric(analytics.vercel.visitorsLast30Days)} visitors in the last 30 days.`
+                    : "Real Vercel Web Analytics totals are available for the last 30 days."
+                  : analytics.vercel.message}
+              </p>
             </article>
             <article className="admin-surface-card">
               <span className="admin-surface-label">Build events</span>
