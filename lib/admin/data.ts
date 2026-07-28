@@ -2,6 +2,12 @@ import "server-only";
 
 import type { User } from "@supabase/supabase-js";
 import type { WebsiteStructure } from "@/lib/ai/structure";
+import type {
+  VercelAnalyticsBreakdownSummary,
+  VercelAnalyticsSummary,
+  VercelAnalyticsWindowSummary,
+  VercelIntegrationOverview,
+} from "@/lib/admin/vercel";
 import { buildPublishingStatusFromStructure, type PublishingStatusUiState } from "@/lib/publish/status";
 import { logger } from "@/lib/observability";
 import type { ProfileRole } from "@/lib/supabase/profile";
@@ -140,6 +146,17 @@ export interface AdminDashboardData {
   };
 }
 
+export interface AdminAnalyticsModel {
+  internal: AdminDashboardData["analytics"];
+  vercel: VercelAnalyticsSummary & {
+    hasAnyTrafficData: boolean;
+    visitsLast7Days: number | null;
+    visitsLast30Days: number | null;
+    visitorsLast7Days: number | null;
+    visitorsLast30Days: number | null;
+  };
+}
+
 function createEmptyAdminDashboardData(): AdminDashboardData {
   return {
     users: {
@@ -186,6 +203,46 @@ function createEmptyAdminDashboardData(): AdminDashboardData {
       versionActivityLast30Days: 0,
       userGrowthLast30Days: 0,
       internalMetricsAvailable: false,
+    },
+  };
+}
+
+function getPrimaryVercelTrafficMetric(window: VercelAnalyticsWindowSummary): number | null {
+  return window.pageViews ?? window.visits;
+}
+
+function hasVercelWindowTraffic(window: VercelAnalyticsWindowSummary): boolean {
+  return Boolean((getPrimaryVercelTrafficMetric(window) ?? 0) > 0 || (window.visitors ?? 0) > 0 || window.daily.length > 0);
+}
+
+function hasVercelBreakdownTraffic(breakdown: VercelAnalyticsBreakdownSummary): boolean {
+  return breakdown.available && breakdown.rows.length > 0;
+}
+
+export function buildAdminAnalyticsModel(params: {
+  dashboard: AdminDashboardData;
+  vercel: VercelIntegrationOverview;
+}): AdminAnalyticsModel {
+  const { dashboard, vercel } = params;
+  const hasAnyTrafficData =
+    vercel.analytics.available &&
+    (hasVercelWindowTraffic(vercel.analytics.last7Days) ||
+      hasVercelWindowTraffic(vercel.analytics.last30Days) ||
+      hasVercelBreakdownTraffic(vercel.analytics.topPages) ||
+      hasVercelBreakdownTraffic(vercel.analytics.referrers) ||
+      hasVercelBreakdownTraffic(vercel.analytics.countries) ||
+      hasVercelBreakdownTraffic(vercel.analytics.devices) ||
+      hasVercelBreakdownTraffic(vercel.analytics.browsers));
+
+  return {
+    internal: dashboard.analytics,
+    vercel: {
+      ...vercel.analytics,
+      hasAnyTrafficData,
+      visitsLast7Days: getPrimaryVercelTrafficMetric(vercel.analytics.last7Days),
+      visitsLast30Days: getPrimaryVercelTrafficMetric(vercel.analytics.last30Days),
+      visitorsLast7Days: vercel.analytics.last7Days.visitors,
+      visitorsLast30Days: vercel.analytics.last30Days.visitors,
     },
   };
 }
