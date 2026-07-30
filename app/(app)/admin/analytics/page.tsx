@@ -69,6 +69,7 @@ export default async function AdminAnalyticsPage() {
   const internalMetricsAvailable = dashboard.analytics.internalMetricsAvailable;
   const analyticsDiagnostics = vercel.diagnostics.filter((diagnostic) => diagnostic.code !== "logs-unavailable");
   const analyticsChecks = vercel.checks.filter((check) => check.id !== "logs");
+  const dailyTrendCheck = analyticsChecks.find((check) => check.id === "analytics-series-last7Days");
   const noVercelDataYet = analytics.vercel.diagnosticCodes.includes("no-data-yet");
   const vercelMetricsReachable = analytics.vercel.available || noVercelDataYet;
   const instrumentationReady =
@@ -249,13 +250,13 @@ export default async function AdminAnalyticsPage() {
               ) : (
                 <div className="admin-empty-state">
                   <strong>No daily trend returned.</strong>
-                  <p>Vercel returned totals for this project, but no daily grouped rows were available for the last 7 days.</p>
+                  <p>{dailyTrendCheck?.detail ?? "No daily grouped rows were available for the last 7 days."}</p>
                 </div>
               )}
             </div>
           ) : (
             <div className="admin-empty-state">
-              <strong>{noVercelDataYet ? "No Vercel Web Analytics data available yet." : analytics.vercel.statusLabel}</strong>
+              <strong>{analytics.vercel.statusLabel}</strong>
               <p>{analytics.vercel.message}</p>
             </div>
           )}
