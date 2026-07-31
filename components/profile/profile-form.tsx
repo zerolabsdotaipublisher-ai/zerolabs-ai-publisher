@@ -1,14 +1,24 @@
 "use client";
 
-import { useMemo, useState, useId, type FormEvent } from "react";
-import { normalizeEditableProfileUpdate, validateEditableProfileUpdate, type EditableProfileFieldErrors } from "@/lib/profile-validation";
+import { useId, useMemo, useState, type FormEvent } from "react";
+import {
+  normalizeEditableProfileUpdate,
+  validateEditableProfileUpdate,
+  type EditableProfileFieldErrors,
+} from "@/lib/profile-validation";
 import type { Profile, ProfileUpdateData } from "@/lib/supabase/profile";
 
+type ProfileLayoutVariant = "default" | "admin";
+
 type ProfileFormProps = {
-  /** The initial profile data fetched server-side. */
   profile: Profile;
+  layoutVariant?: ProfileLayoutVariant;
 };
-export function ProfileForm({ profile: initialProfile }: ProfileFormProps) {
+
+export function ProfileForm({
+  profile: initialProfile,
+  layoutVariant = "default",
+}: ProfileFormProps) {
   const id = useId();
   const [profile, setProfile] = useState<Profile>(initialProfile);
   const [fullName, setFullName] = useState(initialProfile.full_name ?? "");
@@ -21,6 +31,7 @@ export function ProfileForm({ profile: initialProfile }: ProfileFormProps) {
   const successId = `${id}-success`;
   const fullNameErrorId = `${id}-name-error`;
   const avatarUrlErrorId = `${id}-avatar-error`;
+  const isAdminLayout = layoutVariant === "admin";
 
   const formattedMemberSince = useMemo(
     () =>
@@ -102,6 +113,163 @@ export function ProfileForm({ profile: initialProfile }: ProfileFormProps) {
     }
   }
 
+  const profileFields = (
+    <div className="profile-field-grid">
+      <label className={`profile-field${fieldErrors.full_name ? " profile-field-error" : ""}`} htmlFor={`${id}-name`}>
+        <span>Full name</span>
+        <input
+          id={`${id}-name`}
+          type="text"
+          value={fullName}
+          onChange={(event) => setFullName(event.target.value)}
+          autoComplete="name"
+          autoCapitalize="words"
+          maxLength={120}
+          aria-invalid={fieldErrors.full_name ? "true" : "false"}
+          aria-describedby={fieldErrors.full_name ? fullNameErrorId : undefined}
+        />
+        {fieldErrors.full_name ? (
+          <span id={fullNameErrorId} className="profile-field-message" role="alert">
+            {fieldErrors.full_name}
+          </span>
+        ) : (
+          <span className="profile-field-hint">Use the name you want shown across your workspace.</span>
+        )}
+      </label>
+
+      <label className="profile-field" htmlFor={`${id}-email`}>
+        <span>Email</span>
+        <input id={`${id}-email`} type="email" value={profile.email} readOnly aria-readonly="true" />
+        <span className="profile-field-hint">Email changes are not available from this page.</span>
+      </label>
+
+      <label
+        className={`profile-field profile-field-span${fieldErrors.avatar_url ? " profile-field-error" : ""}`}
+        htmlFor={`${id}-avatar`}
+      >
+        <span>Avatar URL</span>
+        <input
+          id={`${id}-avatar`}
+          type="url"
+          value={avatarUrl}
+          onChange={(event) => setAvatarUrl(event.target.value)}
+          autoComplete="url"
+          inputMode="url"
+          maxLength={2048}
+          placeholder="https://example.com/avatar.png"
+          aria-invalid={fieldErrors.avatar_url ? "true" : "false"}
+          aria-describedby={fieldErrors.avatar_url ? avatarUrlErrorId : undefined}
+        />
+        {fieldErrors.avatar_url ? (
+          <span id={avatarUrlErrorId} className="profile-field-message" role="alert">
+            {fieldErrors.avatar_url}
+          </span>
+        ) : (
+          <span className="profile-field-hint">Use a public http or https image URL for your avatar.</span>
+        )}
+      </label>
+    </div>
+  );
+
+  const formFeedback = (
+    <div className="profile-form-feedback">
+      {error ? (
+        <p id={errorId} className="profile-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+
+      {success ? (
+        <p id={successId} className="profile-success" role="status">
+          {success}
+        </p>
+      ) : null}
+    </div>
+  );
+
+  const formBody = (
+    <>
+      {profileFields}
+      {formFeedback}
+      <div className="profile-form-actions">
+        <button type="submit" className="profile-save-button" disabled={isSubmitting || !isDirty} aria-busy={isSubmitting}>
+          {isSubmitting ? "Saving..." : "Save changes"}
+        </button>
+        <p className="profile-form-note">
+          {isDirty ? "Only your authenticated profile record will be updated." : "Make a change to enable saving."}
+        </p>
+      </div>
+      <span className="sr-only" aria-live="polite" aria-atomic="true">
+        {isSubmitting ? "Saving profile, please wait." : success ?? ""}
+      </span>
+    </>
+  );
+
+  const summaryContent = (
+    <>
+      <strong>{profileDisplayName}</strong>
+      <p>{profile.email}</p>
+      <div className="profile-identity-list">
+        <div className="profile-identity-item">
+          <span className="profile-identity-label">Member since</span>
+          <time className="profile-identity-value" dateTime={profile.created_at}>
+            {formattedMemberSince}
+          </time>
+        </div>
+        <div className="profile-identity-item">
+          <span className="profile-identity-label">Last updated</span>
+          <time className="profile-identity-value" dateTime={profile.updated_at}>
+            {formattedUpdatedAt}
+          </time>
+        </div>
+      </div>
+    </>
+  );
+
+  if (isAdminLayout) {
+    return (
+      <section className="profile-page profile-page-admin admin-page-shell" aria-label="Profile page">
+        <header className="admin-page-header profile-page-header">
+          <div>
+            <span className="admin-page-kicker">Admin workspace</span>
+            <h1>Profile</h1>
+            <p>Keep your admin workspace details current without changing customer routes or role-based access.</p>
+          </div>
+        </header>
+
+        <div className="profile-admin-grid admin-content-grid">
+          <section className="admin-panel profile-admin-panel" aria-label="Edit profile details">
+            <header className="admin-panel-header">
+              <div>
+                <span className="admin-panel-kicker">Account settings</span>
+                <h2>Edit profile</h2>
+                <p>Update your display name and avatar URL. Your email stays visible and read-only.</p>
+              </div>
+            </header>
+
+            <form className="profile-form profile-form-admin" onSubmit={onSubmit} aria-label="Edit profile" noValidate>
+              {formBody}
+            </form>
+          </section>
+
+          <aside className="admin-panel profile-admin-summary" aria-label="Profile summary">
+            <header className="admin-panel-header">
+              <div>
+                <span className="admin-panel-kicker">Overview</span>
+                <h2>Account overview</h2>
+                <p>Signed-in identity details for the current admin workspace.</p>
+              </div>
+            </header>
+
+            <article className="admin-surface-card profile-summary-card profile-summary-card-admin">
+              {summaryContent}
+            </article>
+          </aside>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="profile-page dashboard-home-shell" aria-label="Profile page">
       <header className="dashboard-home-header">
@@ -113,22 +281,7 @@ export function ProfileForm({ profile: initialProfile }: ProfileFormProps) {
 
         <aside className="dashboard-welcome-card profile-summary-card" aria-label="Profile summary">
           <span className="dashboard-welcome-label">Account overview</span>
-          <strong>{profileDisplayName}</strong>
-          <p>{profile.email}</p>
-          <div className="profile-identity-list">
-            <div className="profile-identity-item">
-              <span className="profile-identity-label">Member since</span>
-              <time className="profile-identity-value" dateTime={profile.created_at}>
-                {formattedMemberSince}
-              </time>
-            </div>
-            <div className="profile-identity-item">
-              <span className="profile-identity-label">Last updated</span>
-              <time className="profile-identity-value" dateTime={profile.updated_at}>
-                {formattedUpdatedAt}
-              </time>
-            </div>
-          </div>
+          {summaryContent}
         </aside>
       </header>
 
@@ -141,87 +294,7 @@ export function ProfileForm({ profile: initialProfile }: ProfileFormProps) {
         </header>
 
         <form className="profile-form dashboard-panel" onSubmit={onSubmit} aria-label="Edit profile" noValidate>
-          <div className="profile-field-grid">
-            <label className={`profile-field${fieldErrors.full_name ? " profile-field-error" : ""}`} htmlFor={`${id}-name`}>
-              <span>Full name</span>
-              <input
-                id={`${id}-name`}
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                autoComplete="name"
-                autoCapitalize="words"
-                maxLength={120}
-                aria-invalid={fieldErrors.full_name ? "true" : "false"}
-                aria-describedby={fieldErrors.full_name ? fullNameErrorId : undefined}
-              />
-              {fieldErrors.full_name ? (
-                <span id={fullNameErrorId} className="profile-field-message" role="alert">
-                  {fieldErrors.full_name}
-                </span>
-              ) : (
-                <span className="profile-field-hint">Use the name you want shown across your workspace.</span>
-              )}
-            </label>
-
-            <label className="profile-field" htmlFor={`${id}-email`}>
-              <span>Email</span>
-              <input id={`${id}-email`} type="email" value={profile.email} readOnly aria-readonly="true" />
-              <span className="profile-field-hint">Email changes are not available from this page.</span>
-            </label>
-
-            <label
-              className={`profile-field profile-field-span${fieldErrors.avatar_url ? " profile-field-error" : ""}`}
-              htmlFor={`${id}-avatar`}
-            >
-              <span>Avatar URL</span>
-              <input
-                id={`${id}-avatar`}
-                type="url"
-                value={avatarUrl}
-                onChange={(e) => setAvatarUrl(e.target.value)}
-                autoComplete="url"
-                inputMode="url"
-                maxLength={2048}
-                placeholder="https://example.com/avatar.png"
-                aria-invalid={fieldErrors.avatar_url ? "true" : "false"}
-                aria-describedby={fieldErrors.avatar_url ? avatarUrlErrorId : undefined}
-              />
-              {fieldErrors.avatar_url ? (
-                <span id={avatarUrlErrorId} className="profile-field-message" role="alert">
-                  {fieldErrors.avatar_url}
-                </span>
-              ) : (
-                <span className="profile-field-hint">Use a public http or https image URL for your avatar.</span>
-              )}
-            </label>
-          </div>
-
-          <div className="profile-form-feedback">
-            {error ? (
-              <p id={errorId} className="profile-error" role="alert">
-                {error}
-              </p>
-            ) : null}
-
-            {success ? (
-              <p id={successId} className="profile-success" role="status">
-                {success}
-              </p>
-            ) : null}
-          </div>
-
-          <div className="profile-form-actions">
-            <button type="submit" className="profile-save-button" disabled={isSubmitting || !isDirty} aria-busy={isSubmitting}>
-              {isSubmitting ? "Saving…" : "Save changes"}
-            </button>
-            <p className="profile-form-note">
-              {isDirty ? "Only your authenticated profile record will be updated." : "Make a change to enable saving."}
-            </p>
-          </div>
-          <span className="sr-only" aria-live="polite" aria-atomic="true">
-            {isSubmitting ? "Saving profile, please wait." : success ?? ""}
-          </span>
+          {formBody}
         </form>
       </section>
     </section>
