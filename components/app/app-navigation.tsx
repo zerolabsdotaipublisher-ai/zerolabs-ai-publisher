@@ -26,7 +26,7 @@ const adminWorkspaceNavLinks = [
   { href: routes.adminAnalytics, label: "Analytics" },
   { href: routes.adminWebsites, label: "Websites" },
   { href: routes.adminUsers, label: "Admin users" },
-  { href: routes.createWebsite, label: "Create website" },
+  { href: routes.generateWebsite, label: "Create website" },
   { href: routes.profile, label: "Profile" },
 ];
 
@@ -55,7 +55,12 @@ export function AppNavigation({ userDisplayName, userEmail, userRole }: AppNavig
   const { theme } = useTheme();
   const mobileMenuId = "app-navigation-mobile-menu";
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const isAdminWorkspace = userRole === "admin" && (pathname === routes.admin || pathname.startsWith(`${routes.admin}/`));
+  const isAdminWorkspace =
+    userRole === "admin" &&
+    (pathname === routes.admin ||
+      pathname.startsWith(`${routes.admin}/`) ||
+      pathname === routes.profile ||
+      pathname === routes.generateWebsite);
   const navLinks = isAdminWorkspace
     ? adminWorkspaceNavLinks
     : userRole === "admin"

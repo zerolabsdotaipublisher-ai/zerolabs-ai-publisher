@@ -1540,6 +1540,21 @@ html[data-theme="dark"] .auth-panel-list {
   min-width: 0;
 }
 
+.app-nav-admin {
+  align-items: start;
+}
+
+.app-nav-admin .app-nav-links {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  row-gap: 0.45rem;
+  overflow: visible;
+}
+
+.app-nav-admin .app-nav-actions {
+  align-self: start;
+}
+
 .app-nav-user {
   min-width: 0;
   max-width: clamp(5.5rem, 11vw, 9rem);
@@ -8983,15 +8998,15 @@ html[data-theme="dark"] .generation-shell {
 .admin-shell {
   width: 100%;
   min-width: 0;
-  display: grid;
-  grid-template-columns: minmax(19rem, 21rem) minmax(0, 1fr);
-  gap: clamp(1.2rem, 2.6vw, 2rem);
-  align-items: start;
+  max-width: 92rem;
+  margin-inline: auto;
+  display: block;
 }
 
-.app-page-content:has(.admin-shell) {
-  width: min(100%, 104rem);
-  max-width: 104rem;
+.app-page-content:has(.admin-shell),
+.app-page-content:has(.profile-page-admin) {
+  width: min(100%, 92rem);
+  max-width: 92rem;
 }
 
 .admin-sidebar,
@@ -9298,6 +9313,7 @@ html[data-theme="dark"] .generation-shell {
 
 .admin-stat-grid {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  align-items: start;
 }
 
 .admin-stat-card {
@@ -9355,7 +9371,7 @@ html[data-theme="dark"] .generation-shell {
 
 .admin-overview-grid {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
-  align-items: stretch;
+  align-items: start;
 }
 
 .admin-surface-card {
@@ -9587,11 +9603,33 @@ html[data-theme="dark"] .generation-shell {
 .admin-action-card {
   display: grid;
   gap: 0.45rem;
-  min-height: 9.5rem;
   padding: 1rem;
   border: 1px solid var(--border);
   border-radius: 1.15rem;
   background: color-mix(in srgb, var(--surface) 92%, transparent);
+}
+
+.profile-page-admin {
+  gap: 1.1rem;
+}
+
+.profile-admin-grid {
+  grid-template-columns: minmax(0, 1.35fr) minmax(18rem, 0.9fr);
+  align-items: start;
+}
+
+.profile-admin-panel,
+.profile-admin-summary {
+  align-content: start;
+}
+
+.profile-form-admin {
+  width: 100%;
+  max-width: none;
+}
+
+.profile-summary-card-admin {
+  align-content: start;
 }
 
 .admin-detail-grid {
