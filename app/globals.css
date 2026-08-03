@@ -1900,7 +1900,7 @@ html[data-theme="dark"] .auth-panel-list {
   }
 }
 
-@media (min-width: 768px) and (max-width: 1260px) {
+@media (min-width: 768px) and (max-width: 1340px) {
   .app-nav-admin {
     display: flex;
     flex-wrap: nowrap;
@@ -2338,8 +2338,10 @@ html[data-theme="dark"] .auth-panel-list {
 }
 
 .website-builder-preview-panel {
-  position: sticky;
-  top: 1rem;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .website-builder-step-header {
@@ -2420,6 +2422,9 @@ html[data-theme="dark"] .auth-panel-list {
   border: none;
   margin: 0;
   padding: 0;
+  display: grid;
+  gap: 1rem;
+  align-content: start;
 }
 
 .generation-readonly {
@@ -8234,6 +8239,314 @@ html[data-theme="dark"] .generation-shell {
   max-width: 100%;
 }
 
+.website-builder-shell[data-entry-point="generate"] {
+  --wizard-text-primary: rgba(248, 250, 249, 0.98);
+  --wizard-text-secondary: rgba(229, 237, 233, 0.9);
+  --wizard-text-muted: rgba(205, 219, 213, 0.84);
+  --wizard-border: rgba(173, 230, 205, 0.2);
+  --wizard-border-strong: rgba(173, 230, 205, 0.38);
+  --wizard-input-surface: rgba(7, 24, 19, 0.96);
+  --generate-surface: linear-gradient(180deg, rgba(10, 32, 26, 0.94) 0%, rgba(6, 20, 16, 0.98) 100%);
+  --generate-surface-soft: linear-gradient(180deg, rgba(12, 36, 29, 0.92) 0%, rgba(7, 23, 18, 0.96) 100%);
+  --generate-pill-border: rgba(173, 230, 205, 0.68);
+  --generate-pill-bg: linear-gradient(180deg, #dff5e8 0%, #c7e7d8 100%);
+  --generate-pill-text: #052019;
+  gap: clamp(1rem, 2vw, 1.35rem);
+}
+
+.website-builder-shell[data-entry-point="generate"] .wizard-header h1 {
+  font-size: clamp(1.95rem, 1.72rem + 1vw, 2.55rem);
+  line-height: 1.08;
+}
+
+.website-builder-shell[data-entry-point="generate"] .wizard-header p {
+  max-width: 68ch;
+  font-size: 1rem;
+  line-height: 1.68;
+}
+
+.website-builder-shell[data-entry-point="generate"] .website-builder-grid {
+  grid-template-columns: minmax(0, 1.14fr) minmax(21.5rem, 0.9fr);
+  grid-template-areas:
+    "builder rail"
+    "preview preview";
+  gap: clamp(1rem, 2vw, 1.35rem);
+  align-items: start;
+}
+
+.website-builder-shell[data-entry-point="generate"] .website-builder-panel-primary {
+  grid-area: builder;
+  align-self: start;
+}
+
+.website-builder-shell[data-entry-point="generate"] .website-builder-preview-panel {
+  display: contents;
+}
+
+.website-builder-shell[data-entry-point="generate"] .website-builder-preview-rail {
+  grid-area: rail;
+  align-self: start;
+  display: grid;
+  gap: 1rem;
+  position: sticky;
+  top: 1rem;
+}
+
+.website-builder-shell[data-entry-point="generate"] .website-builder-live-preview {
+  grid-area: preview;
+}
+
+.website-builder-shell[data-entry-point="generate"] .website-builder-panel-header,
+.website-builder-shell[data-entry-point="generate"] .website-generation-status-header,
+.website-builder-shell[data-entry-point="generate"] .website-preview-card-header,
+.website-builder-shell[data-entry-point="generate"] .website-builder-section-header,
+.website-builder-shell[data-entry-point="generate"] .website-builder-step-header {
+  gap: 0.9rem;
+}
+
+.website-builder-shell[data-entry-point="generate"] .wizard-step-panel,
+.website-builder-shell[data-entry-point="generate"] .wizard-page-card,
+.website-builder-shell[data-entry-point="generate"] .wizard-page-design-card,
+.website-builder-shell[data-entry-point="generate"] .wizard-design-section,
+.website-builder-shell[data-entry-point="generate"] .wizard-typography-preview,
+.website-builder-shell[data-entry-point="generate"] .wizard-heading-preview,
+.website-builder-shell[data-entry-point="generate"] .website-preview-card,
+.website-builder-shell[data-entry-point="generate"] .website-builder-advanced-details,
+.website-builder-shell[data-entry-point="generate"] .website-builder-step-summary,
+.website-builder-shell[data-entry-point="generate"] .website-page-count-summary,
+.website-builder-shell[data-entry-point="generate"] .website-generation-status-list-wrap,
+.website-builder-shell[data-entry-point="generate"] .website-generation-stage-item,
+.website-builder-shell[data-entry-point="generate"] .website-preview-summary div {
+  border-color: rgba(173, 230, 205, 0.2);
+  background: var(--generate-surface);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 14px 28px rgba(0, 0, 0, 0.12);
+}
+
+.website-builder-shell[data-entry-point="generate"] .website-builder-phase-intro,
+.website-builder-shell[data-entry-point="generate"] .website-generation-status {
+  background: var(--generate-surface-soft);
+}
+
+.website-builder-shell[data-entry-point="generate"] .wizard-step-panel h2,
+.website-builder-shell[data-entry-point="generate"] .wizard-step-panel h3,
+.website-builder-shell[data-entry-point="generate"] .wizard-step-panel h4,
+.website-builder-shell[data-entry-point="generate"] .wizard-choice-title,
+.website-builder-shell[data-entry-point="generate"] .wizard-page-tab strong,
+.website-builder-shell[data-entry-point="generate"] .website-builder-phase-step-content strong,
+.website-builder-shell[data-entry-point="generate"] .website-builder-step-summary strong,
+.website-builder-shell[data-entry-point="generate"] .website-page-count-summary strong,
+.website-builder-shell[data-entry-point="generate"] .website-preview-summary dd,
+.website-builder-shell[data-entry-point="generate"] .website-preview-card-overlay h4,
+.website-builder-shell[data-entry-point="generate"] .website-generation-status-badge {
+  color: var(--wizard-text-primary);
+}
+
+.website-builder-shell[data-entry-point="generate"] .wizard-header p,
+.website-builder-shell[data-entry-point="generate"] .wizard-step-description,
+.website-builder-shell[data-entry-point="generate"] .wizard-choice-description,
+.website-builder-shell[data-entry-point="generate"] .website-builder-phase-step-meta,
+.website-builder-shell[data-entry-point="generate"] .wizard-page-tab-status-copy,
+.website-builder-shell[data-entry-point="generate"] .wizard-section-status,
+.website-builder-shell[data-entry-point="generate"] .website-preview-summary dt,
+.website-builder-shell[data-entry-point="generate"] .website-preview-chip,
+.website-builder-shell[data-entry-point="generate"] .website-generation-status-list,
+.website-builder-shell[data-entry-point="generate"] .website-generation-stage-item > div span,
+.website-builder-shell[data-entry-point="generate"] .website-preview-card-overlay p {
+  color: var(--wizard-text-secondary);
+}
+
+.website-builder-shell[data-entry-point="generate"] .wizard-field-hint,
+.website-builder-shell[data-entry-point="generate"] .website-preview-browser-meta span,
+.website-builder-shell[data-entry-point="generate"] .website-preview-side-label {
+  color: var(--wizard-text-muted);
+}
+
+.website-builder-shell[data-entry-point="generate"] .wizard-choice-card,
+.website-builder-shell[data-entry-point="generate"] .wizard-page-tab,
+.website-builder-shell[data-entry-point="generate"] .website-builder-phase-step {
+  border-color: rgba(173, 230, 205, 0.24);
+  background: linear-gradient(180deg, rgba(9, 27, 22, 0.92) 0%, rgba(6, 20, 16, 0.98) 100%);
+  color: var(--wizard-text-primary);
+}
+
+.website-builder-shell[data-entry-point="generate"] .wizard-choice-card:hover,
+.website-builder-shell[data-entry-point="generate"] .wizard-page-tab:hover,
+.website-builder-shell[data-entry-point="generate"] .website-builder-phase-step:hover {
+  border-color: rgba(173, 230, 205, 0.38);
+  background: linear-gradient(180deg, rgba(13, 34, 28, 0.94) 0%, rgba(8, 24, 19, 0.98) 100%);
+}
+
+.website-builder-shell[data-entry-point="generate"] .wizard-choice-card.is-selected,
+.website-builder-shell[data-entry-point="generate"] .wizard-page-tab.is-active,
+.website-builder-shell[data-entry-point="generate"] .website-builder-phase-step.is-active {
+  border-color: rgba(173, 230, 205, 0.42);
+  background: linear-gradient(180deg, rgba(14, 39, 32, 0.98) 0%, rgba(8, 28, 22, 1) 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(173, 230, 205, 0.18),
+    0 0 0 1px rgba(173, 230, 205, 0.12);
+}
+
+.website-builder-shell[data-entry-point="generate"] .wizard-choice-state,
+.website-builder-shell[data-entry-point="generate"] .wizard-page-tab[data-state="current"] .wizard-page-tab-state,
+.website-builder-shell[data-entry-point="generate"] .website-builder-phase-step[data-state="current"] .website-builder-phase-step-status,
+.website-builder-shell[data-entry-point="generate"] .website-generation-stage-item.is-current .website-generation-stage-state {
+  border-color: var(--generate-pill-border);
+  background: var(--generate-pill-bg);
+  color: var(--generate-pill-text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.website-builder-shell[data-entry-point="generate"] .wizard-page-tab[data-state="ready"] .wizard-page-tab-state,
+.website-builder-shell[data-entry-point="generate"] .website-builder-phase-step[data-state="ready"] .website-builder-phase-step-status,
+.website-builder-shell[data-entry-point="generate"] .website-generation-stage-item.is-complete .website-generation-stage-state {
+  border-color: rgba(134, 239, 172, 0.42);
+  background: rgba(22, 101, 52, 0.24);
+  color: #dcfce7;
+}
+
+.website-builder-shell[data-entry-point="generate"] .wizard-page-tab[data-state="attention"] .wizard-page-tab-state,
+.website-builder-shell[data-entry-point="generate"] .website-builder-phase-step[data-state="attention"] .website-builder-phase-step-status,
+.website-builder-shell[data-entry-point="generate"] .website-generation-stage-item.is-upcoming .website-generation-stage-state {
+  border-color: rgba(252, 211, 77, 0.42);
+  background: #fff2cf;
+  color: #6f3a00;
+}
+
+.website-builder-shell[data-entry-point="generate"] .website-generation-status-badge {
+  font-size: 0.82rem;
+  line-height: 1.25;
+}
+
+.website-builder-shell[data-entry-point="generate"] .website-generation-status-badge.is-ready {
+  border-color: rgba(173, 230, 205, 0.38);
+  background: rgba(173, 230, 205, 0.14);
+  color: rgba(248, 250, 249, 0.96);
+}
+
+.website-builder-shell[data-entry-point="generate"] .website-generation-status-badge.is-running {
+  border-color: rgba(253, 230, 138, 0.46);
+  background: rgba(146, 64, 14, 0.18);
+  color: #fff3c4;
+}
+
+.website-builder-shell[data-entry-point="generate"] .website-generation-status-badge.is-success {
+  border-color: rgba(134, 239, 172, 0.42);
+  background: rgba(22, 101, 52, 0.26);
+  color: #dcfce7;
+}
+
+.website-builder-shell[data-entry-point="generate"] .website-generation-status-badge.is-error {
+  border-color: rgba(252, 165, 165, 0.4);
+  background: rgba(127, 29, 29, 0.24);
+  color: #fee2e2;
+}
+
+.website-builder-shell[data-entry-point="generate"] .website-generation-status-badge.is-idle {
+  border-color: rgba(252, 211, 77, 0.38);
+  background: rgba(120, 53, 15, 0.2);
+  color: #fff3c4;
+}
+
+.website-builder-shell[data-entry-point="generate"] .website-preview-chip {
+  border-color: rgba(173, 230, 205, 0.24);
+  background: rgba(8, 24, 19, 0.86);
+  color: rgba(248, 250, 249, 0.94);
+}
+
+.website-builder-shell[data-entry-point="generate"] .website-preview-summary {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+}
+
+.website-builder-shell[data-entry-point="generate"] .website-preview-card-hero,
+.website-builder-shell[data-entry-point="generate"] .website-preview-card-overlay {
+  min-height: clamp(13.5rem, 28vw, 15.5rem);
+}
+
+.website-builder-shell[data-entry-point="generate"] .website-preview-card-overlay {
+  background: linear-gradient(180deg, rgba(4, 18, 14, 0.16) 0%, rgba(4, 18, 14, 0.82) 60%, rgba(4, 18, 14, 0.94) 100%);
+}
+
+.website-builder-shell[data-entry-point="generate"] .website-preview-browser-bar,
+.website-builder-shell[data-entry-point="generate"] .website-preview-mini-frame,
+.website-builder-shell[data-entry-point="generate"] .website-preview-side-panel {
+  border-color: rgba(248, 250, 252, 0.16);
+  background: rgba(4, 18, 14, 0.48);
+}
+
+.website-builder-shell[data-entry-point="generate"] .website-preview-side-panel strong,
+.website-builder-shell[data-entry-point="generate"] .website-preview-browser-meta strong,
+.website-builder-shell[data-entry-point="generate"] .website-preview-side-panel p,
+.website-builder-shell[data-entry-point="generate"] .website-preview-side-copy span {
+  color: rgba(248, 250, 252, 0.94);
+}
+
+.website-builder-shell[data-entry-point="generate"] .website-action-button,
+.website-builder-shell[data-entry-point="generate"] .wizard-button-secondary,
+.website-builder-shell[data-entry-point="generate"] .website-page-remove {
+  min-height: 2.95rem;
+  padding: 0.8rem 1.08rem;
+  font-size: 0.95rem;
+  line-height: 1.22;
+  text-decoration: none;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.website-builder-shell[data-entry-point="generate"] .website-action-button.is-primary {
+  border-color: rgba(173, 230, 205, 0.7);
+  background: linear-gradient(180deg, #ecfaf2 0%, #d7eee2 100%);
+  color: #052019;
+  box-shadow: 0 12px 28px rgba(2, 12, 9, 0.24);
+}
+
+.website-builder-shell[data-entry-point="generate"] .website-action-button.is-primary:hover {
+  border-color: rgba(173, 230, 205, 0.78);
+  background: linear-gradient(180deg, #f6fcf8 0%, #dff4e7 100%);
+}
+
+.website-builder-shell[data-entry-point="generate"] .wizard-button-secondary,
+.website-builder-shell[data-entry-point="generate"] .website-action-button.is-secondary {
+  border-color: rgba(173, 230, 205, 0.34);
+  background: rgba(10, 29, 23, 0.92);
+  color: rgba(248, 250, 249, 0.96);
+}
+
+.website-builder-shell[data-entry-point="generate"] .website-action-button.is-muted {
+  border-color: rgba(205, 219, 213, 0.24);
+  background: rgba(9, 24, 20, 0.72);
+  color: rgba(230, 239, 235, 0.92);
+}
+
+.website-builder-shell[data-entry-point="generate"] .wizard-button-secondary:hover,
+.website-builder-shell[data-entry-point="generate"] .website-action-button.is-secondary:hover,
+.website-builder-shell[data-entry-point="generate"] .website-action-button.is-muted:hover {
+  border-color: rgba(173, 230, 205, 0.44);
+  background: rgba(13, 35, 28, 0.96);
+}
+
+.website-builder-shell[data-entry-point="generate"] .website-builder-advanced-details summary {
+  min-height: 2.9rem;
+  display: flex;
+  align-items: center;
+  line-height: 1.45;
+}
+
+.website-builder-shell[data-entry-point="generate"] .wizard-error {
+  border-color: color-mix(in srgb, var(--error-text) 42%, transparent);
+  background: linear-gradient(180deg, rgba(72, 20, 20, 0.42) 0%, rgba(45, 13, 13, 0.54) 100%);
+  color: rgba(255, 241, 242, 0.96);
+}
+
+.website-builder-shell[data-entry-point="generate"] .wizard-error h2,
+.website-builder-shell[data-entry-point="generate"] .wizard-error h3,
+.website-builder-shell[data-entry-point="generate"] .wizard-error p,
+.website-builder-shell[data-entry-point="generate"] .wizard-error li {
+  color: inherit;
+  line-height: 1.6;
+}
+
 .website-builder-shell[data-entry-point="create"] .website-builder-grid {
   grid-template-columns: minmax(0, 1.55fr) minmax(21rem, 0.95fr);
   gap: 1rem;
@@ -8928,7 +9241,24 @@ html[data-theme="dark"] .generation-shell {
   line-height: 1.45;
 }
 
+.website-builder-shell[data-entry-point="create"] .website-builder-preview-panel {
+  position: sticky;
+  top: 1rem;
+}
+
 @media (max-width: 1080px) {
+  .website-builder-shell[data-entry-point="generate"] .website-builder-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "builder"
+      "rail"
+      "preview";
+  }
+
+  .website-builder-shell[data-entry-point="generate"] .website-builder-preview-rail {
+    position: static;
+  }
+
   .website-builder-shell[data-entry-point="create"] .website-builder-grid {
     grid-template-columns: 1fr;
   }
@@ -8949,6 +9279,15 @@ html[data-theme="dark"] .generation-shell {
 }
 
 @media (max-width: 767px) {
+  .website-builder-shell[data-entry-point="generate"] .website-generation-actions,
+  .website-builder-shell[data-entry-point="generate"] .website-generation-failure-actions,
+  .website-builder-shell[data-entry-point="generate"] .wizard-pages-grid,
+  .website-builder-shell[data-entry-point="generate"] .wizard-layout-grid,
+  .website-builder-shell[data-entry-point="generate"] .wizard-choice-grid,
+  .website-builder-shell[data-entry-point="generate"] .wizard-page-selector {
+    grid-template-columns: 1fr;
+  }
+
   .website-builder-shell[data-entry-point="create"] .website-generation-actions,
   .website-builder-shell[data-entry-point="create"] .website-generation-failure-actions,
   .website-builder-shell[data-entry-point="create"] .wizard-pages-grid,

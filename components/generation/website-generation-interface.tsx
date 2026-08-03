@@ -404,7 +404,7 @@ export function WebsiteGenerationInterface({
     });
   }
 
-  const title = entryPoint === "generate" ? "Generate website" : "Create website";
+  const title = entryPoint === "generate" ? "Generate Website" : "Create website";
   const description =
     entryPoint === "generate"
       ? "Review or refine the saved builder inputs, then generate and continue to preview."

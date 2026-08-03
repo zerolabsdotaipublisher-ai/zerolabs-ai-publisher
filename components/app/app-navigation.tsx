@@ -26,7 +26,7 @@ const adminWorkspaceNavLinks = [
   { href: routes.adminAnalytics, label: "Analytics" },
   { href: routes.adminWebsites, label: "Websites" },
   { href: routes.adminUsers, label: "Admin users" },
-  { href: routes.generateWebsite, label: "Create website" },
+  { href: routes.generateWebsite, label: "Generate Website" },
   { href: routes.profile, label: "Profile" },
 ];
 
