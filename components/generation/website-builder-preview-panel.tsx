@@ -444,147 +444,70 @@ export function WebsiteBuilderPreviewPanel({
   const showMissingRequirements = workflowStatus.label === "Not ready" && readinessErrors.length > 0;
 
   return (
-    <section className="generation-panel" aria-labelledby="website-builder-preview-title">
-      <section className="wizard-step-panel website-generation-status" aria-live="polite" aria-atomic="true">
-        <div className="website-generation-status-header">
-          <div>
-            <span className="website-builder-step-label">Step 3</span>
-            <h2 id="website-builder-preview-title">Review and generate</h2>
-            <p className="wizard-step-description">{workflowStatus.description}</p>
+    <>
+      <div className="generation-panel website-builder-preview-rail" aria-labelledby="website-builder-preview-title">
+        <section className="wizard-step-panel website-generation-status" aria-live="polite" aria-atomic="true">
+          <div className="website-generation-status-header">
+            <div>
+              <span className="website-builder-step-label">Step 3</span>
+              <h2 id="website-builder-preview-title">Review and generate</h2>
+              <p className="wizard-step-description">{workflowStatus.description}</p>
+            </div>
+            <span
+              className={`website-generation-status-badge is-${workflowStatus.tone}`}
+              aria-label={`Generation status: ${workflowStatus.label}`}
+            >
+              {workflowStatus.label}
+            </span>
           </div>
-          <span
-            className={`website-generation-status-badge is-${workflowStatus.tone}`}
-            aria-label={`Generation status: ${workflowStatus.label}`}
-          >
-            {workflowStatus.label}
-          </span>
-        </div>
 
-        <div className="website-generation-context">
-          <span className="website-preview-chip">{`Pages planned: ${totalPages}`}</span>
-          <span className="website-preview-chip">{`Current page: ${activePageIndex + 1} of ${totalPages}`}</span>
-          <span className="website-preview-chip">{`Editing: ${activePage?.name || "Untitled page"}`}</span>
-          {state.input.brandName ? (
-            <span className="website-preview-chip">{`Brand: ${state.input.brandName}`}</span>
-          ) : null}
-          {state.input.domainName ? (
-            <span className="website-preview-chip">{`Domain: ${state.input.domainName}`}</span>
-          ) : null}
-        </div>
-
-        {showMissingRequirements ? (
-          <div className="website-generation-status-list-wrap">
-            <p className="website-generation-status-list-label">Missing requirements</p>
-            <ul className="website-generation-status-list" id="website-generation-missing-requirements">
-              {readinessErrors.map((error) => (
-              <li key={error}>{error}</li>
-              ))}
-            </ul>
+          <div className="website-generation-context">
+            <span className="website-preview-chip">{`Pages planned: ${totalPages}`}</span>
+            <span className="website-preview-chip">{`Current page: ${activePageIndex + 1} of ${totalPages}`}</span>
+            <span className="website-preview-chip">{`Editing: ${activePage?.name || "Untitled page"}`}</span>
+            {state.input.brandName ? (
+              <span className="website-preview-chip">{`Brand: ${state.input.brandName}`}</span>
+            ) : null}
+            {state.input.domainName ? (
+              <span className="website-preview-chip">{`Domain: ${state.input.domainName}`}</span>
+            ) : null}
           </div>
-        ) : null}
-      </section>
 
-      <section className="website-generation-actions" aria-label="Website generation actions">
-        <button
-          type="button"
-          className="website-action-button is-primary"
-          onClick={onGenerate}
-          disabled={state.submissionStatus === "running"}
-          aria-busy={state.submissionStatus === "running"}
-          aria-describedby={showMissingRequirements ? "website-generation-missing-requirements" : undefined}
-        >
-          {state.submissionStatus === "running" ? "Generating website..." : "Generate website"}
-        </button>
+          {showMissingRequirements ? (
+            <div className="website-generation-status-list-wrap">
+              <p className="website-generation-status-list-label">Missing requirements</p>
+              <ul className="website-generation-status-list" id="website-generation-missing-requirements">
+                {readinessErrors.map((error) => (
+                  <li key={error}>{error}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </section>
 
-        {state.result?.generatedSitePath ? (
-          <Link
-            href={state.result.generatedSitePath}
-            className="website-action-button is-primary"
-            onClick={onPreviewClick}
-          >
-            Continue to preview
-          </Link>
-        ) : null}
-
-        {state.submissionStatus === "error" ? (
+        <section className="website-generation-actions" aria-label="Website generation actions">
           <button
             type="button"
-            className="website-action-button is-secondary"
-            onClick={onRetry}
+            className="website-action-button is-primary"
+            onClick={onGenerate}
+            disabled={state.submissionStatus === "running"}
+            aria-busy={state.submissionStatus === "running"}
+            aria-describedby={showMissingRequirements ? "website-generation-missing-requirements" : undefined}
           >
-            Retry generation
+            {state.submissionStatus === "running" ? "Generating Website..." : "Generate Website"}
           </button>
-        ) : null}
 
-        <button
-          type="button"
-          className="website-action-button is-secondary"
-          onClick={onReviewInputs}
-          disabled={state.submissionStatus === "running"}
-        >
-          Review inputs
-        </button>
-
-        <button
-          type="button"
-          className="website-action-button is-muted"
-          onClick={onEditInputs}
-          disabled={state.submissionStatus === "running"}
-        >
-          Edit inputs
-        </button>
-      </section>
-
-      {state.submissionStatus === "running" ? (
-        <section
-          className="website-preview-card website-preview-status-card"
-          aria-live="polite"
-          aria-busy="true"
-          role="status"
-        >
-          <h3>Generation status</h3>
-          <p>{currentStage.description}</p>
-
-          <ol className="website-generation-stage-list" aria-label="Generation progress">
-            {generationStageDetails.map((stage) => {
-              const stageState = getGenerationStageState(state.stage, stage.id);
-              const stageStateLabel =
-                stageState === "complete"
-                  ? "Complete"
-                  : stageState === "current"
-                    ? "Current"
-                    : "Upcoming";
-
-              return (
-                <li
-                  key={stage.id}
-                  className={`website-generation-stage-item is-${stageState}`}
-                >
-                  <div>
-                    <strong>{stage.label}</strong>
-                    <span>{stage.description}</span>
-                  </div>
-                  <span className="website-generation-stage-state">{stageStateLabel}</span>
-                </li>
-              );
-            })}
-          </ol>
-        </section>
-      ) : null}
-
-      {state.submissionStatus === "error" && state.result?.error ? (
-        <section className="wizard-error website-generation-status" role="alert" aria-live="assertive">
-          <p className="website-generation-status-label">Generation failed</p>
-          <h3>{failureState.title}</h3>
-          <p>{failureState.description}</p>
-          <p>{failureState.guidance}</p>
-          {failureState.referenceId ? (
-            <p className="website-generation-status-reference">
-              Reference ID: {failureState.referenceId}
-            </p>
+          {state.result?.generatedSitePath ? (
+            <Link
+              href={state.result.generatedSitePath}
+              className="website-action-button is-primary"
+              onClick={onPreviewClick}
+            >
+              Continue to preview
+            </Link>
           ) : null}
 
-          <div className="website-generation-failure-actions">
+          {state.submissionStatus === "error" ? (
             <button
               type="button"
               className="website-action-button is-secondary"
@@ -592,50 +515,129 @@ export function WebsiteBuilderPreviewPanel({
             >
               Retry generation
             </button>
-            <button
-              type="button"
-              className="website-action-button is-muted"
-              onClick={onEditInputs}
-            >
-              Edit inputs
-            </button>
-          </div>
-        </section>
-      ) : null}
+          ) : null}
 
-      {state.submissionStatus === "success" && state.result?.generatedSitePath ? (
-        <section className="website-preview-card">
-          <div className="website-preview-card-header">
-            <div>
-              <h3>Generated output</h3>
-              <p className="wizard-step-description">
-                The latest generated website is ready for preview and follow-up edits.
+          <button
+            type="button"
+            className="website-action-button is-secondary"
+            onClick={onReviewInputs}
+            disabled={state.submissionStatus === "running"}
+          >
+            Review inputs
+          </button>
+
+          <button
+            type="button"
+            className="website-action-button is-muted"
+            onClick={onEditInputs}
+            disabled={state.submissionStatus === "running"}
+          >
+            Edit inputs
+          </button>
+        </section>
+
+        {state.submissionStatus === "running" ? (
+          <section
+            className="website-preview-card website-preview-status-card"
+            aria-live="polite"
+            aria-busy="true"
+            role="status"
+          >
+            <h3>Generation status</h3>
+            <p>{currentStage.description}</p>
+
+            <ol className="website-generation-stage-list" aria-label="Generation progress">
+              {generationStageDetails.map((stage) => {
+                const stageState = getGenerationStageState(state.stage, stage.id);
+                const stageStateLabel =
+                  stageState === "complete"
+                    ? "Complete"
+                    : stageState === "current"
+                      ? "Current"
+                      : "Upcoming";
+
+                return (
+                  <li
+                    key={stage.id}
+                    className={`website-generation-stage-item is-${stageState}`}
+                  >
+                    <div>
+                      <strong>{stage.label}</strong>
+                      <span>{stage.description}</span>
+                    </div>
+                    <span className="website-generation-stage-state">{stageStateLabel}</span>
+                  </li>
+                );
+              })}
+            </ol>
+          </section>
+        ) : null}
+
+        {state.submissionStatus === "error" && state.result?.error ? (
+          <section className="wizard-error website-generation-status" role="alert" aria-live="assertive">
+            <p className="website-generation-status-label">Generation failed</p>
+            <h3>{failureState.title}</h3>
+            <p>{failureState.description}</p>
+            <p>{failureState.guidance}</p>
+            {failureState.referenceId ? (
+              <p className="website-generation-status-reference">
+                Reference ID: {failureState.referenceId}
               </p>
-            </div>
-          </div>
+            ) : null}
 
-          <dl className="website-preview-summary">
-            <div>
-              <dt>Structure ID</dt>
-              <dd>{state.result.structureId ?? "Pending"}</dd>
+            <div className="website-generation-failure-actions">
+              <button
+                type="button"
+                className="website-action-button is-secondary"
+                onClick={onRetry}
+              >
+                Retry generation
+              </button>
+              <button
+                type="button"
+                className="website-action-button is-muted"
+                onClick={onEditInputs}
+              >
+                Edit inputs
+              </button>
             </div>
-            <div>
-              <dt>Preview route</dt>
-              <dd>{state.result.generatedSitePath}</dd>
-            </div>
-            <div>
-              <dt>Generated at</dt>
-              <dd>{completedAt ?? "Just now"}</dd>
-            </div>
-            <div>
-              <dt>Status</dt>
-              <dd>Ready to continue</dd>
-            </div>
-          </dl>
-        </section>
-      ) : null}
+          </section>
+        ) : null}
 
-      <section className="website-preview-card">
+        {state.submissionStatus === "success" && state.result?.generatedSitePath ? (
+          <section className="website-preview-card">
+            <div className="website-preview-card-header">
+              <div>
+                <h3>Generated output</h3>
+                <p className="wizard-step-description">
+                  The latest generated website is ready for preview and follow-up edits.
+                </p>
+              </div>
+            </div>
+
+            <dl className="website-preview-summary">
+              <div>
+                <dt>Structure ID</dt>
+                <dd>{state.result.structureId ?? "Pending"}</dd>
+              </div>
+              <div>
+                <dt>Preview route</dt>
+                <dd>{state.result.generatedSitePath}</dd>
+              </div>
+              <div>
+                <dt>Generated at</dt>
+                <dd>{completedAt ?? "Just now"}</dd>
+              </div>
+              <div>
+                <dt>Status</dt>
+                <dd>Ready to continue</dd>
+              </div>
+            </dl>
+          </section>
+        ) : null}
+      </div>
+
+      <section className="website-preview-card website-builder-live-preview">
         <div className="website-preview-card-header">
           <div>
             <h3>Live design preview</h3>
@@ -799,6 +801,6 @@ export function WebsiteBuilderPreviewPanel({
           </p>
         )}
       </section>
-    </section>
+    </>
   );
 }

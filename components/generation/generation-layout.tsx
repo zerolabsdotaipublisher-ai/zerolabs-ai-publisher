@@ -27,8 +27,8 @@ export function GenerationLayout({
       </header>
 
       <div className="website-builder-grid">
-        <div className="website-builder-panel">{builderPanel}</div>
-        <aside className="website-builder-panel website-builder-preview-panel">{previewPanel}</aside>
+        <div className="website-builder-panel website-builder-panel-primary">{builderPanel}</div>
+        <div className="website-builder-panel website-builder-preview-panel">{previewPanel}</div>
       </div>
     </section>
   );
