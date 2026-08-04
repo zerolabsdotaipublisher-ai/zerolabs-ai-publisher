@@ -16,7 +16,7 @@ const customerNavLinks = [
   { href: routes.activity, label: "Activity" },
   { href: routes.insights, label: "Insights" },
   { href: routes.blog, label: "Blog" },
-  { href: routes.createWebsite, label: "Create website" },
+  { href: routes.createWebsite, label: "Generate Website" },
   { href: routes.profile, label: "Profile" },
 ];
 
@@ -44,7 +44,11 @@ function isActivePath(pathname: string, href: string) {
   }
 
   if (href === routes.adminDashboard) {
-    return pathname === routes.admin || pathname.startsWith(`${routes.admin}/`);
+    return pathname === routes.admin || pathname === href;
+  }
+
+  if (href === routes.generateWebsite || href === routes.profile) {
+    return pathname === href;
   }
 
   return pathname === href || pathname.startsWith(`${href}/`);
