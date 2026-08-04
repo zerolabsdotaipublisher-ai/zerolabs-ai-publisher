@@ -442,6 +442,12 @@ export function WebsiteBuilderPreviewPanel({
   const currentStage =
     generationStageDetails.find((stage) => stage.id === state.stage) ?? generationStageDetails[0];
   const showMissingRequirements = workflowStatus.label === "Not ready" && readinessErrors.length > 0;
+  const hasGeneratedOutput = Boolean(state.result?.generatedSitePath);
+  const generateButtonClassName = `website-action-button ${hasGeneratedOutput ? "is-secondary" : "is-primary is-active"}`;
+  const previewButtonClassName = "website-action-button is-primary is-active";
+  const retryButtonClassName = "website-action-button is-secondary is-active";
+  const reviewButtonClassName = `website-action-button is-secondary${state.isEditingInputs ? "" : " is-active"}`;
+  const editButtonClassName = `website-action-button is-muted${state.isEditingInputs ? " is-active" : ""}`;
 
   return (
     <>
@@ -488,7 +494,7 @@ export function WebsiteBuilderPreviewPanel({
         <section className="website-generation-actions" aria-label="Website generation actions">
           <button
             type="button"
-            className="website-action-button is-primary"
+            className={generateButtonClassName}
             onClick={onGenerate}
             disabled={state.submissionStatus === "running"}
             aria-busy={state.submissionStatus === "running"}
@@ -500,7 +506,7 @@ export function WebsiteBuilderPreviewPanel({
           {state.result?.generatedSitePath ? (
             <Link
               href={state.result.generatedSitePath}
-              className="website-action-button is-primary"
+              className={previewButtonClassName}
               onClick={onPreviewClick}
             >
               Continue to preview
@@ -510,7 +516,7 @@ export function WebsiteBuilderPreviewPanel({
           {state.submissionStatus === "error" ? (
             <button
               type="button"
-              className="website-action-button is-secondary"
+              className={retryButtonClassName}
               onClick={onRetry}
             >
               Retry generation
@@ -519,7 +525,7 @@ export function WebsiteBuilderPreviewPanel({
 
           <button
             type="button"
-            className="website-action-button is-secondary"
+            className={reviewButtonClassName}
             onClick={onReviewInputs}
             disabled={state.submissionStatus === "running"}
           >
@@ -528,7 +534,7 @@ export function WebsiteBuilderPreviewPanel({
 
           <button
             type="button"
-            className="website-action-button is-muted"
+            className={editButtonClassName}
             onClick={onEditInputs}
             disabled={state.submissionStatus === "running"}
           >
@@ -588,14 +594,14 @@ export function WebsiteBuilderPreviewPanel({
             <div className="website-generation-failure-actions">
               <button
                 type="button"
-                className="website-action-button is-secondary"
+                className={retryButtonClassName}
                 onClick={onRetry}
               >
                 Retry generation
               </button>
               <button
                 type="button"
-                className="website-action-button is-muted"
+                className={editButtonClassName}
                 onClick={onEditInputs}
               >
                 Edit inputs
