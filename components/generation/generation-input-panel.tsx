@@ -125,6 +125,14 @@ function formatPhaseStatus(errors: string[]): string {
   return `${errors.length} ${errors.length === 1 ? "item" : "items"} left`;
 }
 
+function formatPhaseCardMeta(errors: string[]): string {
+  if (errors.length === 0) {
+    return "All required inputs are complete.";
+  }
+
+  return `${errors.length} required ${errors.length === 1 ? "item remains" : "items remain"}.`;
+}
+
 function getPhaseStateLabel(isActive: boolean, errors: string[]): string {
   if (isActive) {
     return "Current";
@@ -180,6 +188,7 @@ export function GenerationInputPanel({
       id: "planning" as const,
       label: "Phase 1",
       title: "Planning",
+      cardDescription: "Set the page count, page names, and core website identity.",
       description:
         "Map the website foundation first: page count, page names, and website identity.",
       helper:
@@ -189,6 +198,7 @@ export function GenerationInputPanel({
       id: "structure" as const,
       label: "Phase 2",
       title: "Structure and build",
+      cardDescription: "Shape each page layout and define its content direction.",
       description:
         "Choose the page you want to shape, then set its layout and page-specific content direction.",
       helper:
@@ -198,6 +208,7 @@ export function GenerationInputPanel({
       id: "design" as const,
       label: "Phase 3",
       title: "Design",
+      cardDescription: "Refine backgrounds, typography, and the final creative cues.",
       description:
         "Tune background, typography, and heading style for each page, then add broader creative direction if needed.",
       helper:
@@ -317,10 +328,9 @@ export function GenerationInputPanel({
               <span className="website-builder-phase-step-content">
                 <span className="website-builder-phase-step-eyebrow">{phase.label}</span>
                 <strong>{phase.title}</strong>
+                <span className="website-builder-phase-step-description">{phase.cardDescription}</span>
                 <span className="website-builder-phase-step-meta" id={phaseSummaryId}>
-                  {phaseErrors.length === 0
-                    ? "All required inputs are complete."
-                    : formatPhaseStatus(phaseErrors)}
+                  {formatPhaseCardMeta(phaseErrors)}
                 </span>
               </span>
               <span className="website-builder-phase-step-status">{stateLabel}</span>
