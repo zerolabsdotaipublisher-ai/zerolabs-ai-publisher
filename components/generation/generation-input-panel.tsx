@@ -119,7 +119,7 @@ function validateDesignPhase(data: WebsiteWizardInput): string[] {
 
 function formatPhaseStatus(errors: string[]): string {
   if (errors.length === 0) {
-    return "Ready";
+    return "Done";
   }
 
   return `${errors.length} ${errors.length === 1 ? "item" : "items"} left`;
@@ -127,22 +127,22 @@ function formatPhaseStatus(errors: string[]): string {
 
 function formatPhaseCardMeta(errors: string[]): string {
   if (errors.length === 0) {
-    return "All required inputs are complete.";
+    return "All required inputs complete.";
   }
 
-  return `${errors.length} required ${errors.length === 1 ? "item remains" : "items remain"}.`;
+  return `${errors.length} required ${errors.length === 1 ? "item left" : "items left"}.`;
 }
 
 function getPhaseStateLabel(isActive: boolean, errors: string[]): string {
   if (isActive) {
-    return "Current";
+    return "Active";
   }
 
   if (errors.length === 0) {
-    return "Ready";
+    return "Done";
   }
 
-  return "Items left";
+  return "Next";
 }
 
 function getPhaseStateTone(isActive: boolean, errors: string[]): "current" | "ready" | "attention" {
@@ -187,32 +187,32 @@ export function GenerationInputPanel({
     {
       id: "planning" as const,
       label: "Phase 1",
-      title: "Planning",
-      cardDescription: "Set the page count, page names, and core website identity.",
+      title: "Plan",
+      cardDescription: "Set pages, names, and website identity.",
       description:
-        "Map the website foundation first: page count, page names, and website identity.",
+        "Set pages, names, and website identity before you move into layout and styling.",
       helper:
-        "Keep the page-first plan intact, then optionally add the website name or domain.",
+        "Define the website foundation first, then move into build and design decisions.",
     },
     {
       id: "structure" as const,
       label: "Phase 2",
-      title: "Structure and build",
-      cardDescription: "Shape each page layout and define its content direction.",
+      title: "Build",
+      cardDescription: "Create the page structure and layout.",
       description:
-        "Choose the page you want to shape, then set its layout and page-specific content direction.",
+        "Create the page structure and layout for each page before final visual refinement.",
       helper:
-        "Each page stays independently editable. Layout choices here flow into the generation payload.",
+        "Each page stays independently editable, and layout choices here flow into the generation payload.",
     },
     {
       id: "design" as const,
       label: "Phase 3",
       title: "Design",
-      cardDescription: "Refine backgrounds, typography, and the final creative cues.",
+      cardDescription: "Refine visuals, typography, and styling.",
       description:
-        "Tune background, typography, and heading style for each page, then add broader creative direction if needed.",
+        "Refine visuals, typography, and styling across each page, then add broader creative direction if needed.",
       helper:
-        "Visual settings stay page-specific, and optional founder, contact, and content constraints remain available without cluttering the main flow.",
+        "Visual settings stay page-specific, and optional content details remain available without cluttering the main flow.",
     },
   ];
 
@@ -299,7 +299,7 @@ export function GenerationInputPanel({
       <div className="website-builder-panel-header">
         <h2 id="generation-inputs-title">Builder tools</h2>
         <p className="wizard-step-description">
-          Move through planning, structure, and visual design on the left. The right panel stays
+          Move through plan, build, and design on the left. The right panel stays
           focused on preview, generation state, and next actions.
         </p>
       </div>
