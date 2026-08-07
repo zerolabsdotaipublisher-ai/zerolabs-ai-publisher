@@ -8434,21 +8434,29 @@ html[data-theme="dark"] .generation-shell {
 .website-builder-shell[data-entry-point="generate"] .website-builder-phase-stepper {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: stretch;
-  gap: 0.85rem;
+  gap: 1rem;
 }
 
 .website-builder-shell[data-entry-point="generate"] .website-builder-phase-step {
-  min-height: 9.25rem;
-  padding: 1rem;
-  border-radius: 1.125rem;
+  inline-size: 100%;
+  min-width: 0;
+  min-height: clamp(11.5rem, 18vw, 13rem);
+  height: auto;
+  padding: 1.35rem;
+  border-radius: 1rem;
   border-color: var(--generate-phase-card-border);
   background: var(--generate-phase-card-surface);
   color: var(--generate-phase-card-text);
+  box-sizing: border-box;
   display: grid;
-  grid-template-columns: 2.5rem minmax(0, 1fr) auto;
-  gap: 0.8rem;
+  grid-template-columns: 2.75rem minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  column-gap: 0.95rem;
+  row-gap: 0.95rem;
+  justify-content: start;
   align-items: start;
-  align-content: start;
+  align-content: stretch;
+  aspect-ratio: auto;
   box-shadow: var(--generate-phase-card-shadow);
 }
 
@@ -8472,7 +8480,7 @@ html[data-theme="dark"] .generation-shell {
 
 .website-builder-shell[data-entry-point="generate"] .website-builder-phase-step.is-complete:not(.is-active) {
   border-color: rgba(18, 60, 47, 0.22);
-  background: linear-gradient(180deg, #e6f2eb 0%, #d9e8e0 100%);
+  background: linear-gradient(180deg, #eef7f1 0%, #ddeee4 100%);
 }
 
 .website-builder-shell[data-entry-point="generate"] .website-builder-phase-step[data-state="attention"]:not(.is-active) {
@@ -8480,9 +8488,11 @@ html[data-theme="dark"] .generation-shell {
 }
 
 .website-builder-shell[data-entry-point="generate"] .website-builder-phase-step-index {
-  inline-size: 2.5rem;
-  block-size: 2.5rem;
-  border-radius: 0.85rem;
+  grid-column: 1;
+  grid-row: 1;
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+  border-radius: 0.75rem;
   border: 1px solid rgba(18, 60, 47, 0.16);
   background: rgba(255, 255, 255, 0.62);
   color: #143227;
@@ -8497,7 +8507,10 @@ html[data-theme="dark"] .generation-shell {
 }
 
 .website-builder-shell[data-entry-point="generate"] .website-builder-phase-step-content {
-  gap: 0.32rem;
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  gap: 0.42rem;
   padding-top: 0;
 }
 
@@ -8507,23 +8520,23 @@ html[data-theme="dark"] .generation-shell {
 
 .website-builder-shell[data-entry-point="generate"] .website-builder-phase-step-content strong {
   color: var(--generate-phase-card-text);
-  font-size: 1.08rem;
+  font-size: 1.1rem;
   font-weight: 800;
-  line-height: 1.24;
+  line-height: 1.22;
   letter-spacing: -0.01em;
 }
 
 .website-builder-shell[data-entry-point="generate"] .website-builder-phase-step-description {
   display: block;
-  color: var(--generate-phase-card-text);
-  font-size: 0.9rem;
-  line-height: 1.5;
+  color: #17392d;
+  font-size: 0.92rem;
+  line-height: 1.55;
 }
 
 .website-builder-shell[data-entry-point="generate"] .website-builder-phase-step-meta {
-  color: var(--generate-phase-card-muted);
-  font-size: 0.8rem;
-  line-height: 1.35;
+  color: #214939;
+  font-size: 0.82rem;
+  line-height: 1.45;
 }
 
 .website-builder-shell[data-entry-point="generate"] .website-builder-phase-step.is-active .website-builder-phase-step-eyebrow {
@@ -8540,14 +8553,17 @@ html[data-theme="dark"] .generation-shell {
 }
 
 .website-builder-shell[data-entry-point="generate"] .website-builder-phase-step-status {
-  justify-self: end;
-  align-self: start;
-  min-height: 1.72rem;
-  padding: 0.26rem 0.68rem;
-  border-radius: 0.72rem;
+  grid-column: 1 / -1;
+  grid-row: 2;
+  justify-self: start;
+  align-self: end;
+  margin-top: auto;
+  min-height: 1.9rem;
+  padding: 0.34rem 0.78rem;
+  border-radius: 0.75rem;
   border-color: rgba(18, 60, 47, 0.16);
-  background: rgba(255, 255, 255, 0.82);
-  color: #15362a;
+  background: rgba(255, 255, 255, 0.88);
+  color: #113428;
   font-size: 0.76rem;
   font-weight: 700;
   line-height: 1.12;
@@ -8590,15 +8606,15 @@ html[data-theme="dark"] .generation-shell {
 
 .website-builder-shell[data-entry-point="generate"] .website-builder-phase-step[data-state="ready"] .website-builder-phase-step-status {
   border-color: rgba(18, 60, 47, 0.18);
-  background: rgba(24, 70, 54, 0.12);
-  color: #14382c;
+  background: rgba(255, 255, 255, 0.86);
+  color: #123326;
   box-shadow: none;
 }
 
 .website-builder-shell[data-entry-point="generate"] .website-builder-phase-step[data-state="attention"] .website-builder-phase-step-status {
   border-color: rgba(18, 60, 47, 0.14);
-  background: rgba(255, 255, 255, 0.74);
-  color: #355a4a;
+  background: rgba(236, 244, 240, 0.92);
+  color: #28463a;
   box-shadow: none;
 }
 
