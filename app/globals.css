@@ -2284,7 +2284,7 @@ html[data-theme="dark"] .auth-panel-list {
   width: 2rem;
   height: 2rem;
   flex: 0 0 auto;
-  border-radius: 999px;
+  border-radius: 0.85rem;
   display: grid;
   place-items: center;
   background: rgba(173, 230, 205, 0.12);
@@ -8456,7 +8456,6 @@ html[data-theme="dark"] .generation-shell {
   justify-content: start;
   align-items: start;
   align-content: stretch;
-  aspect-ratio: auto;
   box-shadow: var(--generate-phase-card-shadow);
 }
 
@@ -9094,7 +9093,7 @@ html[data-theme="dark"] .generation-shell {
 .website-builder-shell[data-entry-point="create"] .website-builder-phase-step {
   min-height: clamp(4.8rem, 8vw, 5.6rem);
   padding: 0.82rem 0.92rem;
-  border-radius: 1.5rem;
+  border-radius: 1rem;
   border-color: var(--create-phase-border);
   background: linear-gradient(
     180deg,
