@@ -3668,7 +3668,7 @@ html[data-theme="dark"] .auth-panel-list {
 .wizard-shell button:not(.wizard-button-link):not(.wizard-button-secondary):not(.wizard-page-tab):not(.website-page-remove):not(.website-action-button),
 .generation-shell button:not(.wizard-button-link):not(.wizard-button-secondary):not(.wizard-page-tab):not(.website-page-remove):not(.website-action-button) {
   border: 1px solid rgba(173, 230, 205, 0.5);
-  background: linear-gradient(180deg, #b8eed6 0%, #8bd9b5 100%);
+  background: linear-gradient(180deg, #074b2c 0%, #8bd9b5 100%);
   color: #072118;
   font-weight: 700;
   box-shadow: 0 10px 24px rgba(5, 21, 17, 0.28);
