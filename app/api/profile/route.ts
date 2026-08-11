@@ -77,7 +77,19 @@ export async function PATCH(request: Request): Promise<Response> {
     data.avatar_url = (raw.avatar_url as string | null) ?? null;
   }
 
+
+  const fieldsToExtract = ["first_name", "middle_name", "last_name", "suffix", "username", "country", "date_of_birth"];
+  for (const field of fieldsToExtract) {
+    if (field in raw) {
+      if (raw[field] !== null && typeof raw[field] !== "string") {
+        return Response.json({ error: `${field} must be a string or null` }, { status: 400 });
+      }
+      Object.assign(data, { [field]: (raw[field] as string | null) ?? null });
+    }
+  }
+
   if (Object.keys(data).length === 0) {
+
     return Response.json({ error: "No editable fields provided" }, { status: 400 });
   }
 
