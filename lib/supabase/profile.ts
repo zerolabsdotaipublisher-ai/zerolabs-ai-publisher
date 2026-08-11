@@ -11,6 +11,13 @@ export type Profile = {
   role: ProfileRole;
   full_name: string | null;
   avatar_url: string | null;
+  first_name: string | null;
+  middle_name: string | null;
+  last_name: string | null;
+  suffix: string | null;
+  username: string | null;
+  country: string | null;
+  date_of_birth: string | null;
   preferences: Record<string, unknown> | null;
   metadata: Record<string, unknown> | null;
   created_at: string;
@@ -20,6 +27,13 @@ export type Profile = {
 export type ProfileUpdateData = {
   full_name?: string | null;
   avatar_url?: string | null;
+  first_name?: string | null;
+  middle_name?: string | null;
+  last_name?: string | null;
+  suffix?: string | null;
+  username?: string | null;
+  country?: string | null;
+  date_of_birth?: string | null;
 };
 
 type AuthUserMetadata = {
@@ -76,6 +90,13 @@ function createFallbackProfileRecord(id: string, email: string, createdAt?: stri
     role: resolveAdminRole(email),
     full_name: null,
     avatar_url: null,
+    first_name: null,
+    middle_name: null,
+    last_name: null,
+    suffix: null,
+    username: null,
+    country: null,
+    date_of_birth: null,
     preferences: null,
     metadata: null,
     created_at: timestamp,
@@ -92,6 +113,13 @@ function normalizeProfileRow(data: Partial<Profile>): Profile {
     role: normalizeProfileRole(data.role),
     full_name: typeof data.full_name === "string" ? data.full_name : null,
     avatar_url: typeof data.avatar_url === "string" ? data.avatar_url : null,
+    first_name: typeof data.first_name === "string" ? data.first_name : null,
+    middle_name: typeof data.middle_name === "string" ? data.middle_name : null,
+    last_name: typeof data.last_name === "string" ? data.last_name : null,
+    suffix: typeof data.suffix === "string" ? data.suffix : null,
+    username: typeof data.username === "string" ? data.username : null,
+    country: typeof data.country === "string" ? data.country : null,
+    date_of_birth: typeof data.date_of_birth === "string" ? data.date_of_birth : null,
     preferences: data.preferences && typeof data.preferences === "object" ? data.preferences : null,
     metadata: data.metadata && typeof data.metadata === "object" ? data.metadata : null,
     created_at: timestamp,

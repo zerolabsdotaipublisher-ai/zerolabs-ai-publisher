@@ -7,6 +7,7 @@ import {
   type EditableProfileFieldErrors,
 } from "@/lib/profile-validation";
 import type { Profile, ProfileUpdateData } from "@/lib/supabase/profile";
+import { PasswordForm } from "./password-form";
 
 type ProfileLayoutVariant = "default" | "admin";
 
@@ -22,6 +23,13 @@ export function ProfileForm({
   const id = useId();
   const [profile, setProfile] = useState<Profile>(initialProfile);
   const [fullName, setFullName] = useState(initialProfile.full_name ?? "");
+  const [firstName, setFirstName] = useState(initialProfile.first_name ?? "");
+  const [middleName, setMiddleName] = useState(initialProfile.middle_name ?? "");
+  const [lastName, setLastName] = useState(initialProfile.last_name ?? "");
+  const [suffix, setSuffix] = useState(initialProfile.suffix ?? "");
+  const [username, setUsername] = useState(initialProfile.username ?? "");
+  const [country, setCountry] = useState(initialProfile.country ?? "");
+  const [dateOfBirth, setDateOfBirth] = useState(initialProfile.date_of_birth ?? "");
   const [avatarUrl, setAvatarUrl] = useState(initialProfile.avatar_url ?? "");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<EditableProfileFieldErrors>({});
@@ -58,10 +66,24 @@ export function ProfileForm({
   const draftProfile = normalizeEditableProfileUpdate({
     full_name: fullName,
     avatar_url: avatarUrl,
+    first_name: firstName,
+    middle_name: middleName,
+    last_name: lastName,
+    suffix: suffix,
+    username: username,
+    country: country,
+    date_of_birth: dateOfBirth,
   });
   const isDirty =
     draftProfile.full_name !== (profile.full_name ?? null) ||
-    draftProfile.avatar_url !== (profile.avatar_url ?? null);
+    draftProfile.avatar_url !== (profile.avatar_url ?? null) ||
+    draftProfile.first_name !== (profile.first_name ?? null) ||
+    draftProfile.middle_name !== (profile.middle_name ?? null) ||
+    draftProfile.last_name !== (profile.last_name ?? null) ||
+    draftProfile.suffix !== (profile.suffix ?? null) ||
+    draftProfile.username !== (profile.username ?? null) ||
+    draftProfile.country !== (profile.country ?? null) ||
+    draftProfile.date_of_birth !== (profile.date_of_birth ?? null);
   const profileDisplayName = draftProfile.full_name ?? profile.full_name ?? profile.email;
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -104,6 +126,13 @@ export function ProfileForm({
       setProfile(body.profile);
       setFullName(body.profile.full_name ?? "");
       setAvatarUrl(body.profile.avatar_url ?? "");
+      setFirstName(body.profile.first_name ?? "");
+      setMiddleName(body.profile.middle_name ?? "");
+      setLastName(body.profile.last_name ?? "");
+      setSuffix(body.profile.suffix ?? "");
+      setUsername(body.profile.username ?? "");
+      setCountry(body.profile.country ?? "");
+      setDateOfBirth(body.profile.date_of_birth ?? "");
       setFieldErrors({});
       setSuccess("Profile saved successfully.");
     } catch {
@@ -115,6 +144,83 @@ export function ProfileForm({
 
   const profileFields = (
     <div className="profile-field-grid">
+
+      <label className={`profile-field${fieldErrors.username ? " profile-field-error" : ""}`} htmlFor={`${id}-username`}>
+        <span>Username</span>
+        <input
+          id={`${id}-username`}
+          type="text"
+          value={username}
+          onChange={(event) => setUsername(event.target.value)}
+          maxLength={64}
+        />
+      </label>
+
+      <label className={`profile-field${fieldErrors.first_name ? " profile-field-error" : ""}`} htmlFor={`${id}-first-name`}>
+        <span>First name</span>
+        <input
+          id={`${id}-first-name`}
+          type="text"
+          value={firstName}
+          onChange={(event) => setFirstName(event.target.value)}
+          maxLength={120}
+        />
+      </label>
+
+      <label className={`profile-field${fieldErrors.middle_name ? " profile-field-error" : ""}`} htmlFor={`${id}-middle-name`}>
+        <span>Middle name</span>
+        <input
+          id={`${id}-middle-name`}
+          type="text"
+          value={middleName}
+          onChange={(event) => setMiddleName(event.target.value)}
+          maxLength={120}
+        />
+      </label>
+
+      <label className={`profile-field${fieldErrors.last_name ? " profile-field-error" : ""}`} htmlFor={`${id}-last-name`}>
+        <span>Last name</span>
+        <input
+          id={`${id}-last-name`}
+          type="text"
+          value={lastName}
+          onChange={(event) => setLastName(event.target.value)}
+          maxLength={120}
+        />
+      </label>
+
+      <label className={`profile-field${fieldErrors.suffix ? " profile-field-error" : ""}`} htmlFor={`${id}-suffix`}>
+        <span>Suffix</span>
+        <input
+          id={`${id}-suffix`}
+          type="text"
+          value={suffix}
+          onChange={(event) => setSuffix(event.target.value)}
+          maxLength={120}
+        />
+      </label>
+
+      <label className={`profile-field${fieldErrors.country ? " profile-field-error" : ""}`} htmlFor={`${id}-country`}>
+        <span>Country</span>
+        <input
+          id={`${id}-country`}
+          type="text"
+          value={country}
+          onChange={(event) => setCountry(event.target.value)}
+          maxLength={120}
+        />
+      </label>
+
+      <label className={`profile-field${fieldErrors.date_of_birth ? " profile-field-error" : ""}`} htmlFor={`${id}-dob`}>
+        <span>Date of Birth</span>
+        <input
+          id={`${id}-dob`}
+          type="date"
+          value={dateOfBirth}
+          onChange={(event) => setDateOfBirth(event.target.value)}
+        />
+      </label>
+
       <label className={`profile-field${fieldErrors.full_name ? " profile-field-error" : ""}`} htmlFor={`${id}-name`}>
         <span>Full name</span>
         <input
@@ -208,6 +314,11 @@ export function ProfileForm({
   const summaryContent = (
     <>
       <strong>{profileDisplayName}</strong>
+      {profile.date_of_birth && (
+        <p className="profile-identity-value" style={{ marginTop: 4 }}>
+          Age: {Math.floor((new Date().getTime() - new Date(profile.date_of_birth).getTime()) / (1000 * 60 * 60 * 24 * 365.25))}
+        </p>
+      )}
       <p>{profile.email}</p>
       <div className="profile-identity-list">
         <div className="profile-identity-item">
@@ -266,6 +377,22 @@ export function ProfileForm({
             </article>
           </aside>
         </div>
+
+        <div className="profile-admin-grid admin-content-grid" style={{ marginTop: 32 }}>
+          <section className="admin-panel profile-admin-panel" aria-label="Change password">
+            <header className="admin-panel-header">
+              <div>
+                <span className="admin-panel-kicker">Security</span>
+                <h2>Change password</h2>
+                <p>Update your account password.</p>
+              </div>
+            </header>
+
+            <form className="profile-form profile-form-admin" aria-label="Change password" noValidate>
+              <PasswordForm id={id} />
+            </form>
+          </section>
+        </div>
       </section>
     );
   }
@@ -295,6 +422,19 @@ export function ProfileForm({
 
         <form className="profile-form dashboard-panel" onSubmit={onSubmit} aria-label="Edit profile" noValidate>
           {formBody}
+        </form>
+      </section>
+
+      <section className="dashboard-panel-shell profile-panel" aria-label="Change password" style={{ marginTop: 32 }}>
+        <header className="dashboard-section-heading">
+          <div>
+            <h2>Change password</h2>
+            <p>Update your account password securely.</p>
+          </div>
+        </header>
+
+        <form className="profile-form dashboard-panel" aria-label="Change password" noValidate>
+          <PasswordForm id={id} />
         </form>
       </section>
     </section>
