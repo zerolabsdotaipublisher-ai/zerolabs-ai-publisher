@@ -74,6 +74,14 @@ export function SignUpForm() {
   const id = useId();
   const supabase = getSupabaseBrowserClient();
   const [fullName, setFullName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [middleName, setMiddleName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [suffix, setSuffix] = useState("");
+  const [username, setUsername] = useState("");
+  const [country, setCountry] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -107,6 +115,14 @@ export function SignUpForm() {
         options: {
           data: {
             full_name: trimmedFullName || undefined,
+            first_name: firstName.trim() || undefined,
+            middle_name: middleName.trim() || undefined,
+            last_name: lastName.trim() || undefined,
+            suffix: suffix.trim() || undefined,
+            username: username.trim() || undefined,
+            country: country.trim() || undefined,
+            date_of_birth: dateOfBirth || undefined,
+            avatar_url: avatarUrl.trim() || undefined,
           },
           emailRedirectTo: `${getSupabaseAppUrl()}${routes.authCallback}`,
         },
@@ -168,6 +184,100 @@ export function SignUpForm() {
           autoComplete="name"
           autoCapitalize="words"
           placeholder="Example: Maria Santos"
+        />
+      </label>
+
+      <label htmlFor={`${id}-first-name`}>
+        First name
+        <input
+          id={`${id}-first-name`}
+          type="text"
+          value={firstName}
+          onChange={(event) => setFirstName(event.target.value)}
+          autoComplete="given-name"
+          autoCapitalize="words"
+        />
+      </label>
+
+      <label htmlFor={`${id}-middle-name`}>
+        Middle name
+        <input
+          id={`${id}-middle-name`}
+          type="text"
+          value={middleName}
+          onChange={(event) => setMiddleName(event.target.value)}
+          autoComplete="additional-name"
+          autoCapitalize="words"
+        />
+      </label>
+
+      <label htmlFor={`${id}-last-name`}>
+        Last name
+        <input
+          id={`${id}-last-name`}
+          type="text"
+          value={lastName}
+          onChange={(event) => setLastName(event.target.value)}
+          autoComplete="family-name"
+          autoCapitalize="words"
+        />
+      </label>
+
+      <label htmlFor={`${id}-suffix`}>
+        Suffix
+        <input
+          id={`${id}-suffix`}
+          type="text"
+          value={suffix}
+          onChange={(event) => setSuffix(event.target.value)}
+          autoComplete="honorific-suffix"
+          autoCapitalize="words"
+        />
+      </label>
+
+      <label htmlFor={`${id}-username`}>
+        Username
+        <input
+          id={`${id}-username`}
+          type="text"
+          value={username}
+          onChange={(event) => setUsername(event.target.value)}
+          autoComplete="username"
+        />
+      </label>
+
+      <label htmlFor={`${id}-country`}>
+        Country
+        <input
+          id={`${id}-country`}
+          type="text"
+          value={country}
+          onChange={(event) => setCountry(event.target.value)}
+          autoComplete="country-name"
+          autoCapitalize="words"
+        />
+      </label>
+
+      <label htmlFor={`${id}-dob`}>
+        Date of Birth
+        <input
+          id={`${id}-dob`}
+          type="date"
+          value={dateOfBirth}
+          onChange={(event) => setDateOfBirth(event.target.value)}
+          autoComplete="bday"
+        />
+      </label>
+
+      <label htmlFor={`${id}-avatar`}>
+        Avatar URL (optional)
+        <input
+          id={`${id}-avatar`}
+          type="url"
+          value={avatarUrl}
+          onChange={(event) => setAvatarUrl(event.target.value)}
+          autoComplete="url"
+          inputMode="url"
         />
       </label>
 

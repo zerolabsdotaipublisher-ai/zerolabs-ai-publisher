@@ -39,6 +39,13 @@ export type ProfileUpdateData = {
 type AuthUserMetadata = {
   full_name?: string;
   avatar_url?: string;
+  first_name?: string;
+  middle_name?: string;
+  last_name?: string;
+  suffix?: string;
+  username?: string;
+  country?: string;
+  date_of_birth?: string;
 };
 
 function getCurrentTimestamp(): string {
@@ -159,6 +166,13 @@ function extractUserMetadataFromAuth(user: User): AuthUserMetadata {
   return {
     full_name: normalizeOptionalMetadataValue(metadata.full_name),
     avatar_url: normalizeOptionalMetadataValue(metadata.avatar_url),
+    first_name: normalizeOptionalMetadataValue(metadata.first_name),
+    middle_name: normalizeOptionalMetadataValue(metadata.middle_name),
+    last_name: normalizeOptionalMetadataValue(metadata.last_name),
+    suffix: normalizeOptionalMetadataValue(metadata.suffix),
+    username: normalizeOptionalMetadataValue(metadata.username),
+    country: normalizeOptionalMetadataValue(metadata.country),
+    date_of_birth: normalizeOptionalMetadataValue(metadata.date_of_birth),
   };
 }
 
@@ -178,12 +192,29 @@ function shouldSyncExistingProfile(existingProfile: Profile, user: User, metadat
     existingProfile.email !== userEmail ||
     (seededRole === "admin" && existingProfile.role !== "admin") ||
     (isProfileFieldMissing(existingProfile.full_name) && Boolean(metadata.full_name)) ||
-    (isProfileFieldMissing(existingProfile.avatar_url) && Boolean(metadata.avatar_url))
+    (isProfileFieldMissing(existingProfile.avatar_url) && Boolean(metadata.avatar_url)) ||
+    (isProfileFieldMissing(existingProfile.first_name) && Boolean(metadata.first_name)) ||
+    (isProfileFieldMissing(existingProfile.middle_name) && Boolean(metadata.middle_name)) ||
+    (isProfileFieldMissing(existingProfile.last_name) && Boolean(metadata.last_name)) ||
+    (isProfileFieldMissing(existingProfile.suffix) && Boolean(metadata.suffix)) ||
+    (isProfileFieldMissing(existingProfile.username) && Boolean(metadata.username)) ||
+    (isProfileFieldMissing(existingProfile.country) && Boolean(metadata.country)) ||
+    (isProfileFieldMissing(existingProfile.date_of_birth) && Boolean(metadata.date_of_birth))
   );
 }
 
 async function syncAuthUserMetadata(userId: string, data: ProfileUpdateData): Promise<void> {
-  if (!("full_name" in data) && !("avatar_url" in data)) {
+  if (
+    !("full_name" in data) &&
+    !("avatar_url" in data) &&
+    !("first_name" in data) &&
+    !("middle_name" in data) &&
+    !("last_name" in data) &&
+    !("suffix" in data) &&
+    !("username" in data) &&
+    !("country" in data) &&
+    !("date_of_birth" in data)
+  ) {
     return;
   }
 
@@ -215,6 +246,14 @@ async function syncAuthUserMetadata(userId: string, data: ProfileUpdateData): Pr
     nextMetadata.avatar_url = data.avatar_url ?? null;
   }
 
+  if ("first_name" in data) nextMetadata.first_name = data.first_name ?? null;
+  if ("middle_name" in data) nextMetadata.middle_name = data.middle_name ?? null;
+  if ("last_name" in data) nextMetadata.last_name = data.last_name ?? null;
+  if ("suffix" in data) nextMetadata.suffix = data.suffix ?? null;
+  if ("username" in data) nextMetadata.username = data.username ?? null;
+  if ("country" in data) nextMetadata.country = data.country ?? null;
+  if ("date_of_birth" in data) nextMetadata.date_of_birth = data.date_of_birth ?? null;
+
   const { error: updateError } = await supabase.auth.admin.updateUserById(userId, {
     user_metadata: nextMetadata,
   });
@@ -241,6 +280,13 @@ export function createFallbackProfile(user: User): Profile {
     ...fallbackProfile,
     full_name: metadata.full_name ?? null,
     avatar_url: metadata.avatar_url ?? null,
+    first_name: metadata.first_name ?? null,
+    middle_name: metadata.middle_name ?? null,
+    last_name: metadata.last_name ?? null,
+    suffix: metadata.suffix ?? null,
+    username: metadata.username ?? null,
+    country: metadata.country ?? null,
+    date_of_birth: metadata.date_of_birth ?? null,
   };
 }
 
@@ -332,18 +378,39 @@ export async function syncProfileFromAuthUser(user: User): Promise<void> {
     const seededRole = resolveSeededProfileRole(user.email);
     const fullName = resolveProfileField(metadata.full_name, existingProfile?.full_name);
     const avatarUrl = resolveProfileField(metadata.avatar_url, existingProfile?.avatar_url);
+    const firstName = resolveProfileField(metadata.first_name, existingProfile?.first_name);
+    const middleName = resolveProfileField(metadata.middle_name, existingProfile?.middle_name);
+    const lastName = resolveProfileField(metadata.last_name, existingProfile?.last_name);
+    const suffix = resolveProfileField(metadata.suffix, existingProfile?.suffix);
+    const username = resolveProfileField(metadata.username, existingProfile?.username);
+    const country = resolveProfileField(metadata.country, existingProfile?.country);
+    const dateOfBirth = resolveProfileField(metadata.date_of_birth, existingProfile?.date_of_birth);
 
     const profileRow: {
       id: string;
       email: string;
       full_name: string | null;
       avatar_url: string | null;
+      first_name?: string | null;
+      middle_name?: string | null;
+      last_name?: string | null;
+      suffix?: string | null;
+      username?: string | null;
+      country?: string | null;
+      date_of_birth?: string | null;
       role?: ProfileRole;
     } = {
       id: user.id,
       email: user.email,
       full_name: fullName,
       avatar_url: avatarUrl,
+      first_name: firstName,
+      middle_name: middleName,
+      last_name: lastName,
+      suffix: suffix,
+      username: username,
+      country: country,
+      date_of_birth: dateOfBirth,
     };
 
     if (seededRole) {
@@ -362,6 +429,13 @@ export async function syncProfileFromAuthUser(user: User): Promise<void> {
         email: profileRow.email,
         full_name: profileRow.full_name,
         avatar_url: profileRow.avatar_url,
+        first_name: profileRow.first_name,
+        middle_name: profileRow.middle_name,
+        last_name: profileRow.last_name,
+        suffix: profileRow.suffix,
+        username: profileRow.username,
+        country: profileRow.country,
+        date_of_birth: profileRow.date_of_birth,
       };
       const { error: fallbackError } = await supabase.from("profiles").upsert(fallbackProfileRow, { onConflict: "id" });
 
