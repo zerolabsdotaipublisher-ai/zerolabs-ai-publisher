@@ -180,6 +180,7 @@ export function SignUpForm() {
       <h1>Create account</h1>
       <p className="auth-field-hint">Email, password, and password confirmation are required.</p>
 
+<div className="auth-form-row">
       <label htmlFor={`${id}-first-name`}>
         First name
         <input
@@ -189,21 +190,9 @@ export function SignUpForm() {
           onChange={(event) => setFirstName(event.target.value)}
           autoComplete="given-name"
           autoCapitalize="words"
+          placeholder="Example: Maria"
         />
       </label>
-
-      <label htmlFor={`${id}-middle-name`}>
-        Middle name
-        <input
-          id={`${id}-middle-name`}
-          type="text"
-          value={middleName}
-          onChange={(event) => setMiddleName(event.target.value)}
-          autoComplete="additional-name"
-          autoCapitalize="words"
-        />
-      </label>
-
       <label htmlFor={`${id}-last-name`}>
         Last name
         <input
@@ -213,11 +202,26 @@ export function SignUpForm() {
           onChange={(event) => setLastName(event.target.value)}
           autoComplete="family-name"
           autoCapitalize="words"
+          placeholder="Example: Santos"
         />
       </label>
+      </div>
 
+      <div className="auth-form-row">
+      <label htmlFor={`${id}-middle-name`}>
+        Middle name (optional)
+        <input
+          id={`${id}-middle-name`}
+          type="text"
+          value={middleName}
+          onChange={(event) => setMiddleName(event.target.value)}
+          autoComplete="additional-name"
+          autoCapitalize="words"
+          placeholder="Optional"
+        />
+      </label>
       <label htmlFor={`${id}-suffix`}>
-        Suffix
+        Suffix (optional)
         <input
           id={`${id}-suffix`}
           type="text"
@@ -225,9 +229,12 @@ export function SignUpForm() {
           onChange={(event) => setSuffix(event.target.value)}
           autoComplete="honorific-suffix"
           autoCapitalize="words"
+          placeholder="Optional, e.g. Jr., Sr., III"
         />
       </label>
+      </div>
 
+      <div className="auth-form-row">
       <label htmlFor={`${id}-username`}>
         Username
         <input
@@ -236,9 +243,9 @@ export function SignUpForm() {
           value={username}
           onChange={(event) => setUsername(event.target.value)}
           autoComplete="username"
+          placeholder="Example: maria_santos"
         />
       </label>
-
       <label htmlFor={`${id}-country`}>
         Country
         <select
@@ -255,7 +262,9 @@ export function SignUpForm() {
           ))}
         </select>
       </label>
+      </div>
 
+      <div className="auth-form-row">
       <label htmlFor={`${id}-dob`}>
         Date of Birth
         <input
@@ -266,7 +275,6 @@ export function SignUpForm() {
           autoComplete="bday"
         />
       </label>
-
       <label htmlFor={`${id}-email`}>
         Email
         <input
@@ -281,8 +289,9 @@ export function SignUpForm() {
           placeholder="Example: maria@company.com"
         />
       </label>
+      </div>
 
-      <PasswordField
+            <PasswordField
         id={`${id}-password`}
         label="Password"
         toggleLabel="password"
@@ -299,7 +308,7 @@ export function SignUpForm() {
         Minimum 8 characters
       </span>
 
-      <PasswordField
+            <PasswordField
         id={`${id}-confirm-password`}
         label="Confirm password"
         toggleLabel="confirm password"

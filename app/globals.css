@@ -297,7 +297,8 @@ a {
   color: #2c3e50;
 }
 
-.auth-form input {
+.auth-form input,
+.auth-form select {
    min-height: 3.25rem;
    padding: 0.9rem 1rem;
    border: 1px solid rgba(31, 111, 95, 0.22);
@@ -308,12 +309,15 @@ a {
    transition: border-color 200ms ease, box-shadow 200ms ease, background-color 200ms ease;
 }
 
-.auth-form input::placeholder {
+.auth-form input::placeholder,
+.auth-form select::placeholder {
   color: rgba(44, 62, 80, 0.45);
 }
 
 .auth-form input:focus,
-.auth-form input:focus-visible {
+.auth-form select:focus,
+.auth-form input:focus-visible,
+.auth-form select:focus-visible {
   outline: none;
    border-color: #1f6f5f;
    box-shadow: 0 0 0 4px rgba(31, 111, 95, 0.16);
@@ -762,7 +766,8 @@ html[data-theme="dark"] .app-shell {
     color: rgba(248, 249, 250, 0.76);
   }
 
-  html:not([data-theme="light"]) .auth-form input {
+  html:not([data-theme="light"]) .auth-form input,
+html:not([data-theme="light"]) .auth-form select {
      border-color: rgba(173, 230, 205, 0.22);
      background: rgba(11, 36, 29, 0.54);
      color: #f8f9fa;
@@ -778,7 +783,8 @@ html:not([data-theme="light"]) .auth-form .auth-password-toggle:focus-visible {
   color: #d7f5e8;
 }
 
-  html:not([data-theme="light"]) .auth-form input::placeholder {
+  html:not([data-theme="light"]) .auth-form input::placeholder,
+html:not([data-theme="light"]) .auth-form select::placeholder {
     color: rgba(248, 249, 250, 0.45);
   }
 
@@ -875,7 +881,8 @@ html[data-theme="dark"] .auth-visual-panel p {
   color: rgba(248, 249, 250, 0.76);
 }
 
-html[data-theme="dark"] .auth-form input {
+html[data-theme="dark"] .auth-form input,
+html[data-theme="dark"] .auth-form select {
   border-color: rgba(173, 230, 205, 0.22);
   background: rgba(11, 36, 29, 0.54);
   color: #f8f9fa;
@@ -891,7 +898,8 @@ html[data-theme="dark"] .auth-form .auth-password-toggle:focus-visible {
   color: #d7f5e8;
 }
 
-html[data-theme="dark"] .auth-form input::placeholder {
+html[data-theme="dark"] .auth-form input::placeholder,
+html[data-theme="dark"] .auth-form select::placeholder {
   color: rgba(248, 249, 250, 0.45);
 }
 
@@ -7204,14 +7212,16 @@ a[href] {
   color: var(--text-primary);
 }
 
-.auth-form input {
+.auth-form input,
+.auth-form select {
   min-height: 3.25rem;
   border-color: var(--border);
   background: var(--input-surface);
   color: var(--text-primary);
 }
 
-.auth-form input::placeholder {
+.auth-form input::placeholder,
+.auth-form select::placeholder {
   color: var(--text-muted);
 }
 
@@ -12202,4 +12212,31 @@ html[data-theme="dark"] .generation-shell {
   width: 1rem;
   height: 1rem;
   cursor: pointer;
+}
+
+
+html:not([data-theme="light"]) .auth-form select option,
+html[data-theme="dark"] .auth-form select option {
+  background: rgba(11, 36, 29, 0.95);
+  color: #f8f9fa;
+}
+
+
+html[data-theme="light"] .auth-form select option {
+  background: rgba(248, 249, 250, 0.96);
+  color: #2c3e50;
+}
+
+
+.auth-form-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .auth-form-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+  }
 }
