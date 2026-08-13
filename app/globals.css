@@ -12188,6 +12188,7 @@ html[data-theme="dark"] .generation-shell {
 
 .auth-terms-checkbox {
   display: flex;
+  flex-direction: row !important; /* override the global column display for labels in auth-form */
   align-items: center;
   gap: 0.5rem;
   font-size: 0.88rem;
