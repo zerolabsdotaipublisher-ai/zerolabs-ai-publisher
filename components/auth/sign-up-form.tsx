@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useId, useState, type FormEvent } from "react";
+import { COUNTRIES } from "./countries";
 import { PasswordField } from "@/components/auth/password-field";
 import { routes } from "@/config/routes";
 import { getSupabaseAppUrl, getSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -73,7 +74,6 @@ function mapSignUpError(message: string): string {
 export function SignUpForm() {
   const id = useId();
   const supabase = getSupabaseBrowserClient();
-  const [fullName, setFullName] = useState("");
   const [firstName, setFirstName] = useState("");
   const [middleName, setMiddleName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -81,13 +81,13 @@ export function SignUpForm() {
   const [username, setUsername] = useState("");
   const [country, setCountry] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
-  const [avatarUrl, setAvatarUrl] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submittedEmail, setSubmittedEmail] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const errorId = `${id}-error`;
   const passwordHintId = `${id}-password-hint`;
@@ -98,7 +98,13 @@ export function SignUpForm() {
     event.preventDefault();
     setError(null);
     setSubmittedEmail(null);
+
+    if (!termsAccepted) {
+      setError("You must agree to the Terms of Service and Privacy Policy.");
+      return;
+    }
     const validationError = validateRegistration(email, password, confirmPassword);
+
     if (validationError) {
       setError(validationError);
       return;
@@ -108,13 +114,14 @@ export function SignUpForm() {
 
     try {
       const trimmedEmail = email.trim();
-      const trimmedFullName = fullName.trim();
+      const nameParts = [firstName.trim(), middleName.trim(), lastName.trim(), suffix.trim()].filter(Boolean);
+      const derivedFullName = nameParts.length > 0 ? nameParts.join(" ") : undefined;
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: trimmedEmail,
         password,
         options: {
           data: {
-            full_name: trimmedFullName || undefined,
+            full_name: derivedFullName,
             first_name: firstName.trim() || undefined,
             middle_name: middleName.trim() || undefined,
             last_name: lastName.trim() || undefined,
@@ -122,8 +129,7 @@ export function SignUpForm() {
             username: username.trim() || undefined,
             country: country.trim() || undefined,
             date_of_birth: dateOfBirth || undefined,
-            avatar_url: avatarUrl.trim() || undefined,
-          },
+            },
           emailRedirectTo: `${getSupabaseAppUrl()}${routes.authCallback}`,
         },
       });
@@ -174,19 +180,7 @@ export function SignUpForm() {
       <h1>Create account</h1>
       <p className="auth-field-hint">Email, password, and password confirmation are required.</p>
 
-      <label htmlFor={`${id}-name`}>
-        Full name
-        <input
-          id={`${id}-name`}
-          type="text"
-          value={fullName}
-          onChange={(event) => setFullName(event.target.value)}
-          autoComplete="name"
-          autoCapitalize="words"
-          placeholder="Example: Maria Santos"
-        />
-      </label>
-
+<div className="auth-form-row">
       <label htmlFor={`${id}-first-name`}>
         First name
         <input
@@ -196,21 +190,9 @@ export function SignUpForm() {
           onChange={(event) => setFirstName(event.target.value)}
           autoComplete="given-name"
           autoCapitalize="words"
+          placeholder="Example: Maria"
         />
       </label>
-
-      <label htmlFor={`${id}-middle-name`}>
-        Middle name
-        <input
-          id={`${id}-middle-name`}
-          type="text"
-          value={middleName}
-          onChange={(event) => setMiddleName(event.target.value)}
-          autoComplete="additional-name"
-          autoCapitalize="words"
-        />
-      </label>
-
       <label htmlFor={`${id}-last-name`}>
         Last name
         <input
@@ -220,11 +202,26 @@ export function SignUpForm() {
           onChange={(event) => setLastName(event.target.value)}
           autoComplete="family-name"
           autoCapitalize="words"
+          placeholder="Example: Santos"
         />
       </label>
+      </div>
 
+      <div className="auth-form-row">
+      <label htmlFor={`${id}-middle-name`}>
+        Middle name (optional)
+        <input
+          id={`${id}-middle-name`}
+          type="text"
+          value={middleName}
+          onChange={(event) => setMiddleName(event.target.value)}
+          autoComplete="additional-name"
+          autoCapitalize="words"
+          placeholder="Optional"
+        />
+      </label>
       <label htmlFor={`${id}-suffix`}>
-        Suffix
+        Suffix (optional)
         <input
           id={`${id}-suffix`}
           type="text"
@@ -232,9 +229,12 @@ export function SignUpForm() {
           onChange={(event) => setSuffix(event.target.value)}
           autoComplete="honorific-suffix"
           autoCapitalize="words"
+          placeholder="Optional, e.g. Jr., Sr., III"
         />
       </label>
+      </div>
 
+      <div className="auth-form-row">
       <label htmlFor={`${id}-username`}>
         Username
         <input
@@ -243,21 +243,28 @@ export function SignUpForm() {
           value={username}
           onChange={(event) => setUsername(event.target.value)}
           autoComplete="username"
+          placeholder="Example: maria_santos"
         />
       </label>
-
       <label htmlFor={`${id}-country`}>
         Country
-        <input
+        <select
           id={`${id}-country`}
-          type="text"
           value={country}
           onChange={(event) => setCountry(event.target.value)}
           autoComplete="country-name"
-          autoCapitalize="words"
-        />
+        >
+          <option value="">Select a country</option>
+          {COUNTRIES.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
       </label>
+      </div>
 
+      <div className="auth-form-row">
       <label htmlFor={`${id}-dob`}>
         Date of Birth
         <input
@@ -268,19 +275,6 @@ export function SignUpForm() {
           autoComplete="bday"
         />
       </label>
-
-      <label htmlFor={`${id}-avatar`}>
-        Avatar URL (optional)
-        <input
-          id={`${id}-avatar`}
-          type="url"
-          value={avatarUrl}
-          onChange={(event) => setAvatarUrl(event.target.value)}
-          autoComplete="url"
-          inputMode="url"
-        />
-      </label>
-
       <label htmlFor={`${id}-email`}>
         Email
         <input
@@ -295,8 +289,9 @@ export function SignUpForm() {
           placeholder="Example: maria@company.com"
         />
       </label>
+      </div>
 
-      <PasswordField
+            <PasswordField
         id={`${id}-password`}
         label="Password"
         toggleLabel="password"
@@ -313,7 +308,7 @@ export function SignUpForm() {
         Minimum 8 characters
       </span>
 
-      <PasswordField
+            <PasswordField
         id={`${id}-confirm-password`}
         label="Confirm password"
         toggleLabel="confirm password"
@@ -333,6 +328,18 @@ export function SignUpForm() {
         </p>
       ) : null}
 
+      <label htmlFor={`${id}-terms`} className="auth-terms-checkbox">
+        <input
+          id={`${id}-terms`}
+          type="checkbox"
+          checked={termsAccepted}
+          onChange={(event) => setTermsAccepted(event.target.checked)}
+          required
+          aria-required="true"
+        />
+        I agree to the Terms of Service and Privacy Policy.
+      </label>
+
       <button type="submit" disabled={isSubmitting || Boolean(passwordMismatchError)} aria-busy={isSubmitting}>
         {isSubmitting ? "Creating account…" : "Create account"}
       </button>
@@ -340,9 +347,7 @@ export function SignUpForm() {
         {isSubmitting ? "Submitting registration, please wait." : ""}
       </span>
 
-      <p className="auth-terms-notice">
-        By creating an account, you agree to our Terms of Service and Privacy Policy.
-      </p>
+
     </form>
   );
 }
