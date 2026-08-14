@@ -2221,8 +2221,8 @@ html[data-theme="dark"] .auth-panel-list {
 }
 
 .generation-shell {
-  border: 1px solid #e5e7eb;
-  border-radius: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 1.25rem;
   padding: 1rem;
   gap: 1rem;
 }
@@ -2431,6 +2431,8 @@ html[data-theme="dark"] .auth-panel-list {
 }
 
 .generation-panel .wizard-step-panel {
+  position: relative;
+  z-index: 1;
   margin-bottom: 0.5rem;
 }
 
@@ -2511,6 +2513,8 @@ html[data-theme="dark"] .auth-panel-list {
 }
 
 .wizard-step-panel {
+  position: relative;
+  z-index: 1;
   border: 1px solid #e5e7eb;
   border-radius: 0.5rem;
   padding: 1rem;
@@ -3647,6 +3651,8 @@ html[data-theme="dark"] .auth-panel-list {
 }
 
 .website-builder-advanced-details-body .wizard-step-panel {
+  position: relative;
+  z-index: 1;
   margin-bottom: 0;
 }
 .wizard-shell button,
@@ -7570,7 +7576,7 @@ html[data-theme="dark"] .website-builder-shell .website-action-button.is-primary
 
 .preview-toolbar h1 {
   font-family: var(--font-heading), serif;
-  font-size: clamp(1.75rem, 1.45rem + 1vw, 2.3rem);
+  font-size: clamp(1.2rem, 1vw, 1.5rem);
   line-height: 1.08;
   color: var(--text-primary);
 }
@@ -7730,6 +7736,40 @@ html[data-theme="dark"] .website-builder-shell .website-action-button.is-primary
     linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 94%, transparent) 0%, color-mix(in srgb, var(--surface) 96%, transparent) 100%);
   border-color: var(--border);
   box-shadow: var(--surface-shadow);
+}
+
+
+html[data-theme="light"] .website-builder-shell,
+html[data-theme="light"] .generation-shell {
+  --wizard-text-primary: var(--text-primary);
+  --wizard-text-secondary: var(--text-secondary);
+  --wizard-text-muted: var(--text-muted);
+  --wizard-accent: var(--accent);
+  --wizard-accent-strong: var(--accent);
+  --wizard-border: var(--border);
+  --wizard-border-strong: var(--border-strong);
+  --wizard-surface: color-mix(in srgb, var(--surface) 92%, transparent);
+  --wizard-surface-strong: color-mix(in srgb, var(--surface-elevated) 96%, transparent);
+  --wizard-input-surface: var(--input-surface);
+  color-scheme: light;
+}
+html[data-theme="light"] .website-builder-shell[data-entry-point="generate"] {
+  --generate-surface: linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 94%, transparent) 0%, color-mix(in srgb, var(--surface) 96%, transparent) 100%);
+  --generate-surface-soft: linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 92%, transparent) 0%, color-mix(in srgb, var(--surface) 94%, transparent) 100%);
+  --generate-pill-border: var(--border-strong);
+  --generate-pill-bg: color-mix(in srgb, var(--surface-elevated) 80%, transparent);
+  --generate-pill-text: var(--text-primary);
+  --generate-phase-card-border: var(--border);
+  --generate-phase-card-border-strong: var(--border-strong);
+  --generate-phase-card-surface: color-mix(in srgb, var(--surface) 80%, transparent);
+  --generate-phase-card-surface-hover: color-mix(in srgb, var(--surface-elevated) 90%, transparent);
+  --generate-phase-card-text: var(--text-primary);
+  --generate-phase-card-muted: var(--text-secondary);
+  --generate-phase-card-shadow: var(--surface-shadow);
+  --generate-phase-card-shadow-strong: var(--surface-shadow-strong);
+  --generate-phase-card-active-surface: color-mix(in srgb, var(--surface-elevated) 96%, transparent);
+  --generate-phase-card-active-text: var(--text-primary);
+  --generate-phase-card-active-muted: var(--text-secondary);
 }
 
 html[data-theme="dark"] .wizard-shell,
@@ -8286,28 +8326,33 @@ html[data-theme="dark"] .generation-shell {
 }
 
 .website-builder-shell[data-entry-point="generate"] {
-  --wizard-text-primary: rgba(248, 250, 249, 0.98);
-  --wizard-text-secondary: rgba(229, 237, 233, 0.9);
-  --wizard-text-muted: rgba(205, 219, 213, 0.84);
-  --wizard-border: rgba(173, 230, 205, 0.2);
-  --wizard-border-strong: rgba(173, 230, 205, 0.38);
-  --wizard-input-surface: rgba(7, 24, 19, 0.96);
-  --generate-surface: linear-gradient(180deg, rgba(10, 32, 26, 0.94) 0%, rgba(6, 20, 16, 0.98) 100%);
-  --generate-surface-soft: linear-gradient(180deg, rgba(12, 36, 29, 0.92) 0%, rgba(7, 23, 18, 0.96) 100%);
-  --generate-pill-border: rgba(173, 230, 205, 0.68);
-  --generate-pill-bg: linear-gradient(180deg, #dff5e8 0%, #c7e7d8 100%);
-  --generate-pill-text: #052019;
-  --generate-phase-card-border: rgba(18, 60, 47, 0.14);
-  --generate-phase-card-border-strong: rgba(18, 60, 47, 0.28);
-  --generate-phase-card-surface: linear-gradient(180deg, #edf8f1 0%, #d9ede1 100%);
-  --generate-phase-card-surface-hover: linear-gradient(180deg, #f6fcf8 0%, #e5f3eb 100%);
-  --generate-phase-card-text: #113428;
-  --generate-phase-card-muted: #2b5a47;
-  --generate-phase-card-shadow: 0 14px 28px rgba(4, 18, 14, 0.09);
-  --generate-phase-card-shadow-strong: 0 18px 36px rgba(4, 18, 14, 0.16);
-  --generate-phase-card-active-surface: linear-gradient(180deg, #184635 0%, #0d2d22 100%);
-  --generate-phase-card-active-text: rgba(248, 251, 250, 0.98);
-  --generate-phase-card-active-muted: rgba(221, 240, 231, 0.88);
+  --wizard-text-primary: var(--text-primary);
+  --wizard-text-secondary: var(--text-secondary);
+  --wizard-text-muted: var(--text-muted);
+  --wizard-accent: var(--accent);
+  --wizard-accent-strong: var(--accent);
+  --wizard-border: var(--border);
+  --wizard-border-strong: var(--border-strong);
+  --wizard-surface: color-mix(in srgb, var(--surface) 92%, transparent);
+  --wizard-surface-strong: color-mix(in srgb, var(--surface-elevated) 96%, transparent);
+  --wizard-input-surface: var(--input-surface);
+
+  --generate-surface: linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 94%, transparent) 0%, color-mix(in srgb, var(--surface) 96%, transparent) 100%);
+  --generate-surface-soft: linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 92%, transparent) 0%, color-mix(in srgb, var(--surface) 94%, transparent) 100%);
+  --generate-pill-border: var(--border-strong);
+  --generate-pill-bg: color-mix(in srgb, var(--surface-elevated) 80%, transparent);
+  --generate-pill-text: var(--text-primary);
+  --generate-phase-card-border: var(--border);
+  --generate-phase-card-border-strong: var(--border-strong);
+  --generate-phase-card-surface: color-mix(in srgb, var(--surface) 80%, transparent);
+  --generate-phase-card-surface-hover: color-mix(in srgb, var(--surface-elevated) 90%, transparent);
+  --generate-phase-card-text: var(--text-primary);
+  --generate-phase-card-muted: var(--text-secondary);
+  --generate-phase-card-shadow: var(--surface-shadow);
+  --generate-phase-card-shadow-strong: var(--surface-shadow-strong);
+  --generate-phase-card-active-surface: color-mix(in srgb, var(--surface-elevated) 96%, transparent);
+  --generate-phase-card-active-text: var(--text-primary);
+  --generate-phase-card-active-muted: var(--text-secondary);
   gap: clamp(1rem, 2vw, 1.35rem);
 }
 
@@ -8323,34 +8368,34 @@ html[data-theme="dark"] .generation-shell {
 }
 
 .website-builder-shell[data-entry-point="generate"] .website-builder-grid {
-  grid-template-columns: minmax(0, 1.14fr) minmax(21.5rem, 0.9fr);
-  grid-template-areas:
-    "builder rail"
-    "preview preview";
+  grid-template-columns: minmax(0, 1.55fr) minmax(21rem, 0.95fr);
   gap: clamp(1rem, 2vw, 1.35rem);
   align-items: start;
 }
 
 .website-builder-shell[data-entry-point="generate"] .website-builder-panel-primary {
-  grid-area: builder;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
   align-self: start;
 }
 
 .website-builder-shell[data-entry-point="generate"] .website-builder-preview-panel {
-  display: contents;
-}
-
-.website-builder-shell[data-entry-point="generate"] .website-builder-preview-rail {
-  grid-area: rail;
-  align-self: start;
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 1rem;
   position: sticky;
   top: 1rem;
 }
 
+.website-builder-shell[data-entry-point="generate"] .website-builder-preview-rail {
+  display: grid;
+  gap: 1rem;
+}
+
 .website-builder-shell[data-entry-point="generate"] .website-builder-live-preview {
-  grid-area: preview;
+  display: flex;
+  flex-direction: column;
 }
 
 .website-builder-shell[data-entry-point="generate"] .website-builder-panel-header,
@@ -9479,10 +9524,6 @@ html[data-theme="dark"] .generation-shell {
 @media (max-width: 1080px) {
   .website-builder-shell[data-entry-point="generate"] .website-builder-grid {
     grid-template-columns: 1fr;
-    grid-template-areas:
-      "builder"
-      "rail"
-      "preview";
   }
 
   .website-builder-shell[data-entry-point="generate"] .website-builder-preview-rail {
@@ -9580,7 +9621,8 @@ html[data-theme="dark"] .generation-shell {
 
 .app-page-content:has(.admin-shell),
 .app-page-content:has(.profile-page-admin) {
-  width: min(100%, 92rem);
+  width: 100%;
+  max-width: none;
   max-width: 92rem;
 }
 
@@ -9608,7 +9650,7 @@ html[data-theme="dark"] .generation-shell {
   display: grid;
   min-width: 0;
   gap: 0.9rem;
-  padding: clamp(1rem, 2vw, 1.2rem);
+  padding: clamp(0.6rem, 1.2vw, 0.9rem);
 }
 
 .admin-sidebar-panel {
@@ -9926,7 +9968,7 @@ html[data-theme="dark"] .generation-shell {
   min-width: 0;
   gap: 0.95rem;
   overflow: hidden;
-  padding: clamp(1rem, 2vw, 1.2rem);
+  padding: clamp(0.6rem, 1.2vw, 0.9rem);
 }
 
 .admin-panel-wide {
@@ -10318,7 +10360,7 @@ html[data-theme="dark"] .generation-shell {
 .preview-toolbar {
   display: grid;
   gap: 1rem;
-  padding: clamp(1rem, 2vw, 1.2rem);
+  padding: clamp(0.6rem, 1.2vw, 0.9rem);
 }
 
 .preview-toolbar-heading {
@@ -11617,7 +11659,8 @@ html[data-theme="dark"] .generation-shell {
 
 .preview-shell {
   position: relative;
-  width: min(100%, 92rem);
+  width: 100%;
+  max-width: none;
   gap: clamp(1rem, 2vw, 1.25rem);
   padding-bottom: 0.5rem;
 }
@@ -11638,7 +11681,7 @@ html[data-theme="dark"] .generation-shell {
   position: sticky;
   top: clamp(0.45rem, 1vw, 0.7rem);
   z-index: 24;
-  padding: clamp(0.9rem, 1.7vw, 1rem);
+  padding: clamp(0.5rem, 1vw, 0.75rem);
   border: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
   border-radius: 1.35rem;
   background:
