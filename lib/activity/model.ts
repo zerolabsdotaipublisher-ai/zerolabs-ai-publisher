@@ -309,15 +309,15 @@ function buildSegments(items: PublishingActivityItem[]): Pick<PublishingActivity
 
   const upcoming = items
     .filter((item) => item.status === "scheduled" && (item.scheduledFor ?? item.occurredAt) > now)
-    .sort((left, right) => (left.scheduledFor ?? left.occurredAt).localeCompare(right.scheduledFor ?? right.occurredAt));
+    .sort((left, right) => String(left.scheduledFor ?? left.occurredAt).localeCompare(String(right.scheduledFor ?? right.occurredAt)));
 
   const attention = items
     .filter((item) => item.status === "failed" || item.status === "retry_pending")
-    .sort((left, right) => right.occurredAt.localeCompare(left.occurredAt));
+    .sort((left, right) => String(right.occurredAt).localeCompare(String(left.occurredAt)));
 
   const recent = items
     .filter((item) => item.occurredAt <= now)
-    .sort((left, right) => right.occurredAt.localeCompare(left.occurredAt));
+    .sort((left, right) => String(right.occurredAt).localeCompare(String(left.occurredAt)));
 
   return {
     recent,
@@ -357,7 +357,7 @@ export async function getPublishingActivityOverview(
     ...toSocialHistoryItems(snapshot),
   ]
     .filter((item) => Boolean(item.occurredAt))
-    .sort((left, right) => right.occurredAt.localeCompare(left.occurredAt));
+    .sort((left, right) => String(right.occurredAt).localeCompare(String(left.occurredAt)));
 
   const filtered = filterPublishingActivityItems(aggregated, query);
   const segmented = applySegment(filtered, query);
