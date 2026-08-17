@@ -121,7 +121,7 @@ export function ActivityOverviewShell({ initialOverview }: ActivityOverviewShell
   return (
     <section className="activity-overview-shell" aria-label="Publishing activity overview">
       <header className="activity-overview-header">
-        <h1>Publishing Activity Overview</h1>
+        <h2>Publishing Activity</h2>
         <p>Operational overview across website publishing, scheduling, history, and social delivery systems.</p>
       </header>
 
