@@ -11,8 +11,8 @@ export function DashboardWebsiteSummarySection({ summary }: DashboardWebsiteSumm
   return (
     <section className="dashboard-panel-shell" aria-label="Website summary">
       <header>
-        <h2>Website summary</h2>
-        <p>Reused from existing website management lifecycle and status data.</p>
+        <h2>Your websites</h2>
+        <p>Recently generated and managed active websites.</p>
       </header>
       <dl className="dashboard-definition-grid">
         <div>
@@ -40,20 +40,38 @@ export function DashboardWebsiteSummarySection({ summary }: DashboardWebsiteSumm
         <ul className="dashboard-compact-list">
           {summary.recentlyUpdated.map((website) => (
             <li key={website.id}>
-              <Link href={website.href}>{website.title}</Link>
-              <PublishStatusBadge state={website.publishStatus.uiState} />
-              <time dateTime={website.updatedAt}>{new Date(website.updatedAt).toLocaleString()}</time>
-              <span>
-                Last published:{" "}
-                {website.publishedAt ? new Date(website.publishedAt).toLocaleString() : "Not published"}
-              </span>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1rem" }}>
+                <div>
+                  <Link href={website.href} className="dashboard-inline-link" style={{ fontSize: "1.1rem", marginBottom: "0.25rem", display: "inline-block" }}>
+                    {website.title}
+                  </Link>
+                  <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.5rem", flexWrap: "wrap" }}>
+                    <PublishStatusBadge state={website.publishStatus.uiState} />
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                    <time dateTime={website.updatedAt}>Updated: {new Date(website.updatedAt).toLocaleString()}</time>
+                    <span>
+                      Published:{" "}
+                      {website.publishedAt ? new Date(website.publishedAt).toLocaleString() : "Not published"}
+                    </span>
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                  <Link href={website.previewPath} className="wizard-button-secondary" style={{ padding: "0.4rem 0.8rem", fontSize: "0.85rem", minHeight: "auto" }}>
+                    Preview
+                  </Link>
+                  <Link href={website.editorPath} className="wizard-button-secondary" style={{ padding: "0.4rem 0.8rem", fontSize: "0.85rem", minHeight: "auto" }}>
+                    Open / Edit
+                  </Link>
+                </div>
+              </div>
             </li>
           ))}
         </ul>
       ) : (
         <p className="dashboard-empty-note">No websites found yet.</p>
       )}
-      <Link href={routes.websites}>Manage all websites</Link>
+      <Link href={routes.websites} className="dashboard-inline-link">Manage all websites</Link>
     </section>
   );
 }
