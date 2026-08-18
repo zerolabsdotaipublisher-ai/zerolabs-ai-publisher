@@ -15,7 +15,7 @@ const customerNavLinks = [
   { href: routes.dashboard, label: "Dashboard" },
   { href: routes.activity, label: "Activity" },
   { href: routes.insights, label: "Insights" },
-  { href: routes.blog, label: "Blog" },
+  { href: routes.appBlog, label: "Blog" },
   { href: routes.createWebsite, label: "Generate Website" },
   { href: routes.profile, label: "Profile" },
 ];
