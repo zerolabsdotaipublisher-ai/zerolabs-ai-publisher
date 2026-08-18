@@ -1,6 +1,7 @@
 export const routes = {
   home: "/",
   blog: "/blog",
+  appBlog: "/app-blog",
   login: "/login",
   signup: "/signup",
   forgotPassword: "/forgot-password",
