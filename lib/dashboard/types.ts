@@ -64,6 +64,8 @@ export interface DashboardWebsiteSummary {
     updatedAt: string;
     publishedAt?: string;
     href: string;
+    previewPath: string;
+    editorPath: string;
   }>;
 }
 

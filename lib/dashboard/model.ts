@@ -46,6 +46,8 @@ export async function buildDashboardSummary(options: BuildDashboardSummaryOption
       updatedAt: website.lastUpdatedAt,
       publishedAt: website.lastPublishedAt,
       href: website.generatedSitePath,
+      previewPath: routes.previewSite(website.id),
+      editorPath: routes.editorSite(website.id),
     })),
   };
 
