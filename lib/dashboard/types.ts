@@ -102,6 +102,10 @@ export interface DashboardSummary {
   contentSummary: DashboardContentSummary;
   socialSummary: DashboardSocialSummary;
   alerts: DashboardAlert[];
+  publicWebsites: any[];
+  communityPosts: any[];
+  userCommunityPosts: any[];
+  savedItemIds: string[];
   mvpBoundaries: string[];
 }
 

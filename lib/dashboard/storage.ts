@@ -1,3 +1,5 @@
+import type { GeneratedSocialPost } from "@/lib/social/types";
+import type { WebsiteManagementRecord } from "@/lib/management";
 import "server-only";
 
 import { logger } from "@/lib/observability";
@@ -40,7 +42,7 @@ async function countGeneratedContentRows(
       metadata: { contentType, contentStatus },
       error: { name: "DashboardGeneratedContentCountError", message: error.message },
     });
-    throw error;
+    return count ?? 0;
   }
 
   return count ?? 0;
@@ -65,7 +67,7 @@ async function listRecentGeneratedContentRows(userId: string): Promise<Dashboard
       userId,
       error: { name: "DashboardGeneratedContentListError", message: error.message },
     });
-    throw error;
+    return [];
   }
 
   return (data ?? []) as DashboardGeneratedContentRow[];
@@ -96,20 +98,38 @@ async function getGeneratedContentStats(userId: string): Promise<DashboardGenera
 export async function fetchDashboardStorageSnapshot(userId: string): Promise<DashboardStorageSnapshot> {
   const [websites, socialSchedules, socialPosts, socialHistoryResult, socialAccounts, generatedContent] =
     await Promise.all([
-      listManagedWebsites(userId, { status: "all", includeDeleted: false }),
-      listOwnedSocialSchedules(userId),
-      listSocialPosts(userId, { limit: 100 }),
-      listOwnedSocialPublishHistoryJobs(userId, { page: 1, perPage: 25 }),
-      listSocialAccountConnections(userId),
-      getGeneratedContentStats(userId),
+      listManagedWebsites(userId, { status: "all", includeDeleted: false }).catch(e => {
+        logger.error("listManagedWebsites failed", { error: e });
+        return [];
+      }),
+      listOwnedSocialSchedules(userId).catch(e => {
+        logger.error("listOwnedSocialSchedules failed", { error: e });
+        return [];
+      }),
+      listSocialPosts(userId, { limit: 100 }).catch(e => {
+        logger.error("listSocialPosts failed", { error: e });
+        return [];
+      }),
+      listOwnedSocialPublishHistoryJobs(userId, { page: 1, perPage: 25 }).catch(e => {
+        logger.error("listOwnedSocialPublishHistoryJobs failed", { error: e });
+        return { items: [], page: 1, perPage: 25, totalCount: 0 };
+      }),
+      listSocialAccountConnections(userId).catch(e => {
+        logger.error("listSocialAccountConnections failed", { error: e });
+        return [];
+      }),
+      getGeneratedContentStats(userId).catch(e => {
+        logger.error("getGeneratedContentStats failed", { error: e });
+        return { total: 0, website: 0, blog: 0, article: 0, published: 0, scheduled: 0, rows: [] };
+      }),
     ]);
 
   return {
-    websites,
-    socialSchedules,
-    socialPosts,
-    socialHistory: socialHistoryResult.items,
-    socialAccounts,
-    generatedContent,
+    websites: websites ,
+    socialSchedules: socialSchedules ,
+    socialPosts: socialPosts ,
+    socialHistory: (socialHistoryResult ).items || [],
+    socialAccounts: socialAccounts ,
+    generatedContent: generatedContent ,
   };
 }
