@@ -10,6 +10,8 @@ import { DashboardQuickActions } from "./dashboard-quick-actions";
 import { DashboardRecentActivity } from "./dashboard-recent-activity";
 import { DashboardSocialSummarySection } from "./dashboard-social-summary";
 import { DashboardWebsiteSummarySection } from "./dashboard-website-summary";
+import { DashboardCommunityPosts } from "./community/dashboard-community-posts";
+import { DashboardCommunityWebsites } from "./community/dashboard-community-websites";
 
 interface DashboardSummaryApiResponse {
   ok: boolean;
@@ -185,10 +187,13 @@ export function DashboardHome({ initialSummary, initialError }: DashboardHomePro
         <DashboardContentSummarySection summary={summary.contentSummary} />
       </div>
 
-      <div className="dashboard-two-column-grid">
+            <div className="dashboard-two-column-grid">
         <DashboardSocialSummarySection summary={summary.socialSummary} />
         <DashboardRecentActivity items={summary.recentActivity} />
       </div>
+
+      <DashboardCommunityWebsites publicWebsites={summary.publicWebsites} savedItemIds={summary.savedItemIds} />
+      <DashboardCommunityPosts initialPosts={summary.communityPosts} userPosts={summary.userCommunityPosts} savedItemIds={summary.savedItemIds} />
     </section>
   );
 }
