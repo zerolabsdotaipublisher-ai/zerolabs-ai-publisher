@@ -10,6 +10,7 @@ import { DashboardQuickActions } from "./dashboard-quick-actions";
 import { DashboardRecentActivity } from "./dashboard-recent-activity";
 import { DashboardSocialSummarySection } from "./dashboard-social-summary";
 import { DashboardWebsiteSummarySection } from "./dashboard-website-summary";
+import { CommunityFeed } from "./community-feed";
 
 interface DashboardSummaryApiResponse {
   ok: boolean;
@@ -181,13 +182,15 @@ export function DashboardHome({ initialSummary, initialError }: DashboardHomePro
       <DashboardAlerts alerts={summary.alerts} />
 
       <div className="dashboard-two-column-grid">
-        <DashboardWebsiteSummarySection summary={summary.websiteSummary} />
-        <DashboardContentSummarySection summary={summary.contentSummary} />
-      </div>
-
-      <div className="dashboard-two-column-grid">
-        <DashboardSocialSummarySection summary={summary.socialSummary} />
-        <DashboardRecentActivity items={summary.recentActivity} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          <DashboardWebsiteSummarySection summary={summary.websiteSummary} />
+          <CommunityFeed currentUserId={summary.user.id} />
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          <DashboardContentSummarySection summary={summary.contentSummary} />
+          <DashboardSocialSummarySection summary={summary.socialSummary} />
+          <DashboardRecentActivity items={summary.recentActivity} />
+        </div>
       </div>
     </section>
   );
