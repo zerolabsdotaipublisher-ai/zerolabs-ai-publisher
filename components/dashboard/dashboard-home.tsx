@@ -8,9 +8,9 @@ import { DashboardContentSummarySection } from "./dashboard-content-summary";
 import { DashboardMetricCard } from "./dashboard-metric-card";
 import { DashboardQuickActions } from "./dashboard-quick-actions";
 import { DashboardRecentActivity } from "./dashboard-recent-activity";
-import { DashboardSocialSummarySection } from "./dashboard-social-summary";
-import { DashboardWebsiteSummarySection } from "./dashboard-website-summary";
 import { CommunityFeed } from "./community-feed";
+import { routes } from "@/config/routes";
+import Link from "next/link";
 
 interface DashboardSummaryApiResponse {
   ok: boolean;
@@ -81,11 +81,6 @@ export function DashboardHome({ initialSummary, initialError }: DashboardHomePro
     }
   }
 
-  async function handleRefresh() {
-    await handleTrack("dashboard_refresh_clicked");
-    await loadSummary();
-  }
-
   if (loading && !summary) {
     return (
       <section className="dashboard-home-shell" aria-busy="true" aria-label="Loading dashboard">
@@ -120,77 +115,132 @@ export function DashboardHome({ initialSummary, initialError }: DashboardHomePro
   const empty = isDashboardSummaryEmpty(summary);
 
   return (
-    <section className="dashboard-home-shell" aria-label="Dashboard homepage">
-      <header className="dashboard-home-header">
-        <div>
-          <h1>Dashboard</h1>
-          <p>
-            Welcome back{summary.user.displayName ? `, ${summary.user.displayName}` : ""}. Here is your publishing
-            workspace snapshot.
-          </p>
-        </div>
-        <button
-          type="button"
-          className="wizard-button-secondary"
-          onClick={() => void handleRefresh()}
-          disabled={loading}
-        >
-          {loading ? "Refreshing..." : "Refresh"}
-        </button>
-      </header>
+    <section className="dashboard-home-shell" aria-label="Dashboard homepage" style={{ maxWidth: '1400px', margin: '0 auto', padding: '2rem 1rem' }}>
 
-      {error ? <p className="dashboard-error-state">{error}</p> : null}
-
-      <div className="dashboard-metrics-grid">
-        <DashboardMetricCard
-          label="Total websites"
-          value={summary.metrics.totalWebsites}
-          hint="Owned website records"
-        />
-        <DashboardMetricCard
-          label="Published websites + content"
-          value={summary.metrics.publishedItems}
-          hint="Live websites and published generated content"
-        />
-        <DashboardMetricCard
-          label="Generated content"
-          value={summary.metrics.generatedContentCount}
-          hint="Website + social generated assets"
-        />
-        <DashboardMetricCard
-          label="Scheduled items"
-          value={summary.metrics.scheduledItems}
-          hint="Content and social schedules"
-          tone="warning"
-        />
-        <DashboardMetricCard
-          label="Needs attention"
-          value={summary.metrics.attentionRequiredItems}
-          hint="Failures, retries, and account blockers"
-          tone={summary.metrics.attentionRequiredItems > 0 ? "error" : "default"}
-        />
-      </div>
-
-      {empty ? (
-        <section className="dashboard-panel-shell">
-          <h2>No activity yet</h2>
-          <p className="dashboard-empty-note">Create your first website or connect a social account to populate the dashboard.</p>
-        </section>
-      ) : null}
-
-      <DashboardQuickActions actions={summary.quickActions} onTrack={(eventName) => void handleTrack(eventName)} />
       <DashboardAlerts alerts={summary.alerts} />
 
-      <div className="dashboard-two-column-grid">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-          <DashboardWebsiteSummarySection summary={summary.websiteSummary} />
-          <CommunityFeed currentUserId={summary.user.id} />
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-          <DashboardContentSummarySection summary={summary.contentSummary} />
-          <DashboardSocialSummarySection summary={summary.socialSummary} />
-          <DashboardRecentActivity items={summary.recentActivity} />
-        </div>
+      <div className="dashboard-three-column-layout">
+        <style>{`
+          .dashboard-three-column-layout {
+            display: grid;
+            grid-template-columns: 250px 1fr 300px;
+            gap: 2rem;
+            align-items: start;
+          }
+
+          @media (max-width: 1024px) {
+            .dashboard-three-column-layout {
+              grid-template-columns: 250px 1fr;
+            }
+            .dashboard-right-sidebar {
+              grid-column: 1 / -1;
+            }
+          }
+
+          @media (max-width: 768px) {
+            .dashboard-three-column-layout {
+              grid-template-columns: 1fr;
+            }
+            .dashboard-left-sidebar, .dashboard-right-sidebar {
+              grid-column: 1 / -1;
+            }
+          }
+
+          .dashboard-sidebar-panel {
+            background: var(--background);
+            border: 1px solid var(--marketing-card-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+          }
+
+          .dashboard-sidebar-nav {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+          }
+
+          .dashboard-sidebar-nav a {
+            display: block;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            color: var(--foreground);
+            text-decoration: none;
+            transition: background 0.2s;
+            font-weight: 500;
+          }
+
+          .dashboard-sidebar-nav a:hover {
+            background: var(--marketing-surface);
+            color: var(--marketing-ocean);
+          }
+        `}</style>
+
+        {/* Left Column: Profile & Navigation */}
+        <aside className="dashboard-left-sidebar">
+          <div className="dashboard-sidebar-panel">
+            <h2 style={{ fontSize: '1.25rem', marginBottom: '0.25rem' }}>{summary.user.displayName || "Zero Labs User"}</h2>
+            <p style={{ color: 'var(--marketing-muted)', fontSize: '0.9rem', marginBottom: '1.5rem', wordBreak: 'break-all' }}>{summary.user.email}</p>
+
+            <ul className="dashboard-sidebar-nav">
+              <li><Link href={routes.dashboard}>Community Feed</Link></li>
+              <li><Link href={routes.websites}>My Websites</Link></li>
+              <li><Link href={routes.generateWebsite}>Generate Website</Link></li>
+              <li><Link href={routes.profile}>Profile</Link></li>
+            </ul>
+          </div>
+
+          <div style={{ marginTop: '2rem' }}>
+            <DashboardMetricCard
+              label="Websites"
+              value={summary.metrics.totalWebsites}
+              hint="Owned website records"
+            />
+            <div style={{ height: '1rem' }} />
+            <DashboardMetricCard
+              label="Content"
+              value={summary.metrics.generatedContentCount}
+              hint="Website + social generated assets"
+            />
+          </div>
+        </aside>
+
+        {/* Center Column: Feed & Own content */}
+        <main className="dashboard-center-feed">
+          {error ? <p className="dashboard-error-state">{error}</p> : null}
+
+          {empty ? (
+            <section className="dashboard-panel-shell" style={{ marginBottom: '2rem' }}>
+              <h2>No activity yet</h2>
+              <p className="dashboard-empty-note">Create your first website or connect a social account to populate the dashboard.</p>
+            </section>
+          ) : null}
+
+          <DashboardQuickActions actions={summary.quickActions} onTrack={(eventName) => void handleTrack(eventName)} />
+
+          <CommunityFeed
+             currentUserId={summary.user.id}
+             websiteSummary={summary.websiteSummary}
+          />
+        </main>
+
+        {/* Right Column: Analytics & Extracted pieces */}
+        <aside className="dashboard-right-sidebar" id="dashboard-right-sidebar">
+          <div className="dashboard-sidebar-panel" style={{ marginBottom: '2rem' }}>
+            <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>Activity Summary</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+               <DashboardRecentActivity items={summary.recentActivity} />
+            </div>
+          </div>
+
+          <div className="dashboard-sidebar-panel">
+            <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>Content Analytics</h3>
+            <DashboardContentSummarySection summary={summary.contentSummary} />
+          </div>
+        </aside>
+
       </div>
     </section>
   );

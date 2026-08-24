@@ -3,6 +3,10 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { routes } from "@/config/routes";
+import { PublishStatusBadge } from "@/components/publish/publish-status-badge";
+import { VisibilityToggle } from "./visibility-toggle";
+import type { DashboardWebsiteSummary } from "@/lib/dashboard";
+import { createPortal } from "react-dom";
 
 interface Post {
   id: string;
@@ -26,11 +30,18 @@ interface SavedItem {
   item_type: string;
 }
 
-export function CommunityFeed({ currentUserId }: { currentUserId: string }) {
+export function CommunityFeed({
+  currentUserId,
+  websiteSummary
+}: {
+  currentUserId: string,
+  websiteSummary: DashboardWebsiteSummary
+}) {
   const [websites, setWebsites] = useState<Website[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [savedItems, setSavedItems] = useState<SavedItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [rightSidebarMounted, setRightSidebarMounted] = useState(false);
 
   // New Post State
   const [newPostContent, setNewPostContent] = useState("");
@@ -55,6 +66,7 @@ export function CommunityFeed({ currentUserId }: { currentUserId: string }) {
 
   useEffect(() => {
     fetchCommunityData();
+    setRightSidebarMounted(true);
   }, []);
 
   const handleCreatePost = async (e: React.FormEvent) => {
@@ -110,59 +122,57 @@ export function CommunityFeed({ currentUserId }: { currentUserId: string }) {
     }
   };
 
-  if (loading) {
-    return <div className="dashboard-panel-shell" aria-busy="true"><p>Loading community feed...</p></div>;
-  }
-
   const isSaved = (id: string, type: string) => savedItems.some(i => i.item_id === id && i.item_type === type);
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+  const rightSidebarContent = rightSidebarMounted && document.getElementById("dashboard-right-sidebar") ? createPortal(
+    <>
+      <div className="dashboard-sidebar-panel" style={{ marginBottom: '2rem' }}>
+        <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>Saved Items</h3>
+        {savedItems.length > 0 ? (
+           <p className="dashboard-empty-note">You have {savedItems.length} saved item(s).</p>
+        ) : (
+           <p className="dashboard-empty-note">No items saved yet.</p>
+        )}
+      </div>
 
-      {/* Community Websites Section */}
-      <section className="dashboard-panel-shell" aria-label="Community websites">
-        <header>
-          <h2>Community websites</h2>
-          <p>Public website previews shared by other users.</p>
-        </header>
+      <div className="dashboard-sidebar-panel" style={{ marginBottom: '2rem' }}>
+        <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>Community Websites</h3>
         {websites.filter(w => w.user_id !== currentUserId).length > 0 ? (
-          <ul className="dashboard-compact-list">
+          <ul className="dashboard-compact-list" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
             {websites.filter(w => w.user_id !== currentUserId).map(website => (
-              <li key={website.id}>
-                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1rem" }}>
-                    <div>
-                      <strong style={{ fontSize: "1.1rem" }}>{website.site_title || "Untitled"}</strong>
-                    </div>
-                    <div style={{ display: "flex", gap: "0.5rem" }}>
-                      <Link href={routes.previewSite(website.id)} className="wizard-button-secondary" style={{ padding: "0.4rem 0.8rem", fontSize: "0.85rem", minHeight: "auto" }}>
-                        Preview
-                      </Link>
-                      <button onClick={() => handleSaveItem(website.id, "website")} className="wizard-button-secondary" style={{ padding: "0.4rem 0.8rem", fontSize: "0.85rem", minHeight: "auto" }}>
-                        {isSaved(website.id, "website") ? "Unsave" : "Save"}
-                      </button>
-                    </div>
-                 </div>
+              <li key={website.id} style={{ padding: '0.5rem 0', borderBottom: '1px solid var(--marketing-card-border)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <strong style={{ fontSize: '0.95rem' }}>{website.site_title || "Untitled"}</strong>
+                <div style={{ display: "flex", gap: "0.5rem" }}>
+                  <Link href={routes.previewSite(website.id)} className="wizard-button-secondary" style={{ padding: "0.2rem 0.5rem", fontSize: "0.75rem", minHeight: "auto" }}>
+                    Preview
+                  </Link>
+                  <button onClick={() => handleSaveItem(website.id, "website")} className="wizard-button-secondary" style={{ padding: "0.2rem 0.5rem", fontSize: "0.75rem", minHeight: "auto" }}>
+                    {isSaved(website.id, "website") ? "Unsave" : "Save"}
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="dashboard-empty-note">No public websites yet.</p>
+          <p className="dashboard-empty-note" style={{ fontSize: '0.85rem' }}>No public websites found.</p>
         )}
-      </section>
+      </div>
+    </>,
+    document.getElementById("dashboard-right-sidebar")!
+  ) : null;
 
-      {/* Community Feed Section */}
-      <section className="dashboard-panel-shell" aria-label="Community feed">
-        <header>
-          <h2>Community feed</h2>
-          <p>Read posts from others and share your own.</p>
-        </header>
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+      {rightSidebarContent}
 
-        <form onSubmit={handleCreatePost} style={{ marginBottom: "2rem", display: "flex", flexDirection: "column", gap: "1rem", padding: "1rem", background: "var(--marketing-surface)", borderRadius: "8px", border: "1px solid var(--marketing-card-border)" }}>
+      {/* Center Feed: Create Post */}
+      <section className="dashboard-panel-shell" aria-label="Create a post" style={{ padding: '1.5rem', background: 'var(--marketing-surface)' }}>
+        <form onSubmit={handleCreatePost} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
            <textarea
              value={newPostContent}
              onChange={e => setNewPostContent(e.target.value)}
-             placeholder="What's on your mind?"
-             style={{ width: "100%", minHeight: "80px", padding: "0.5rem", borderRadius: "4px", border: "1px solid var(--marketing-card-border)", background: "var(--background)", color: "var(--foreground)" }}
+             placeholder="Share an update, ask a question, or post a public draft..."
+             style={{ width: "100%", minHeight: "80px", padding: "1rem", borderRadius: "8px", border: "1px solid var(--marketing-card-border)", background: "var(--background)", color: "var(--foreground)", resize: "vertical", fontFamily: "inherit" }}
              disabled={posting}
              required
            />
@@ -170,31 +180,76 @@ export function CommunityFeed({ currentUserId }: { currentUserId: string }) {
              <select
                value={newPostVisibility}
                onChange={e => setNewPostVisibility(e.target.value as "public" | "private")}
-               style={{ padding: "0.3rem", borderRadius: "4px", border: "1px solid var(--marketing-card-border)" }}
+               style={{ padding: "0.5rem", borderRadius: "8px", border: "1px solid var(--marketing-card-border)", background: "var(--background)", color: "var(--foreground)" }}
                disabled={posting}
              >
-               <option value="public">Public</option>
-               <option value="private">Private (Draft)</option>
+               <option value="public">Public Post</option>
+               <option value="private">Private Draft</option>
              </select>
-             <button type="submit" className="wizard-button-primary" disabled={posting} style={{ padding: "0.4rem 1rem", fontSize: "0.9rem", minHeight: "auto" }}>
+             <button type="submit" className="wizard-button-primary" disabled={posting || !newPostContent.trim()} style={{ padding: "0.5rem 1.5rem", minHeight: "auto" }}>
                {posting ? "Posting..." : "Post"}
              </button>
            </div>
         </form>
+      </section>
 
-        {posts.length > 0 ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+      {/* Center Feed: Own Websites Summary inline instead of dashboard-website-summary to fit feed */}
+      <section className="dashboard-panel-shell" aria-label="My Websites">
+        <header>
+          <h2>My Websites</h2>
+        </header>
+        {websiteSummary.recentlyUpdated.length > 0 ? (
+          <ul className="dashboard-compact-list">
+            {websiteSummary.recentlyUpdated.map((website) => (
+              <li key={website.id} style={{ padding: '1rem', border: '1px solid var(--marketing-card-border)', borderRadius: '8px', marginBottom: '1rem', background: 'var(--background)' }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1rem" }}>
+                  <div>
+                    <Link href={website.href} className="dashboard-inline-link" style={{ fontSize: "1.1rem", marginBottom: "0.25rem", display: "inline-block", fontWeight: '600' }}>
+                      {website.title}
+                    </Link>
+                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.5rem", flexWrap: "wrap" }}>
+                      <PublishStatusBadge state={website.publishStatus.uiState} />
+                      <VisibilityToggle websiteId={website.id} initialVisibility={website.visibility || "private"} />
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                    <Link href={website.previewPath} className="wizard-button-secondary" style={{ padding: "0.4rem 0.8rem", fontSize: "0.85rem", minHeight: "auto" }}>
+                      Preview
+                    </Link>
+                    <Link href={website.editorPath} className="wizard-button-secondary" style={{ padding: "0.4rem 0.8rem", fontSize: "0.85rem", minHeight: "auto" }}>
+                      Open / Edit
+                    </Link>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="dashboard-empty-note">No websites found yet.</p>
+        )}
+      </section>
+
+      {/* Center Feed: Community Posts */}
+      <section className="dashboard-panel-shell" aria-label="Community feed">
+        <header>
+          <h2>Feed</h2>
+        </header>
+
+        {loading ? (
+           <p className="dashboard-empty-note">Loading posts...</p>
+        ) : posts.length > 0 ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
             {posts.map(post => (
-              <article key={post.id} style={{ padding: "1rem", borderRadius: "8px", border: "1px solid var(--marketing-card-border)", background: "var(--background)" }}>
-                <p style={{ margin: "0 0 1rem 0", whiteSpace: "pre-wrap" }}>{post.body}</p>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.85rem", color: "var(--marketing-muted)" }}>
+              <article key={post.id} style={{ padding: "1.5rem", borderRadius: "12px", border: "1px solid var(--marketing-card-border)", background: "var(--background)", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+                <p style={{ margin: "0 0 1rem 0", whiteSpace: "pre-wrap", fontSize: "1rem", lineHeight: "1.5" }}>{post.body}</p>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.85rem", color: "var(--marketing-muted)", borderTop: "1px solid var(--marketing-card-border)", paddingTop: "1rem" }}>
                   <span>{new Date(post.created_at).toLocaleString()}</span>
-                  <div style={{ display: "flex", gap: "0.5rem" }}>
+                  <div style={{ display: "flex", gap: "1rem" }}>
                      {post.user_id === currentUserId ? (
-                       <button onClick={() => handleDeletePost(post.id)} style={{ background: "none", border: "none", color: "red", cursor: "pointer", textDecoration: "underline" }}>Delete</button>
+                       <button onClick={() => handleDeletePost(post.id)} style={{ background: "none", border: "none", color: "var(--marketing-error, red)", cursor: "pointer", fontWeight: "500" }}>Delete</button>
                      ) : (
-                       <button onClick={() => handleSaveItem(post.id, "post")} style={{ background: "none", border: "none", color: "var(--marketing-ocean)", cursor: "pointer", textDecoration: "underline" }}>
-                         {isSaved(post.id, "post") ? "Unsave" : "Save"}
+                       <button onClick={() => handleSaveItem(post.id, "post")} style={{ background: "none", border: "none", color: "var(--marketing-ocean)", cursor: "pointer", fontWeight: "500" }}>
+                         {isSaved(post.id, "post") ? "Saved" : "Save"}
                        </button>
                      )}
                   </div>
@@ -203,21 +258,9 @@ export function CommunityFeed({ currentUserId }: { currentUserId: string }) {
             ))}
           </div>
         ) : (
-          <p className="dashboard-empty-note">No community posts yet.</p>
+          <p className="dashboard-empty-note">No posts in the feed yet.</p>
         )}
       </section>
-
-      {/* Saved Items Summary could be added here if needed, but requirements mention "if simple to include" and we have inline toggles. We can add a simple list. */}
-      {savedItems.length > 0 && (
-         <section className="dashboard-panel-shell" aria-label="Saved items">
-            <header>
-              <h2>Saved items</h2>
-              <p>Your saved posts and websites.</p>
-            </header>
-            <p className="dashboard-empty-note">You have {savedItems.length} saved item(s).</p>
-         </section>
-      )}
-
     </div>
   );
 }

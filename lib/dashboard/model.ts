@@ -31,14 +31,25 @@ export async function buildDashboardSummary(options: BuildDashboardSummaryOption
   ]);
 
   const supabase = getSupabaseServiceClient();
-  // Fetch visibility for websites explicitly
-  const { data: websiteVisibilities } = await supabase
-     .from("website_structures")
-     .select("id, visibility")
-     .in("id", snapshot.websites.map(w => w.id))
-     .eq("user_id", options.userId);
+  // Fetch visibility for websites safely
+  const websiteIds = snapshot.websites.map(w => w.id);
+  let visibilityMap = new Map<string, "public" | "private">();
 
-  const visibilityMap = new Map(websiteVisibilities?.map(v => [v.id, v.visibility as "public" | "private"]) || []);
+  if (websiteIds.length > 0) {
+    try {
+      const { data: websiteVisibilities, error } = await supabase
+         .from("website_structures")
+         .select("id, visibility")
+         .in("id", websiteIds)
+         .eq("user_id", options.userId);
+
+      if (!error && websiteVisibilities) {
+         visibilityMap = new Map(websiteVisibilities.map(v => [v.id, (v.visibility as "public" | "private") || "private"]));
+      }
+    } catch {
+      // Ignore if visibility column doesn't exist or table isn't migrated
+    }
+  }
 
   const websitesByRecentUpdate = [...snapshot.websites].sort(
     (left, right) => new Date(right.lastUpdatedAt).getTime() - new Date(left.lastUpdatedAt).getTime(),
