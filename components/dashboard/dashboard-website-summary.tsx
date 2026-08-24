@@ -2,6 +2,7 @@ import Link from "next/link";
 import { routes } from "@/config/routes";
 import type { DashboardWebsiteSummary } from "@/lib/dashboard";
 import { PublishStatusBadge } from "@/components/publish/publish-status-badge";
+import { VisibilityToggle } from "./visibility-toggle";
 
 interface DashboardWebsiteSummaryProps {
   summary: DashboardWebsiteSummary;
@@ -47,6 +48,7 @@ export function DashboardWebsiteSummarySection({ summary }: DashboardWebsiteSumm
                   </Link>
                   <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.5rem", flexWrap: "wrap" }}>
                     <PublishStatusBadge state={website.publishStatus.uiState} />
+                    <VisibilityToggle websiteId={website.id} initialVisibility={website.visibility || "private"} />
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
                     <time dateTime={website.updatedAt}>Updated: {new Date(website.updatedAt).toLocaleString()}</time>

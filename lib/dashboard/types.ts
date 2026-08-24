@@ -66,6 +66,7 @@ export interface DashboardWebsiteSummary {
     href: string;
     previewPath: string;
     editorPath: string;
+    visibility?: "public" | "private";
   }>;
 }
 

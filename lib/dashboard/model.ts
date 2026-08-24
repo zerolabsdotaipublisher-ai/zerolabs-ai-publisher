@@ -6,6 +6,7 @@ import { DASHBOARD_MVP_BOUNDARIES, DASHBOARD_QUICK_ACTIONS, isAccountAttentionRe
 import { fetchDashboardStorageSnapshot } from "./storage";
 import { buildDashboardMetrics } from "./metrics";
 import type { DashboardSummary } from "./types";
+import { getSupabaseServiceClient } from "@/lib/supabase/server";
 export { isDashboardSummaryEmpty, getDefaultDashboardErrorMessage } from "./client";
 
 interface BuildDashboardSummaryOptions {
@@ -28,6 +29,17 @@ export async function buildDashboardSummary(options: BuildDashboardSummaryOption
     fetchDashboardStorageSnapshot(options.userId),
     listOwnedReviewRecords(options.userId),
   ]);
+
+  const supabase = getSupabaseServiceClient();
+  // Fetch visibility for websites explicitly
+  const { data: websiteVisibilities } = await supabase
+     .from("website_structures")
+     .select("id, visibility")
+     .in("id", snapshot.websites.map(w => w.id))
+     .eq("user_id", options.userId);
+
+  const visibilityMap = new Map(websiteVisibilities?.map(v => [v.id, v.visibility as "public" | "private"]) || []);
+
   const websitesByRecentUpdate = [...snapshot.websites].sort(
     (left, right) => new Date(right.lastUpdatedAt).getTime() - new Date(left.lastUpdatedAt).getTime(),
   );
@@ -48,6 +60,7 @@ export async function buildDashboardSummary(options: BuildDashboardSummaryOption
       href: website.generatedSitePath,
       previewPath: routes.previewSite(website.id),
       editorPath: routes.editorSite(website.id),
+      visibility: visibilityMap.get(website.id) || "private"
     })),
   };
 
