@@ -1,16 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { getDefaultDashboardErrorMessage, isDashboardSummaryEmpty } from "@/lib/dashboard/client";
+import { getDefaultDashboardErrorMessage,  } from "@/lib/dashboard/client";
 import type { DashboardSummary } from "@/lib/dashboard/types";
-import { DashboardAlerts } from "./dashboard-alerts";
-import { DashboardContentSummarySection } from "./dashboard-content-summary";
 import { DashboardMetricCard } from "./dashboard-metric-card";
-import { DashboardQuickActions } from "./dashboard-quick-actions";
 import { DashboardRecentActivity } from "./dashboard-recent-activity";
-import { DashboardSocialSummarySection } from "./dashboard-social-summary";
-import { DashboardWebsiteSummarySection } from "./dashboard-website-summary";
-import { CommunityFeed } from "./community-feed";
+import { DashboardOverviewChart } from "./dashboard-overview-chart";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Activity, CreditCard, DollarSign, Users } from "lucide-react";
 
 interface DashboardSummaryApiResponse {
   ok: boolean;
@@ -24,14 +21,6 @@ interface DashboardHomeProps {
 }
 
 const DASHBOARD_SUMMARY_POLL_INTERVAL_MS = 30_000;
-
-async function trackDashboardEvent(eventName: string): Promise<void> {
-  await fetch("/api/observability/events", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ event: eventName }),
-  });
-}
 
 export function DashboardHome({ initialSummary, initialError }: DashboardHomeProps) {
   const [summary, setSummary] = useState<DashboardSummary | undefined>(initialSummary);
@@ -73,125 +62,100 @@ export function DashboardHome({ initialSummary, initialError }: DashboardHomePro
     return () => clearInterval(intervalId);
   }, [loadSummary]);
 
-  async function handleTrack(eventName: string) {
-    try {
-      await trackDashboardEvent(eventName);
-    } catch {
-      // no-op; analytics should not block user flow
-    }
-  }
-
-  async function handleRefresh() {
-    await handleTrack("dashboard_refresh_clicked");
-    await loadSummary();
-  }
 
   if (loading && !summary) {
     return (
-      <section className="dashboard-home-shell" aria-busy="true" aria-label="Loading dashboard">
-        <header className="dashboard-home-header">
-          <h1>Dashboard</h1>
-          <p>Loading your workspace summary…</p>
-        </header>
-        <div className="dashboard-metrics-grid">
-          {Array.from({ length: 5 }).map((_, index) => (
-            <article key={index} className="dashboard-metric-card dashboard-skeleton" />
-          ))}
+      <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className="flex items-center justify-between space-y-2">
+          <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
         </div>
-      </section>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+           {Array.from({ length: 4 }).map((_, index) => (
+             <div key={index} className="h-[120px] rounded-xl border bg-card/50 animate-pulse" />
+           ))}
+        </div>
+      </div>
     );
   }
 
   if (!summary) {
     return (
-      <section className="dashboard-home-shell" aria-label="Dashboard unavailable">
-        <header className="dashboard-home-header">
-          <h1>Dashboard</h1>
-          <p>We could not load your dashboard summary.</p>
-        </header>
-        <p className="dashboard-error-state">{error || getDefaultDashboardErrorMessage()}</p>
-        <button type="button" onClick={() => void loadSummary()}>
-          Retry
-        </button>
-      </section>
+      <div className="flex-1 space-y-4 p-8 pt-6">
+        <div className="flex items-center justify-between space-y-2">
+          <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+        </div>
+        <p className="text-red-500">{error || getDefaultDashboardErrorMessage()}</p>
+        <button className="bg-primary text-primary-foreground px-4 py-2 rounded-md" onClick={() => void loadSummary()}>Retry</button>
+      </div>
     );
   }
 
-  const empty = isDashboardSummaryEmpty(summary);
+  // Construct chart data from non-fabricated metrics to respect AGENTS.md rule
+  const chartData = [
+    { name: "Websites", total: summary.metrics.totalWebsites },
+    { name: "Generated", total: summary.metrics.generatedContentCount },
+    { name: "Published", total: summary.metrics.publishedItems },
+    { name: "Scheduled", total: summary.metrics.scheduledItems },
+    { name: "Attention", total: summary.metrics.attentionRequiredItems }
+  ];
 
   return (
-    <section className="dashboard-home-shell" aria-label="Dashboard homepage">
-      <header className="dashboard-home-header">
-        <div>
-          <h1>Dashboard</h1>
-          <p>
-            Welcome back{summary.user.displayName ? `, ${summary.user.displayName}` : ""}. Here is your publishing
-            workspace snapshot.
-          </p>
-        </div>
-        <button
-          type="button"
-          className="wizard-button-secondary"
-          onClick={() => void handleRefresh()}
-          disabled={loading}
-        >
-          {loading ? "Refreshing..." : "Refresh"}
-        </button>
-      </header>
-
-      {error ? <p className="dashboard-error-state">{error}</p> : null}
-
-      <div className="dashboard-metrics-grid">
-        <DashboardMetricCard
-          label="Total websites"
-          value={summary.metrics.totalWebsites}
-          hint="Owned website records"
-        />
-        <DashboardMetricCard
-          label="Published websites + content"
-          value={summary.metrics.publishedItems}
-          hint="Live websites and published generated content"
-        />
-        <DashboardMetricCard
-          label="Generated content"
-          value={summary.metrics.generatedContentCount}
-          hint="Website + social generated assets"
-        />
-        <DashboardMetricCard
-          label="Scheduled items"
-          value={summary.metrics.scheduledItems}
-          hint="Content and social schedules"
-          tone="warning"
-        />
-        <DashboardMetricCard
-          label="Needs attention"
-          value={summary.metrics.attentionRequiredItems}
-          hint="Failures, retries, and account blockers"
-          tone={summary.metrics.attentionRequiredItems > 0 ? "error" : "default"}
-        />
-      </div>
-
-      {empty ? (
-        <section className="dashboard-panel-shell">
-          <h2>No activity yet</h2>
-          <p className="dashboard-empty-note">Create your first website or connect a social account to populate the dashboard.</p>
-        </section>
-      ) : null}
-
-      <DashboardQuickActions actions={summary.quickActions} onTrack={(eventName) => void handleTrack(eventName)} />
-      <DashboardAlerts alerts={summary.alerts} />
-
-      <div className="dashboard-two-column-grid">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-          <DashboardWebsiteSummarySection summary={summary.websiteSummary} />
-          <CommunityFeed currentUserId={summary.user.id} />
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-          <DashboardContentSummarySection summary={summary.contentSummary} />
-          <DashboardSocialSummarySection summary={summary.socialSummary} />
-          <DashboardRecentActivity items={summary.recentActivity} />
+    <div className="flex-1 space-y-4 p-8 pt-6">
+      <div className="flex items-center justify-between space-y-2">
+        <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => void loadSummary()}
+            disabled={loading}
+            className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
+          >
+            {loading ? "Refreshing..." : "Refresh"}
+          </button>
         </div>
       </div>
-    </section>
+
+      <Tabs defaultValue="overview" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="analytics" disabled>Analytics</TabsTrigger>
+          <TabsTrigger value="reports" disabled>Reports</TabsTrigger>
+          <TabsTrigger value="notifications" disabled>Notifications</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <DashboardMetricCard
+              label="Total websites"
+              value={summary.metrics.totalWebsites}
+              hint="Owned website records"
+              icon={<DollarSign />}
+            />
+            <DashboardMetricCard
+              label="Published items"
+              value={summary.metrics.publishedItems}
+              hint="Live websites and content"
+              icon={<Users />}
+            />
+            <DashboardMetricCard
+              label="Generated content"
+              value={summary.metrics.generatedContentCount}
+              hint="Website + social assets"
+              icon={<CreditCard />}
+            />
+            <DashboardMetricCard
+              label="Scheduled items"
+              value={summary.metrics.scheduledItems}
+              hint="Content and social schedules"
+              icon={<Activity />}
+            />
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+            <DashboardOverviewChart data={chartData} />
+            <DashboardRecentActivity items={summary.recentActivity} />
+          </div>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }
