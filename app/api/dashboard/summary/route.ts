@@ -18,7 +18,8 @@ export async function GET(): Promise<NextResponse> {
     });
 
     return NextResponse.json({ ok: true, summary });
-  } catch {
+  } catch (err) {
+    console.error("Dashboard API Error:", err);
     return NextResponse.json({ ok: false, error: getDefaultDashboardErrorMessage() }, { status: 500 });
   }
 }
