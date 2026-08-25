@@ -8,6 +8,7 @@ export const routes = {
   resetPassword: "/reset-password",
   authCallback: "/auth/callback",
   dashboard: "/dashboard",
+  feed: "/feed",
   admin: "/admin",
   adminDashboard: "/admin/dashboard",
   adminDeployments: "/admin/deployments",
