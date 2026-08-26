@@ -1,3 +1,4 @@
+import { storeWebsiteProjectData } from "@/lib/generation/project-persistence";
 import { storeWebsiteGeneratedContent, type WebsiteContentPackage } from "@/lib/ai/content";
 import { storeWebsiteNavigation } from "@/lib/ai/navigation";
 import { storeWebsiteSeoMetadata, type WebsiteSeoPackage } from "@/lib/ai/seo";
@@ -103,7 +104,19 @@ export async function persistNonCriticalGenerationArtifacts(args: {
       });
     }
   }
+
+  try {
+    await storeWebsiteProjectData({
+      structure: args.structure,
+      userId: args.userId,
+      requestId: args.requestId,
+      content: args.content,
+    });
+  } catch (err) {
+    logger.warn("Failed to store to new normalized website_projects tables", { error: { message: err instanceof Error ? err.message : String(err), name: "ProjectPersistenceError" } });
+  }
 }
+
 
 export async function createGenerationVersionSnapshot(args: {
   structure: WebsiteStructure;

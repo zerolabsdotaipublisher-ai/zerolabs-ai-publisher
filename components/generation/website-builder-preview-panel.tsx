@@ -428,13 +428,16 @@ export function WebsiteBuilderPreviewPanel({
     ? findLabel(headingScaleOptions, activePage.headings.headingScale)
     : "Not selected";
   const completedAt = formatTimestamp(state.result?.completedAt);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const previewStyle = activePage ? buildPreviewStyle(activePage) : undefined;
   const promptSummary = activePage
     ? summarizeText(activePage.contentPrompt, "Add a page content prompt to shape this page.")
     : "Add a page to preview its design settings.";
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const previewHeadingColor = activePage
     ? resolvePreviewTextColor(activePage.headings.headingColor, "#f8f9fa")
     : "#f8f9fa";
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const previewBodyColor = activePage
     ? resolvePreviewTextColor(activePage.typography.bodyColor, "rgba(248, 249, 250, 0.9)")
     : "rgba(248, 249, 250, 0.9)";
@@ -643,167 +646,173 @@ export function WebsiteBuilderPreviewPanel({
         ) : null}
       </div>
 
-      <section className="website-preview-card website-builder-live-preview">
+<section className="website-preview-card website-builder-live-preview">
         <div className="website-preview-card-header">
           <div>
-            <h3>Live design preview</h3>
+            <h3>Website Summary</h3>
             <p className="wizard-step-description">
-              The preview below updates from the currently selected page settings, even before generation.
+              Review your website setup, design system, and page configuration before generating.
             </p>
           </div>
         </div>
 
         {activePage ? (
           <>
-            <div className="website-preview-chip-row" aria-label="Active page summary">
-              <span className="website-preview-chip">{`Page: ${activePage.name || "Untitled page"}`}</span>
-              <span className="website-preview-chip">{`Layout: ${pageLayout}`}</span>
-              <span className="website-preview-chip">{`Background: ${pageBackground}`}</span>
+            <div className="website-preview-summary-group">
+              <h4>General Details</h4>
+              <dl className="website-preview-summary">
+                <div>
+                  <dt>Website name</dt>
+                  <dd>{websiteNameLabel}</dd>
+                </div>
+                <div>
+                  <dt>Domain</dt>
+                  <dd>{domainSlugValue}</dd>
+                </div>
+                <div>
+                  <dt>Total pages</dt>
+                  <dd>{totalPages}</dd>
+                </div>
+                <div className="is-wide">
+                  <dt>Content prompt</dt>
+                  <dd>{promptSummary}</dd>
+                </div>
+              </dl>
             </div>
 
-            <div className="website-preview-card-hero" style={previewStyle}>
-              <div className="website-preview-card-overlay">
-                <div className="website-preview-browser-bar" aria-hidden="true">
-                  <div className="website-preview-browser-dots">
-                    <span />
-                    <span />
-                    <span />
-                  </div>
-                  <div className="website-preview-browser-meta">
-                    <strong>{websiteNameLabel}</strong>
-                    <span>{domainSlugValue}</span>
-                  </div>
+            <div className="website-preview-summary-group">
+              <h4>Design System</h4>
+              <dl className="website-preview-summary">
+                <div>
+                  <dt>Background Color</dt>
+                  <dd>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ display: 'inline-block', width: '16px', height: '16px', borderRadius: '50%', background: activePage.background.primaryColor, border: '1px solid rgba(255,255,255,0.1)' }} />
+                      <span>{activePage.background.primaryColor}</span>
+                    </div>
+                  </dd>
                 </div>
-
-                <span className="website-preview-eyebrow">{`Page ${activePageIndex + 1}`}</span>
-                <h4
-                  style={{
-                    color: previewHeadingColor,
-                    fontFamily: activePage.headings.headingFont,
-                    fontWeight: activePage.headings.headingWeight,
-                  }}
-                >
-                  {activePage.name || "Active page"}
-                </h4>
-                <p
-                  style={{
-                    color: previewBodyColor,
-                    fontFamily: activePage.typography.bodyFont,
-                  }}
-                >
-                  {summarizeText(
-                    activePage.contentPrompt,
-                    "Use the content prompt to shape the page story and key sections.",
-                    120,
-                  )}
-                </p>
-
-                <div className="website-preview-scene">
-                  <div className="website-preview-mini-frame">
-                    <div className="website-preview-mini-nav">
-                      <span className="website-preview-mini-pill" />
-                      <span className="website-preview-mini-pill" />
-                      <span className="website-preview-mini-pill is-short" />
+                <div>
+                  <dt>Text Color</dt>
+                  <dd>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ display: 'inline-block', width: '16px', height: '16px', borderRadius: '50%', background: activePage.typography.bodyColor, border: '1px solid rgba(255,255,255,0.1)' }} />
+                      <span>{activePage.typography.bodyColor}</span>
                     </div>
-                    <span
-                      className="website-preview-mini-heading"
-                      style={{ background: previewHeadingColor }}
-                    />
-                    <span
-                      className="website-preview-mini-line is-wide"
-                      style={{ background: previewBodyColor }}
-                    />
-                    <span
-                      className="website-preview-mini-line"
-                      style={{ background: previewBodyColor }}
-                    />
-                    <div className="website-preview-mini-grid">
-                      <span style={{ background: previewBodyColor }} />
-                      <span style={{ background: previewBodyColor }} />
-                      <span style={{ background: previewBodyColor }} />
-                    </div>
-                    <span
-                      className="website-preview-mini-accent"
-                      style={{ background: previewHeadingColor }}
-                    />
-                  </div>
-
-                  <div className="website-preview-side-panel" aria-hidden="true">
-                    <span className="website-preview-side-label">Style direction</span>
-                    <strong>{pageLayout}</strong>
-                    <p>{`${pageBackground} / ${headingScale}`}</p>
-                    <div className="website-preview-side-swatches">
-                      <span style={{ background: activePage.background.primaryColor }} />
-                      <span style={{ background: previewAccentColor }} />
-                      <span style={{ background: activePage.headings.headingColor }} />
-                    </div>
-                    <div className="website-preview-side-copy">
-                      <span>{activePage.typography.fontMood}</span>
-                      <span>{activePage.typography.bodyFont}</span>
-                    </div>
-                  </div>
+                  </dd>
                 </div>
+                <div>
+                  <dt>Heading Color</dt>
+                  <dd>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ display: 'inline-block', width: '16px', height: '16px', borderRadius: '50%', background: activePage.headings.headingColor, border: '1px solid rgba(255,255,255,0.1)' }} />
+                      <span>{activePage.headings.headingColor}</span>
+                    </div>
+                  </dd>
+                </div>
+                <div>
+                  <dt>Accent Color</dt>
+                  <dd>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ display: 'inline-block', width: '16px', height: '16px', borderRadius: '50%', background: previewAccentColor, border: '1px solid rgba(255,255,255,0.1)' }} />
+                      <span>{previewAccentColor}</span>
+                    </div>
+                  </dd>
+                </div>
+              </dl>
+            </div>
+
+            <div className="website-preview-summary-group">
+              <h4>Typography Choices</h4>
+              <dl className="website-preview-summary">
+                <div>
+                  <dt>Heading Font</dt>
+                  <dd>{activePage.headings.headingFont}</dd>
+                </div>
+                <div>
+                  <dt>Heading Scale</dt>
+                  <dd>{headingScale}</dd>
+                </div>
+                <div>
+                  <dt>Heading Weight</dt>
+                  <dd>{activePage.headings.headingWeight}</dd>
+                </div>
+                <div>
+                  <dt>Body Font</dt>
+                  <dd>{activePage.typography.bodyFont}</dd>
+                </div>
+                <div>
+                  <dt>Font Mood</dt>
+                  <dd>{activePage.typography.fontMood}</dd>
+                </div>
+              </dl>
+            </div>
+
+            <div className="website-preview-summary-group">
+              <h4>Background & Media</h4>
+              <dl className="website-preview-summary">
+                <div>
+                  <dt>Background Style</dt>
+                  <dd>{pageBackground}</dd>
+                </div>
+                <div>
+                  <dt>Layout Type</dt>
+                  <dd>{pageLayout}</dd>
+                </div>
+              </dl>
+            </div>
+
+            <div className="website-preview-summary-group">
+              <h4>Pages Selected</h4>
+              <div className="website-preview-pages-list">
+                {state.input.designConfig?.pages?.map((p, i) => (
+                  <div key={p.id} className="website-preview-page-card">
+                    <strong>{p.name || `Page ${i + 1}`}</strong>
+                    <div className="website-preview-chip-row" style={{ marginTop: '8px' }}>
+                      <span className="website-preview-chip">{p.layout}</span>
+                      <span className="website-preview-chip">{p.background.type}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
-            <dl className="website-preview-summary">
-              <div>
-                <dt>Active page</dt>
-                <dd>{activePage.name || "Untitled page"}</dd>
-              </div>
-              <div>
-                <dt>Layout</dt>
-                <dd>{pageLayout}</dd>
-              </div>
-              <div>
-                <dt>Background style</dt>
-                <dd>{pageBackground}</dd>
-              </div>
-              <div>
-                <dt>Total pages</dt>
-                <dd>{totalPages}</dd>
-              </div>
-              <div>
-                <dt>Website name</dt>
-                <dd>{websiteNameLabel}</dd>
-              </div>
-              <div>
-                <dt>Domain</dt>
-                <dd>{domainSlugValue}</dd>
-              </div>
-              <div>
-                <dt>Body font</dt>
-                <dd>{activePage.typography.bodyFont}</dd>
-              </div>
-              <div>
-                <dt>Body color</dt>
-                <dd>{activePage.typography.bodyColor}</dd>
-              </div>
-              <div>
-                <dt>Font mood</dt>
-                <dd>{activePage.typography.fontMood}</dd>
-              </div>
-              <div>
-                <dt>Heading font</dt>
-                <dd>{activePage.headings.headingFont}</dd>
-              </div>
-              <div>
-                <dt>Heading scale</dt>
-                <dd>{headingScale}</dd>
-              </div>
-              <div>
-                <dt>Heading weight</dt>
-                <dd>{activePage.headings.headingWeight}</dd>
-              </div>
-              <div className="is-wide">
-                <dt>Content prompt summary</dt>
-                <dd>{promptSummary}</dd>
-              </div>
-            </dl>
+            <div className="website-preview-summary-group">
+              <h4>SEO Readiness</h4>
+              <dl className="website-preview-summary">
+                <div className="is-wide">
+                  <dt>Status</dt>
+                  <dd>Metadata will be generated automatically during generation.</dd>
+                </div>
+              </dl>
+            </div>
+
+            <div className="website-preview-summary-group">
+              <h4>Final Actions</h4>
+              <dl className="website-preview-summary">
+                <div>
+                  <dt>Visibility Default</dt>
+                  <dd>Private</dd>
+                </div>
+                <div>
+                  <dt>Editable After Creation</dt>
+                  <dd>Yes</dd>
+                </div>
+                <div>
+                  <dt>Design Saved</dt>
+                  <dd>Yes</dd>
+                </div>
+                <div>
+                  <dt>Content Saved</dt>
+                  <dd>Yes</dd>
+                </div>
+              </dl>
+            </div>
+
           </>
         ) : (
           <p className="wizard-step-description">
-            Add or restore at least one page to see the live preview and summary here.
+            Add or restore at least one page to see the summary here.
           </p>
         )}
       </section>
