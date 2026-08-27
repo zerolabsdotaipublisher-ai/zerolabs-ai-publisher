@@ -17,6 +17,15 @@ export async function getUserPublishingActivityOverview(userId: string): Promise
   let isAvailable = true;
   let storedVersions = 0;
 
+  let legacyWebsites: WebsiteManagementRecord[] = [];
+  try {
+    // 2. Fetch from existing structures (legacy/fallback)
+    legacyWebsites = await listManagedWebsites(userId, { status: "all", includeDeleted: false });
+  } catch (legacyError) {
+    console.error("Error fetching legacy user websites for activity overview:", legacyError);
+    // don't mark completely unavailable if legacy fails, new ones might succeed
+  }
+
   try {
     const supabase = getSupabaseServiceClient();
     // 1. Fetch from normalized tables
@@ -32,9 +41,6 @@ export async function getUserPublishingActivityOverview(userId: string): Promise
       .eq("user_id", userId);
 
     storedVersions = pagesCount || 0;
-
-    // 2. Fetch from existing structures (legacy/fallback)
-    const legacyWebsites = await listManagedWebsites(userId, { status: "all", includeDeleted: false });
 
     if (!projectsError && projects) {
       // Merge results, preferring the new table
@@ -102,7 +108,12 @@ export async function getUserPublishingActivityOverview(userId: string): Promise
     }
   } catch (error) {
     console.error("Error fetching user websites for activity overview:", error);
-    isAvailable = false;
+    // Only mark unavailable if everything failed
+    if (legacyWebsites.length === 0) {
+      isAvailable = false;
+    } else {
+      websites = legacyWebsites;
+    }
   }
 
   const draftWebsites = websites.filter(w => w.publicationState === "draft" || w.publicationState === "unpublished_changes").length;
