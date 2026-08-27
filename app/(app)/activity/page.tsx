@@ -59,7 +59,7 @@ export default async function ActivityPage() {
               </li>
               <li>
                 <span>Stored versions</span>
-                <strong>Unavailable</strong>
+                <strong>{renderMetricValue(overview.storedVersions, overview.isAvailable)}</strong>
               </li>
             </ul>
           </div>
@@ -101,6 +101,7 @@ export default async function ActivityPage() {
                       <strong>{website.title || "Untitled Website"}</strong>
                       <p>
                         {website.status}
+                        {website.numberOfPages ? ` • ${website.numberOfPages} pages` : ""}
                         {website.lastUpdatedAt ? ` • Updated: ${new Date(website.lastUpdatedAt).toLocaleDateString()}` : ""}
                         {website.generatedAt ? ` • Created: ${new Date(website.generatedAt).toLocaleDateString()}` : ""}
                       </p>
