@@ -4,25 +4,34 @@ import { getSupabaseServiceClient } from "@/lib/supabase/server";
 export interface UserPublishingActivityOverview {
   generatedAt: string;
   isAvailable: boolean;
-  websites: WebsiteManagementRecord[];
+  websites: (WebsiteManagementRecord & { numberOfPages?: number })[];
   totalWebsites: number;
   draftWebsites: number;
   publishedWebsites: number;
   recentGenerations: number;
+  storedVersions: number;
 }
 
 export async function getUserPublishingActivityOverview(userId: string): Promise<UserPublishingActivityOverview> {
-  let websites: WebsiteManagementRecord[] = [];
+  let websites: (WebsiteManagementRecord & { numberOfPages?: number })[] = [];
   let isAvailable = true;
+  let storedVersions = 0;
 
   try {
     const supabase = getSupabaseServiceClient();
     // 1. Fetch from normalized tables
     const { data: projects, error: projectsError } = await supabase
       .from("website_projects")
-      .select("id, title, status, website_type, created_at, updated_at, source_structure_id")
+      .select("id, title, status, website_type, created_at, updated_at, source_structure_id, number_of_pages")
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
+
+    const { count: pagesCount } = await supabase
+      .from("website_pages")
+      .select("*", { count: 'exact', head: true })
+      .eq("user_id", userId);
+
+    storedVersions = pagesCount || 0;
 
     // 2. Fetch from existing structures (legacy/fallback)
     const legacyWebsites = await listManagedWebsites(userId, { status: "all", includeDeleted: false });
@@ -31,29 +40,34 @@ export async function getUserPublishingActivityOverview(userId: string): Promise
       // Merge results, preferring the new table
       const legacyMap = new Map(legacyWebsites.map(w => [w.id, w]));
 
-      const newWebsites: WebsiteManagementRecord[] = projects.map(p => {
+      const newWebsites: (WebsiteManagementRecord & { numberOfPages?: number })[] = projects.map(p => {
         // Fallback to legacy record if source_structure_id matches an old record to retain full compatibility
         const legacyMatch = p.source_structure_id ? legacyMap.get(p.source_structure_id) : undefined;
+
+        const publicationState = (p.status === "published" ? "live" : "draft") as import("@/lib/publish/status").PublishingStatusUiState;
+        const backendPublicationState = (p.status === "published" ? "live" : "draft") as import("@/lib/publish/types").PublicationState;
 
         return legacyMatch ? {
             ...legacyMatch,
             title: p.title || legacyMatch.title,
-            status: "draft",
+            status: p.status === "published" ? "live" : "draft",
+            publicationState,
+            numberOfPages: p.number_of_pages,
         } : {
             id: p.id,
             userId: userId,
             title: p.title || "Untitled",
-            status: "draft",
+            status: p.status === "published" ? "live" : "draft",
             structureStatus: "generated",
             websiteType: (p.website_type || "landing-page") as import("@/lib/ai/prompts/types").WebsiteType,
-            publicationState: "draft",
+            publicationState,
             publishStatus: {
                 structureId: p.id,
                 userId: userId,
-                uiState: "draft",
-                uiLabel: "Draft",
-                backend: { structureStatus: "generated", publicationState: "draft", hasDeletedAt: false },
-                detection: { state: "draft", neverPublished: true, isPublishing: false, hasUnpublishedChanges: true, hasFailedUpdate: false, canPublish: true },
+                uiState: p.status === "published" ? "live" : "draft",
+                uiLabel: p.status === "published" ? "Live" : "Draft",
+                backend: { structureStatus: "generated", publicationState: backendPublicationState, hasDeletedAt: false },
+                detection: { state: backendPublicationState, neverPublished: true, isPublishing: false, hasUnpublishedChanges: true, hasFailedUpdate: false, canPublish: true },
                 validation: { ok: true, eligible: true, errors: [], validationScope: "draft", hasWarnings: false, ruleResults: [] },
                 timestamps: { created: p.created_at, lastAnalyzed: p.created_at, lastUpdatedAt: p.updated_at },
                 hasUnpublishedChanges: true,
@@ -64,10 +78,10 @@ export async function getUserPublishingActivityOverview(userId: string): Promise
             generatedAt: p.created_at,
             previewPath: `/preview/${p.id}`,
             editorPath: `/editor/${p.id}`,
-            analyticsConfigured: false,
             generatedSitePath: `/preview/${p.id}`,
             deletionState: 'active',
             supportsBulkActions: false,
+            numberOfPages: p.number_of_pages,
         };
       });
 
@@ -81,6 +95,9 @@ export async function getUserPublishingActivityOverview(userId: string): Promise
         return timeB - timeA;
       });
     } else {
+      if (projectsError) {
+          console.error("Error fetching projects: ", projectsError);
+      }
       websites = legacyWebsites;
     }
   } catch (error) {
@@ -103,5 +120,6 @@ export async function getUserPublishingActivityOverview(userId: string): Promise
     draftWebsites,
     publishedWebsites,
     recentGenerations,
+    storedVersions,
   };
 }
