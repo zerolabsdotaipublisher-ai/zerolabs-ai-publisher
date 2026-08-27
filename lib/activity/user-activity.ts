@@ -50,6 +50,9 @@ export async function getUserPublishingActivityOverview(userId: string): Promise
         // Fallback to legacy record if source_structure_id matches an old record to retain full compatibility
         const legacyMatch = p.source_structure_id ? legacyMap.get(p.source_structure_id) : undefined;
 
+        // Ensure preview routes point to old structures if that is where preview routes fetch from, otherwise use the project id.
+        const routeId = p.source_structure_id ? p.source_structure_id : p.id;
+
         const publicationState = (p.status === "published" ? "live" : "draft") as import("@/lib/publish/status").PublishingStatusUiState;
         const backendPublicationState = (p.status === "published" ? "live" : "draft") as import("@/lib/publish/types").PublicationState;
 
@@ -59,6 +62,9 @@ export async function getUserPublishingActivityOverview(userId: string): Promise
             status: p.status === "published" ? "live" : "draft",
             publicationState,
             numberOfPages: p.number_of_pages,
+            previewPath: `/preview/${routeId}`,
+            editorPath: `/editor/${routeId}`,
+            generatedSitePath: `/preview/${routeId}`,
         } : {
             id: p.id,
             userId: userId,
@@ -82,9 +88,9 @@ export async function getUserPublishingActivityOverview(userId: string): Promise
             },
             lastUpdatedAt: p.updated_at,
             generatedAt: p.created_at,
-            previewPath: `/preview/${p.id}`,
-            editorPath: `/editor/${p.id}`,
-            generatedSitePath: `/preview/${p.id}`,
+            previewPath: `/preview/${routeId}`,
+            editorPath: `/editor/${routeId}`,
+            generatedSitePath: `/preview/${routeId}`,
             deletionState: 'active',
             supportsBulkActions: false,
             numberOfPages: p.number_of_pages,
