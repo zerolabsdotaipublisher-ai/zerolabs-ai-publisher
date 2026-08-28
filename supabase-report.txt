@@ -1,0 +1,79 @@
+-- Supabase Schema Report for Zero Labs AI Publisher --
+
+-- 1. Dashboard listing
+-- Data source: website_structures
+-- Ensure website_structures table has the proper query access:
+-- RLS Policy:
+-- CREATE POLICY "User can view own website_structures" ON website_structures FOR SELECT USING (auth.uid() = user_id);
+-- No immediate changes needed since the query already hits website_structures safely.
+
+-- 2. Preview routing
+-- No database changes needed for routing. routes.previewSite(id) generates /preview/[id]
+-- which reads from website_structures securely via RLS.
+
+-- 3. Feed Post attachments, hearts, comments, shares
+-- To support future features on Feed:
+-- CREATE TABLE community_posts_attachments (
+--     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+--     post_id uuid REFERENCES community_posts(id) ON DELETE CASCADE,
+--     attachment_type text CHECK (attachment_type IN ('image', 'code', 'file', 'video', 'gif')),
+--     url text NOT NULL,
+--     created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+-- );
+
+-- CREATE TABLE community_posts_hearts (
+--     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+--     post_id uuid REFERENCES community_posts(id) ON DELETE CASCADE,
+--     user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+--     created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+--     UNIQUE(post_id, user_id)
+-- );
+
+-- CREATE TABLE community_posts_comments (
+--     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+--     post_id uuid REFERENCES community_posts(id) ON DELETE CASCADE,
+--     user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+--     content text NOT NULL,
+--     created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+-- );
+
+-- CREATE TABLE community_posts_shares (
+--     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+--     post_id uuid REFERENCES community_posts(id) ON DELETE CASCADE,
+--     user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+--     created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+-- );
+
+-- 4. Website and Profile Analytics for Insights
+-- To support the future Insights metrics:
+-- CREATE TABLE analytics_website_views (
+--     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+--     website_id uuid REFERENCES website_structures(id) ON DELETE CASCADE,
+--     viewer_id uuid REFERENCES auth.users(id) ON DELETE SET NULL, -- Null if anonymous
+--     viewed_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+-- );
+
+-- CREATE TABLE analytics_profile_views (
+--     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+--     profile_user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+--     viewer_id uuid REFERENCES auth.users(id) ON DELETE SET NULL, -- Null if anonymous
+--     viewed_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+-- );
+
+-- CREATE TABLE website_hearts (
+--     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+--     website_id uuid REFERENCES website_structures(id) ON DELETE CASCADE,
+--     user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+--     created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+--     UNIQUE(website_id, user_id)
+-- );
+
+-- CREATE TABLE website_shares (
+--     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+--     website_id uuid REFERENCES website_structures(id) ON DELETE CASCADE,
+--     user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+--     created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+-- );
+
+-- RLS should be applied appropriately to allow inserts from authenticated users,
+-- and selects based on visibility rules (e.g. public websites).

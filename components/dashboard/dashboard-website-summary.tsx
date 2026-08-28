@@ -71,7 +71,7 @@ export function DashboardWebsiteSummarySection({ summary }: DashboardWebsiteSumm
           ))}
         </ul>
       ) : (
-        <p className="dashboard-empty-note">No websites found yet.</p>
+        <div><p className="dashboard-empty-note mb-4">No websites yet. Generate your first website.</p><Link href={routes.createWebsite} className="website-action-button is-primary text-sm inline-flex items-center justify-center">Generate Website</Link></div>
       )}
       <Link href={routes.websites} className="dashboard-inline-link">Manage all websites</Link>
     </section>

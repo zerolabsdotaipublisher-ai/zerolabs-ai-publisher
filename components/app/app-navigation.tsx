@@ -14,9 +14,7 @@ import type { ProfileRole } from "@/lib/supabase/profile";
 const customerNavLinks = [
   { href: routes.dashboard, label: "Dashboard" },
   { href: routes.feed, label: "Feed" },
-  { href: routes.activity, label: "Activity" },
   { href: routes.insights, label: "Insights" },
-  { href: routes.appBlog, label: "Blog" },
   { href: routes.createWebsite, label: "Generate Website" },
   { href: routes.profile, label: "Profile" },
 ];

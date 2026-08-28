@@ -28,7 +28,7 @@ export function PostComposer() {
           type="text"
           name="title"
           placeholder="Title (optional)"
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-mint-500"
+          className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-mint-500"
           disabled={isPending}
         />
         <textarea
@@ -36,13 +36,13 @@ export function PostComposer() {
           placeholder="What's on your mind?"
           required
           rows={3}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-mint-500 resize-none"
+          className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-mint-500 resize-none"
           disabled={isPending}
         />
         <div className="flex justify-between items-center mt-2">
           <select
             name="visibility"
-            className="px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-mint-500"
+            className="px-3 py-1.5 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-mint-500"
             disabled={isPending}
           >
             <option value="public">Public</option>

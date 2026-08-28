@@ -7754,20 +7754,20 @@ html[data-theme="light"] .generation-shell {
   color-scheme: light;
 }
 html[data-theme="light"] .website-builder-shell[data-entry-point="generate"] {
-  --generate-surface: linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 94%, transparent) 0%, color-mix(in srgb, var(--surface) 96%, transparent) 100%);
-  --generate-surface-soft: linear-gradient(180deg, color-mix(in srgb, var(--surface-elevated) 92%, transparent) 0%, color-mix(in srgb, var(--surface) 94%, transparent) 100%);
+  --generate-surface: #e7f8f0;
+  --generate-surface-soft: #f0fbf6;
   --generate-pill-border: var(--border-strong);
-  --generate-pill-bg: color-mix(in srgb, var(--surface-elevated) 80%, transparent);
+  --generate-pill-bg: #ddefe4;
   --generate-pill-text: var(--text-primary);
-  --generate-phase-card-border: var(--border);
-  --generate-phase-card-border-strong: var(--border-strong);
-  --generate-phase-card-surface: color-mix(in srgb, var(--surface) 80%, transparent);
-  --generate-phase-card-surface-hover: color-mix(in srgb, var(--surface-elevated) 90%, transparent);
+  --generate-phase-card-border: rgba(173, 230, 205, 0.42);
+  --generate-phase-card-border-strong: rgba(173, 230, 205, 0.72);
+  --generate-phase-card-surface: #f0fbf6;
+  --generate-phase-card-surface-hover: #e7f8f0;
   --generate-phase-card-text: var(--text-primary);
   --generate-phase-card-muted: var(--text-secondary);
-  --generate-phase-card-shadow: var(--surface-shadow);
-  --generate-phase-card-shadow-strong: var(--surface-shadow-strong);
-  --generate-phase-card-active-surface: color-mix(in srgb, var(--surface-elevated) 96%, transparent);
+  --generate-phase-card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  --generate-phase-card-shadow-strong: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+  --generate-phase-card-active-surface: #ddefe4;
   --generate-phase-card-active-text: var(--text-primary);
   --generate-phase-card-active-muted: var(--text-secondary);
 }
@@ -12282,4 +12282,34 @@ html[data-theme="light"] .auth-form select option {
     grid-template-columns: 1fr 1fr;
     gap: 1.25rem;
   }
+}
+
+/* Feed Polish */
+html[data-theme="light"] .app-card {
+  background: color-mix(in srgb, var(--surface) 98%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 1.25rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
+html[data-theme="dark"] .app-card {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: 1.25rem;
+  padding: 1.5rem;
+  box-shadow: var(--surface-shadow);
+}
+
+html[data-theme="light"] .app-card input,
+html[data-theme="light"] .app-card textarea,
+html[data-theme="light"] .app-card select {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+}
+
+html[data-theme="light"] .app-card input::placeholder,
+html[data-theme="light"] .app-card textarea::placeholder {
+  color: var(--text-muted);
 }

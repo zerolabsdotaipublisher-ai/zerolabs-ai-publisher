@@ -9,12 +9,6 @@ const insightCards = [
     cta: "Open dashboard",
   },
   {
-    title: "Review the public narrative",
-    description: "The public homepage and blog remain part of the same shared theme and accessibility system used across the logged-in workspace.",
-    href: routes.blog,
-    cta: "Open blog",
-  },
-  {
     title: "Continue building",
     description: "Move directly into the create flow when you want to turn the latest prompt and page plan into a preview-ready website.",
     href: routes.createWebsite,
@@ -38,6 +32,48 @@ export default function InsightsPage() {
           <p>Shared theme, shared accessibility standards, and direct routes into the core publishing surfaces.</p>
         </aside>
       </header>
+
+      <section className="dashboard-panel-shell" aria-label="Analytics readiness">
+        <header className="dashboard-section-heading">
+          <div>
+            <h2>Analytics Overview</h2>
+            <p>Your workspace analytics and community engagement signals.</p>
+          </div>
+        </header>
+
+        <div className="dashboard-metrics-grid">
+          <article className="dashboard-metric-card">
+            <span className="dashboard-metric-label">Website Views</span>
+            <span className="dashboard-metric-value text-sm text-[var(--text-muted)] font-normal mt-1">Not configured</span>
+            <span className="dashboard-metric-hint">Total views across public sites</span>
+          </article>
+          <article className="dashboard-metric-card">
+            <span className="dashboard-metric-label">Profile Views</span>
+            <span className="dashboard-metric-value text-sm text-[var(--text-muted)] font-normal mt-1">Not configured</span>
+            <span className="dashboard-metric-hint">Community profile visits</span>
+          </article>
+          <article className="dashboard-metric-card">
+            <span className="dashboard-metric-label">Post Hearts</span>
+            <span className="dashboard-metric-value text-sm text-[var(--text-muted)] font-normal mt-1">No data yet</span>
+            <span className="dashboard-metric-hint">Engagement on community posts</span>
+          </article>
+          <article className="dashboard-metric-card">
+            <span className="dashboard-metric-label">Post Shares</span>
+            <span className="dashboard-metric-value text-sm text-[var(--text-muted)] font-normal mt-1">No data yet</span>
+            <span className="dashboard-metric-hint">Shares of your posts</span>
+          </article>
+          <article className="dashboard-metric-card">
+            <span className="dashboard-metric-label">Website Hearts</span>
+            <span className="dashboard-metric-value text-sm text-[var(--text-muted)] font-normal mt-1">No data yet</span>
+            <span className="dashboard-metric-hint">Engagement on public sites</span>
+          </article>
+          <article className="dashboard-metric-card">
+            <span className="dashboard-metric-label">Website Shares</span>
+            <span className="dashboard-metric-value text-sm text-[var(--text-muted)] font-normal mt-1">No data yet</span>
+            <span className="dashboard-metric-hint">Shares of your public sites</span>
+          </article>
+        </div>
+      </section>
 
       <section className="dashboard-panel-shell" aria-label="Insights quick links">
         <header className="dashboard-section-heading">

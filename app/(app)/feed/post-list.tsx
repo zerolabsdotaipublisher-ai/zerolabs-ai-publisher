@@ -21,7 +21,7 @@ export function PostList({ posts, currentUserId }: { posts: any[], currentUserId
 
   if (!posts || posts.length === 0) {
     return (
-      <div className="app-card text-center py-10 text-gray-500 dark:text-gray-400">
+      <div className="app-card text-center py-10 text-[var(--text-muted)]">
         No posts to display yet. Be the first to share something!
       </div>
     );
@@ -51,7 +51,7 @@ export function PostList({ posts, currentUserId }: { posts: any[], currentUserId
                 {authorInitial}
               </div>
               <div>
-                <div className="font-medium text-gray-900 dark:text-gray-100 text-sm">
+                <div className="font-medium text-[var(--text-primary)] text-sm">
                   {authorName}
                   {post.visibility !== 'public' && <span className="ml-2 text-xs text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">{post.visibility}</span>}
                 </div>
@@ -61,8 +61,8 @@ export function PostList({ posts, currentUserId }: { posts: any[], currentUserId
               </div>
             </div>
 
-            {post.title && <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">{post.title}</h3>}
-            <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{post.body}</p>
+            {post.title && <h3 className="font-semibold text-[var(--text-primary)] mb-2">{post.title}</h3>}
+            <p className="text-[var(--text-secondary)] whitespace-pre-wrap">{post.body}</p>
           </div>
         );
       })}
