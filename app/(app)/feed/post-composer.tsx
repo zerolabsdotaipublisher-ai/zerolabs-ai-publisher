@@ -1,11 +1,24 @@
 "use client";
 
-import { useState, useRef, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { createCommunityPost } from "./actions";
+import type { PublicWebsiteRecord } from "./types";
 
-export function PostComposer() {
+const postTypes = [
+  ["text", "Text"],
+  ["image", "Image"],
+  ["code", "Code"],
+  ["project", "Project"],
+  ["docs", "Docs"],
+  ["gif", "GIF"],
+  ["video", "Video"],
+  ["website", "Website"],
+] as const;
+
+export function PostComposer({ websites }: { websites: PublicWebsiteRecord[] }) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [postType, setPostType] = useState("text");
   const formRef = useRef<HTMLFormElement>(null);
 
   const handleSubmit = async (formData: FormData) => {
@@ -14,50 +27,113 @@ export function PostComposer() {
       const result = await createCommunityPost(formData);
       if (result.error) {
         setError(result.error);
-      } else {
-        formRef.current?.reset();
+        return;
       }
+
+      formRef.current?.reset();
     });
   };
 
   return (
-    <div className="app-card">
-      <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Create a Post</h2>
-      <form ref={formRef} action={handleSubmit} className="flex flex-col gap-3">
-        <input
-          type="text"
-          name="title"
-          placeholder="Title (optional)"
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-mint-500"
-          disabled={isPending}
-        />
-        <textarea
-          name="body"
-          placeholder="What's on your mind?"
-          required
-          rows={3}
-          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-mint-500 resize-none"
-          disabled={isPending}
-        />
-        <div className="flex justify-between items-center mt-2">
-          <select
-            name="visibility"
-            className="px-3 py-1.5 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-mint-500"
+    <section className="feed-panel feed-composer-card" aria-label="Create a community post">
+      <div className="feed-panel-heading">
+        <span className="feed-panel-kicker">Create</span>
+        <h2>Share with the community</h2>
+        <p>Share an update or use the configured community attachment storage for media, files, and website shares.</p>
+      </div>
+
+      <div className="feed-type-row" aria-label="Supported post types">
+        {postTypes.map(([value, label]) => (
+          <button key={value} type="button" className={`feed-type-pill ${postType === value ? "is-active" : ""}`} onClick={() => setPostType(value)} disabled={isPending}>
+            {label}
+            {value !== "text" ? <span>{value === "website" ? "Share" : "Attachment"}</span> : null}
+          </button>
+        ))}
+      </div>
+
+      <form ref={formRef} action={handleSubmit} className="feed-composer-form">
+        <input type="hidden" name="post_type" value={postType} />
+        <label className="feed-field">
+          <span>Title</span>
+          <input
+            type="text"
+            name="title"
+            placeholder="Optional headline for your post"
+            className="feed-input"
             disabled={isPending}
-          >
-            <option value="public">Public</option>
-            <option value="private">Private</option>
-          </select>
-          <button
-            type="submit"
+          />
+        </label>
+
+        {postType === "website" ? (
+          <label className="feed-field">
+            <span>Generated website</span>
+            <select name="website_id" className="feed-select" disabled={isPending || websites.length === 0} required>
+              <option value="">Select a public website</option>
+              {websites.map((website) => <option key={website.id} value={website.id}>{website.site_title || "Untitled website"}</option>)}
+            </select>
+          </label>
+        ) : null}
+
+        {postType === "project" ? (
+          <label className="feed-field">
+            <span>Project link</span>
+            <input type="url" name="project_url" className="feed-input" placeholder="https://example.com/project" required disabled={isPending} />
+          </label>
+        ) : null}
+
+        {postType !== "text" && postType !== "website" ? (
+          <label className="feed-field">
+            <span>{postType === "code" ? "Code file (optional; paste code in Post)" : "Attachment"}</span>
+            <input
+              type="file"
+              name="attachment"
+              className="feed-input feed-file-input"
+              accept={postType === "image" ? "image/*" : postType === "gif" ? "image/gif" : postType === "video" ? "video/*" : postType === "docs" ? ".pdf,.txt,.md,.doc,.docx,.xls,.xlsx,.csv" : undefined}
+              disabled={isPending}
+              required={postType !== "code"}
+            />
+          </label>
+        ) : null}
+
+        <label className="feed-field">
+          <span>Post</span>
+          <textarea
+            name="body"
+            placeholder="Share a build update, launch note, question, or idea."
+            required
+            rows={5}
+            className="feed-textarea"
             disabled={isPending}
-            className="px-4 py-2 bg-mint-600 hover:bg-mint-700 text-white rounded-md font-medium transition-colors disabled:opacity-50"
-          >
+          />
+        </label>
+
+        <div className="feed-composer-footer">
+          <label className="feed-field feed-field-inline">
+            <span>Visibility</span>
+            <select
+              name="visibility"
+              className="feed-select"
+              disabled={isPending}
+              defaultValue="public"
+            >
+              <option value="public">Public</option>
+              <option value="private">Private</option>
+            </select>
+          </label>
+
+          <button type="submit" disabled={isPending} className="feed-submit-button">
             {isPending ? "Posting..." : "Post"}
           </button>
         </div>
-        {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
+
+        {error ? (
+          <p className="feed-form-message is-error" role="alert">
+            {error}
+          </p>
+        ) : (
+          <p className="feed-form-message">Uploads are limited to the configured community attachment bucket and are validated server-side.</p>
+        )}
       </form>
-    </div>
+    </section>
   );
 }

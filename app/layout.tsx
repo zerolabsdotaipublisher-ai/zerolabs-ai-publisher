@@ -22,9 +22,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <Script id="zero-labs-theme-init" strategy="beforeInteractive">
-          {themeInitializationScript}
-        </Script>
+        <Script id="zero-labs-theme-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: themeInitializationScript }} />
       </head>
       <body>
         <a href="#main-content" className="skip-link">

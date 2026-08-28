@@ -1,36 +1,48 @@
 "use client";
 
-import { ExternalLink } from "lucide-react";
 import Link from "next/link";
+import { ExternalLink } from "lucide-react";
 import { routes } from "@/config/routes";
+import type { PublicWebsiteRecord } from "./types";
 
-export function PublicWebsiteList({ websites }: { websites: any[] }) { // eslint-disable-line @typescript-eslint/no-explicit-any
-  if (!websites || websites.length === 0) {
+interface PublicWebsiteListProps {
+  websites: PublicWebsiteRecord[];
+}
+
+function formatDate(value: string): string {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "Unknown date" : date.toLocaleDateString();
+}
+
+export function PublicWebsiteList({ websites }: PublicWebsiteListProps) {
+  if (websites.length === 0) {
     return (
-      <div className="text-sm text-gray-500 dark:text-gray-400 py-4 text-center">
-        No public websites shared yet.
+      <div className="feed-empty-state is-compact">
+        <strong>No public websites shared yet.</strong>
+        <p>Public previews will appear here once website visibility is enabled for other users.</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="feed-website-list">
       {websites.map((site) => (
-        <div key={site.id} className="p-3 border border-gray-100 dark:border-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-          <div className="font-medium text-gray-900 dark:text-gray-100 text-sm mb-1 truncate">
-            {site.name || "Untitled Website"}
+        <article key={site.id} className="feed-website-card">
+          <div className="feed-website-card-copy">
+            <strong>{site.site_title || "Untitled website"}</strong>
+            <p>
+              Generated {formatDate(site.generated_at)}
+              {site.updated_at ? ` | Updated ${formatDate(site.updated_at)}` : ""}
+            </p>
           </div>
-          <div className="flex justify-between items-center mt-2">
-            <span className="text-xs text-gray-500 capitalize">{site.theme || "Default"} Theme</span>
-            <Link
-              href={routes.liveSite(site.id)}
-              target="_blank"
-              className="text-mint-600 dark:text-mint-400 hover:text-mint-700 dark:hover:text-mint-300 text-xs flex items-center gap-1"
-            >
-              View <ExternalLink size={12} />
+
+          <div className="feed-website-card-footer">
+            <span className={`feed-website-status is-${site.status}`}>{site.status.replaceAll("_", " ")}</span>
+            <Link href={routes.liveSite(site.id)} target="_blank" className="feed-inline-link">
+              View site <ExternalLink size={12} />
             </Link>
           </div>
-        </div>
+        </article>
       ))}
     </div>
   );

@@ -1,8 +1,10 @@
-import type { DashboardMetricSummary, DashboardStorageSnapshot } from "./types";
+import type { DashboardMetricSummary, DashboardStorageSnapshot, DashboardWebsiteSummary } from "./types";
 import { isAccountAttentionRequired } from "./schema";
 
-export function buildDashboardMetrics(snapshot: DashboardStorageSnapshot): DashboardMetricSummary {
-  const publishedWebsites = snapshot.websites.filter((website) => website.status === "live").length;
+export function buildDashboardMetrics(
+  snapshot: DashboardStorageSnapshot,
+  websiteSummary: Pick<DashboardWebsiteSummary, "total" | "draft" | "published" | "storedPages" | "storedVersions">,
+): DashboardMetricSummary {
   const scheduledContent = snapshot.websites.filter(
     (website) => website.schedule?.status === "active" || website.schedule?.status === "running",
   ).length;
@@ -20,8 +22,12 @@ export function buildDashboardMetrics(snapshot: DashboardStorageSnapshot): Dashb
   const accountAttention = snapshot.socialAccounts.filter(isAccountAttentionRequired).length;
 
   return {
-    totalWebsites: snapshot.websites.length,
-    publishedItems: publishedWebsites + snapshot.generatedContent.published,
+    totalWebsites: websiteSummary.total,
+    draftWebsites: websiteSummary.draft,
+    publishedWebsites: websiteSummary.published,
+    storedPages: websiteSummary.storedPages,
+    storedVersions: websiteSummary.storedVersions,
+    publishedItems: websiteSummary.published + snapshot.generatedContent.published,
     generatedContentCount: snapshot.generatedContent.total + snapshot.socialPosts.length,
     scheduledItems: scheduledContent + scheduledSocial,
     attentionRequiredItems: failedSchedules + failedPublishes + accountAttention,
