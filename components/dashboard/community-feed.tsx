@@ -174,7 +174,7 @@ export function CommunityFeed({ currentUserId }: { currentUserId: string }) {
                disabled={posting}
              >
                <option value="public">Public</option>
-               <option value="private">Private (Draft)</option>
+                <option value="private">Private</option>
              </select>
              <button type="submit" className="wizard-button-primary" disabled={posting} style={{ padding: "0.4rem 1rem", fontSize: "0.9rem", minHeight: "auto" }}>
                {posting ? "Posting..." : "Post"}
@@ -193,9 +193,9 @@ export function CommunityFeed({ currentUserId }: { currentUserId: string }) {
                      {post.user_id === currentUserId ? (
                        <button onClick={() => handleDeletePost(post.id)} style={{ background: "none", border: "none", color: "red", cursor: "pointer", textDecoration: "underline" }}>Delete</button>
                      ) : (
-                       <button onClick={() => handleSaveItem(post.id, "post")} style={{ background: "none", border: "none", color: "var(--marketing-ocean)", cursor: "pointer", textDecoration: "underline" }}>
-                         {isSaved(post.id, "post") ? "Unsave" : "Save"}
-                       </button>
+                        <button onClick={() => handleSaveItem(post.id, "post")} style={{ background: "none", border: "none", color: "var(--accent)", cursor: "pointer", textDecoration: "underline" }}>
+                          {isSaved(post.id, "post") ? "Unsave" : "Save"}
+                        </button>
                      )}
                   </div>
                 </div>

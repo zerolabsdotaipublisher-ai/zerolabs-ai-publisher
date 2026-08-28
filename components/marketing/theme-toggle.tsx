@@ -1,5 +1,6 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
 import { AppTheme } from "@/lib/theme";
 
 export type MarketingTheme = AppTheme;
@@ -11,7 +12,14 @@ interface ThemeToggleProps {
 }
 
 export function ThemeToggle({ theme, onToggle, className }: ThemeToggleProps) {
-  const isDark = theme === "dark";
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+
+  // Keep the first server and client render identical; the persisted theme applies after mount.
+  const isDark = mounted && theme === "dark";
 
   return (
     <button

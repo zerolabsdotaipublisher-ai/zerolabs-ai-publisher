@@ -2,12 +2,34 @@ import "server-only";
 
 import { logger } from "@/lib/observability";
 import { listManagedWebsites } from "@/lib/management";
-import { listSocialAccountConnections } from "@/lib/social/accounts/workflow";
-import { listOwnedSocialPublishHistoryJobs } from "@/lib/social/history";
-import { listOwnedSocialSchedules } from "@/lib/social/scheduling";
-import { listSocialPosts } from "@/lib/social/storage";
 import { getSupabaseServiceClient } from "@/lib/supabase/server";
 import type { DashboardGeneratedContentRow, DashboardGeneratedContentStats, DashboardStorageSnapshot } from "./types";
+
+async function loadOptionalDashboardData<T>(label: string, load: Promise<T>, fallback: T): Promise<T> {
+  try {
+    return await load;
+  } catch (error) {
+    if (process.env.NODE_ENV === "development") {
+      logger.warn(`Optional dashboard data unavailable: ${label}`, {
+        category: "error",
+        service: "dashboard",
+        error: { name: "OptionalDashboardDataError", message: error instanceof Error ? error.message : String(error) },
+      });
+    }
+
+    return fallback;
+  }
+}
+
+const emptyGeneratedContent: DashboardGeneratedContentStats = {
+  total: 0,
+  website: 0,
+  blog: 0,
+  article: 0,
+  published: 0,
+  scheduled: 0,
+  rows: [],
+};
 
 async function countGeneratedContentRows(
   userId: string,
@@ -94,22 +116,17 @@ async function getGeneratedContentStats(userId: string): Promise<DashboardGenera
 }
 
 export async function fetchDashboardStorageSnapshot(userId: string): Promise<DashboardStorageSnapshot> {
-  const [websites, socialSchedules, socialPosts, socialHistoryResult, socialAccounts, generatedContent] =
-    await Promise.all([
-      listManagedWebsites(userId, { status: "all", includeDeleted: false }),
-      listOwnedSocialSchedules(userId),
-      listSocialPosts(userId, { limit: 100 }),
-      listOwnedSocialPublishHistoryJobs(userId, { page: 1, perPage: 25 }),
-      listSocialAccountConnections(userId),
-      getGeneratedContentStats(userId),
-    ]);
+  const [websites, generatedContent] = await Promise.all([
+    listManagedWebsites(userId, { status: "all", includeDeleted: false }),
+    loadOptionalDashboardData("generated content", getGeneratedContentStats(userId), emptyGeneratedContent),
+  ]);
 
   return {
     websites,
-    socialSchedules,
-    socialPosts,
-    socialHistory: socialHistoryResult.items,
-    socialAccounts,
+    socialSchedules: [],
+    socialPosts: [],
+    socialHistory: [],
+    socialAccounts: [],
     generatedContent,
   };
 }

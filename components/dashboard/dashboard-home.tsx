@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { getDefaultDashboardErrorMessage, isDashboardSummaryEmpty } from "@/lib/dashboard/client";
+import { getDefaultDashboardErrorMessage } from "@/lib/dashboard/client";
 import type { DashboardSummary } from "@/lib/dashboard/types";
 import { DashboardAlerts } from "./dashboard-alerts";
 import { DashboardContentSummarySection } from "./dashboard-content-summary";
@@ -10,7 +10,6 @@ import { DashboardQuickActions } from "./dashboard-quick-actions";
 import { DashboardRecentActivity } from "./dashboard-recent-activity";
 import { DashboardSocialSummarySection } from "./dashboard-social-summary";
 import { DashboardWebsiteSummarySection } from "./dashboard-website-summary";
-import { CommunityFeed } from "./community-feed";
 
 interface DashboardSummaryApiResponse {
   ok: boolean;
@@ -91,7 +90,7 @@ export function DashboardHome({ initialSummary, initialError }: DashboardHomePro
       <section className="dashboard-home-shell" aria-busy="true" aria-label="Loading dashboard">
         <header className="dashboard-home-header">
           <h1>Dashboard</h1>
-          <p>Loading your workspace summary…</p>
+          <p>Loading your workspace summary...</p>
         </header>
         <div className="dashboard-metrics-grid">
           {Array.from({ length: 5 }).map((_, index) => (
@@ -117,8 +116,6 @@ export function DashboardHome({ initialSummary, initialError }: DashboardHomePro
     );
   }
 
-  const empty = isDashboardSummaryEmpty(summary);
-
   return (
     <section className="dashboard-home-shell" aria-label="Dashboard homepage">
       <header className="dashboard-home-header">
@@ -143,51 +140,40 @@ export function DashboardHome({ initialSummary, initialError }: DashboardHomePro
 
       <div className="dashboard-metrics-grid">
         <DashboardMetricCard
-          label="Total websites"
+          label="Generated websites"
           value={summary.metrics.totalWebsites}
-          hint="Owned website records"
+          hint="Owner-scoped website records"
         />
         <DashboardMetricCard
-          label="Published websites + content"
-          value={summary.metrics.publishedItems}
-          hint="Live websites and published generated content"
-        />
-        <DashboardMetricCard
-          label="Generated content"
-          value={summary.metrics.generatedContentCount}
-          hint="Website + social generated assets"
-        />
-        <DashboardMetricCard
-          label="Scheduled items"
-          value={summary.metrics.scheduledItems}
-          hint="Content and social schedules"
+          label="Draft websites"
+          value={summary.metrics.draftWebsites}
+          hint="Drafts and unpublished changes"
           tone="warning"
         />
         <DashboardMetricCard
-          label="Needs attention"
-          value={summary.metrics.attentionRequiredItems}
-          hint="Failures, retries, and account blockers"
-          tone={summary.metrics.attentionRequiredItems > 0 ? "error" : "default"}
+          label="Published websites"
+          value={summary.metrics.publishedWebsites}
+          hint="Currently live websites"
+        />
+        <DashboardMetricCard
+          label="Stored pages"
+          value={summary.metrics.storedPages}
+          hint="From website pages or structure fallback"
+        />
+        <DashboardMetricCard
+          label="Stored versions"
+          value={summary.metrics.storedVersions}
+          hint="Website version snapshots if configured"
         />
       </div>
 
-      {empty ? (
-        <section className="dashboard-panel-shell">
-          <h2>No activity yet</h2>
-          <p className="dashboard-empty-note">Create your first website or connect a social account to populate the dashboard.</p>
-        </section>
-      ) : null}
-
       <DashboardQuickActions actions={summary.quickActions} onTrack={(eventName) => void handleTrack(eventName)} />
       <DashboardAlerts alerts={summary.alerts} />
+      <DashboardWebsiteSummarySection summary={summary.websiteSummary} />
 
       <div className="dashboard-two-column-grid">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-          <DashboardWebsiteSummarySection summary={summary.websiteSummary} />
-          <CommunityFeed currentUserId={summary.user.id} />
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-          <DashboardContentSummarySection summary={summary.contentSummary} />
+        <DashboardContentSummarySection summary={summary.contentSummary} />
+        <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
           <DashboardSocialSummarySection summary={summary.socialSummary} />
           <DashboardRecentActivity items={summary.recentActivity} />
         </div>

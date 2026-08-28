@@ -1,5 +1,4 @@
 import type { WebsiteLifecycleStatus, WebsiteManagementRecord } from "@/lib/management";
-import type { PublishingStatusModel } from "@/lib/publish/status";
 import type { SocialAccountConnection } from "@/lib/social/accounts";
 import type { SocialPublishHistoryJob } from "@/lib/social/history";
 import type { SocialSchedule } from "@/lib/social/scheduling";
@@ -17,6 +16,10 @@ export type DashboardActivityType =
 
 export interface DashboardMetricSummary {
   totalWebsites: number;
+  draftWebsites: number;
+  publishedWebsites: number;
+  storedPages: number | null;
+  storedVersions: number | null;
   publishedItems: number;
   generatedContentCount: number;
   scheduledItems: number;
@@ -56,17 +59,23 @@ export interface DashboardWebsiteSummary {
   draft: number;
   archived: number;
   attentionRequired: number;
-  recentlyUpdated: Array<{
+  storedPages: number | null;
+  storedVersions: number | null;
+  dataSource: "website_projects" | "website_structures" | "hybrid";
+  generatedWebsites: Array<{
     id: string;
     title: string;
     status: WebsiteLifecycleStatus;
-    publishStatus: PublishingStatusModel;
+    statusLabel: string;
+    createdAt: string;
     updatedAt: string;
     publishedAt?: string;
-    href: string;
-    previewPath: string;
-    editorPath: string;
+    generatedSitePath?: string;
+    previewPath?: string;
+    editorPath?: string;
     visibility?: "public" | "private";
+    pageCount?: number;
+    pageCountSource: "website_pages" | "website_structures" | "website_projects" | "unavailable";
   }>;
 }
 
