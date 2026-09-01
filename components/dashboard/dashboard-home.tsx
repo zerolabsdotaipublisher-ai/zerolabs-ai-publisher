@@ -4,11 +4,9 @@ import { useCallback, useEffect, useState } from "react";
 import { getDefaultDashboardErrorMessage } from "@/lib/dashboard/client";
 import type { DashboardSummary } from "@/lib/dashboard/types";
 import { DashboardAlerts } from "./dashboard-alerts";
-import { DashboardContentSummarySection } from "./dashboard-content-summary";
 import { DashboardMetricCard } from "./dashboard-metric-card";
 import { DashboardQuickActions } from "./dashboard-quick-actions";
 import { DashboardRecentActivity } from "./dashboard-recent-activity";
-import { DashboardSocialSummarySection } from "./dashboard-social-summary";
 import { DashboardWebsiteSummarySection } from "./dashboard-website-summary";
 
 interface DashboardSummaryApiResponse {
@@ -30,6 +28,12 @@ async function trackDashboardEvent(eventName: string): Promise<void> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ event: eventName }),
   });
+}
+
+function formatDate(dateString?: string): string {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString(undefined, { year: 'numeric', month: 'short' });
 }
 
 export function DashboardHome({ initialSummary, initialError }: DashboardHomeProps) {
@@ -93,7 +97,7 @@ export function DashboardHome({ initialSummary, initialError }: DashboardHomePro
           <p>Loading your workspace summary...</p>
         </header>
         <div className="dashboard-metrics-grid">
-          {Array.from({ length: 5 }).map((_, index) => (
+          {Array.from({ length: 4 }).map((_, index) => (
             <article key={index} className="dashboard-metric-card dashboard-skeleton" />
           ))}
         </div>
@@ -116,15 +120,32 @@ export function DashboardHome({ initialSummary, initialError }: DashboardHomePro
     );
   }
 
+  const memberSinceStr = formatDate(summary.user.memberSince);
+
   return (
     <section className="dashboard-home-shell" aria-label="Dashboard homepage">
       <header className="dashboard-home-header">
-        <div>
+        <div className="dashboard-hero-panel" style={{ flex: 1 }}>
           <h1>Dashboard</h1>
-          <p>
-            Welcome back{summary.user.displayName ? `, ${summary.user.displayName}` : ""}. Here is your publishing
-            workspace snapshot.
-          </p>
+          <p>Manage, preview, edit, and share your generated websites.</p>
+
+          <div className="dashboard-welcome-card" style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+            <span className="dashboard-welcome-label">Workspace User</span>
+            <strong>{summary.user.displayName || summary.user.email}</strong>
+            <p>{summary.user.email}</p>
+            <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+              {summary.user.plan && (
+                <span style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--accent)' }}>
+                  {summary.user.plan} Plan
+                </span>
+              )}
+              {memberSinceStr && (
+                <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                  Member since {memberSinceStr}
+                </span>
+              )}
+            </div>
+          </div>
         </div>
         <button
           type="button"
@@ -142,7 +163,12 @@ export function DashboardHome({ initialSummary, initialError }: DashboardHomePro
         <DashboardMetricCard
           label="Generated websites"
           value={summary.metrics.totalWebsites}
-          hint="Owner-scoped website records"
+          hint="Total website projects"
+        />
+        <DashboardMetricCard
+          label="Published websites"
+          value={summary.metrics.publishedWebsites}
+          hint="Currently live websites"
         />
         <DashboardMetricCard
           label="Draft websites"
@@ -151,33 +177,20 @@ export function DashboardHome({ initialSummary, initialError }: DashboardHomePro
           tone="warning"
         />
         <DashboardMetricCard
-          label="Published websites"
-          value={summary.metrics.publishedWebsites}
-          hint="Currently live websites"
-        />
-        <DashboardMetricCard
           label="Stored pages"
           value={summary.metrics.storedPages}
           hint="From website pages or structure fallback"
-        />
-        <DashboardMetricCard
-          label="Stored versions"
-          value={summary.metrics.storedVersions}
-          hint="Website version snapshots if configured"
         />
       </div>
 
       <DashboardQuickActions actions={summary.quickActions} onTrack={(eventName) => void handleTrack(eventName)} />
       <DashboardAlerts alerts={summary.alerts} />
+
       <DashboardWebsiteSummarySection summary={summary.websiteSummary} />
 
-      <div className="dashboard-two-column-grid">
-        <DashboardContentSummarySection summary={summary.contentSummary} />
-        <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
-          <DashboardSocialSummarySection summary={summary.socialSummary} />
-          <DashboardRecentActivity items={summary.recentActivity} />
-        </div>
-      </div>
+      {summary.recentActivity.length > 0 && (
+        <DashboardRecentActivity items={summary.recentActivity} />
+      )}
     </section>
   );
 }

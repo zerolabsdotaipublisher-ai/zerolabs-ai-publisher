@@ -13,6 +13,7 @@ import type { DashboardSummary, DashboardWebsiteSummary } from "./types";
 export { isDashboardSummaryEmpty, getDefaultDashboardErrorMessage } from "./client";
 
 interface BuildDashboardSummaryOptions {
+  memberSince?: string;
   userId: string;
   email: string;
   displayName?: string;
@@ -408,6 +409,7 @@ export async function buildDashboardSummary(options: BuildDashboardSummaryOption
       id: options.userId,
       email: options.email,
       displayName: options.displayName,
+      memberSince: options.memberSince,
     },
     metrics: buildDashboardMetrics(snapshot, websiteSummary),
     quickActions: DASHBOARD_QUICK_ACTIONS,

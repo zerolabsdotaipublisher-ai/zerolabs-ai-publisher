@@ -79,6 +79,7 @@ async function loadDashboardView(): Promise<DashboardView> {
       userId: user.id,
       email: user.email ?? "",
       displayName,
+      memberSince: profile.created_at || user.created_at,
     });
 
     return {

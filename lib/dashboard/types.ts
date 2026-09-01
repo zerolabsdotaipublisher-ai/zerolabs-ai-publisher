@@ -104,6 +104,8 @@ export interface DashboardSummary {
     id: string;
     email: string;
     displayName?: string;
+    memberSince?: string;
+    plan?: string;
   };
   metrics: DashboardMetricSummary;
   quickActions: DashboardQuickAction[];
