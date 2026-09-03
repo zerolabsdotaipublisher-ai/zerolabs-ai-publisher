@@ -73,8 +73,8 @@ export function DashboardWebsiteSummarySection({ summary }: DashboardWebsiteSumm
             <article key={website.id} className="dashboard-website-card">
               <div className="dashboard-website-card-header">
                 <div className="dashboard-website-card-copy">
-                  {website.generatedSitePath ? (
-                    <Link href={website.generatedSitePath} className="dashboard-website-title">
+                  {website.previewPath ? (
+                    <Link href={website.previewPath} className="dashboard-website-title">
                       {website.title}
                     </Link>
                   ) : (
