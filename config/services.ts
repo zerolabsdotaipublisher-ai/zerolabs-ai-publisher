@@ -1,3 +1,5 @@
+import "server-only";
+
 /**
  * Grouped service configuration.
  *
@@ -11,7 +13,7 @@
  *   - Platform services: ZeroFlow (shared platform layer)
  *   - Future services: Stripe (billing), Resend (email)
  *
- * Import from "@/config" for the unified entry point.
+ * Import from "@/config" for the unified server-only entry point.
  */
 
 import { env } from "./env";

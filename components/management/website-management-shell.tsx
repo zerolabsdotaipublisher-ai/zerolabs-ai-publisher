@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { PublishMutationResponse } from "@/lib/publish";
 import type {
@@ -18,7 +19,19 @@ import { WebsiteList } from "./website-list";
 
 interface WebsiteManagementShellProps {
   initialListing: WebsiteListPage;
+  initialStatus?: WebsiteStatusFilter;
   currentUserId?: string;
+  initialError?: string;
+  context?: "default" | "dashboard";
+  showHeader?: boolean;
+  showBulkFoundation?: boolean;
+  headerEyebrow?: string;
+  headerTitle?: string;
+  headerDescription?: string;
+  headerActions?: Array<{
+    href: string;
+    label: string;
+  }>;
 }
 
 interface WebsiteListApiResponse {
@@ -35,7 +48,19 @@ const DEFAULT_PER_PAGE = 12;
 const SEARCH_DEBOUNCE_MS = 250;
 const WEBSITE_LIST_POLL_INTERVAL_MS = 30_000;
 
-export function WebsiteManagementShell({ initialListing, currentUserId }: WebsiteManagementShellProps) {
+export function WebsiteManagementShell({
+  initialListing,
+  initialStatus = "all",
+  currentUserId,
+  initialError,
+  context = "default",
+  showHeader = true,
+  showBulkFoundation = true,
+  headerEyebrow,
+  headerTitle,
+  headerDescription,
+  headerActions = [],
+}: WebsiteManagementShellProps) {
   const [websites, setWebsites] = useState(initialListing.websites);
   const [total, setTotal] = useState(initialListing.total);
   const [page, setPage] = useState(initialListing.page);
@@ -43,13 +68,13 @@ export function WebsiteManagementShell({ initialListing, currentUserId }: Websit
   const [hasMore, setHasMore] = useState(initialListing.hasMore);
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [status, setStatus] = useState<WebsiteStatusFilter>("all");
+  const [status, setStatus] = useState<WebsiteStatusFilter>(initialStatus);
   const [publishState, setPublishState] = useState<WebsitePublishStateFilter>("all");
   const [websiteType, setWebsiteType] = useState<WebsiteTypeFilter>("all");
   const [includeDeleted, setIncludeDeleted] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [feedback, setFeedback] = useState<string>();
-  const [error, setError] = useState<string>();
+  const [error, setError] = useState<string | undefined>(initialError);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [deletingId, setDeletingId] = useState<string>();
@@ -272,6 +297,17 @@ export function WebsiteManagementShell({ initialListing, currentUserId }: Websit
     debouncedQuery || status !== "all" || publishState !== "all" || websiteType !== "all" || includeDeleted,
   );
   const hasResults = websites.length > 0;
+  const shellClassName =
+    context === "dashboard"
+      ? "website-management-shell website-management-shell-dashboard"
+      : "website-management-shell";
+  const HeaderHeadingTag = context === "dashboard" ? "h2" : "h1";
+  const resolvedHeaderTitle = headerTitle ?? (context === "dashboard" ? "Your websites" : "Website listing");
+  const resolvedHeaderDescription =
+    headerDescription
+    ?? (context === "dashboard"
+      ? "Preview, edit, publish, and share every generated website from one workspace."
+      : "View and manage user-owned websites with publish-aware status, quick actions, and responsive filtering.");
   const bulkActionNotice = useMemo(() => {
     if (selectedCount === 0) {
       return "Bulk actions foundation is ready for MVP, but destructive bulk execution remains disabled.";
@@ -281,11 +317,27 @@ export function WebsiteManagementShell({ initialListing, currentUserId }: Websit
   }, [selectedCount]);
 
   return (
-    <section className="website-management-shell" aria-label="Website management">
-      <header className="website-management-header">
-        <h1>Website listing</h1>
-        <p>View and manage user-owned websites with publish-aware status, quick actions, and responsive filtering.</p>
-      </header>
+    <section className={shellClassName} aria-label={context === "dashboard" ? "Dashboard website workspace" : "Website management"}>
+      {showHeader ? (
+        <header className="website-management-header">
+          {headerEyebrow ? <span className="website-management-eyebrow">{headerEyebrow}</span> : null}
+          <div className="website-management-header-row">
+            <div>
+              <HeaderHeadingTag>{resolvedHeaderTitle}</HeaderHeadingTag>
+              <p>{resolvedHeaderDescription}</p>
+            </div>
+            {headerActions.length > 0 ? (
+              <div className="website-management-header-actions">
+                {headerActions.map((action) => (
+                  <Link key={`${action.href}-${action.label}`} href={action.href} className="dashboard-inline-link">
+                    {action.label}
+                  </Link>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </header>
+      ) : null}
 
       <WebsiteListControls
         query={query}
@@ -300,15 +352,17 @@ export function WebsiteManagementShell({ initialListing, currentUserId }: Websit
         onIncludeDeletedChange={setIncludeDeleted}
       />
 
-      <section className="website-bulk-foundation" aria-live="polite">
-        <p>{bulkActionNotice}</p>
-        <button type="button" disabled>
-          Bulk delete (coming soon)
-        </button>
-        <button type="button" disabled>
-          Bulk archive (coming soon)
-        </button>
-      </section>
+      {showBulkFoundation ? (
+        <section className="website-bulk-foundation" aria-live="polite">
+          <p>{bulkActionNotice}</p>
+          <button type="button" disabled>
+            Bulk delete (coming soon)
+          </button>
+          <button type="button" disabled>
+            Bulk archive (coming soon)
+          </button>
+        </section>
+      ) : null}
 
       <p className="website-management-meta">
         Showing {websites.length} of {total} websites.
@@ -364,7 +418,7 @@ export function WebsiteManagementShell({ initialListing, currentUserId }: Websit
             }}
           />
 
-          {loadingMore ? <p className="website-loading-more">Loading more websites…</p> : null}
+          {loadingMore ? <p className="website-loading-more">Loading more websites...</p> : null}
           {hasMore ? (
             <button
               type="button"

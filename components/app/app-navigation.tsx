@@ -8,7 +8,6 @@ import { Menu, X } from "lucide-react";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { SiteThemeToggle } from "@/components/theme/site-theme-toggle";
 import { routes } from "@/config/routes";
-import { useTheme } from "@/providers/theme-provider";
 import type { ProfileRole } from "@/lib/supabase/profile";
 
 const customerNavLinks = [
@@ -59,7 +58,6 @@ function isActivePath(pathname: string, href: string) {
 
 export function AppNavigation({ userDisplayName, userEmail, userRole }: AppNavigationProps) {
   const pathname = usePathname();
-  const { theme } = useTheme();
   const mobileMenuId = "app-navigation-mobile-menu";
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const isAdminWorkspace =
@@ -79,15 +77,26 @@ export function AppNavigation({ userDisplayName, userEmail, userRole }: AppNavig
   const closeMobileMenu = useCallback(() => setIsMobileMenuOpen(false), []);
   const userLabel = userDisplayName?.trim() || userEmail?.trim() || null;
   const renderBrandLogo = () => (
-    <Image
-      src={theme === "dark" ? "/images/AI robot logo light.svg" : "/images/AI robot logo dark.svg"}
-      alt=""
-      aria-hidden="true"
-      width={44}
-      height={29}
-      priority
-      className="app-nav-brand-logo"
-    />
+    <>
+      <Image
+        src="/images/AI robot logo dark.svg"
+        alt=""
+        aria-hidden="true"
+        width={44}
+        height={29}
+        priority
+        className="app-nav-brand-logo app-nav-brand-logo-light"
+      />
+      <Image
+        src="/images/AI robot logo light.svg"
+        alt=""
+        aria-hidden="true"
+        width={44}
+        height={29}
+        priority
+        className="app-nav-brand-logo app-nav-brand-logo-dark"
+      />
+    </>
   );
   const renderUserActions = () => (
     <>

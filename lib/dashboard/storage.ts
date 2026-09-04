@@ -3,15 +3,15 @@ import "server-only";
 import { logger } from "@/lib/observability";
 import { listManagedWebsites } from "@/lib/management";
 import { getSupabaseServiceClient } from "@/lib/supabase/server";
-import type { DashboardGeneratedContentRow, DashboardGeneratedContentStats, DashboardStorageSnapshot } from "./types";
+import type { DashboardStorageSnapshot, DashboardWebsiteShareActivity } from "./types";
 
 async function loadOptionalDashboardData<T>(label: string, load: Promise<T>, fallback: T): Promise<T> {
   try {
     return await load;
   } catch (error) {
     if (process.env.NODE_ENV === "development") {
-      logger.warn(`Optional dashboard data unavailable: ${label}`, {
-        category: "error",
+      logger.info(`Optional dashboard data unavailable: ${label}`, {
+        category: "config",
         service: "dashboard",
         error: { name: "OptionalDashboardDataError", message: error instanceof Error ? error.message : String(error) },
       });
@@ -21,112 +21,44 @@ async function loadOptionalDashboardData<T>(label: string, load: Promise<T>, fal
   }
 }
 
-const emptyGeneratedContent: DashboardGeneratedContentStats = {
-  total: 0,
-  website: 0,
-  blog: 0,
-  article: 0,
-  published: 0,
-  scheduled: 0,
-  rows: [],
-};
-
-async function countGeneratedContentRows(
-  userId: string,
-  contentType?: "website" | "blog" | "article",
-  contentStatus?: "published" | "scheduled",
-): Promise<number> {
+async function listOptionalWebsiteShares(userId: string): Promise<DashboardWebsiteShareActivity[]> {
   const supabase = getSupabaseServiceClient();
-  let query = supabase
-    .from("website_generated_content")
-    .select("id", { count: "exact", head: true })
+  const { data: posts, error: postsError } = await supabase
+    .from("community_posts")
+    .select("id, title, created_at")
     .eq("user_id", userId)
-    .eq("section_key", "__page__")
-    .is("deleted_at", null)
-    .eq("is_archived", false);
+    .order("created_at", { ascending: false })
+    .limit(50);
 
-  if (contentType) {
-    query = query.eq("content_type", contentType);
-  }
+  if (postsError) throw postsError;
+  const postRows = (posts ?? []) as Array<{ id: string; title?: string | null; created_at: string }>;
+  if (postRows.length === 0) return [];
 
-  if (contentStatus) {
-    query = query.eq("content_status", contentStatus);
-  }
+  const { data: attachments, error: attachmentsError } = await supabase
+    .from("community_post_attachments")
+    .select("id, post_id, metadata")
+    .in("post_id", postRows.map((post) => post.id));
 
-  const { count, error } = await query;
-  if (error) {
-    logger.error("Failed counting generated content rows for dashboard", {
-      category: "error",
-      service: "supabase",
-      userId,
-      metadata: { contentType, contentStatus },
-      error: { name: "DashboardGeneratedContentCountError", message: error.message },
-    });
-    throw error;
-  }
+  if (attachmentsError) throw attachmentsError;
+  const postMap = new Map(postRows.map((post) => [post.id, post]));
 
-  return count ?? 0;
-}
-
-async function listRecentGeneratedContentRows(userId: string): Promise<DashboardGeneratedContentRow[]> {
-  const supabase = getSupabaseServiceClient();
-  const { data, error } = await supabase
-    .from("website_generated_content")
-    .select("id, structure_id, content_type, content_status, schedule_state, page_slug, created_at, updated_at")
-    .eq("user_id", userId)
-    .eq("section_key", "__page__")
-    .is("deleted_at", null)
-    .eq("is_archived", false)
-    .order("updated_at", { ascending: false })
-    .limit(20);
-
-  if (error) {
-    logger.error("Failed loading recent generated content rows for dashboard", {
-      category: "error",
-      service: "supabase",
-      userId,
-      error: { name: "DashboardGeneratedContentListError", message: error.message },
-    });
-    throw error;
-  }
-
-  return (data ?? []) as DashboardGeneratedContentRow[];
-}
-
-async function getGeneratedContentStats(userId: string): Promise<DashboardGeneratedContentStats> {
-  const [total, website, blog, article, published, scheduled, rows] = await Promise.all([
-    countGeneratedContentRows(userId),
-    countGeneratedContentRows(userId, "website"),
-    countGeneratedContentRows(userId, "blog"),
-    countGeneratedContentRows(userId, "article"),
-    countGeneratedContentRows(userId, undefined, "published"),
-    countGeneratedContentRows(userId, undefined, "scheduled"),
-    listRecentGeneratedContentRows(userId),
-  ]);
-
-  return {
-    total,
-    website,
-    blog,
-    article,
-    published,
-    scheduled,
-    rows,
-  };
+  return ((attachments ?? []) as Array<{ id: string; post_id: string; metadata?: Record<string, unknown> | null }>)
+    .map((attachment) => {
+      const websiteId = typeof attachment.metadata?.website_id === "string" ? attachment.metadata.website_id : null;
+      const post = postMap.get(attachment.post_id);
+      return websiteId && post ? { id: attachment.id, websiteId, postTitle: post.title ?? null, sharedAt: post.created_at } : null;
+    })
+    .filter((share): share is DashboardWebsiteShareActivity => share !== null);
 }
 
 export async function fetchDashboardStorageSnapshot(userId: string): Promise<DashboardStorageSnapshot> {
-  const [websites, generatedContent] = await Promise.all([
-    listManagedWebsites(userId, { status: "all", includeDeleted: false }),
-    loadOptionalDashboardData("generated content", getGeneratedContentStats(userId), emptyGeneratedContent),
+  const [websites, websiteShares] = await Promise.all([
+    listManagedWebsites(userId, { includeSchedules: false, status: "all", includeDeleted: false }),
+    loadOptionalDashboardData("website shares", listOptionalWebsiteShares(userId), []),
   ]);
 
   return {
     websites,
-    socialSchedules: [],
-    socialPosts: [],
-    socialHistory: [],
-    socialAccounts: [],
-    generatedContent,
+    websiteShares,
   };
 }

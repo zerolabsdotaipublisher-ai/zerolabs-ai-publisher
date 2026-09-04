@@ -1470,6 +1470,24 @@ html[data-theme="dark"] .auth-panel-list {
   height: auto;
 }
 
+.app-nav-brand-logo-light {
+  display: inline-flex;
+}
+
+.app-nav-brand-logo-dark {
+  display: none;
+}
+
+html:not([data-theme="light"]) .app-nav-brand-logo-light,
+html[data-theme="dark"] .app-nav-brand-logo-light {
+  display: none;
+}
+
+html:not([data-theme="light"]) .app-nav-brand-logo-dark,
+html[data-theme="dark"] .app-nav-brand-logo-dark {
+  display: inline-flex;
+}
+
 .app-nav-links {
   grid-area: links;
   display: flex;
@@ -5034,6 +5052,34 @@ html[data-theme="dark"] .auth-panel-list {
   margin-inline: auto;
 }
 
+.website-management-header {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.website-management-eyebrow {
+  display: inline-flex;
+  width: fit-content;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.website-management-header-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.85rem 1rem;
+}
+
+.website-management-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1rem;
+}
+
 .website-management-header p {
   color: #6b7280;
 }
@@ -5167,6 +5213,30 @@ html[data-theme="dark"] .auth-panel-list {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+.website-share-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.website-share-status {
+  width: 100%;
+  color: #166534;
+  font-size: 0.85rem;
+}
+
+.website-share-status.is-error {
+  color: #991b1b;
+}
+
+.website-share-link {
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  padding: 0.35rem 0.55rem;
+  font-size: 0.85rem;
 }
 
 .website-list-item-links a,
@@ -5524,6 +5594,31 @@ html[data-theme="dark"] .auth-panel-list {
   line-height: 1.75;
 }
 
+.dashboard-header-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+.dashboard-summary-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid rgba(173, 230, 205, 0.22);
+  border-radius: 999px;
+  background: rgba(248, 249, 250, 0.04);
+  color: rgba(248, 249, 250, 0.82);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.dashboard-summary-status.is-warning {
+  border-color: rgba(245, 158, 11, 0.34);
+  color: #fde68a;
+}
+
 .dashboard-welcome-card {
   display: flex;
   flex-direction: column;
@@ -5541,6 +5636,13 @@ html[data-theme="dark"] .auth-panel-list {
   display: grid;
   padding: clamp(1rem, 1.6vw, 1.2rem);
   gap: 0.85rem;
+}
+
+.dashboard-home-shell .dashboard-panel-shell-emphasis {
+  border-color: rgba(173, 230, 205, 0.3);
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.24),
+    0 0 42px rgba(31, 111, 95, 0.18);
 }
 
 .dashboard-home-shell .dashboard-panel-shell header {
@@ -5654,6 +5756,19 @@ html[data-theme="dark"] .auth-panel-list {
   gap: 0.55rem;
   box-shadow: inset 0 1px 0 rgba(248, 249, 250, 0.04);
   transition: border-color 200ms ease, background-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+}
+
+.dashboard-home-shell button.dashboard-quick-action {
+  width: 100%;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.dashboard-home-shell button.dashboard-quick-action:disabled {
+  cursor: progress;
+  opacity: 0.78;
 }
 
 .dashboard-home-shell .dashboard-quick-action:hover,
@@ -6526,6 +6641,8 @@ html[data-theme="dark"] .auth-panel-list {
   .website-bulk-foundation button,
   .website-list-item-links a,
   .website-list-item-actions button,
+  .website-share-actions button,
+  .website-share-actions a,
   .website-delete-dialog-actions button,
   .website-rename-dialog-actions button,
   .website-publish-confirm-actions button {
@@ -7687,11 +7804,96 @@ html[data-theme="dark"] .website-builder-shell .website-action-button.is-primary
   background: color-mix(in srgb, var(--surface) 92%, transparent);
 }
 
+.dashboard-home-shell .dashboard-panel-shell-emphasis {
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+  box-shadow:
+    0 24px 70px color-mix(in srgb, black 22%, transparent),
+    0 0 42px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.dashboard-home-shell .website-management-shell-dashboard {
+  max-width: 100%;
+  gap: 0.85rem;
+}
+
+.dashboard-home-shell .website-management-shell-dashboard .website-management-eyebrow {
+  color: var(--accent);
+}
+
+.dashboard-home-shell .website-management-shell-dashboard .website-management-header h2,
+.dashboard-home-shell .website-management-shell-dashboard .website-list-item h3 {
+  color: var(--text-primary);
+}
+
+.dashboard-home-shell .website-management-shell-dashboard .website-management-header p,
+.dashboard-home-shell .website-management-shell-dashboard .website-management-meta,
+.dashboard-home-shell .website-management-shell-dashboard .website-list-item-header p,
+.dashboard-home-shell .website-management-shell-dashboard .website-list-item-meta dt {
+  color: var(--text-secondary);
+}
+
+.dashboard-home-shell .website-management-shell-dashboard .website-search,
+.dashboard-home-shell .website-management-shell-dashboard .website-filters,
+.dashboard-home-shell .website-management-shell-dashboard .website-list-item,
+.dashboard-home-shell .website-management-shell-dashboard .website-empty-state,
+.dashboard-home-shell .website-management-shell-dashboard .website-management-error-panel {
+  border: 1px solid var(--border);
+  border-radius: 1.35rem;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-elevated) 95%, transparent) 0%,
+      color-mix(in srgb, var(--surface) 96%, transparent) 100%
+    );
+  box-shadow: var(--surface-shadow);
+}
+
+.dashboard-home-shell .website-management-shell-dashboard .website-search input,
+.dashboard-home-shell .website-management-shell-dashboard .website-filters select,
+.dashboard-home-shell .website-management-shell-dashboard .website-rename-dialog input {
+  border-color: var(--border);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  color: var(--text-primary);
+}
+
+.dashboard-home-shell .website-management-shell-dashboard .website-bulk-foundation,
+.dashboard-home-shell .website-management-shell-dashboard .website-list-item-links a,
+.dashboard-home-shell .website-management-shell-dashboard .website-list-item-links span,
+.dashboard-home-shell .website-management-shell-dashboard .website-share-link {
+  border-color: var(--border);
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  color: var(--text-primary);
+}
+
+.dashboard-home-shell .website-management-shell-dashboard .website-share-status {
+  color: color-mix(in srgb, #22c55e 72%, var(--text-primary));
+}
+
+.dashboard-home-shell .website-management-shell-dashboard .website-share-status.is-error,
+.dashboard-home-shell .website-management-shell-dashboard .website-management-error {
+  color: color-mix(in srgb, #ef4444 72%, var(--text-primary));
+}
+
+.dashboard-home-shell .website-management-shell-dashboard .website-management-success {
+  color: color-mix(in srgb, #22c55e 72%, var(--text-primary));
+}
+
 .dashboard-home-shell .dashboard-quick-action:hover,
 .dashboard-home-shell .dashboard-quick-action:focus-visible {
   border-color: var(--border-strong);
   background: color-mix(in srgb, var(--accent) 12%, var(--surface));
   box-shadow: var(--surface-shadow);
+}
+
+.dashboard-summary-status {
+  border-color: var(--border);
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  color: var(--text-secondary);
+}
+
+.dashboard-summary-status.is-warning {
+  border-color: color-mix(in srgb, #f59e0b 38%, var(--border));
+  color: color-mix(in srgb, #f59e0b 72%, var(--text-primary));
 }
 
 .profile-field input {
@@ -12344,6 +12546,44 @@ html[data-theme="light"] .auth-form select option {
   display: grid;
   gap: 1rem;
   padding: 1rem;
+  align-content: start;
+}
+
+.dashboard-website-thumbnail {
+  display: grid;
+  gap: 0.45rem;
+  min-height: 10rem;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, var(--border));
+  border-radius: 1rem;
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--surface-elevated) 92%, white 8%) 0%,
+      color-mix(in srgb, var(--accent) 34%, var(--surface)) 100%
+    );
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 32%, transparent);
+}
+
+.dashboard-website-thumbnail-label {
+  color: color-mix(in srgb, var(--text-primary) 72%, white 28%);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.dashboard-website-thumbnail strong {
+  align-self: end;
+  margin-top: auto;
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  line-height: 1.2;
+}
+
+.dashboard-website-thumbnail > span:last-child {
+  color: color-mix(in srgb, var(--text-primary) 82%, white 18%);
+  font-size: 0.9rem;
 }
 
 .dashboard-website-card-header,
@@ -12384,6 +12624,23 @@ html[data-theme="light"] .auth-form select option {
   display: flex;
   flex-wrap: wrap;
   gap: 0.55rem;
+}
+
+.dashboard-website-card-footer {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.dashboard-website-share-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.dashboard-website-share-actions .website-share-status {
+  flex-basis: 100%;
+  margin: 0;
 }
 
 .dashboard-website-visibility,
@@ -12459,6 +12716,16 @@ html[data-theme="light"] .auth-form select option {
   font-size: 0.92rem;
   font-weight: 700;
   text-decoration: none;
+}
+
+.dashboard-website-button[aria-disabled="true"] {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.dashboard-website-button:disabled {
+  opacity: 0.62;
+  cursor: not-allowed;
 }
 
 .dashboard-website-button.is-primary,
@@ -12551,6 +12818,14 @@ html[data-theme="light"] .auth-form select option {
   color: var(--text-secondary);
 }
 
+.dashboard-website-card .website-share-actions {
+  width: 100%;
+}
+
+.dashboard-website-card .website-share-status {
+  margin: 0;
+}
+
 .feed-shell {
   display: grid;
   gap: 1rem;
@@ -12583,6 +12858,7 @@ html[data-theme="light"] .auth-form select option {
 .feed-panel-heading {
   display: grid;
   gap: 0.4rem;
+  min-width: 0;
 }
 
 .feed-panel-kicker {
@@ -12601,11 +12877,13 @@ html[data-theme="light"] .auth-form select option {
 }
 
 .feed-profile-card {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   gap: 0.85rem;
   padding: 0.95rem 1rem;
   border-radius: 1.2rem;
+  min-width: 0;
 }
 
 .feed-profile-avatar,
@@ -12637,6 +12915,17 @@ html[data-theme="light"] .auth-form select option {
 .feed-form-message {
   font-size: 0.9rem;
   line-height: 1.6;
+}
+
+.feed-panel-heading p,
+.feed-profile-copy span,
+.feed-panel-note,
+.feed-post-body,
+.feed-post-author-copy p,
+.feed-post-author-copy span,
+.feed-form-message {
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .feed-form-message.is-error {
@@ -12901,8 +13190,9 @@ html[data-theme="light"] .auth-form select option {
 
 @media (min-width: 1200px) {
   .feed-shell {
-    grid-template-columns: minmax(13rem, 17rem) minmax(0, 1fr) minmax(15rem, 19rem);
+    grid-template-columns: minmax(16rem, 19rem) minmax(0, 1fr) minmax(16rem, 19rem);
     align-items: start;
+    gap: 1.25rem;
   }
 
   .feed-sticky-panel {
@@ -12913,7 +13203,7 @@ html[data-theme="light"] .auth-form select option {
 
 @media (min-width: 768px) and (max-width: 1199px) {
   .feed-shell {
-    grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr);
+    grid-template-columns: minmax(16rem, 19rem) minmax(0, 1fr);
     align-items: start;
   }
 

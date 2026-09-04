@@ -2,6 +2,7 @@ import { filterWebsites, sortWebsitesByUpdatedAt } from "./filters";
 import { toWebsiteManagementRecord } from "./model";
 import { searchWebsites } from "./search";
 import { listOwnedWebsiteStructures } from "./storage";
+import { logger } from "@/lib/observability";
 import { listOwnedContentSchedules, toContentScheduleSummary } from "@/lib/scheduling";
 import type { WebsiteListPage, WebsiteListingOptions, WebsiteManagementRecord } from "./types";
 
@@ -29,6 +30,61 @@ function normalizePagination(options: WebsiteListingOptions): { page: number; pe
   return { page, perPage };
 }
 
+function readString(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+function isMissingOptionalScheduleSchemaError(
+  error: {
+    code?: unknown;
+    message?: unknown;
+    details?: unknown;
+    hint?: unknown;
+  } | null | undefined,
+): boolean {
+  const code = readString(error?.code);
+  const searchable = [
+    readString(error?.message),
+    readString(error?.details),
+    readString(error?.hint),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  return (
+    code === "42P01" ||
+    code === "42703" ||
+    code === "PGRST204" ||
+    code === "PGRST205" ||
+    searchable.includes("schema cache") ||
+    searchable.includes("could not find the table") ||
+    searchable.includes("could not find the column") ||
+    ((searchable.includes("relation") || searchable.includes("column")) && searchable.includes("does not exist"))
+  );
+}
+
+async function listOwnedContentSchedulesBestEffort(userId: string) {
+  try {
+    return await listOwnedContentSchedules(userId);
+  } catch (error) {
+    if (isMissingOptionalScheduleSchemaError(error as Parameters<typeof isMissingOptionalScheduleSchemaError>[0])) {
+      logger.warn("Website listing is continuing without content schedule summaries", {
+        category: "error",
+        service: "dashboard",
+        userId,
+        error: {
+          name: "ContentScheduleCompatibilityWarning",
+          message: error instanceof Error ? error.message : String(error),
+        },
+      });
+      return [];
+    }
+
+    throw error;
+  }
+}
+
 function toPaginatedResult(
   websites: WebsiteManagementRecord[],
   page: number,
@@ -52,8 +108,10 @@ async function buildManagedWebsiteRecords(
   userId: string,
   options: WebsiteListingOptions,
 ): Promise<WebsiteManagementRecord[]> {
-  const websites = await listOwnedWebsiteStructures(userId);
-  const schedules = await listOwnedContentSchedules(userId);
+  const [websites, schedules] = await Promise.all([
+    listOwnedWebsiteStructures(userId),
+    options.includeSchedules === false ? Promise.resolve([]) : listOwnedContentSchedulesBestEffort(userId),
+  ]);
   const scheduleMap = new Map(
     schedules.map((schedule) => [schedule.structureId, toContentScheduleSummary(schedule)]),
   );

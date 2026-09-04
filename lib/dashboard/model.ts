@@ -1,12 +1,12 @@
 import { routes } from "@/config/routes";
-import { listOwnedReviewRecords } from "@/lib/review/storage";
 import { getSupabaseServiceClient } from "@/lib/supabase/server";
 import { toPublishingStatusLabel, type PublishingStatusUiState } from "@/lib/publish/status";
 import type { WebsiteManagementRecord } from "@/lib/management";
+import { logger } from "@/lib/observability";
 import { buildDashboardRecentActivity } from "./activity";
 import { buildDashboardAlerts } from "./alerts";
 import { buildDashboardMetrics } from "./metrics";
-import { DASHBOARD_MVP_BOUNDARIES, DASHBOARD_QUICK_ACTIONS, isAccountAttentionRequired } from "./schema";
+import { DASHBOARD_MVP_BOUNDARIES, DASHBOARD_QUICK_ACTIONS } from "./schema";
 import { fetchDashboardStorageSnapshot } from "./storage";
 import type { DashboardSummary, DashboardWebsiteSummary } from "./types";
 
@@ -49,12 +49,72 @@ interface WebsiteProjectPageRow {
   website_project_id: string | null;
 }
 
+interface WebsiteProjectDesignConfigRow {
+  website_project_id: string | null;
+  color_palette: unknown;
+}
+
+interface ProjectDesignConfigPreview {
+  designConfigured: boolean;
+  thumbnailAccentColor?: string;
+  thumbnailSurfaceColor?: string;
+}
+
+type CountFilter =
+  | { type: "eq"; column: string; value: string }
+  | { type: "in"; column: string; value: string[] };
+
 function readString(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
 
 function readCount(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function collectHexColors(value: unknown, colors: string[], depth = 0): void {
+  if (depth > 4 || colors.length >= 4) {
+    return;
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return;
+    }
+
+    const matches = trimmed.match(/#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\b/g);
+    if (matches) {
+      for (const match of matches) {
+        if (!colors.includes(match)) {
+          colors.push(match);
+        }
+      }
+    }
+
+    if ((trimmed.startsWith("{") || trimmed.startsWith("[")) && colors.length < 4) {
+      try {
+        collectHexColors(JSON.parse(trimmed), colors, depth + 1);
+      } catch {
+        // Ignore malformed serialized design config values.
+      }
+    }
+
+    return;
+  }
+
+  if (Array.isArray(value)) {
+    for (const entry of value) {
+      collectHexColors(entry, colors, depth + 1);
+    }
+    return;
+  }
+
+  if (value && typeof value === "object") {
+    for (const entry of Object.values(value as Record<string, unknown>)) {
+      collectHexColors(entry, colors, depth + 1);
+    }
+  }
 }
 
 function isMissingSchemaError(error: {
@@ -83,6 +143,151 @@ function isMissingSchemaError(error: {
     searchable.includes("could not find the column") ||
     ((searchable.includes("relation") || searchable.includes("column")) && searchable.includes("does not exist"))
   );
+}
+
+async function listIdsForUser(table: string, userId: string): Promise<string[] | null> {
+  const supabase = getSupabaseServiceClient();
+  const { data, error } = await supabase
+    .from(table)
+    .select("id")
+    .eq("user_id", userId);
+
+  if (error) {
+    if (isMissingSchemaError(error)) {
+      return null;
+    }
+
+    throw error;
+  }
+
+  return (data ?? [])
+    .map((row) => readString((row as { id?: unknown }).id))
+    .filter((value): value is string => Boolean(value));
+}
+
+async function listIdsForFirstAvailableTable(tables: string[], userId: string): Promise<string[] | null> {
+  for (const table of tables) {
+    const ids = await listIdsForUser(table, userId);
+    if (ids !== null) {
+      return ids;
+    }
+  }
+
+  return null;
+}
+
+async function countRows(table: string, filters: CountFilter[] = []): Promise<number | null> {
+  const supabase = getSupabaseServiceClient();
+  let query = supabase.from(table).select("id", { count: "exact", head: true });
+
+  for (const filter of filters) {
+    query =
+      filter.type === "eq"
+        ? query.eq(filter.column, filter.value)
+        : query.in(filter.column, filter.value);
+  }
+
+  const { count, error } = await query;
+  if (error) {
+    if (isMissingSchemaError(error)) {
+      return null;
+    }
+
+    throw error;
+  }
+
+  return typeof count === "number" ? count : 0;
+}
+
+async function countFirstAvailableTable(tables: string[], filters: CountFilter[] = []): Promise<number | null> {
+  for (const table of tables) {
+    const count = await countRows(table, filters);
+    if (count !== null) {
+      return count;
+    }
+  }
+
+  return null;
+}
+
+function createOwnedIdFilter(column: string, values: string[]): CountFilter {
+  if (values.length > 0) {
+    return {
+      type: "in",
+      column,
+      value: values,
+    };
+  }
+
+  return {
+    type: "eq",
+    column,
+    value: "__none__",
+  };
+}
+
+function sumAvailableCounts(...values: Array<number | null>): number | null {
+  const availableValues = values.filter((value): value is number => typeof value === "number");
+  if (availableValues.length === 0) {
+    return null;
+  }
+
+  return availableValues.reduce((total, value) => total + value, 0);
+}
+
+async function loadDashboardEngagementMetrics(
+  userId: string,
+): Promise<Pick<DashboardSummary["metrics"], "totalViews" | "totalHearts">> {
+  try {
+    const [ownedWebsiteIds, ownedFeedPostIds] = await Promise.all([
+      listIdsForUser("website_structures", userId),
+      listIdsForFirstAvailableTable(["community_posts", "feed_posts"], userId),
+    ]);
+
+    const websiteViewsPromise = ownedWebsiteIds
+      ? countRows("website_view_events", [createOwnedIdFilter("website_id", ownedWebsiteIds)])
+      : Promise.resolve(null);
+    const profileViewsPromise = countRows("profile_view_events", [{ type: "eq", column: "profile_user_id", value: userId }]);
+    const websiteHeartsPromise = ownedWebsiteIds
+      ? countRows("website_reactions", [
+          createOwnedIdFilter("website_id", ownedWebsiteIds),
+          { type: "eq", column: "reaction_type", value: "heart" },
+        ])
+      : Promise.resolve(null);
+    const postHeartsPromise = ownedFeedPostIds
+      ? countFirstAvailableTable(["community_post_reactions", "feed_post_reactions"], [
+          createOwnedIdFilter("post_id", ownedFeedPostIds),
+          { type: "eq", column: "reaction_type", value: "heart" },
+        ])
+      : Promise.resolve(null);
+
+    const [websiteViews, profileViews, websiteHearts, postHearts] = await Promise.all([
+      websiteViewsPromise,
+      profileViewsPromise,
+      websiteHeartsPromise,
+      postHeartsPromise,
+    ]);
+
+    return {
+      totalViews: sumAvailableCounts(websiteViews, profileViews),
+      totalHearts: sumAvailableCounts(websiteHearts, postHearts),
+    };
+  } catch (error) {
+    logger.info("Dashboard is continuing without optional engagement metrics", {
+      category: "config",
+      service: "dashboard",
+      userId,
+      error: {
+        name: "DashboardEngagementCompatibilityWarning",
+        message: error instanceof Error ? error.message : String(error),
+      },
+    });
+
+    return {
+      totalViews: null,
+      totalHearts: null,
+    };
+  }
 }
 
 function countStructurePages(row: WebsiteStructureInventoryRow | undefined): number | undefined {
@@ -207,11 +412,11 @@ async function listOwnedWebsitePages(userId: string): Promise<WebsiteProjectPage
   return (data ?? []) as WebsiteProjectPageRow[];
 }
 
-async function countOwnedWebsiteVersions(userId: string): Promise<number | null> {
+async function listOwnedWebsiteDesignConfigs(userId: string): Promise<WebsiteProjectDesignConfigRow[] | null> {
   const supabase = getSupabaseServiceClient();
-  const { count, error } = await supabase
-    .from("website_versions")
-    .select("id", { count: "exact", head: true })
+  const { data, error } = await supabase
+    .from("website_design_configs")
+    .select("website_project_id, color_palette")
     .eq("user_id", userId);
 
   if (error) {
@@ -222,7 +427,54 @@ async function countOwnedWebsiteVersions(userId: string): Promise<number | null>
     throw error;
   }
 
-  return readCount(count);
+  return (data ?? []) as WebsiteProjectDesignConfigRow[];
+}
+
+async function countOwnedWebsiteVersions(userId: string): Promise<number> {
+  const supabase = getSupabaseServiceClient();
+  const { count, error } = await supabase
+    .from("website_versions")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId);
+
+  if (error) {
+    if (isMissingSchemaError(error)) {
+      return 0;
+    }
+
+    throw error;
+  }
+
+  return readCount(count) ?? 0;
+}
+
+function createProjectDesignConfigMap(rows: WebsiteProjectDesignConfigRow[] | null): Map<string, ProjectDesignConfigPreview> {
+  if (!rows?.length) {
+    return new Map();
+  }
+
+  const entries: Array<[string, ProjectDesignConfigPreview]> = [];
+
+  for (const row of rows) {
+    const projectId = readString(row.website_project_id);
+    if (!projectId) {
+      continue;
+    }
+
+    const colors: string[] = [];
+    collectHexColors(row.color_palette, colors);
+
+    entries.push([
+      projectId,
+      {
+        designConfigured: true,
+        thumbnailAccentColor: colors[0],
+        thumbnailSurfaceColor: colors[1],
+      },
+    ]);
+  }
+
+  return new Map(entries);
 }
 
 function buildLegacyWebsiteCards(args: {
@@ -239,12 +491,14 @@ function buildLegacyWebsiteCards(args: {
       createdAt: website.generatedAt,
       updatedAt: website.lastUpdatedAt,
       publishedAt: website.lastPublishedAt,
+      liveUrl: website.liveUrl,
       generatedSitePath: website.generatedSitePath,
       previewPath: website.previewPath,
       editorPath: website.editorPath,
       visibility: args.visibilityMap.get(website.id) ?? "private",
       pageCount: countStructurePages(args.structureRows.get(website.id)),
       pageCountSource: args.structureRows.has(website.id) ? "website_structures" : "unavailable",
+      designConfigured: false,
     })),
   );
 }
@@ -253,17 +507,19 @@ async function buildDashboardWebsiteSummary(
   userId: string,
   websites: WebsiteManagementRecord[],
 ): Promise<DashboardWebsiteSummary> {
-  const [structureRows, visibilityMap, projectRows, websitePageRows, storedVersions] = await Promise.all([
+  const [structureRows, visibilityMap, projectRows, websitePageRows, designConfigRows, storedVersions] = await Promise.all([
     listOwnedStructureInventory(userId),
     listOwnedStructureVisibility(userId),
     listOwnedWebsiteProjects(userId),
     listOwnedWebsitePages(userId),
+    listOwnedWebsiteDesignConfigs(userId),
     countOwnedWebsiteVersions(userId),
   ]);
 
   const structureRowMap = new Map(structureRows.map((row) => [row.id, row]));
   const structurePageTotal = structureRows.reduce((total, row) => total + (countStructurePages(row) ?? 0), 0);
   const legacyWebsiteMap = new Map(websites.map((website) => [website.id, website]));
+  const designConfigMap = createProjectDesignConfigMap(designConfigRows);
 
   if (!projectRows || projectRows.length === 0) {
     const generatedWebsites = buildLegacyWebsiteCards({
@@ -319,6 +575,8 @@ async function buildDashboardWebsiteSummary(
       mappedStructureIds.add(structureId);
     }
 
+    const designConfig = designConfigMap.get(project.id);
+
     return {
       id: structureId ?? project.id,
       title:
@@ -331,6 +589,7 @@ async function buildDashboardWebsiteSummary(
       createdAt: project.created_at || legacyWebsite?.generatedAt || structureRow?.generated_at || project.updated_at,
       updatedAt: project.updated_at || legacyWebsite?.lastUpdatedAt || structureRow?.updated_at || project.created_at,
       publishedAt: legacyWebsite?.lastPublishedAt,
+      liveUrl: legacyWebsite?.liveUrl,
       generatedSitePath: structureId ? routes.generatedSite(structureId) : legacyWebsite?.generatedSitePath,
       previewPath: structureId ? routes.previewSite(structureId) : legacyWebsite?.previewPath,
       editorPath: structureId ? routes.editorSite(structureId) : legacyWebsite?.editorPath,
@@ -340,6 +599,9 @@ async function buildDashboardWebsiteSummary(
         pageCountFromProject ??
         pageCountFromStructure,
       pageCountSource,
+      designConfigured: designConfig?.designConfigured ?? false,
+      thumbnailAccentColor: designConfig?.thumbnailAccentColor,
+      thumbnailSurfaceColor: designConfig?.thumbnailSurfaceColor,
     };
   });
 
@@ -371,35 +633,29 @@ async function buildDashboardWebsiteSummary(
 }
 
 export async function buildDashboardSummary(options: BuildDashboardSummaryOptions): Promise<DashboardSummary> {
-  const [snapshot, reviewRecords] = await Promise.all([
+  const [snapshot, engagementMetrics] = await Promise.all([
     fetchDashboardStorageSnapshot(options.userId),
-    listOwnedReviewRecords(options.userId),
+    loadDashboardEngagementMetrics(options.userId),
   ]);
   const websiteSummary = await buildDashboardWebsiteSummary(options.userId, snapshot.websites);
 
   const contentSummary = {
-    totalGenerated: snapshot.generatedContent.total,
-    websiteGenerated: snapshot.generatedContent.website,
-    blogGenerated: snapshot.generatedContent.blog,
-    articleGenerated: snapshot.generatedContent.article,
-    publishedContent: snapshot.generatedContent.published,
-    scheduledContent:
-      snapshot.generatedContent.scheduled +
-      snapshot.websites.filter(
-        (website) => website.schedule?.status === "active" || website.schedule?.status === "running",
-      ).length,
-    pendingApproval: reviewRecords.filter((record) => record.state === "pending_review").length,
+    totalGenerated: 0,
+    websiteGenerated: 0,
+    blogGenerated: 0,
+    articleGenerated: 0,
+    publishedContent: 0,
+    scheduledContent: 0,
+    pendingApproval: 0,
   };
 
   const socialSummary = {
-    connectedAccounts: snapshot.socialAccounts.filter((account) => account.status === "connected").length,
-    accountsNeedingAttention: snapshot.socialAccounts.filter(isAccountAttentionRequired).length,
-    generatedPosts: snapshot.socialPosts.length,
-    scheduledPosts: snapshot.socialSchedules.filter((schedule) =>
-      ["scheduled", "queued", "retry_pending"].includes(schedule.status),
-    ).length,
-    publishedPosts: snapshot.socialPosts.filter((post) => Boolean(post.publishedAt)).length,
-    failedPublishes: snapshot.socialHistory.filter((history) => history.status === "failed").length,
+    connectedAccounts: 0,
+    accountsNeedingAttention: 0,
+    generatedPosts: 0,
+    scheduledPosts: 0,
+    publishedPosts: 0,
+    failedPublishes: 0,
   };
 
   return {
@@ -409,7 +665,7 @@ export async function buildDashboardSummary(options: BuildDashboardSummaryOption
       email: options.email,
       displayName: options.displayName,
     },
-    metrics: buildDashboardMetrics(snapshot, websiteSummary),
+    metrics: buildDashboardMetrics(snapshot, websiteSummary, engagementMetrics),
     quickActions: DASHBOARD_QUICK_ACTIONS,
     recentActivity: buildDashboardRecentActivity(snapshot),
     websiteSummary,

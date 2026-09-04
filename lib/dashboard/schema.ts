@@ -1,5 +1,4 @@
 import { routes } from "@/config/routes";
-import type { SocialAccountConnection } from "@/lib/social/accounts";
 import type { DashboardQuickAction } from "./types";
 
 export const DASHBOARD_MAX_RECENT_ACTIVITY = 12;
@@ -7,7 +6,7 @@ export const DASHBOARD_MAX_RECENT_ACTIVITY = 12;
 export const DASHBOARD_QUICK_ACTIONS: DashboardQuickAction[] = [
   {
     id: "create-website",
-    label: "Create website",
+    label: "Create new website",
     description: "Start a new AI website project.",
     href: routes.createWebsite,
     eventName: "dashboard_quick_action_create_website",
@@ -27,6 +26,27 @@ export const DASHBOARD_QUICK_ACTIONS: DashboardQuickAction[] = [
     eventName: "dashboard_quick_action_view_websites",
   },
   {
+    id: "open-drafts",
+    label: "Open drafts",
+    description: "Review websites that are still in draft before publishing.",
+    href: `${routes.websites}?status=draft`,
+    eventName: "dashboard_quick_action_open_drafts",
+  },
+  {
+    id: "view-insights",
+    label: "View Insights",
+    description: "Review performance and workspace insights.",
+    href: routes.insights,
+    eventName: "dashboard_quick_action_view_insights",
+  },
+  {
+    id: "open-feed",
+    label: "Open Feed",
+    description: "Share websites and follow updates from the community.",
+    href: routes.feed,
+    eventName: "dashboard_quick_action_open_feed",
+  },
+  {
     id: "content-library",
     label: "Content library",
     description: "Browse and manage generated websites, blogs, articles, and social content.",
@@ -40,40 +60,11 @@ export const DASHBOARD_QUICK_ACTIONS: DashboardQuickAction[] = [
     href: routes.approval,
     eventName: "dashboard_quick_action_approval_queue",
   },
-  {
-    id: "publishing-activity",
-    label: "Publishing activity",
-    description: "Open the full publishing activity overview for recent, upcoming, and attention-required items.",
-    href: routes.activity,
-    eventName: "dashboard_quick_action_publishing_activity",
-  },
-  {
-    id: "schedule-social",
-    label: "Schedule social post",
-    description: "Use social scheduling from your website workflows.",
-    href: routes.websites,
-    eventName: "dashboard_quick_action_schedule_social_post",
-  },
-  {
-    id: "connect-social-account",
-    label: "Connect social account",
-    description: "Connect Instagram account used by social publishing.",
-    href: `/api/social/accounts/connect/instagram?returnTo=${encodeURIComponent(routes.dashboard)}`,
-    eventName: "dashboard_quick_action_connect_social_account",
-  },
 ];
 
 export const DASHBOARD_MVP_BOUNDARIES = [
   "Dashboard is an AI Publisher homepage summary only (not a full analytics platform).",
-  "Metrics are owner-scoped snapshots aggregated from existing website, content, scheduling, social history, and account systems.",
+  "Metrics are owner-scoped snapshots aggregated from existing website and content systems.",
   "Quick actions route users into existing workflows; dashboard does not add duplicate management or publishing pipelines.",
-  "Social account connection action targets current MVP-supported provider flow (Instagram).",
   "Alerting is lightweight and in-app only; no external notification delivery is introduced.",
 ] as const;
-
-export function isAccountAttentionRequired(account: SocialAccountConnection): boolean {
-  return (
-    account.reauthorizationRequired ||
-    ["expired", "invalid", "reauthorization_required"].includes(account.status)
-  );
-}

@@ -5,8 +5,10 @@ import { updateSession } from "@/lib/supabase/middleware";
 
 const protectedPaths = [
   routes.dashboard,
+  routes.feed,
   routes.admin,
   routes.activity,
+  routes.insights,
   routes.contentLibrary,
   routes.review,
   routes.approval,
@@ -27,7 +29,7 @@ function isProtectedPath(pathname: string): boolean {
   return exactProtectedPaths.has(pathname) || protectedPathPrefixes.some((prefix) => pathname.startsWith(prefix));
 }
 
-export async function middleware(request: NextRequest): Promise<NextResponse> {
+export async function proxy(request: NextRequest): Promise<NextResponse> {
   const { pathname, search } = request.nextUrl;
 
   // Keep public routes out of Supabase middleware entirely so the homepage,
@@ -45,7 +47,7 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     response = sessionResult.response;
     hasSession = sessionResult.hasSession;
   } catch (error) {
-    console.warn("middleware session refresh failed; allowing request to continue", error);
+    console.warn("proxy session refresh failed; allowing request to continue", error);
   }
 
   if (hasSession) {

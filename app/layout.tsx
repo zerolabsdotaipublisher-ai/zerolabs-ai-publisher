@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import "./globals.css";
 import { VercelAnalyticsTracker } from "@/components/analytics/vercel-analytics";
-import { getPublicConfig } from "@/config";
+import { publicAppConfig } from "@/config/public";
 import { AuthProvider } from "@/providers/auth-provider";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { themeInitializationScript } from "@/lib/theme";
@@ -17,23 +17,21 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const publicConfig = getPublicConfig();
-
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <Script id="zero-labs-theme-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: themeInitializationScript }} />
-      </head>
       <body>
+        <Script id="zero-labs-theme-init" strategy="beforeInteractive">
+          {themeInitializationScript}
+        </Script>
         <a href="#main-content" className="skip-link">
           Skip to main content
         </a>
         <ThemeProvider>
           <AuthProvider
             supabaseConfig={{
-              url: publicConfig.supabase.url,
-              anonKey: publicConfig.supabase.anonKey,
-              appUrl: publicConfig.url,
+              url: publicAppConfig.supabase.url,
+              anonKey: publicAppConfig.supabase.anonKey,
+              appUrl: publicAppConfig.url,
             }}
           >
             {children}

@@ -32,6 +32,7 @@ export interface WebsiteManagementRecord {
 }
 
 export interface WebsiteListingOptions {
+  includeSchedules?: boolean;
   query?: string;
   status?: WebsiteStatusFilter;
   publishState?: WebsitePublishStateFilter;

@@ -1,3 +1,5 @@
+import "server-only";
+
 /**
  * Feature flag configuration.
  *
@@ -11,7 +13,7 @@
  *   3. Declaring the field in FeatureFlags below
  *   4. Mapping it in the features export below
  *
- * Import from "@/config" for the unified entry point.
+ * Import from "@/config" for the unified server-only entry point.
  */
 
 import { env } from "./env";

@@ -87,6 +87,19 @@ export async function createCommunityPost(formData: FormData) {
   if (file && attachmentType && !isAllowedAttachment(file, attachmentType)) return { error: "This file type or size is not supported." };
 
   const supabase = await getSupabaseServerClient();
+  if (postType === "website") {
+    const websiteId = readText(formData, "website_id");
+    if (!websiteId) return { error: "Select a website before posting." };
+    const { data: website, error: websiteError } = await supabase
+      .from("website_structures")
+      .select("id, visibility")
+      .eq("id", websiteId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (websiteError) return { error: "Unable to verify website visibility." };
+    if (!website) return { error: "You are not allowed to share this website." };
+    if (website.visibility !== "public") return { error: "Make the website public before sharing it to Feed." };
+  }
   const { data: post, error } = await supabase.from("community_posts").insert({
     user_id: user.id,
     title: title || null,
@@ -130,8 +143,14 @@ export async function createCommunityPost(formData: FormData) {
     if (postType === "website") {
       const websiteId = readText(formData, "website_id");
       if (!websiteId) return { error: "Select a website before posting." };
-      const { data: website } = await supabase.from("website_structures").select("id, site_title").eq("id", websiteId).eq("user_id", user.id).maybeSingle();
+      const { data: website } = await supabase
+        .from("website_structures")
+        .select("id, site_title, visibility")
+        .eq("id", websiteId)
+        .eq("user_id", user.id)
+        .maybeSingle();
       if (!website) return { error: "You are not allowed to share this website." };
+      if (website.visibility !== "public") return { error: "Make the website public before sharing it to Feed." };
       await supabase.from("community_post_attachments").insert({
         post_id: post.id,
         user_id: user.id,
@@ -144,6 +163,60 @@ export async function createCommunityPost(formData: FormData) {
   } catch (attachmentError) {
     logFeedActionError("create attachment", attachmentError instanceof Error ? attachmentError : null);
     return { error: attachmentError instanceof Error && attachmentError.message === "Upload failed." ? "Upload failed." : "Feed attachments are not configured." };
+  }
+
+  revalidatePath(routes.feed);
+  return { success: true };
+}
+
+export async function shareWebsiteToFeed(structureId: string, title: string) {
+  const user = await requireUser(routes.feed);
+  const websiteId = structureId.trim();
+  if (!websiteId) return { error: "Website id is required." };
+
+  const supabase = await getSupabaseServerClient();
+  const { data: website, error: websiteError } = await supabase
+    .from("website_structures")
+    .select("id, site_title, visibility")
+    .eq("id", websiteId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (websiteError) {
+    logFeedActionError("check website before sharing", websiteError);
+    return { error: "Unable to verify website visibility." };
+  }
+  if (!website) return { error: "You are not allowed to share this website." };
+  if (website.visibility !== "public") return { error: "Make the website public before sharing it to Feed." };
+
+  const { data: post, error: postError } = await supabase
+    .from("community_posts")
+    .insert({
+      user_id: user.id,
+      title: title.trim() || website.site_title || "Generated website",
+      body: `Shared website: ${website.site_title || "Untitled website"}`,
+      visibility: "public",
+    })
+    .select("id")
+    .single();
+
+  if (postError || !post) {
+    logFeedActionError("share website post", postError);
+    return { error: "Feed tables are not configured." };
+  }
+
+  const { error: attachmentError } = await supabase.from("community_post_attachments").insert({
+    post_id: post.id,
+    user_id: user.id,
+    attachment_type: "project",
+    storage_path: `website:${website.id}`,
+    file_name: website.site_title,
+    metadata: { website_id: website.id, kind: "generated-website" },
+  });
+
+  if (attachmentError) {
+    logFeedActionError("share website attachment", attachmentError);
+    return { error: "Feed attachments are not configured." };
   }
 
   revalidatePath(routes.feed);

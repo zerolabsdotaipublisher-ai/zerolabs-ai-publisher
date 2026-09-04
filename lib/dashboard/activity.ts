@@ -1,17 +1,28 @@
 import { routes } from "@/config/routes";
-import { DASHBOARD_MAX_RECENT_ACTIVITY, isAccountAttentionRequired } from "./schema";
+import { DASHBOARD_MAX_RECENT_ACTIVITY } from "./schema";
 import type { DashboardRecentActivityItem, DashboardStorageSnapshot } from "./types";
 
 function toWebsiteActivity(snapshot: DashboardStorageSnapshot): DashboardRecentActivityItem[] {
-  return snapshot.websites.slice(0, 8).map((website) => ({
-    id: `website_${website.id}_${website.lastUpdatedAt}`,
-    type: "website_update",
-    title: website.title,
-    detail: `Website status: ${website.status}`,
-    timestamp: website.lastUpdatedAt,
-    status: website.status === "failed" ? "error" : website.status === "live" ? "success" : "info",
-    href: website.generatedSitePath,
-  }));
+  return snapshot.websites.slice(0, 8).flatMap((website) => [
+    {
+      id: `website_generated_${website.id}_${website.generatedAt}`,
+      type: "website_update" as const,
+      title: "Website generated",
+      detail: website.title,
+      timestamp: website.generatedAt,
+      status: "success" as const,
+      href: website.generatedSitePath,
+    },
+    {
+      id: `website_${website.id}_${website.lastUpdatedAt}`,
+      type: "website_update" as const,
+      title: "Website updated",
+      detail: `${website.title} · Status: ${website.status}`,
+      timestamp: website.lastUpdatedAt,
+      status: website.status === "failed" ? "error" as const : website.status === "live" ? "success" as const : "info" as const,
+      href: website.generatedSitePath,
+    },
+  ]);
 }
 
 function toPublishActivity(snapshot: DashboardStorageSnapshot): DashboardRecentActivityItem[] {
@@ -27,60 +38,19 @@ function toPublishActivity(snapshot: DashboardStorageSnapshot): DashboardRecentA
       href: website.generatedSitePath,
     }));
 
-  const getSocialPublishStatusForDisplay = (
-    status: string,
-  ): DashboardRecentActivityItem["status"] => {
-    if (status === "failed") return "error";
-    if (status === "published") return "success";
-    return "info";
-  };
-
-  const socialPublishes = snapshot.socialHistory.slice(0, 10).map((history) => ({
-    id: `publish_social_${history.id}_${history.updatedAt}`,
-    type: "social_publish" as const,
-    title: `Social publish (${history.platform})`,
-    detail: `Status: ${history.status}`,
-    timestamp: history.updatedAt,
-    status: getSocialPublishStatusForDisplay(history.status),
-    href: routes.websites,
-  }));
-
-  return [...websitePublishes, ...socialPublishes];
+  return websitePublishes;
 }
 
-function toContentActivity(snapshot: DashboardStorageSnapshot): DashboardRecentActivityItem[] {
-  return snapshot.generatedContent.rows.slice(0, 10).map((row) => ({
-    id: `content_${row.id}_${row.updated_at}`,
-    type: "content_generation",
-    title: `Generated ${row.content_type} content`,
-    detail: `Page: ${row.page_slug}`,
-    timestamp: row.updated_at,
-    status: "info",
-    href: routes.websites,
-  }));
-}
-
-function toSocialScheduleActivity(snapshot: DashboardStorageSnapshot): DashboardRecentActivityItem[] {
-  return snapshot.socialSchedules.slice(0, 8).map((schedule) => ({
-    id: `social_schedule_${schedule.id}_${schedule.updatedAt}`,
-    type: "social_schedule",
-    title: schedule.title,
-    detail: `Schedule status: ${schedule.status}`,
-    timestamp: schedule.updatedAt,
-    status: schedule.status === "failed" ? "error" : schedule.status === "retry_pending" ? "warning" : "info",
-    href: routes.websites,
-  }));
-}
-
-function toAccountActivity(snapshot: DashboardStorageSnapshot): DashboardRecentActivityItem[] {
-  return snapshot.socialAccounts.slice(0, 8).map((account) => ({
-    id: `account_${account.id}_${account.updatedAt}`,
-    type: "account_event",
-    title: `${account.platform} account`,
-    detail: `Connection status: ${account.status}`,
-    timestamp: account.updatedAt,
-    status: isAccountAttentionRequired(account) ? "warning" : "info",
-    href: routes.websites,
+function toWebsiteShareActivity(snapshot: DashboardStorageSnapshot): DashboardRecentActivityItem[] {
+  const websiteTitles = new Map(snapshot.websites.map((website) => [website.id, website.title]));
+  return snapshot.websiteShares.map((share) => ({
+    id: `website_shared_${share.id}`,
+    type: "website_update" as const,
+    title: "Website shared",
+    detail: share.postTitle || websiteTitles.get(share.websiteId) || "Generated website",
+    timestamp: share.sharedAt,
+    status: "success" as const,
+    href: routes.feed,
   }));
 }
 
@@ -88,9 +58,7 @@ export function buildDashboardRecentActivity(snapshot: DashboardStorageSnapshot)
   const items = [
     ...toWebsiteActivity(snapshot),
     ...toPublishActivity(snapshot),
-    ...toContentActivity(snapshot),
-    ...toSocialScheduleActivity(snapshot),
-    ...toAccountActivity(snapshot),
+    ...toWebsiteShareActivity(snapshot),
   ];
 
   return items

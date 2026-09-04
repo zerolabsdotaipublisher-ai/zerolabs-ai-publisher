@@ -1,5 +1,9 @@
+"use client";
+
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { PublishStatusBadge } from "@/components/publish/publish-status-badge";
+import { DashboardWebsiteShareActions } from "@/components/dashboard/dashboard-website-share-actions";
 import { routes } from "@/config/routes";
 import type { DashboardWebsiteSummary } from "@/lib/dashboard";
 
@@ -7,72 +11,64 @@ interface DashboardWebsiteSummaryProps {
   summary: DashboardWebsiteSummary;
 }
 
-function formatDate(value: string): string {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "Unknown date" : date.toLocaleDateString();
-}
-
-function formatMetric(value: number | null, emptyLabel = "Unavailable"): string {
-  return value === null ? emptyLabel : value.toLocaleString();
-}
-
-function formatDataSourceLabel(value: DashboardWebsiteSummary["dataSource"]): string {
-  switch (value) {
-    case "website_projects":
-      return "Using normalized website project rows.";
-    case "hybrid":
-      return "Using website projects with structure fallback.";
-    default:
-      return "Using website structure records.";
+function formatDateTime(value?: string): string {
+  if (!value) {
+    return "Not available";
   }
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "Not available" : date.toLocaleString();
+}
+
+function formatPageCount(
+  pageCount: number | undefined,
+  pageCountSource: DashboardWebsiteSummary["generatedWebsites"][number]["pageCountSource"],
+): string {
+  if (typeof pageCount === "number") {
+    return pageCount.toLocaleString();
+  }
+
+  return pageCountSource === "unavailable" ? "Not configured" : "0";
+}
+
+function createThumbnailStyle(
+  website: DashboardWebsiteSummary["generatedWebsites"][number],
+): CSSProperties | undefined {
+  if (!website.thumbnailAccentColor && !website.thumbnailSurfaceColor) {
+    return undefined;
+  }
+
+  const accentColor = website.thumbnailAccentColor ?? "var(--accent)";
+  const surfaceColor = website.thumbnailSurfaceColor ?? "color-mix(in srgb, var(--surface) 92%, white 8%)";
+
+  return {
+    background: `linear-gradient(145deg, ${surfaceColor} 0%, ${accentColor} 100%)`,
+    borderColor: accentColor,
+  };
 }
 
 export function DashboardWebsiteSummarySection({ summary }: DashboardWebsiteSummaryProps) {
   return (
-    <section className="dashboard-panel-shell dashboard-website-section" aria-label="Generated websites">
+    <section className="dashboard-panel-shell dashboard-website-section" aria-label="Your website profiles">
       <header className="dashboard-section-heading">
         <div>
-          <h2>Generated websites</h2>
-          <p>Review website status, visibility, page counts, and existing preview or edit routes from the main dashboard.</p>
+          <h2>Your website profiles</h2>
+          <p>See every generated website profile, open the preview, jump into editing, and share it with collaborators.</p>
         </div>
 
         <div className="dashboard-panel-actions">
           <Link href={routes.generateWebsite} className="dashboard-inline-link">
-            Generate website
+            Generate Website
           </Link>
           <Link href={routes.websites} className="dashboard-inline-link">
-            Manage all websites
+            Open Website List
           </Link>
         </div>
       </header>
 
-      <dl className="dashboard-website-overview">
-        <div className="dashboard-website-overview-item">
-          <dt>Generated websites</dt>
-          <dd>{summary.total.toLocaleString()}</dd>
-        </div>
-        <div className="dashboard-website-overview-item">
-          <dt>Draft websites</dt>
-          <dd>{summary.draft.toLocaleString()}</dd>
-        </div>
-        <div className="dashboard-website-overview-item">
-          <dt>Published websites</dt>
-          <dd>{summary.published.toLocaleString()}</dd>
-        </div>
-        <div className="dashboard-website-overview-item">
-          <dt>Stored pages</dt>
-          <dd>{formatMetric(summary.storedPages)}</dd>
-        </div>
-        <div className="dashboard-website-overview-item">
-          <dt>Stored versions</dt>
-          <dd>{formatMetric(summary.storedVersions)}</dd>
-        </div>
-      </dl>
-
       {summary.generatedWebsites.length === 0 ? (
         <div className="dashboard-website-empty">
-          <strong>No websites yet. Generate your first website.</strong>
-          <p>Your dashboard will show preview-ready website cards here as soon as you create one.</p>
+          <strong>No website profiles yet. Generate your first website to see it here.</strong>
           <Link href={routes.generateWebsite} className="dashboard-website-button is-primary">
             Generate Website
           </Link>
@@ -81,6 +77,14 @@ export function DashboardWebsiteSummarySection({ summary }: DashboardWebsiteSumm
         <div className="dashboard-website-grid">
           {summary.generatedWebsites.map((website) => (
             <article key={website.id} className="dashboard-website-card">
+              <div className="dashboard-website-thumbnail" style={createThumbnailStyle(website)}>
+                <span className="dashboard-website-thumbnail-label">
+                  {website.visibility ?? "private"} workspace preview
+                </span>
+                <strong>{website.title}</strong>
+                <span>{website.designConfigured ? "Design configured" : "Design not configured"}</span>
+              </div>
+
               <div className="dashboard-website-card-header">
                 <div className="dashboard-website-card-copy">
                   {website.generatedSitePath ? (
@@ -90,10 +94,7 @@ export function DashboardWebsiteSummarySection({ summary }: DashboardWebsiteSumm
                   ) : (
                     <strong className="dashboard-website-title">{website.title}</strong>
                   )}
-                  <p>
-                    Created {formatDate(website.createdAt)}
-                    {website.updatedAt ? ` | Updated ${formatDate(website.updatedAt)}` : ""}
-                  </p>
+                  <p>Updated {formatDateTime(website.updatedAt)}</p>
                 </div>
 
                 <div className="dashboard-website-pill-row">
@@ -110,37 +111,54 @@ export function DashboardWebsiteSummarySection({ summary }: DashboardWebsiteSumm
                   <dd>{website.statusLabel}</dd>
                 </div>
                 <div>
-                  <dt>Visibility</dt>
-                  <dd>{website.visibility ?? "private"}</dd>
-                </div>
-                <div>
                   <dt>Pages</dt>
-                  <dd>{website.pageCount ?? "Unavailable"}</dd>
+                  <dd>{formatPageCount(website.pageCount, website.pageCountSource)}</dd>
                 </div>
                 <div>
-                  <dt>Route</dt>
-                  <dd>{website.previewPath ?? "Preview unavailable"}</dd>
+                  <dt>Generated</dt>
+                  <dd>{formatDateTime(website.createdAt)}</dd>
+                </div>
+                <div>
+                  <dt>Published</dt>
+                  <dd>{website.publishedAt ? formatDateTime(website.publishedAt) : "Not published"}</dd>
                 </div>
               </dl>
 
-              <div className="dashboard-website-actions">
-                {website.previewPath ? (
-                  <Link href={website.previewPath} className="dashboard-website-button is-primary">
-                    Preview
-                  </Link>
-                ) : null}
-                {website.editorPath ? (
-                  <Link href={website.editorPath} className="dashboard-website-button is-secondary">
-                    Open / Edit
-                  </Link>
-                ) : null}
+              <div className="dashboard-website-card-footer">
+                <div className="dashboard-website-actions">
+                  {website.previewPath ? (
+                    <Link href={website.previewPath} className="dashboard-website-button is-primary">
+                      Preview
+                    </Link>
+                  ) : (
+                    <span className="dashboard-website-button is-secondary" aria-disabled="true">
+                      Preview unavailable
+                    </span>
+                  )}
+                  {website.editorPath ? (
+                    <Link href={website.editorPath} className="dashboard-website-button is-secondary">
+                      Edit
+                    </Link>
+                  ) : null}
+                  {website.generatedSitePath ? (
+                    <Link href={website.generatedSitePath} className="dashboard-website-button is-secondary">
+                      Manage
+                    </Link>
+                  ) : null}
+                </div>
+
+                <DashboardWebsiteShareActions
+                  structureId={website.id}
+                  title={website.title}
+                  visibility={website.visibility ?? "private"}
+                  published={website.status === "live"}
+                  liveUrl={website.liveUrl}
+                />
               </div>
             </article>
           ))}
         </div>
       )}
-
-      <p className="dashboard-section-footnote">{formatDataSourceLabel(summary.dataSource)}</p>
     </section>
   );
 }
