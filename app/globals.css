@@ -13130,3 +13130,47 @@ html[data-theme="light"] .website-builder-shell[data-entry-point="generate"] .we
   border-color: color-mix(in srgb, var(--accent) 34%, transparent);
   background: color-mix(in srgb, var(--accent) 10%, var(--surface));
 }
+
+/* NEW CLEAN FEED LAYOUT OVERRIDES */
+body .feed-shell {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 1.5rem !important;
+  align-items: start !important;
+  width: 100% !important;
+}
+
+body .feed-main {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 1.5rem !important;
+  min-width: 0 !important;
+}
+
+body .feed-sticky-panel {
+  position: sticky !important;
+  top: 5rem !important;
+}
+
+body .feed-shell > :last-child {
+  grid-column: auto !important;
+}
+
+@media (min-width: 768px) {
+  body .feed-shell {
+    grid-template-columns: 280px minmax(0, 1fr) !important;
+  }
+}
+
+@media (min-width: 1200px) {
+  body .feed-shell {
+    grid-template-columns: 280px minmax(0, 1fr) 280px !important;
+    gap: 2rem !important;
+  }
+}
+.dashboard-metric-value.is-muted {
+  font-size: 1.1rem;
+  font-weight: 500;
+  line-height: 2.5rem;
+  color: var(--text-secondary);
+}

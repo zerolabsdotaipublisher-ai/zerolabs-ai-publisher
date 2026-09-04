@@ -3,12 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { getDefaultDashboardErrorMessage } from "@/lib/dashboard/client";
 import type { DashboardSummary } from "@/lib/dashboard/types";
-import { DashboardAlerts } from "./dashboard-alerts";
-import { DashboardContentSummarySection } from "./dashboard-content-summary";
 import { DashboardMetricCard } from "./dashboard-metric-card";
-import { DashboardQuickActions } from "./dashboard-quick-actions";
-import { DashboardRecentActivity } from "./dashboard-recent-activity";
-import { DashboardSocialSummarySection } from "./dashboard-social-summary";
 import { DashboardWebsiteSummarySection } from "./dashboard-website-summary";
 
 interface DashboardSummaryApiResponse {
@@ -93,7 +88,7 @@ export function DashboardHome({ initialSummary, initialError }: DashboardHomePro
           <p>Loading your workspace summary...</p>
         </header>
         <div className="dashboard-metrics-grid">
-          {Array.from({ length: 5 }).map((_, index) => (
+          {Array.from({ length: 4 }).map((_, index) => (
             <article key={index} className="dashboard-metric-card dashboard-skeleton" />
           ))}
         </div>
@@ -109,7 +104,7 @@ export function DashboardHome({ initialSummary, initialError }: DashboardHomePro
           <p>We could not load your dashboard summary.</p>
         </header>
         <p className="dashboard-error-state">{error || getDefaultDashboardErrorMessage()}</p>
-        <button type="button" onClick={() => void loadSummary()}>
+        <button type="button" onClick={() => void loadSummary()} className="wizard-button-secondary">
           Retry
         </button>
       </section>
@@ -120,11 +115,8 @@ export function DashboardHome({ initialSummary, initialError }: DashboardHomePro
     <section className="dashboard-home-shell" aria-label="Dashboard homepage">
       <header className="dashboard-home-header">
         <div>
-          <h1>Dashboard</h1>
-          <p>
-            Welcome back{summary.user.displayName ? `, ${summary.user.displayName}` : ""}. Here is your publishing
-            workspace snapshot.
-          </p>
+          <h1>Welcome back{summary.user.displayName ? `, ${summary.user.displayName}` : ""}</h1>
+          <p>Here&apos;s what&apos;s happening across your website profiles.</p>
         </div>
         <button
           type="button"
@@ -140,44 +132,32 @@ export function DashboardHome({ initialSummary, initialError }: DashboardHomePro
 
       <div className="dashboard-metrics-grid">
         <DashboardMetricCard
-          label="Generated websites"
+          label="Website profiles"
           value={summary.metrics.totalWebsites}
           hint="Owner-scoped website records"
         />
         <DashboardMetricCard
-          label="Draft websites"
-          value={summary.metrics.draftWebsites}
-          hint="Drafts and unpublished changes"
-          tone="warning"
-        />
-        <DashboardMetricCard
-          label="Published websites"
+          label="Published"
           value={summary.metrics.publishedWebsites}
           hint="Currently live websites"
         />
-        <DashboardMetricCard
-          label="Stored pages"
-          value={summary.metrics.storedPages}
-          hint="From website pages or structure fallback"
-        />
-        <DashboardMetricCard
-          label="Stored versions"
-          value={summary.metrics.storedVersions}
-          hint="Website version snapshots if configured"
-        />
+        <article className="dashboard-metric-card">
+          <span className="dashboard-metric-label">Total views</span>
+          <strong className="dashboard-metric-value is-muted">
+            Not configured
+          </strong>
+          <span className="dashboard-metric-hint">Analytics not configured yet</span>
+        </article>
+        <article className="dashboard-metric-card">
+          <span className="dashboard-metric-label">Total hearts</span>
+          <strong className="dashboard-metric-value is-muted">
+            Not configured
+          </strong>
+          <span className="dashboard-metric-hint">Analytics not configured yet</span>
+        </article>
       </div>
 
-      <DashboardQuickActions actions={summary.quickActions} onTrack={(eventName) => void handleTrack(eventName)} />
-      <DashboardAlerts alerts={summary.alerts} />
       <DashboardWebsiteSummarySection summary={summary.websiteSummary} />
-
-      <div className="dashboard-two-column-grid">
-        <DashboardContentSummarySection summary={summary.contentSummary} />
-        <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
-          <DashboardSocialSummarySection summary={summary.socialSummary} />
-          <DashboardRecentActivity items={summary.recentActivity} />
-        </div>
-      </div>
     </section>
   );
 }

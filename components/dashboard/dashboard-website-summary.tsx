@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useCallback, useState } from "react";
 import { PublishStatusBadge } from "@/components/publish/publish-status-badge";
 import { routes } from "@/config/routes";
 import type { DashboardWebsiteSummary } from "@/lib/dashboard";
@@ -10,10 +13,6 @@ interface DashboardWebsiteSummaryProps {
 function formatDate(value: string): string {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? "Unknown date" : date.toLocaleDateString();
-}
-
-function formatMetric(value: number | null, emptyLabel = "Unavailable"): string {
-  return value === null ? emptyLabel : value.toLocaleString();
 }
 
 function formatDataSourceLabel(value: DashboardWebsiteSummary["dataSource"]): string {
@@ -28,46 +27,37 @@ function formatDataSourceLabel(value: DashboardWebsiteSummary["dataSource"]): st
 }
 
 export function DashboardWebsiteSummarySection({ summary }: DashboardWebsiteSummaryProps) {
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleCopyLink = useCallback(async (websiteId: string, url: string) => {
+    try {
+      if (url.startsWith("/")) {
+        const origin = typeof window !== "undefined" ? window.location.origin : "";
+        await navigator.clipboard.writeText(`${origin}${url}`);
+      } else {
+        await navigator.clipboard.writeText(url);
+      }
+      setCopiedId(websiteId);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (err) {
+      console.error("Failed to copy link: ", err);
+    }
+  }, []);
+
   return (
     <section className="dashboard-panel-shell dashboard-website-section" aria-label="Generated websites">
       <header className="dashboard-section-heading">
         <div>
-          <h2>Generated websites</h2>
-          <p>Review website status, visibility, page counts, and existing preview or edit routes from the main dashboard.</p>
+          <h2>Your website profiles</h2>
+          <p>Manage, preview, edit, and share your custom websites.</p>
         </div>
 
         <div className="dashboard-panel-actions">
-          <Link href={routes.generateWebsite} className="dashboard-inline-link">
-            Generate website
-          </Link>
-          <Link href={routes.websites} className="dashboard-inline-link">
-            Manage all websites
+          <Link href={routes.generateWebsite} className="dashboard-website-button is-primary">
+            + New Website
           </Link>
         </div>
       </header>
-
-      <dl className="dashboard-website-overview">
-        <div className="dashboard-website-overview-item">
-          <dt>Generated websites</dt>
-          <dd>{summary.total.toLocaleString()}</dd>
-        </div>
-        <div className="dashboard-website-overview-item">
-          <dt>Draft websites</dt>
-          <dd>{summary.draft.toLocaleString()}</dd>
-        </div>
-        <div className="dashboard-website-overview-item">
-          <dt>Published websites</dt>
-          <dd>{summary.published.toLocaleString()}</dd>
-        </div>
-        <div className="dashboard-website-overview-item">
-          <dt>Stored pages</dt>
-          <dd>{formatMetric(summary.storedPages)}</dd>
-        </div>
-        <div className="dashboard-website-overview-item">
-          <dt>Stored versions</dt>
-          <dd>{formatMetric(summary.storedVersions)}</dd>
-        </div>
-      </dl>
 
       {summary.generatedWebsites.length === 0 ? (
         <div className="dashboard-website-empty">
@@ -83,8 +73,8 @@ export function DashboardWebsiteSummarySection({ summary }: DashboardWebsiteSumm
             <article key={website.id} className="dashboard-website-card">
               <div className="dashboard-website-card-header">
                 <div className="dashboard-website-card-copy">
-                  {website.generatedSitePath ? (
-                    <Link href={website.generatedSitePath} className="dashboard-website-title">
+                  {website.previewPath ? (
+                    <Link href={website.previewPath} className="dashboard-website-title">
                       {website.title}
                     </Link>
                   ) : (
@@ -117,10 +107,6 @@ export function DashboardWebsiteSummarySection({ summary }: DashboardWebsiteSumm
                   <dt>Pages</dt>
                   <dd>{website.pageCount ?? "Unavailable"}</dd>
                 </div>
-                <div>
-                  <dt>Route</dt>
-                  <dd>{website.previewPath ?? "Preview unavailable"}</dd>
-                </div>
               </dl>
 
               <div className="dashboard-website-actions">
@@ -131,9 +117,18 @@ export function DashboardWebsiteSummarySection({ summary }: DashboardWebsiteSumm
                 ) : null}
                 {website.editorPath ? (
                   <Link href={website.editorPath} className="dashboard-website-button is-secondary">
-                    Open / Edit
+                    Edit
                   </Link>
                 ) : null}
+                <button
+                  type="button"
+                  className="dashboard-website-button is-secondary"
+                  disabled={website.visibility !== "public" || !website.previewPath}
+                  title={website.visibility === "public" ? "Copy public link" : "Make this website public before sharing."}
+                  onClick={() => website.previewPath && handleCopyLink(website.id, website.previewPath)}
+                >
+                  {copiedId === website.id ? "Copied!" : "Share"}
+                </button>
               </div>
             </article>
           ))}
