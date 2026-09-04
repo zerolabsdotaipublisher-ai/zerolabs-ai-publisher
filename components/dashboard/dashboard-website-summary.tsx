@@ -2,8 +2,8 @@
 
 import type { CSSProperties } from "react";
 import Link from "next/link";
+import { useCallback, useState } from "react";
 import { PublishStatusBadge } from "@/components/publish/publish-status-badge";
-import { DashboardWebsiteShareActions } from "@/components/dashboard/dashboard-website-share-actions";
 import { routes } from "@/config/routes";
 import type { DashboardWebsiteSummary } from "@/lib/dashboard";
 
@@ -47,7 +47,36 @@ function createThumbnailStyle(
   };
 }
 
+function toAbsolutePreviewUrl(previewPath: string): string {
+  if (!previewPath.startsWith("/")) {
+    return previewPath;
+  }
+
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  return `${origin}${previewPath}`;
+}
+
 export function DashboardWebsiteSummarySection({ summary }: DashboardWebsiteSummaryProps) {
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [copyErrorId, setCopyErrorId] = useState<string | null>(null);
+
+  const handleCopyLink = useCallback(async (websiteId: string, previewPath: string) => {
+    try {
+      await navigator.clipboard.writeText(toAbsolutePreviewUrl(previewPath));
+      setCopyErrorId((current) => (current === websiteId ? null : current));
+      setCopiedId(websiteId);
+      window.setTimeout(() => {
+        setCopiedId((current) => (current === websiteId ? null : current));
+      }, 2000);
+    } catch {
+      setCopiedId((current) => (current === websiteId ? null : current));
+      setCopyErrorId(websiteId);
+      window.setTimeout(() => {
+        setCopyErrorId((current) => (current === websiteId ? null : current));
+      }, 2000);
+    }
+  }, []);
+
   return (
     <section className="dashboard-panel-shell dashboard-website-section" aria-label="Your website profiles">
       <header className="dashboard-section-heading">
@@ -87,8 +116,8 @@ export function DashboardWebsiteSummarySection({ summary }: DashboardWebsiteSumm
 
               <div className="dashboard-website-card-header">
                 <div className="dashboard-website-card-copy">
-                  {website.generatedSitePath ? (
-                    <Link href={website.generatedSitePath} className="dashboard-website-title">
+                  {website.previewPath ? (
+                    <Link href={website.previewPath} className="dashboard-website-title">
                       {website.title}
                     </Link>
                   ) : (
@@ -111,50 +140,50 @@ export function DashboardWebsiteSummarySection({ summary }: DashboardWebsiteSumm
                   <dd>{website.statusLabel}</dd>
                 </div>
                 <div>
+                  <dt>Visibility</dt>
+                  <dd>{website.visibility ?? "private"}</dd>
+                </div>
+                <div>
                   <dt>Pages</dt>
                   <dd>{formatPageCount(website.pageCount, website.pageCountSource)}</dd>
                 </div>
-                <div>
-                  <dt>Generated</dt>
-                  <dd>{formatDateTime(website.createdAt)}</dd>
-                </div>
-                <div>
-                  <dt>Published</dt>
-                  <dd>{website.publishedAt ? formatDateTime(website.publishedAt) : "Not published"}</dd>
-                </div>
               </dl>
 
-              <div className="dashboard-website-card-footer">
-                <div className="dashboard-website-actions">
-                  {website.previewPath ? (
-                    <Link href={website.previewPath} className="dashboard-website-button is-primary">
-                      Preview
-                    </Link>
-                  ) : (
-                    <span className="dashboard-website-button is-secondary" aria-disabled="true">
-                      Preview unavailable
-                    </span>
-                  )}
-                  {website.editorPath ? (
-                    <Link href={website.editorPath} className="dashboard-website-button is-secondary">
-                      Edit
-                    </Link>
-                  ) : null}
-                  {website.generatedSitePath ? (
-                    <Link href={website.generatedSitePath} className="dashboard-website-button is-secondary">
-                      Manage
-                    </Link>
-                  ) : null}
-                </div>
-
-                <DashboardWebsiteShareActions
-                  structureId={website.id}
-                  title={website.title}
-                  visibility={website.visibility ?? "private"}
-                  published={website.status === "live"}
-                  liveUrl={website.liveUrl}
-                />
+              <div className="dashboard-website-actions">
+                {website.previewPath ? (
+                  <Link href={website.previewPath} className="dashboard-website-button is-primary">
+                    Preview
+                  </Link>
+                ) : (
+                  <span className="dashboard-website-button is-secondary" aria-disabled="true">
+                    Preview unavailable
+                  </span>
+                )}
+                {website.editorPath ? (
+                  <Link href={website.editorPath} className="dashboard-website-button is-secondary">
+                    Edit
+                  </Link>
+                ) : (
+                  <span className="dashboard-website-button is-secondary" aria-disabled="true">
+                    Edit unavailable
+                  </span>
+                )}
+                <button
+                  type="button"
+                  className="dashboard-website-button is-secondary"
+                  disabled={website.visibility !== "public" || !website.previewPath}
+                  title={website.visibility === "public" ? "Copy preview link" : "Make this website public before sharing."}
+                  onClick={() => website.previewPath && void handleCopyLink(website.id, website.previewPath)}
+                >
+                  {copiedId === website.id ? "Copied!" : "Share"}
+                </button>
               </div>
+
+              {copyErrorId === website.id ? (
+                <p className="website-share-status is-error" role="status" aria-live="polite">
+                  Copy failed. Open the preview and copy the URL manually.
+                </p>
+              ) : null}
             </article>
           ))}
         </div>

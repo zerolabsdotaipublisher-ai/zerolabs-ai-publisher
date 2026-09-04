@@ -2,19 +2,16 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { DashboardAlerts } from "@/components/dashboard/dashboard-alerts";
 import { DashboardMetricCard } from "@/components/dashboard/dashboard-metric-card";
-import { DashboardRecentActivity } from "@/components/dashboard/dashboard-recent-activity";
-import { DashboardQuickActions } from "@/components/dashboard/dashboard-quick-actions";
 import { DashboardWebsiteSummarySection } from "@/components/dashboard/dashboard-website-summary";
-import { WebsiteManagementShell } from "@/components/management/website-management-shell";
 import { routes } from "@/config/routes";
-import type { DashboardSummary } from "@/lib/dashboard/types";
-import type { WebsiteListPage } from "@/lib/management/types";
+import type { DashboardSummary, DashboardWebsiteSummary } from "@/lib/dashboard/types";
+import type { WebsiteLifecycleStatus, WebsiteListPage, WebsiteManagementRecord } from "@/lib/management/types";
 
 interface DashboardSummaryApiResponse {
   ok: boolean;
   summary?: DashboardSummary;
+  error?: string;
 }
 
 interface DashboardHomeProps {
@@ -41,15 +38,55 @@ function formatDashboardMetric(value: number | null | undefined): number | strin
   return typeof value === "number" ? value : "Not configured";
 }
 
+function getDashboardMetricHint(value: number | null | undefined, configuredHint: string): string {
+  return typeof value === "number" ? configuredHint : "Analytics not configured yet";
+}
+
+function isDraftWebsiteStatus(status: WebsiteLifecycleStatus): boolean {
+  return status === "draft" || status === "unpublished_changes";
+}
+
+function createFallbackWebsiteSummary(websites: WebsiteManagementRecord[]): DashboardWebsiteSummary {
+  const generatedWebsites = websites.map((website) => ({
+    id: website.id,
+    title: website.title || "Untitled website",
+    status: website.status,
+    statusLabel: website.publishStatus.uiLabel,
+    createdAt: website.generatedAt,
+    updatedAt: website.lastUpdatedAt,
+    publishedAt: website.lastPublishedAt,
+    liveUrl: website.liveUrl,
+    generatedSitePath: website.generatedSitePath,
+    previewPath: website.previewPath,
+    editorPath: website.editorPath,
+    visibility: "private" as const,
+    pageCount: undefined,
+    pageCountSource: "unavailable" as const,
+    designConfigured: false,
+  }));
+
+  return {
+    total: websites.length,
+    published: generatedWebsites.filter((website) => website.status === "live").length,
+    draft: generatedWebsites.filter((website) => isDraftWebsiteStatus(website.status)).length,
+    archived: generatedWebsites.filter((website) => website.status === "archived").length,
+    attentionRequired: generatedWebsites.filter((website) => website.status === "failed").length,
+    storedPages: null,
+    storedVersions: null,
+    dataSource: "website_structures",
+    generatedWebsites,
+  };
+}
+
 export function DashboardHome({
   initialSummary,
   initialListing,
   initialListingError,
   userEmail,
   displayName,
-  currentUserId,
 }: DashboardHomeProps) {
   const [summary, setSummary] = useState<DashboardSummary | undefined>(initialSummary);
+  const [summaryError, setSummaryError] = useState<string>();
 
   const loadSummary = useCallback(async () => {
     try {
@@ -59,29 +96,50 @@ export function DashboardHome({
       });
       const body = (await response.json()) as DashboardSummaryApiResponse;
 
-      if (response.ok && body.ok && body.summary) {
-        setSummary(body.summary);
+      if (!response.ok || !body.ok || !body.summary) {
+        setSummaryError(body.error || "Unable to refresh your dashboard summary right now.");
+        return;
       }
+
+      setSummary(body.summary);
+      setSummaryError(undefined);
     } catch {
-      // Summary is secondary to the main website workspace.
+      setSummaryError("Unable to refresh your dashboard summary right now.");
     }
   }, []);
 
   useEffect(() => {
+    let initialLoadTimeoutId: number | undefined;
+
+    if (!initialSummary) {
+      initialLoadTimeoutId = window.setTimeout(() => {
+        void loadSummary();
+      }, 0);
+    }
+
     const intervalId = setInterval(() => {
       void loadSummary();
     }, DASHBOARD_SUMMARY_POLL_INTERVAL_MS);
 
-    return () => clearInterval(intervalId);
-  }, [loadSummary]);
+    return () => {
+      clearInterval(intervalId);
 
+      if (initialLoadTimeoutId !== undefined) {
+        window.clearTimeout(initialLoadTimeoutId);
+      }
+    };
+  }, [initialSummary, loadSummary]);
+
+  const fallbackWebsiteSummary = createFallbackWebsiteSummary(initialListing.websites);
+  const websiteSummary = summary?.websiteSummary ?? fallbackWebsiteSummary;
   const userDisplayName = summary?.user.displayName ?? displayName;
   const accountEmail = summary?.user.email ?? userEmail;
   const websiteCount = summary?.metrics.totalWebsites ?? initialListing.total;
-  const publishedCount = summary?.metrics.publishedWebsites ?? 0;
-  const draftCount = summary?.metrics.draftWebsites ?? 0;
+  const publishedCount = summary?.metrics.publishedWebsites ?? fallbackWebsiteSummary.published;
+  const draftCount = summary?.metrics.draftWebsites ?? fallbackWebsiteSummary.draft;
   const hasWebsites = websiteCount > 0;
   const lastUpdatedLabel = formatTimestamp(summary?.generatedAt);
+  const workspaceError = summaryError ?? (!summary ? initialListingError : undefined);
   const heroDescription = "Manage, preview, edit, and share your generated website profiles.";
   const workspaceCopy = hasWebsites
     ? summary
@@ -118,58 +176,32 @@ export function DashboardHome({
         </aside>
       </header>
 
-      {summary ? (
-        <>
-          <div className="dashboard-metrics-grid">
-            <DashboardMetricCard
-              label="Website profiles"
-              value={summary.metrics.totalWebsites}
-              hint="Generated website profiles currently in your workspace"
-            />
-            <DashboardMetricCard
-              label="Published"
-              value={summary.metrics.publishedWebsites}
-              hint="Website profiles live for visitors"
-            />
-            <DashboardMetricCard
-              label="Total views"
-              value={formatDashboardMetric(summary.metrics.totalViews)}
-              hint="Website and profile views from configured analytics tables"
-            />
-            <DashboardMetricCard
-              label="Total hearts"
-              value={formatDashboardMetric(summary.metrics.totalHearts)}
-              hint="Website and feed hearts from configured reaction tables"
-            />
-          </div>
+      {workspaceError ? <p className="dashboard-error-state">{workspaceError}</p> : null}
 
-          <DashboardWebsiteSummarySection summary={summary.websiteSummary} />
-
-          <DashboardQuickActions actions={summary.quickActions} />
-
-          <div className="dashboard-two-column-grid">
-            <DashboardAlerts alerts={summary.alerts} />
-            <DashboardRecentActivity items={summary.recentActivity} />
-          </div>
-
-        </>
-      ) : (
-        <WebsiteManagementShell
-          initialListing={initialListing}
-          initialError={initialListingError}
-          currentUserId={currentUserId}
-          context="dashboard"
-          showHeader
-          showBulkFoundation={false}
-          headerEyebrow="Main workspace"
-          headerTitle="Your Websites"
-          headerDescription="See every website you own, then preview, edit, publish, and share it from one place."
-          headerActions={[
-            { href: routes.generateWebsite, label: "Generate Website" },
-            { href: routes.feed, label: "Open Feed" },
-          ]}
+      <div className="dashboard-metrics-grid">
+        <DashboardMetricCard
+          label="Website profiles"
+          value={summary?.metrics.totalWebsites ?? websiteCount}
+          hint="Generated website profiles currently in your workspace"
         />
-      )}
+        <DashboardMetricCard
+          label="Published"
+          value={summary?.metrics.publishedWebsites ?? publishedCount}
+          hint="Website profiles live for visitors"
+        />
+        <DashboardMetricCard
+          label="Total views"
+          value={formatDashboardMetric(summary?.metrics.totalViews)}
+          hint={getDashboardMetricHint(summary?.metrics.totalViews, "Website and profile views from configured analytics tables")}
+        />
+        <DashboardMetricCard
+          label="Total hearts"
+          value={formatDashboardMetric(summary?.metrics.totalHearts)}
+          hint={getDashboardMetricHint(summary?.metrics.totalHearts, "Website and feed hearts from configured reaction tables")}
+        />
+      </div>
+
+      <DashboardWebsiteSummarySection summary={websiteSummary} />
     </section>
   );
 }

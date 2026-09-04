@@ -1,11 +1,10 @@
+import "server-only";
+
 import { routes } from "@/config/routes";
-import { getSupabaseServiceClient } from "@/lib/supabase/server";
-import { toPublishingStatusLabel, type PublishingStatusUiState } from "@/lib/publish/status";
 import type { WebsiteManagementRecord } from "@/lib/management";
 import { logger } from "@/lib/observability";
-import { buildDashboardRecentActivity } from "./activity";
-import { buildDashboardAlerts } from "./alerts";
-import { buildDashboardMetrics } from "./metrics";
+import { toPublishingStatusLabel, type PublishingStatusUiState } from "@/lib/publish/status";
+import { getSupabaseServiceClient } from "@/lib/supabase/server";
 import { DASHBOARD_MVP_BOUNDARIES, DASHBOARD_QUICK_ACTIONS } from "./schema";
 import { fetchDashboardStorageSnapshot } from "./storage";
 import type { DashboardSummary, DashboardWebsiteSummary } from "./types";
@@ -21,7 +20,6 @@ interface BuildDashboardSummaryOptions {
 interface WebsiteStructureInventoryRow {
   id: string;
   site_title: string;
-  status: string;
   generated_at: string;
   updated_at: string;
   structure: {
@@ -45,8 +43,9 @@ interface WebsiteProjectInventoryRow {
   number_of_pages: number | null;
 }
 
-interface WebsiteProjectPageRow {
-  website_project_id: string | null;
+interface WebsitePageCountRow {
+  structure_id?: string | null;
+  website_project_id?: string | null;
 }
 
 interface WebsiteProjectDesignConfigRow {
@@ -342,7 +341,7 @@ async function listOwnedStructureInventory(userId: string): Promise<WebsiteStruc
   const supabase = getSupabaseServiceClient();
   const { data, error } = await supabase
     .from("website_structures")
-    .select("id, site_title, status, generated_at, updated_at, structure")
+    .select("id, site_title, generated_at, updated_at, structure")
     .eq("user_id", userId)
     .order("updated_at", { ascending: false });
 
@@ -394,22 +393,49 @@ async function listOwnedWebsiteProjects(userId: string): Promise<WebsiteProjectI
   return (data ?? []) as WebsiteProjectInventoryRow[];
 }
 
-async function listOwnedWebsitePages(userId: string): Promise<WebsiteProjectPageRow[] | null> {
+async function listOwnedWebsitePages(userId: string): Promise<WebsitePageCountRow[] | null> {
   const supabase = getSupabaseServiceClient();
-  const { data, error } = await supabase
+
+  const combined = await supabase
+    .from("website_pages")
+    .select("structure_id, website_project_id")
+    .eq("user_id", userId);
+
+  if (!combined.error) {
+    return (combined.data ?? []) as WebsitePageCountRow[];
+  }
+
+  if (!isMissingSchemaError(combined.error)) {
+    throw combined.error;
+  }
+
+  const structureOnly = await supabase
+    .from("website_pages")
+    .select("structure_id")
+    .eq("user_id", userId);
+
+  if (!structureOnly.error) {
+    return (structureOnly.data ?? []) as WebsitePageCountRow[];
+  }
+
+  if (!isMissingSchemaError(structureOnly.error)) {
+    throw structureOnly.error;
+  }
+
+  const projectOnly = await supabase
     .from("website_pages")
     .select("website_project_id")
     .eq("user_id", userId);
 
-  if (error) {
-    if (isMissingSchemaError(error)) {
-      return null;
-    }
-
-    throw error;
+  if (!projectOnly.error) {
+    return (projectOnly.data ?? []) as WebsitePageCountRow[];
   }
 
-  return (data ?? []) as WebsiteProjectPageRow[];
+  if (isMissingSchemaError(projectOnly.error)) {
+    return null;
+  }
+
+  throw projectOnly.error;
 }
 
 async function listOwnedWebsiteDesignConfigs(userId: string): Promise<WebsiteProjectDesignConfigRow[] | null> {
@@ -481,25 +507,36 @@ function buildLegacyWebsiteCards(args: {
   websites: WebsiteManagementRecord[];
   structureRows: Map<string, WebsiteStructureInventoryRow>;
   visibilityMap: Map<string, "public" | "private">;
+  pageCountMap: Map<string, number>;
 }): DashboardWebsiteSummary["generatedWebsites"] {
   return sortByUpdatedAtDescending(
-    args.websites.map((website) => ({
-      id: website.id,
-      title: website.title,
-      status: website.status,
-      statusLabel: toPublishingStatusLabel(website.status),
-      createdAt: website.generatedAt,
-      updatedAt: website.lastUpdatedAt,
-      publishedAt: website.lastPublishedAt,
-      liveUrl: website.liveUrl,
-      generatedSitePath: website.generatedSitePath,
-      previewPath: website.previewPath,
-      editorPath: website.editorPath,
-      visibility: args.visibilityMap.get(website.id) ?? "private",
-      pageCount: countStructurePages(args.structureRows.get(website.id)),
-      pageCountSource: args.structureRows.has(website.id) ? "website_structures" : "unavailable",
-      designConfigured: false,
-    })),
+    args.websites.map((website) => {
+      const pageCountFromPages = args.pageCountMap.get(website.id);
+      const pageCountFromStructure = countStructurePages(args.structureRows.get(website.id));
+
+      return {
+        id: website.id,
+        title: website.title || "Untitled website",
+        status: website.status,
+        statusLabel: toPublishingStatusLabel(website.status),
+        createdAt: website.generatedAt,
+        updatedAt: website.lastUpdatedAt,
+        publishedAt: website.lastPublishedAt,
+        liveUrl: website.liveUrl,
+        generatedSitePath: website.generatedSitePath,
+        previewPath: website.previewPath,
+        editorPath: website.editorPath,
+        visibility: args.visibilityMap.get(website.id) ?? "private",
+        pageCount: pageCountFromPages ?? pageCountFromStructure,
+        pageCountSource:
+          pageCountFromPages !== undefined
+            ? "website_pages"
+            : args.structureRows.has(website.id)
+              ? "website_structures"
+              : "unavailable",
+        designConfigured: false,
+      };
+    }),
   );
 }
 
@@ -520,12 +557,29 @@ async function buildDashboardWebsiteSummary(
   const structurePageTotal = structureRows.reduce((total, row) => total + (countStructurePages(row) ?? 0), 0);
   const legacyWebsiteMap = new Map(websites.map((website) => [website.id, website]));
   const designConfigMap = createProjectDesignConfigMap(designConfigRows);
+  const pageCountMap = new Map<string, number>();
+
+  if (websitePageRows) {
+    for (const row of websitePageRows) {
+      const structureId = readString(row.structure_id);
+      const projectId = readString(row.website_project_id);
+
+      if (structureId) {
+        pageCountMap.set(structureId, (pageCountMap.get(structureId) ?? 0) + 1);
+      }
+
+      if (projectId) {
+        pageCountMap.set(projectId, (pageCountMap.get(projectId) ?? 0) + 1);
+      }
+    }
+  }
 
   if (!projectRows || projectRows.length === 0) {
     const generatedWebsites = buildLegacyWebsiteCards({
       websites,
       structureRows: structureRowMap,
       visibilityMap,
+      pageCountMap,
     });
 
     return {
@@ -534,23 +588,11 @@ async function buildDashboardWebsiteSummary(
       draft: generatedWebsites.filter((website) => isDraftWebsiteStatus(website.status)).length,
       archived: generatedWebsites.filter((website) => website.status === "archived").length,
       attentionRequired: generatedWebsites.filter((website) => website.status === "failed").length,
-      storedPages: generatedWebsites.length > 0 ? structurePageTotal : 0,
+      storedPages: websitePageRows !== null ? websitePageRows.length : generatedWebsites.length > 0 ? structurePageTotal : 0,
       storedVersions,
       dataSource: "website_structures",
       generatedWebsites,
     };
-  }
-
-  const projectPageCountMap = new Map<string, number>();
-  if (websitePageRows) {
-    for (const row of websitePageRows) {
-      const projectId = readString(row.website_project_id);
-      if (!projectId) {
-        continue;
-      }
-
-      projectPageCountMap.set(projectId, (projectPageCountMap.get(projectId) ?? 0) + 1);
-    }
   }
 
   const mappedStructureIds = new Set<string>();
@@ -559,7 +601,9 @@ async function buildDashboardWebsiteSummary(
     const legacyWebsite = structureId ? legacyWebsiteMap.get(structureId) : undefined;
     const structureRow = structureId ? structureRowMap.get(structureId) : undefined;
     const status = legacyWebsite?.status ?? toProjectLifecycleStatus(project.status);
-    const pageCountFromPages = projectPageCountMap.get(project.id);
+    const pageCountFromPages =
+      pageCountMap.get(project.id) ??
+      (structureId ? pageCountMap.get(structureId) : undefined);
     const pageCountFromProject = readCount(project.number_of_pages);
     const pageCountFromStructure = countStructurePages(structureRow);
     const pageCountSource: DashboardWebsiteSummary["generatedWebsites"][number]["pageCountSource"] =
@@ -593,11 +637,8 @@ async function buildDashboardWebsiteSummary(
       generatedSitePath: structureId ? routes.generatedSite(structureId) : legacyWebsite?.generatedSitePath,
       previewPath: structureId ? routes.previewSite(structureId) : legacyWebsite?.previewPath,
       editorPath: structureId ? routes.editorSite(structureId) : legacyWebsite?.editorPath,
-      visibility: project.visibility ?? visibilityMap.get(structureId ?? "") ?? "private",
-      pageCount:
-        pageCountFromPages ??
-        pageCountFromProject ??
-        pageCountFromStructure,
+      visibility: project.visibility ?? (structureId ? visibilityMap.get(structureId) : undefined) ?? "private",
+      pageCount: pageCountFromPages ?? pageCountFromProject ?? pageCountFromStructure,
       pageCountSource,
       designConfigured: designConfig?.designConfigured ?? false,
       thumbnailAccentColor: designConfig?.thumbnailAccentColor,
@@ -609,6 +650,7 @@ async function buildDashboardWebsiteSummary(
     websites: websites.filter((website) => !mappedStructureIds.has(website.id)),
     structureRows: structureRowMap,
     visibilityMap,
+    pageCountMap,
   });
   const mergedGeneratedWebsites = sortByUpdatedAtDescending([
     ...generatedWebsites,
@@ -658,6 +700,20 @@ export async function buildDashboardSummary(options: BuildDashboardSummaryOption
     failedPublishes: 0,
   };
 
+  const metrics = {
+    totalWebsites: websiteSummary.total,
+    draftWebsites: websiteSummary.draft,
+    publishedWebsites: websiteSummary.published,
+    totalViews: engagementMetrics.totalViews,
+    totalHearts: engagementMetrics.totalHearts,
+    storedPages: websiteSummary.storedPages,
+    storedVersions: websiteSummary.storedVersions,
+    publishedItems: websiteSummary.published,
+    generatedContentCount: 0,
+    scheduledItems: 0,
+    attentionRequiredItems: websiteSummary.attentionRequired,
+  };
+
   return {
     generatedAt: new Date().toISOString(),
     user: {
@@ -665,13 +721,13 @@ export async function buildDashboardSummary(options: BuildDashboardSummaryOption
       email: options.email,
       displayName: options.displayName,
     },
-    metrics: buildDashboardMetrics(snapshot, websiteSummary, engagementMetrics),
+    metrics,
     quickActions: DASHBOARD_QUICK_ACTIONS,
-    recentActivity: buildDashboardRecentActivity(snapshot),
+    recentActivity: [],
     websiteSummary,
     contentSummary,
     socialSummary,
-    alerts: buildDashboardAlerts(snapshot),
+    alerts: [],
     mvpBoundaries: [...DASHBOARD_MVP_BOUNDARIES],
   };
 }
