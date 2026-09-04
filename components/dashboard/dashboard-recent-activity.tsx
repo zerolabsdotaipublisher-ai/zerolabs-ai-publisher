@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { routes } from "@/config/routes";
 import type { DashboardRecentActivityItem } from "@/lib/dashboard";
 
 interface DashboardRecentActivityProps {
@@ -11,12 +10,7 @@ export function DashboardRecentActivity({ items }: DashboardRecentActivityProps)
     <section className="dashboard-panel-shell" aria-label="Recent activity">
       <header>
         <h2>Recent activity</h2>
-        <p>Latest events across generation, publishing, scheduling, and account connections.</p>
-        <div className="dashboard-panel-actions">
-          <Link href={routes.activity} className="dashboard-inline-link">
-            View full activity overview
-          </Link>
-        </div>
+        <p>Latest events across website generation, updates, publishing, and sharing.</p>
       </header>
       {items.length === 0 ? (
         <p className="dashboard-empty-note">No recent activity yet.</p>

@@ -2,12 +2,11 @@ import type { ReactNode } from "react";
 import { AppFooter } from "@/components/app/app-footer";
 import { AppNavigation } from "@/components/app/app-navigation";
 import { SessionGuard } from "@/components/auth/session-guard";
-import { routes } from "@/config/routes";
 import { createFallbackProfile, getProfileDisplayName, getSafeProfile } from "@/lib/supabase/profile";
 import { requireUser } from "@/lib/supabase/auth";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
-  const user = await requireUser(routes.dashboard);
+  const user = await requireUser();
   const profile = await getSafeProfile(user).catch(() => createFallbackProfile(user));
 
   return (

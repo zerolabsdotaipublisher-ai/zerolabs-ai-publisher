@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { routes } from "@/config/routes";
 import type { PublishAction } from "@/lib/publish";
 import { resolveWebsiteManagementControls } from "@/lib/management/controls";
 import type { WebsiteManagementRecord } from "@/lib/management/types";
 import { WebsiteActionMenu } from "./website-action-menu";
+import { WebsiteShareActions } from "./website-share-actions";
 import { WebsiteSettingsEntry } from "./website-settings-entry";
 
 interface WebsiteManagementActionsProps {
@@ -61,7 +63,7 @@ export function WebsiteManagementActions({
         {controls.permissions.canManage ? <Link href={website.generatedSitePath}>Manage</Link> : <span aria-disabled="true">Manage</span>}
         {controls.permissions.canPreview ? <Link href={website.previewPath}>Preview</Link> : <span aria-disabled="true">Preview</span>}
         {controls.permissions.canEdit ? <Link href={website.editorPath}>Edit</Link> : <span aria-disabled="true">Edit</span>}
-        {controls.permissions.canEdit ? <Link href={`/websites/${encodeURIComponent(website.id)}/media`}>Media library</Link> : <span aria-disabled="true">Media library</span>}
+        {controls.permissions.canEdit ? <Link href={routes.websiteMediaLibrary(website.id)}>Media library</Link> : <span aria-disabled="true">Media library</span>}
         {website.liveUrl ? (
           <a href={website.liveUrl} target="_blank" rel="noreferrer">
             Live site
@@ -73,6 +75,10 @@ export function WebsiteManagementActions({
       </div>
 
       <div className="website-list-item-actions">
+        <WebsiteShareActions
+          structureId={website.id}
+          disabled={!controls.permissions.canPreview || actionsDisabled}
+        />
         {publishAction ? (
           <button
             type="button"
@@ -108,7 +114,7 @@ export function WebsiteManagementActions({
             {
               id: "media-library",
               label: "Open media library",
-              href: `/websites/${encodeURIComponent(website.id)}/media`,
+              href: routes.websiteMediaLibrary(website.id),
               disabled: !controls.permissions.canEdit,
             },
             {

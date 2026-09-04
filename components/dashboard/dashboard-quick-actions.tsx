@@ -3,10 +3,10 @@ import type { DashboardQuickAction } from "@/lib/dashboard";
 
 interface DashboardQuickActionsProps {
   actions: DashboardQuickAction[];
-  onTrack: (eventName: string) => void;
+  onTrack?: (eventName: string) => void;
 }
 
-export function DashboardQuickActions({ actions, onTrack }: DashboardQuickActionsProps) {
+export function DashboardQuickActions({ actions, onTrack = () => undefined }: DashboardQuickActionsProps) {
   return (
     <section className="dashboard-panel-shell" aria-label="Quick actions">
       <header>

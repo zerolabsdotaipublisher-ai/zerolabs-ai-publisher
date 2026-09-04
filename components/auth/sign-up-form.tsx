@@ -129,7 +129,7 @@ export function SignUpForm() {
             username: username.trim() || undefined,
             country: country.trim() || undefined,
             date_of_birth: dateOfBirth || undefined,
-            },
+          },
           emailRedirectTo: `${getSupabaseAppUrl()}${routes.authCallback}`,
         },
       });
@@ -180,118 +180,118 @@ export function SignUpForm() {
       <h1>Create account</h1>
       <p className="auth-field-hint">Email, password, and password confirmation are required.</p>
 
-<div className="auth-form-row">
-      <label htmlFor={`${id}-first-name`}>
-        First name
-        <input
-          id={`${id}-first-name`}
-          type="text"
-          value={firstName}
-          onChange={(event) => setFirstName(event.target.value)}
-          autoComplete="given-name"
-          autoCapitalize="words"
-          placeholder="Example: Maria"
-        />
-      </label>
-      <label htmlFor={`${id}-last-name`}>
-        Last name
-        <input
-          id={`${id}-last-name`}
-          type="text"
-          value={lastName}
-          onChange={(event) => setLastName(event.target.value)}
-          autoComplete="family-name"
-          autoCapitalize="words"
-          placeholder="Example: Santos"
-        />
-      </label>
+      <div className="auth-form-row">
+        <label htmlFor={`${id}-first-name`}>
+          First name
+          <input
+            id={`${id}-first-name`}
+            type="text"
+            value={firstName}
+            onChange={(event) => setFirstName(event.target.value)}
+            autoComplete="given-name"
+            autoCapitalize="words"
+            placeholder="Example: Maria"
+          />
+        </label>
+        <label htmlFor={`${id}-last-name`}>
+          Last name
+          <input
+            id={`${id}-last-name`}
+            type="text"
+            value={lastName}
+            onChange={(event) => setLastName(event.target.value)}
+            autoComplete="family-name"
+            autoCapitalize="words"
+            placeholder="Example: Santos"
+          />
+        </label>
       </div>
 
       <div className="auth-form-row">
-      <label htmlFor={`${id}-middle-name`}>
-        Middle name (optional)
-        <input
-          id={`${id}-middle-name`}
-          type="text"
-          value={middleName}
-          onChange={(event) => setMiddleName(event.target.value)}
-          autoComplete="additional-name"
-          autoCapitalize="words"
-          placeholder="Optional"
-        />
-      </label>
-      <label htmlFor={`${id}-suffix`}>
-        Suffix (optional)
-        <input
-          id={`${id}-suffix`}
-          type="text"
-          value={suffix}
-          onChange={(event) => setSuffix(event.target.value)}
-          autoComplete="honorific-suffix"
-          autoCapitalize="words"
-          placeholder="Optional, e.g. Jr., Sr., III"
-        />
-      </label>
+        <label htmlFor={`${id}-middle-name`}>
+          Middle name (optional)
+          <input
+            id={`${id}-middle-name`}
+            type="text"
+            value={middleName}
+            onChange={(event) => setMiddleName(event.target.value)}
+            autoComplete="additional-name"
+            autoCapitalize="words"
+            placeholder="Optional"
+          />
+        </label>
+        <label htmlFor={`${id}-suffix`}>
+          Suffix (optional)
+          <input
+            id={`${id}-suffix`}
+            type="text"
+            value={suffix}
+            onChange={(event) => setSuffix(event.target.value)}
+            autoComplete="honorific-suffix"
+            autoCapitalize="words"
+            placeholder="Optional, e.g. Jr., Sr., III"
+          />
+        </label>
       </div>
 
       <div className="auth-form-row">
-      <label htmlFor={`${id}-username`}>
-        Username
-        <input
-          id={`${id}-username`}
-          type="text"
-          value={username}
-          onChange={(event) => setUsername(event.target.value)}
-          autoComplete="username"
-          placeholder="Example: maria_santos"
-        />
-      </label>
-      <label htmlFor={`${id}-country`}>
-        Country
-        <select
-          id={`${id}-country`}
-          value={country}
-          onChange={(event) => setCountry(event.target.value)}
-          autoComplete="country-name"
-        >
-          <option value="">Select a country</option>
-          {COUNTRIES.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
-      </label>
+        <label htmlFor={`${id}-username`}>
+          Username
+          <input
+            id={`${id}-username`}
+            type="text"
+            value={username}
+            onChange={(event) => setUsername(event.target.value)}
+            autoComplete="username"
+            placeholder="Example: maria_santos"
+          />
+        </label>
+        <label htmlFor={`${id}-country`}>
+          Country
+          <select
+            id={`${id}-country`}
+            value={country}
+            onChange={(event) => setCountry(event.target.value)}
+            autoComplete="country-name"
+          >
+            <option value="">Select a country</option>
+            {COUNTRIES.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
 
       <div className="auth-form-row">
-      <label htmlFor={`${id}-dob`}>
-        Date of Birth
-        <input
-          id={`${id}-dob`}
-          type="date"
-          value={dateOfBirth}
-          onChange={(event) => setDateOfBirth(event.target.value)}
-          autoComplete="bday"
-        />
-      </label>
-      <label htmlFor={`${id}-email`}>
-        Email
-        <input
-          id={`${id}-email`}
-          type="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          required
-          autoComplete="email"
-          aria-required="true"
-          aria-describedby={displayedError ? errorId : undefined}
-          placeholder="Example: maria@company.com"
-        />
-      </label>
+        <label htmlFor={`${id}-dob`}>
+          Date of Birth
+          <input
+            id={`${id}-dob`}
+            type="date"
+            value={dateOfBirth}
+            onChange={(event) => setDateOfBirth(event.target.value)}
+            autoComplete="bday"
+          />
+        </label>
+        <label htmlFor={`${id}-email`}>
+          Email
+          <input
+            id={`${id}-email`}
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            required
+            autoComplete="email"
+            aria-required="true"
+            aria-describedby={displayedError ? errorId : undefined}
+            placeholder="Example: maria@company.com"
+          />
+        </label>
       </div>
 
-            <PasswordField
+      <PasswordField
         id={`${id}-password`}
         label="Password"
         toggleLabel="password"
@@ -308,7 +308,7 @@ export function SignUpForm() {
         Minimum 8 characters
       </span>
 
-            <PasswordField
+      <PasswordField
         id={`${id}-confirm-password`}
         label="Confirm password"
         toggleLabel="confirm password"
@@ -346,8 +346,6 @@ export function SignUpForm() {
       <span className="sr-only" aria-live="polite" aria-atomic="true">
         {isSubmitting ? "Submitting registration, please wait." : ""}
       </span>
-
-
     </form>
   );
 }

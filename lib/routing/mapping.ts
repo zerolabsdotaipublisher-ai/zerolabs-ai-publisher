@@ -1,4 +1,5 @@
-import { config, routes } from "@/config";
+import { publicAppConfig } from "@/config/public";
+import { routes } from "@/config/routes";
 import type { WebsiteStructure } from "@/lib/ai/structure";
 import { createRedirectsForRouteChanges } from "./redirects";
 import { getReservedRoutePrefixes } from "./reserved";
@@ -156,9 +157,9 @@ export function buildWebsiteRouting(structure: WebsiteStructure, now = new Date(
     reservedPaths: getReservedRoutePrefixes(),
     urls: {
       previewBasePath: routes.previewSite(structure.id),
-      previewBaseUrl: new URL(routes.previewSite(structure.id), config.app.url).toString(),
+      previewBaseUrl: new URL(routes.previewSite(structure.id), publicAppConfig.url).toString(),
       liveBasePath: routes.liveSite(structure.id),
-      liveBaseUrl: new URL(routes.liveSite(structure.id), config.app.url).toString(),
+      liveBaseUrl: new URL(routes.liveSite(structure.id), publicAppConfig.url).toString(),
     },
   };
 

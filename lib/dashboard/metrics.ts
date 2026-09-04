@@ -1,35 +1,29 @@
 import type { DashboardMetricSummary, DashboardStorageSnapshot, DashboardWebsiteSummary } from "./types";
-import { isAccountAttentionRequired } from "./schema";
 
 export function buildDashboardMetrics(
   snapshot: DashboardStorageSnapshot,
   websiteSummary: Pick<DashboardWebsiteSummary, "total" | "draft" | "published" | "storedPages" | "storedVersions">,
+  engagementSummary: Pick<DashboardMetricSummary, "totalViews" | "totalHearts">,
 ): DashboardMetricSummary {
   const scheduledContent = snapshot.websites.filter(
     (website) => website.schedule?.status === "active" || website.schedule?.status === "running",
   ).length;
-  const scheduledSocial = snapshot.socialSchedules.filter((schedule) =>
-    ["scheduled", "queued", "retry_pending"].includes(schedule.status),
-  ).length;
   const failedSchedules =
-    snapshot.websites.filter((website) => website.schedule?.status === "failed").length +
-    snapshot.socialSchedules.filter((schedule) => schedule.status === "failed").length;
+    snapshot.websites.filter((website) => website.schedule?.status === "failed").length;
 
-  const failedPublishes =
-    snapshot.websites.filter((website) => website.status === "failed").length +
-    snapshot.socialHistory.filter((history) => history.status === "failed").length;
-
-  const accountAttention = snapshot.socialAccounts.filter(isAccountAttentionRequired).length;
+  const failedPublishes = snapshot.websites.filter((website) => website.status === "failed").length;
 
   return {
     totalWebsites: websiteSummary.total,
     draftWebsites: websiteSummary.draft,
     publishedWebsites: websiteSummary.published,
+    totalViews: engagementSummary.totalViews,
+    totalHearts: engagementSummary.totalHearts,
     storedPages: websiteSummary.storedPages,
     storedVersions: websiteSummary.storedVersions,
-    publishedItems: websiteSummary.published + snapshot.generatedContent.published,
-    generatedContentCount: snapshot.generatedContent.total + snapshot.socialPosts.length,
-    scheduledItems: scheduledContent + scheduledSocial,
-    attentionRequiredItems: failedSchedules + failedPublishes + accountAttention,
+    publishedItems: websiteSummary.published,
+    generatedContentCount: 0,
+    scheduledItems: scheduledContent,
+    attentionRequiredItems: failedSchedules + failedPublishes,
   };
 }

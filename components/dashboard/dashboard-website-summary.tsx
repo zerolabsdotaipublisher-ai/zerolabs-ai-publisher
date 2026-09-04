@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { useCallback, useState } from "react";
 import { PublishStatusBadge } from "@/components/publish/publish-status-badge";
@@ -10,59 +11,93 @@ interface DashboardWebsiteSummaryProps {
   summary: DashboardWebsiteSummary;
 }
 
-function formatDate(value: string): string {
+function formatDateTime(value?: string): string {
+  if (!value) {
+    return "Not available";
+  }
+
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "Unknown date" : date.toLocaleDateString();
+  return Number.isNaN(date.getTime()) ? "Not available" : date.toLocaleString();
 }
 
-function formatDataSourceLabel(value: DashboardWebsiteSummary["dataSource"]): string {
-  switch (value) {
-    case "website_projects":
-      return "Using normalized website project rows.";
-    case "hybrid":
-      return "Using website projects with structure fallback.";
-    default:
-      return "Using website structure records.";
+function formatPageCount(
+  pageCount: number | undefined,
+  pageCountSource: DashboardWebsiteSummary["generatedWebsites"][number]["pageCountSource"],
+): string {
+  if (typeof pageCount === "number") {
+    return pageCount.toLocaleString();
   }
+
+  return pageCountSource === "unavailable" ? "Not configured" : "0";
+}
+
+function createThumbnailStyle(
+  website: DashboardWebsiteSummary["generatedWebsites"][number],
+): CSSProperties | undefined {
+  if (!website.thumbnailAccentColor && !website.thumbnailSurfaceColor) {
+    return undefined;
+  }
+
+  const accentColor = website.thumbnailAccentColor ?? "var(--accent)";
+  const surfaceColor = website.thumbnailSurfaceColor ?? "color-mix(in srgb, var(--surface) 92%, white 8%)";
+
+  return {
+    background: `linear-gradient(145deg, ${surfaceColor} 0%, ${accentColor} 100%)`,
+    borderColor: accentColor,
+  };
+}
+
+function toAbsolutePreviewUrl(previewPath: string): string {
+  if (!previewPath.startsWith("/")) {
+    return previewPath;
+  }
+
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  return `${origin}${previewPath}`;
 }
 
 export function DashboardWebsiteSummarySection({ summary }: DashboardWebsiteSummaryProps) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [copyErrorId, setCopyErrorId] = useState<string | null>(null);
 
-  const handleCopyLink = useCallback(async (websiteId: string, url: string) => {
+  const handleCopyLink = useCallback(async (websiteId: string, previewPath: string) => {
     try {
-      if (url.startsWith("/")) {
-        const origin = typeof window !== "undefined" ? window.location.origin : "";
-        await navigator.clipboard.writeText(`${origin}${url}`);
-      } else {
-        await navigator.clipboard.writeText(url);
-      }
+      await navigator.clipboard.writeText(toAbsolutePreviewUrl(previewPath));
+      setCopyErrorId((current) => (current === websiteId ? null : current));
       setCopiedId(websiteId);
-      setTimeout(() => setCopiedId(null), 2000);
-    } catch (err) {
-      console.error("Failed to copy link: ", err);
+      window.setTimeout(() => {
+        setCopiedId((current) => (current === websiteId ? null : current));
+      }, 2000);
+    } catch {
+      setCopiedId((current) => (current === websiteId ? null : current));
+      setCopyErrorId(websiteId);
+      window.setTimeout(() => {
+        setCopyErrorId((current) => (current === websiteId ? null : current));
+      }, 2000);
     }
   }, []);
 
   return (
-    <section className="dashboard-panel-shell dashboard-website-section" aria-label="Generated websites">
+    <section className="dashboard-panel-shell dashboard-website-section" aria-label="Your website profiles">
       <header className="dashboard-section-heading">
         <div>
           <h2>Your website profiles</h2>
-          <p>Manage, preview, edit, and share your custom websites.</p>
+          <p>See every generated website profile, open the preview, jump into editing, and share it with collaborators.</p>
         </div>
 
         <div className="dashboard-panel-actions">
-          <Link href={routes.generateWebsite} className="dashboard-website-button is-primary">
-            + New Website
+          <Link href={routes.generateWebsite} className="dashboard-inline-link">
+            Generate Website
+          </Link>
+          <Link href={routes.websites} className="dashboard-inline-link">
+            Open Website List
           </Link>
         </div>
       </header>
 
       {summary.generatedWebsites.length === 0 ? (
         <div className="dashboard-website-empty">
-          <strong>No websites yet. Generate your first website.</strong>
-          <p>Your dashboard will show preview-ready website cards here as soon as you create one.</p>
+          <strong>No website profiles yet. Generate your first website to see it here.</strong>
           <Link href={routes.generateWebsite} className="dashboard-website-button is-primary">
             Generate Website
           </Link>
@@ -71,6 +106,14 @@ export function DashboardWebsiteSummarySection({ summary }: DashboardWebsiteSumm
         <div className="dashboard-website-grid">
           {summary.generatedWebsites.map((website) => (
             <article key={website.id} className="dashboard-website-card">
+              <div className="dashboard-website-thumbnail" style={createThumbnailStyle(website)}>
+                <span className="dashboard-website-thumbnail-label">
+                  {website.visibility ?? "private"} workspace preview
+                </span>
+                <strong>{website.title}</strong>
+                <span>{website.designConfigured ? "Design configured" : "Design not configured"}</span>
+              </div>
+
               <div className="dashboard-website-card-header">
                 <div className="dashboard-website-card-copy">
                   {website.previewPath ? (
@@ -80,10 +123,7 @@ export function DashboardWebsiteSummarySection({ summary }: DashboardWebsiteSumm
                   ) : (
                     <strong className="dashboard-website-title">{website.title}</strong>
                   )}
-                  <p>
-                    Created {formatDate(website.createdAt)}
-                    {website.updatedAt ? ` | Updated ${formatDate(website.updatedAt)}` : ""}
-                  </p>
+                  <p>Updated {formatDateTime(website.updatedAt)}</p>
                 </div>
 
                 <div className="dashboard-website-pill-row">
@@ -105,7 +145,7 @@ export function DashboardWebsiteSummarySection({ summary }: DashboardWebsiteSumm
                 </div>
                 <div>
                   <dt>Pages</dt>
-                  <dd>{website.pageCount ?? "Unavailable"}</dd>
+                  <dd>{formatPageCount(website.pageCount, website.pageCountSource)}</dd>
                 </div>
               </dl>
 
@@ -114,28 +154,40 @@ export function DashboardWebsiteSummarySection({ summary }: DashboardWebsiteSumm
                   <Link href={website.previewPath} className="dashboard-website-button is-primary">
                     Preview
                   </Link>
-                ) : null}
+                ) : (
+                  <span className="dashboard-website-button is-secondary" aria-disabled="true">
+                    Preview unavailable
+                  </span>
+                )}
                 {website.editorPath ? (
                   <Link href={website.editorPath} className="dashboard-website-button is-secondary">
                     Edit
                   </Link>
-                ) : null}
+                ) : (
+                  <span className="dashboard-website-button is-secondary" aria-disabled="true">
+                    Edit unavailable
+                  </span>
+                )}
                 <button
                   type="button"
                   className="dashboard-website-button is-secondary"
                   disabled={website.visibility !== "public" || !website.previewPath}
-                  title={website.visibility === "public" ? "Copy public link" : "Make this website public before sharing."}
-                  onClick={() => website.previewPath && handleCopyLink(website.id, website.previewPath)}
+                  title={website.visibility === "public" ? "Copy preview link" : "Make this website public before sharing."}
+                  onClick={() => website.previewPath && void handleCopyLink(website.id, website.previewPath)}
                 >
                   {copiedId === website.id ? "Copied!" : "Share"}
                 </button>
               </div>
+
+              {copyErrorId === website.id ? (
+                <p className="website-share-status is-error" role="status" aria-live="polite">
+                  Copy failed. Open the preview and copy the URL manually.
+                </p>
+              ) : null}
             </article>
           ))}
         </div>
       )}
-
-      <p className="dashboard-section-footnote">{formatDataSourceLabel(summary.dataSource)}</p>
     </section>
   );
 }

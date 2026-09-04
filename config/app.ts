@@ -1,17 +1,19 @@
+import "server-only";
+
 /**
  * Application-level configuration.
  *
  * Composes typed app metadata and operational defaults from the raw
- * environment values in config/env.ts. Server-side only — only import
+ * environment values in config/env.ts. Server-side only - only import
  * in server-side code (API routes, Server Components, server actions).
  *
- * Import from "@/config" for the unified entry point.
+ * Import from "@/config" for the unified server-only entry point.
  */
 
 import type { RuntimeEnvironment } from "./env";
 import { env } from "./env";
 
-/** Full application configuration — server-side only. */
+/** Full application configuration - server-side only. */
 export interface AppConfig {
   /** Display name shown in the UI */
   name: string;
@@ -23,40 +25,9 @@ export interface AppConfig {
   environment: RuntimeEnvironment;
 }
 
-/**
- * Browser-safe subset of AppConfig.
- * Only includes values backed by NEXT_PUBLIC_* variables — safe to pass to
- * client components or serialize into page props.
- */
-export interface PublicAppConfig {
-  /** Display name shown in the UI */
-  name: string;
-  /** Canonical base URL for this deployment */
-  url: string;
-  /** Current runtime stage */
-  environment: RuntimeEnvironment;
-  /** Browser-safe Supabase settings */
-  supabase: {
-    /** Project URL — NEXT_PUBLIC, safe for browser */
-    url: string;
-    /** Anon (public) key — NEXT_PUBLIC, safe for browser */
-    anonKey: string;
-  };
-}
-
 export const appConfig: AppConfig = {
   name: env.app.name,
   description: "AI-powered publishing application",
   url: env.app.url,
   environment: env.runtime.stage,
-};
-
-export const publicAppConfig: PublicAppConfig = {
-  name: appConfig.name,
-  url: appConfig.url,
-  environment: appConfig.environment,
-  supabase: {
-    url: env.supabase.url,
-    anonKey: env.supabase.anonKey,
-  },
 };

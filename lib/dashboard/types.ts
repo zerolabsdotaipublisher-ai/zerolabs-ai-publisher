@@ -1,23 +1,17 @@
 import type { WebsiteLifecycleStatus, WebsiteManagementRecord } from "@/lib/management";
-import type { SocialAccountConnection } from "@/lib/social/accounts";
-import type { SocialPublishHistoryJob } from "@/lib/social/history";
-import type { SocialSchedule } from "@/lib/social/scheduling";
-import type { GeneratedSocialPost } from "@/lib/social/types";
 
 export type DashboardAlertSeverity = "info" | "warning" | "error";
 
 export type DashboardActivityType =
-  | "content_generation"
   | "website_update"
-  | "publish_event"
-  | "social_schedule"
-  | "social_publish"
-  | "account_event";
+  | "publish_event";
 
 export interface DashboardMetricSummary {
   totalWebsites: number;
   draftWebsites: number;
   publishedWebsites: number;
+  totalViews: number | null;
+  totalHearts: number | null;
   storedPages: number | null;
   storedVersions: number | null;
   publishedItems: number;
@@ -70,12 +64,16 @@ export interface DashboardWebsiteSummary {
     createdAt: string;
     updatedAt: string;
     publishedAt?: string;
+    liveUrl?: string;
     generatedSitePath?: string;
     previewPath?: string;
     editorPath?: string;
     visibility?: "public" | "private";
     pageCount?: number;
     pageCountSource: "website_pages" | "website_structures" | "website_projects" | "unavailable";
+    designConfigured: boolean;
+    thumbnailAccentColor?: string;
+    thumbnailSurfaceColor?: string;
   }>;
 }
 
@@ -115,32 +113,14 @@ export interface DashboardSummary {
   mvpBoundaries: string[];
 }
 
-export interface DashboardGeneratedContentRow {
-  id: string;
-  structure_id: string;
-  content_type: "website" | "blog" | "article";
-  content_status: string;
-  schedule_state: string;
-  page_slug: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface DashboardGeneratedContentStats {
-  total: number;
-  website: number;
-  blog: number;
-  article: number;
-  published: number;
-  scheduled: number;
-  rows: DashboardGeneratedContentRow[];
-}
-
 export interface DashboardStorageSnapshot {
   websites: WebsiteManagementRecord[];
-  socialSchedules: SocialSchedule[];
-  socialPosts: GeneratedSocialPost[];
-  socialHistory: SocialPublishHistoryJob[];
-  socialAccounts: SocialAccountConnection[];
-  generatedContent: DashboardGeneratedContentStats;
+  websiteShares: DashboardWebsiteShareActivity[];
+}
+
+export interface DashboardWebsiteShareActivity {
+  id: string;
+  websiteId: string;
+  postTitle: string | null;
+  sharedAt: string;
 }
