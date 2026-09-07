@@ -228,82 +228,6 @@ export function ProfileForm({
         />
       </label>
 
-      <label className={`profile-field${fieldErrors.username ? " profile-field-error" : ""}`} htmlFor={`${id}-username`}>
-        <span>Username</span>
-        <input
-          id={`${id}-username`}
-          type="text"
-          value={username}
-          onChange={(event) => setUsername(event.target.value)}
-          maxLength={64}
-        />
-      </label>
-
-      <label className={`profile-field${fieldErrors.first_name ? " profile-field-error" : ""}`} htmlFor={`${id}-first-name`}>
-        <span>First name</span>
-        <input
-          id={`${id}-first-name`}
-          type="text"
-          value={firstName}
-          onChange={(event) => setFirstName(event.target.value)}
-          maxLength={120}
-        />
-      </label>
-
-      <label className={`profile-field${fieldErrors.middle_name ? " profile-field-error" : ""}`} htmlFor={`${id}-middle-name`}>
-        <span>Middle name</span>
-        <input
-          id={`${id}-middle-name`}
-          type="text"
-          value={middleName}
-          onChange={(event) => setMiddleName(event.target.value)}
-          maxLength={120}
-        />
-      </label>
-
-      <label className={`profile-field${fieldErrors.last_name ? " profile-field-error" : ""}`} htmlFor={`${id}-last-name`}>
-        <span>Last name</span>
-        <input
-          id={`${id}-last-name`}
-          type="text"
-          value={lastName}
-          onChange={(event) => setLastName(event.target.value)}
-          maxLength={120}
-        />
-      </label>
-
-      <label className={`profile-field${fieldErrors.suffix ? " profile-field-error" : ""}`} htmlFor={`${id}-suffix`}>
-        <span>Suffix</span>
-        <input
-          id={`${id}-suffix`}
-          type="text"
-          value={suffix}
-          onChange={(event) => setSuffix(event.target.value)}
-          maxLength={120}
-        />
-      </label>
-
-      <label className={`profile-field${fieldErrors.country ? " profile-field-error" : ""}`} htmlFor={`${id}-country`}>
-        <span>Country</span>
-        <input
-          id={`${id}-country`}
-          type="text"
-          value={country}
-          onChange={(event) => setCountry(event.target.value)}
-          maxLength={120}
-        />
-      </label>
-
-      <label className={`profile-field${fieldErrors.date_of_birth ? " profile-field-error" : ""}`} htmlFor={`${id}-dob`}>
-        <span>Date of Birth</span>
-        <input
-          id={`${id}-dob`}
-          type="date"
-          value={dateOfBirth}
-          onChange={(event) => setDateOfBirth(event.target.value)}
-        />
-      </label>
-
       <label className={`profile-field${fieldErrors.full_name ? " profile-field-error" : ""}`} htmlFor={`${id}-name`}>
         <span>Full name</span>
         <input
@@ -471,9 +395,7 @@ export function ProfileForm({
               </div>
             </header>
 
-            <form className="profile-form profile-form-admin" aria-label="Change password" noValidate>
-              <PasswordForm id={id} />
-            </form>
+            <PasswordForm id={id} className="profile-form profile-form-admin" />
           </section>
         </div>
       </section>
@@ -516,9 +438,7 @@ export function ProfileForm({
           </div>
         </header>
 
-        <form className="profile-form dashboard-panel" aria-label="Change password" noValidate>
-          <PasswordForm id={id} />
-        </form>
+        <PasswordForm id={id} className="profile-form dashboard-panel" />
       </section>
     </section>
   );

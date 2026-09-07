@@ -3,7 +3,12 @@
 import { useState, type FormEvent } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
-export function PasswordForm({ id }: { id: string }) {
+type PasswordFormProps = {
+  id: string;
+  className?: string;
+};
+
+export function PasswordForm({ id, className }: PasswordFormProps) {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -55,7 +60,7 @@ export function PasswordForm({ id }: { id: string }) {
   const isDirty = newPassword.length > 0 || confirmPassword.length > 0;
 
   return (
-    <form onSubmit={handlePasswordSubmit}>
+    <form className={className} onSubmit={handlePasswordSubmit} aria-label="Change password" noValidate>
       <div className="profile-field-grid">
         <label className="profile-field" htmlFor={`${id}-new-password`}>
           <span>New Password</span>
