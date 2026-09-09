@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { routes } from "@/config/routes";
 import { Renderer } from "@/components/generated-site/renderer";
 import { getWebsiteStructureById } from "@/lib/ai/structure/storage";
+import { recordWebsiteView } from "@/lib/insights/events";
 import { detectPublicationState } from "@/lib/publish";
 import { resolveWebsitePageByPath } from "@/lib/routing";
+import { getServerUser } from "@/lib/supabase/server";
 
 interface LiveSitePageProps {
   params: Promise<{ id: string; slug?: string[] }>;
@@ -81,6 +84,17 @@ export default async function LiveSitePage({ params }: LiveSitePageProps) {
   if (!page || !isVisible) {
     notFound();
   }
+
+  const [requestHeaders, viewer] = await Promise.all([headers(), getServerUser()]);
+  await recordWebsiteView({
+    ownerUserId: structure.userId,
+    structureId: structure.id,
+    viewerUserId: viewer?.id,
+    source: "live-site",
+    pathname: liveRoutePath(id, resolved.route?.path ?? page.slug),
+    referrer: requestHeaders.get("referer"),
+    userAgent: requestHeaders.get("user-agent"),
+  });
 
   return <Renderer structure={structure} pageSlug={resolved.route?.path ?? page.slug} strictRoute />;
 }

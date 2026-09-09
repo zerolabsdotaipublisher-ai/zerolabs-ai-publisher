@@ -13651,3 +13651,109 @@ body .feed-shell > :last-child {
   line-height: 2.5rem;
   color: var(--text-secondary);
 }
+
+.insights-chart-panel {
+  min-height: 0;
+}
+
+.insights-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem 1rem;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+}
+
+.insights-chart-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.insights-chart-key {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.insights-chart-key.is-profile,
+.insights-chart-bar.is-profile {
+  background: color-mix(in srgb, #8b5cf6 76%, var(--accent));
+}
+
+.insights-chart {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  align-items: end;
+  min-height: 14rem;
+  gap: clamp(0.4rem, 1.4vw, 0.9rem);
+  padding: 0.75rem 0.35rem 0 0.2rem;
+  border-bottom: 1px solid var(--border);
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(25% - 1px),
+    color-mix(in srgb, var(--border) 72%, transparent) calc(25% - 1px),
+    color-mix(in srgb, var(--border) 72%, transparent) 25%
+  );
+}
+
+.insights-chart-day {
+  display: grid;
+  grid-template-rows: minmax(11rem, 1fr) auto;
+  min-width: 0;
+  gap: 0.5rem;
+}
+
+.insights-chart-bars {
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  height: 100%;
+  gap: clamp(0.15rem, 0.5vw, 0.35rem);
+}
+
+.insights-chart-bar {
+  width: min(42%, 1.1rem);
+  min-height: 0;
+  border-radius: 0.4rem 0.4rem 0 0;
+  background: var(--accent);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 25%, transparent);
+  transition: height 160ms ease;
+}
+
+.insights-chart-bar:hover {
+  filter: brightness(1.08);
+}
+
+.insights-chart-day-label {
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: clamp(0.65rem, 1.7vw, 0.78rem);
+  line-height: 1.2;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.insights-chart-empty {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 480px) {
+  .insights-chart {
+    gap: 0.25rem;
+    min-height: 11rem;
+    padding-inline: 0;
+  }
+
+  .insights-chart-day {
+    grid-template-rows: minmax(8rem, 1fr) auto;
+  }
+
+  .insights-chart-day-label {
+    font-size: 0.61rem;
+  }
+}
