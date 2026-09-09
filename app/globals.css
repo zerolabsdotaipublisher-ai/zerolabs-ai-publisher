@@ -13379,6 +13379,193 @@ html[data-theme="light"] .website-builder-shell[data-entry-point="generate"] .we
   color: var(--warning-text);
 }
 
+/* Generate phase stepper palette */
+html:not([data-theme="dark"]) .generation-shell.website-builder-shell[data-entry-point="generate"] {
+  --generate-phase-card-border: color-mix(in srgb, var(--accent) 24%, transparent);
+  --generate-phase-card-border-strong: color-mix(in srgb, var(--accent) 46%, transparent);
+  --generate-phase-card-surface: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--surface) 76%, var(--surface-elevated)) 0%,
+    color-mix(in srgb, var(--surface-elevated) 64%, white) 100%
+  );
+  --generate-phase-card-surface-hover: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--accent) 8%, var(--surface)) 0%,
+    color-mix(in srgb, var(--accent) 6%, var(--surface-elevated)) 100%
+  );
+  --generate-phase-card-active-surface: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--accent) 15%, white) 0%,
+    color-mix(in srgb, var(--accent) 8%, var(--surface-elevated)) 100%
+  );
+  --generate-phase-card-complete-surface: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--accent) 7%, var(--surface)) 0%,
+    color-mix(in srgb, var(--accent) 5%, var(--surface-elevated)) 100%
+  );
+  --generate-phase-card-text: var(--text-primary);
+  --generate-phase-card-muted: var(--text-secondary);
+  --generate-phase-card-active-text: var(--text-primary);
+  --generate-phase-card-active-muted: var(--text-secondary);
+  --generate-phase-card-shadow: 0 12px 28px rgba(15, 71, 57, 0.07);
+  --generate-phase-card-shadow-strong: 0 18px 36px rgba(15, 71, 57, 0.12);
+  --generate-phase-index-border: color-mix(in srgb, var(--accent) 26%, transparent);
+  --generate-phase-index-surface: color-mix(in srgb, var(--accent) 10%, white);
+  --generate-phase-index-text: #0e4938;
+  --generate-phase-index-active-border: color-mix(in srgb, var(--accent) 46%, transparent);
+  --generate-phase-index-active-surface: color-mix(in srgb, var(--accent) 20%, white);
+  --generate-phase-index-active-text: #0b4031;
+  --generate-phase-status-border: color-mix(in srgb, var(--accent) 24%, transparent);
+  --generate-phase-status-surface: color-mix(in srgb, var(--accent) 6%, var(--surface));
+  --generate-phase-status-text: #174b3a;
+  --generate-phase-status-current-border: color-mix(in srgb, var(--accent) 44%, transparent);
+  --generate-phase-status-current-surface: color-mix(in srgb, var(--accent) 17%, white);
+  --generate-phase-status-current-text: #0a4434;
+  --generate-phase-status-ready-border: color-mix(in srgb, var(--accent) 30%, transparent);
+  --generate-phase-status-ready-surface: color-mix(in srgb, var(--accent) 10%, white);
+  --generate-phase-status-ready-text: #145442;
+}
+
+html[data-theme="dark"] .generation-shell.website-builder-shell[data-entry-point="generate"] {
+  --generate-phase-card-border: rgba(173, 230, 205, 0.24);
+  --generate-phase-card-border-strong: rgba(173, 230, 205, 0.46);
+  --generate-phase-card-surface: linear-gradient(
+    145deg,
+    rgba(14, 45, 36, 0.76) 0%,
+    rgba(7, 29, 22, 0.88) 100%
+  );
+  --generate-phase-card-surface-hover: linear-gradient(
+    145deg,
+    rgba(17, 54, 43, 0.82) 0%,
+    rgba(8, 35, 27, 0.92) 100%
+  );
+  --generate-phase-card-active-surface: linear-gradient(
+    145deg,
+    rgba(21, 65, 51, 0.88) 0%,
+    rgba(10, 41, 31, 0.94) 100%
+  );
+  --generate-phase-card-complete-surface: linear-gradient(
+    145deg,
+    rgba(15, 51, 40, 0.72) 0%,
+    rgba(8, 34, 26, 0.84) 100%
+  );
+  --generate-phase-card-text: var(--text-primary);
+  --generate-phase-card-muted: var(--text-secondary);
+  --generate-phase-card-active-text: #f5fff9;
+  --generate-phase-card-active-muted: rgba(222, 242, 231, 0.84);
+  --generate-phase-card-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
+  --generate-phase-card-shadow-strong: 0 18px 38px rgba(0, 0, 0, 0.26);
+  --generate-phase-index-border: rgba(173, 230, 205, 0.24);
+  --generate-phase-index-surface: rgba(173, 230, 205, 0.11);
+  --generate-phase-index-text: #d9f7e8;
+  --generate-phase-index-active-border: rgba(173, 230, 205, 0.44);
+  --generate-phase-index-active-surface: rgba(173, 230, 205, 0.19);
+  --generate-phase-index-active-text: #f5fff9;
+  --generate-phase-status-border: rgba(173, 230, 205, 0.22);
+  --generate-phase-status-surface: rgba(173, 230, 205, 0.08);
+  --generate-phase-status-text: rgba(235, 249, 241, 0.9);
+  --generate-phase-status-current-border: rgba(173, 230, 205, 0.42);
+  --generate-phase-status-current-surface: rgba(173, 230, 205, 0.16);
+  --generate-phase-status-current-text: #f5fff9;
+  --generate-phase-status-ready-border: rgba(173, 230, 205, 0.3);
+  --generate-phase-status-ready-surface: rgba(108, 190, 151, 0.12);
+  --generate-phase-status-ready-text: #cdf6df;
+}
+
+html .generation-shell.website-builder-shell[data-entry-point="generate"] .website-builder-phase-step {
+  border-color: var(--generate-phase-card-border);
+  background: var(--generate-phase-card-surface);
+  color: var(--generate-phase-card-text);
+  box-shadow: var(--generate-phase-card-shadow);
+}
+
+html .generation-shell.website-builder-shell[data-entry-point="generate"] .website-builder-phase-step:hover {
+  border-color: var(--generate-phase-card-border-strong);
+  background: var(--generate-phase-card-surface-hover);
+  box-shadow: var(--generate-phase-card-shadow-strong);
+}
+
+html .generation-shell.website-builder-shell[data-entry-point="generate"] .website-builder-phase-step.is-active,
+html .generation-shell.website-builder-shell[data-entry-point="generate"] .website-builder-phase-step[data-state="current"] {
+  border-color: var(--generate-phase-card-border-strong);
+  background: var(--generate-phase-card-active-surface);
+  color: var(--generate-phase-card-active-text);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 0 0 1px color-mix(in srgb, var(--generate-phase-card-border-strong) 38%, transparent),
+    var(--generate-phase-card-shadow-strong),
+    0 0 22px color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+html .generation-shell.website-builder-shell[data-entry-point="generate"] .website-builder-phase-step.is-complete:not(.is-active) {
+  border-color: var(--generate-phase-card-border);
+  background: var(--generate-phase-card-complete-surface);
+}
+
+html .generation-shell.website-builder-shell[data-entry-point="generate"] .website-builder-phase-step[data-state="attention"]:not(.is-active) {
+  border-color: var(--generate-phase-card-border);
+}
+
+html .generation-shell.website-builder-shell[data-entry-point="generate"] .website-builder-phase-step-index {
+  border-color: var(--generate-phase-index-border);
+  background: var(--generate-phase-index-surface);
+  color: var(--generate-phase-index-text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+html .generation-shell.website-builder-shell[data-entry-point="generate"] .website-builder-phase-step.is-active .website-builder-phase-step-index,
+html .generation-shell.website-builder-shell[data-entry-point="generate"] .website-builder-phase-step[data-state="current"] .website-builder-phase-step-index {
+  border-color: var(--generate-phase-index-active-border);
+  background: var(--generate-phase-index-active-surface);
+  color: var(--generate-phase-index-active-text);
+}
+
+html .generation-shell.website-builder-shell[data-entry-point="generate"] .website-builder-phase-step-content strong {
+  color: var(--generate-phase-card-text);
+}
+
+html .generation-shell.website-builder-shell[data-entry-point="generate"] .website-builder-phase-step-description,
+html .generation-shell.website-builder-shell[data-entry-point="generate"] .website-builder-phase-step-meta {
+  color: var(--generate-phase-card-muted);
+}
+
+html .generation-shell.website-builder-shell[data-entry-point="generate"] .website-builder-phase-step.is-active .website-builder-phase-step-content strong,
+html .generation-shell.website-builder-shell[data-entry-point="generate"] .website-builder-phase-step[data-state="current"] .website-builder-phase-step-content strong {
+  color: var(--generate-phase-card-active-text);
+}
+
+html .generation-shell.website-builder-shell[data-entry-point="generate"] .website-builder-phase-step.is-active .website-builder-phase-step-description,
+html .generation-shell.website-builder-shell[data-entry-point="generate"] .website-builder-phase-step.is-active .website-builder-phase-step-meta,
+html .generation-shell.website-builder-shell[data-entry-point="generate"] .website-builder-phase-step[data-state="current"] .website-builder-phase-step-description,
+html .generation-shell.website-builder-shell[data-entry-point="generate"] .website-builder-phase-step[data-state="current"] .website-builder-phase-step-meta {
+  color: var(--generate-phase-card-active-muted);
+}
+
+html .generation-shell.website-builder-shell[data-entry-point="generate"] .website-builder-phase-step-status {
+  border-color: var(--generate-phase-status-border);
+  background: var(--generate-phase-status-surface);
+  color: var(--generate-phase-status-text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+}
+
+html .generation-shell.website-builder-shell[data-entry-point="generate"] .website-builder-phase-step[data-state="current"] .website-builder-phase-step-status {
+  border-color: var(--generate-phase-status-current-border);
+  background: var(--generate-phase-status-current-surface);
+  color: var(--generate-phase-status-current-text);
+}
+
+html .generation-shell.website-builder-shell[data-entry-point="generate"] .website-builder-phase-step[data-state="ready"] .website-builder-phase-step-status {
+  border-color: var(--generate-phase-status-ready-border);
+  background: var(--generate-phase-status-ready-surface);
+  color: var(--generate-phase-status-ready-text);
+}
+
+html .generation-shell.website-builder-shell[data-entry-point="generate"] .website-builder-phase-step[data-state="attention"] .website-builder-phase-step-status {
+  border-color: var(--generate-phase-status-border);
+  background: var(--generate-phase-status-surface);
+  color: var(--generate-phase-status-text);
+}
+
 html[data-theme="light"] .website-builder-shell[data-entry-point="generate"] .website-generation-status-badge.is-error,
 html[data-theme="light"] .website-builder-shell[data-entry-point="generate"] .website-generation-status-badge.is-idle {
   border-color: color-mix(in srgb, var(--error-text) 44%, transparent);
