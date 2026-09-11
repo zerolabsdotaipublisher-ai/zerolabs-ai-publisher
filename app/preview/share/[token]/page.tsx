@@ -6,6 +6,7 @@ import { createPreviewModel } from "@/lib/preview/model";
 import { verifyPreviewShareToken } from "@/lib/preview/sharing";
 import { PREVIEW_QUERY_KEYS } from "@/lib/preview/state";
 import { resolveSharedPreviewAccess } from "@/lib/preview/security";
+import { recordWebsiteView } from "@/lib/insights/events";
 import { withWebsiteAssetQueryContext } from "@/lib/website-asset-retrieval";
 
 interface PageProps {
@@ -64,6 +65,15 @@ export default async function SharedWebsitePreviewPage({ params, searchParams }:
       throw error;
     }
   })();
+
+  await recordWebsiteView({
+    ownerUserId: access.structure.userId,
+    structureId: access.structure.id,
+    source: "shared-preview",
+    pathname: `/preview/share/${token}`,
+    referrer: requestHeaders.get("referer"),
+    userAgent: requestHeaders.get("user-agent"),
+  });
 
   return <WebsitePreviewShell model={model} requestId={requestId} />;
 }
