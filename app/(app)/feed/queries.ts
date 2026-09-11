@@ -1,4 +1,5 @@
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getFeedAuthorDisplayName, getFeedAuthorInitials, type FeedAuthorProfile } from "./author";
 import type { CommunityPostRecord, CommunitySavedItemRecord, PublicWebsiteRecord } from "./types";
 
 function logOptionalFeedError(label: string, error: { message?: string } | null) {
@@ -20,18 +21,31 @@ export async function getCommunityFeed(): Promise<CommunityPostRecord[]> {
     return [];
   }
 
-  const posts = (data ?? []) as CommunityPostRecord[];
+  const posts = (data ?? []) as Array<Omit<CommunityPostRecord, "author" | "attachments" | "reactionCount" | "commentCount" | "shareCount" | "reactedByCurrentUser" | "comments">>;
   const ids = posts.map((post) => post.id);
   if (ids.length === 0) return [];
 
-  const [attachments, reactions, comments, shares] = await Promise.all([
+  const authorIds = [...new Set(posts.map((post) => post.user_id))];
+
+  const [authorProfiles, attachments, reactions, comments, shares, currentUser] = await Promise.all([
+    supabase.from("profiles").select("id, username, full_name, first_name, last_name").in("id", authorIds),
     supabase.from("community_post_attachments").select("id, post_id, attachment_type, storage_path, public_url, file_name, mime_type, file_size, metadata").in("post_id", ids),
     supabase.from("community_post_reactions").select("post_id, user_id").in("post_id", ids),
     supabase.from("community_post_comments").select("id, post_id, user_id, body, created_at").in("post_id", ids).is("deleted_at", null).order("created_at", { ascending: true }),
     supabase.from("community_post_shares").select("post_id").in("post_id", ids),
+    supabase.auth.getUser(),
   ]);
 
-  const currentUser = await supabase.auth.getUser();
+  if (authorProfiles.error) {
+    logOptionalFeedError("post authors", authorProfiles.error);
+  }
+
+  const profilesById = new Map(
+    (authorProfiles.data ?? []).map((profile) => {
+      const authorProfile = profile as FeedAuthorProfile;
+      return [authorProfile.id, authorProfile];
+    }),
+  );
   const currentUserId = currentUser.data.user?.id;
   const attachmentRows = attachments.error ? [] : await Promise.all((attachments.data ?? []).map(async (row) => {
     const attachment = row as CommunityPostRecord["attachments"][number];
@@ -46,6 +60,20 @@ export async function getCommunityFeed(): Promise<CommunityPostRecord[]> {
 
   return posts.map((post) => ({
     ...post,
+    author: (() => {
+      const profile = profilesById.get(post.user_id);
+      const authorProfile = profile ?? {
+        id: post.user_id,
+        email: currentUserId === post.user_id ? currentUser.data.user?.email : null,
+      };
+
+      return {
+        id: post.user_id,
+        username: profile?.username ?? null,
+        displayName: getFeedAuthorDisplayName(authorProfile),
+        initials: getFeedAuthorInitials(authorProfile),
+      };
+    })(),
     attachments: attachmentRows.filter((row) => row.post_id === post.id) as CommunityPostRecord["attachments"],
     reactionCount: reactions.error ? null : count(reactionRows, post.id),
     commentCount: comments.error ? null : count(commentRows, post.id),
