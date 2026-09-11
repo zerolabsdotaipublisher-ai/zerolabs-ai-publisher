@@ -2,8 +2,9 @@ export type CommunityPostVisibility = "public" | "private" | "draft";
 
 export interface CommunityPostAuthor {
   id: string;
-  full_name?: string | null;
   username?: string | null;
+  displayName: string;
+  initials: string;
 }
 
 export interface CommunityPostRecord {
@@ -14,7 +15,7 @@ export interface CommunityPostRecord {
   visibility: CommunityPostVisibility;
   created_at: string;
   updated_at: string;
-  author?: CommunityPostAuthor | null;
+  author: CommunityPostAuthor;
   attachments: CommunityPostAttachment[];
   reactionCount: number | null;
   commentCount: number | null;

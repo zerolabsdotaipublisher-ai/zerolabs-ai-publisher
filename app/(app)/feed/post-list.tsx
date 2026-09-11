@@ -19,14 +19,6 @@ function formatPostDate(value: string): string {
   return Number.isNaN(date.getTime()) ? "Unknown date" : date.toLocaleString();
 }
 
-function resolveAuthorName(post: CommunityPostRecord, currentUserId: string): string {
-  if (post.user_id === currentUserId) {
-    return "You";
-  }
-
-  return post.author?.username || post.author?.full_name || "Community member";
-}
-
 export function PostList({ posts, currentUserId, savedPostIds }: PostListProps) {
   const [busyPostId, setBusyPostId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -106,19 +98,22 @@ export function PostList({ posts, currentUserId, savedPostIds }: PostListProps) 
         const isOwner = post.user_id === currentUserId;
         const isSaved = savedPostIds.includes(post.id);
         const isBusy = isPending && busyPostId === post.id;
-        const authorName = resolveAuthorName(post, currentUserId);
-        const authorInitial = authorName.charAt(0).toUpperCase();
+        const authorUsername = post.author.username?.trim();
+        const shouldShowAuthorUsername = Boolean(
+          authorUsername && authorUsername.localeCompare(post.author.displayName, undefined, { sensitivity: "accent" }) !== 0,
+        );
 
         return (
           <article key={post.id} className="feed-post-card">
             <div className="feed-post-header">
               <div className="feed-post-author">
                 <div className="feed-post-avatar" aria-hidden="true">
-                  {authorInitial}
+                  {post.author.initials}
                 </div>
 
                 <div className="feed-post-author-copy">
-                  <strong>{authorName}</strong>
+                  <strong>{post.author.displayName}</strong>
+                  {shouldShowAuthorUsername ? <span>@{authorUsername}</span> : null}
                   <div className="feed-post-meta">
                     <span>{formatPostDate(post.created_at)}</span>
                     <span className={`feed-post-visibility is-${post.visibility}`}>{post.visibility}</span>
