@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 interface GenerationLayoutProps {
   title: string;
   description: string;
+  navigatorPanel?: ReactNode;
   builderPanel: ReactNode;
   previewPanel: ReactNode;
   entryPoint?: "create" | "generate";
@@ -11,6 +12,7 @@ interface GenerationLayoutProps {
 export function GenerationLayout({
   title,
   description,
+  navigatorPanel,
   builderPanel,
   previewPanel,
   entryPoint = "create",
@@ -27,8 +29,18 @@ export function GenerationLayout({
       </header>
 
       <div className="website-builder-grid">
+        {navigatorPanel ? (
+          <aside className="website-builder-panel website-builder-navigator-panel">
+            {navigatorPanel}
+          </aside>
+        ) : null}
         <div className="website-builder-panel website-builder-panel-primary">{builderPanel}</div>
-        <div className="website-builder-panel website-builder-preview-panel">{previewPanel}</div>
+        <aside
+          className="website-builder-panel website-builder-preview-panel"
+          aria-label={entryPoint === "generate" ? "Inputs, review, and actions" : "Website preview"}
+        >
+          {previewPanel}
+        </aside>
       </div>
     </section>
   );

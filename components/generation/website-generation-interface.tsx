@@ -23,8 +23,9 @@ import {
   type GenerationSafeErrorCategory,
 } from "@/lib/generation";
 import type { WebsiteWizardInput, WebsiteWizardInputPatch } from "@/lib/wizard";
-import { GenerationInputPanel } from "./generation-input-panel";
+import { GenerationInputPanel, type BuilderPhaseId } from "./generation-input-panel";
 import { GenerationLayout } from "./generation-layout";
+import { GenerationPhaseNavigator } from "./generation-phase-navigator";
 import { WebsiteBuilderPreviewPanel } from "./website-builder-preview-panel";
 
 interface WebsiteGenerationInterfaceProps {
@@ -181,6 +182,7 @@ export function WebsiteGenerationInterface({
   const [activePageId, setActivePageId] = useState<string | null>(
     state.input.designConfig.pages[0]?.id ?? null,
   );
+  const [activePhase, setActivePhase] = useState<BuilderPhaseId>("planning");
 
   useEffect(() => {
     window.localStorage.setItem(GENERATION_STORAGE_KEY, JSON.stringify(state));
@@ -415,6 +417,13 @@ export function WebsiteGenerationInterface({
       title={title}
       description={description}
       entryPoint={entryPoint}
+      navigatorPanel={entryPoint === "generate" ? (
+        <GenerationPhaseNavigator
+          data={state.input}
+          activePhase={activePhase}
+          onPhaseChange={setActivePhase}
+        />
+      ) : undefined}
       builderPanel={
         <GenerationInputPanel
           data={state.input}
@@ -422,8 +431,11 @@ export function WebsiteGenerationInterface({
           constraintsText={constraintsText}
           errors={state.validationErrors}
           isEditing={state.isEditingInputs}
+          activePhase={activePhase}
+          showPhaseNavigator={entryPoint === "create"}
           activePageId={activePageId ?? undefined}
           onActivePageChange={setActivePageId}
+          onPhaseChange={setActivePhase}
           onFieldChange={updateInput}
           onSocialLinksChange={(value) =>
             updateInput({

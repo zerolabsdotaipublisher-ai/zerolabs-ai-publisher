@@ -64,6 +64,17 @@ function summarizeText(value: string, fallback: string, maxLength = 160): string
   return trimmed.length > maxLength ? `${trimmed.slice(0, maxLength - 3)}...` : trimmed;
 }
 
+function summarizeList(values: Array<string | undefined> | undefined, fallback: string, maxLength = 160): string {
+  return summarizeText(
+    (values ?? [])
+      .map((value) => value?.trim() ?? "")
+      .filter(Boolean)
+      .join(" · "),
+    fallback,
+    maxLength,
+  );
+}
+
 function sanitizeFailureDescription(error?: string): string | undefined {
   const firstLine = error?.split(/\r?\n/)[0]?.trim();
   if (!firstLine) {
@@ -433,6 +444,16 @@ export function WebsiteBuilderPreviewPanel({
   const promptSummary = activePage
     ? summarizeText(activePage.contentPrompt, "Add a page content prompt to shape this page.")
     : "Add a page to preview its design settings.";
+  const websiteDescription = summarizeText(state.input.description, "Not provided.");
+  const targetAudience = summarizeText(state.input.targetAudience, "Not provided.");
+  const services = summarizeList(state.input.services, "Not provided.");
+  const founder = summarizeList(
+    [state.input.founderProfile.name, state.input.founderProfile.role],
+    "Not provided.",
+  );
+  const founderBio = summarizeText(state.input.founderProfile.bio ?? "", "Not provided.");
+  const socialLinks = summarizeList(state.input.contactInfo.socialLinks, "Not provided.");
+  const contentConstraints = summarizeList(state.input.constraints, "Not provided.");
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const previewHeadingColor = activePage
     ? resolvePreviewTextColor(activePage.headings.headingColor, "#f8f9fa")
@@ -458,8 +479,8 @@ export function WebsiteBuilderPreviewPanel({
         <section className="wizard-step-panel website-generation-status" aria-live="polite" aria-atomic="true">
           <div className="website-generation-status-header">
             <div>
-              <span className="website-builder-step-label">Step 3</span>
-              <h2 id="website-builder-preview-title">Review and generate</h2>
+              <span className="website-builder-step-label">Input review</span>
+              <h2 id="website-builder-preview-title">Review &amp; actions</h2>
               <p className="wizard-step-description">{workflowStatus.description}</p>
             </div>
             <span
@@ -494,55 +515,62 @@ export function WebsiteBuilderPreviewPanel({
           ) : null}
         </section>
 
-        <section className="website-generation-actions" aria-label="Website generation actions">
-          <button
-            type="button"
-            className={generateButtonClassName}
-            onClick={onGenerate}
-            disabled={state.submissionStatus === "running"}
-            aria-busy={state.submissionStatus === "running"}
-            aria-describedby={showMissingRequirements ? "website-generation-missing-requirements" : undefined}
-          >
-            {state.submissionStatus === "running" ? "Generating Website..." : "Generate Website"}
-          </button>
+        <section className="website-generation-action-panel" aria-labelledby="website-generation-actions-title">
+          <div className="website-generation-actions-header">
+            <h3 id="website-generation-actions-title">Actions</h3>
+            <p>Changes to this builder are saved automatically on this device.</p>
+          </div>
 
-          {state.result?.generatedSitePath ? (
-            <Link
-              href={state.result.generatedSitePath}
-              className={previewButtonClassName}
-              onClick={onPreviewClick}
-            >
-              Continue to preview
-            </Link>
-          ) : null}
-
-          {state.submissionStatus === "error" ? (
+          <div className="website-generation-actions">
             <button
               type="button"
-              className={retryButtonClassName}
-              onClick={onRetry}
+              className={generateButtonClassName}
+              onClick={onGenerate}
+              disabled={state.submissionStatus === "running"}
+              aria-busy={state.submissionStatus === "running"}
+              aria-describedby={showMissingRequirements ? "website-generation-missing-requirements" : undefined}
             >
-              Retry generation
+              {state.submissionStatus === "running" ? "Generating Website..." : "Generate Website"}
             </button>
-          ) : null}
 
-          <button
-            type="button"
-            className={reviewButtonClassName}
-            onClick={onReviewInputs}
-            disabled={state.submissionStatus === "running"}
-          >
-            Review inputs
-          </button>
+            {state.result?.generatedSitePath ? (
+              <Link
+                href={state.result.generatedSitePath}
+                className={previewButtonClassName}
+                onClick={onPreviewClick}
+              >
+                Continue to preview
+              </Link>
+            ) : null}
 
-          <button
-            type="button"
-            className={editButtonClassName}
-            onClick={onEditInputs}
-            disabled={state.submissionStatus === "running"}
-          >
-            Edit inputs
-          </button>
+            {state.submissionStatus === "error" ? (
+              <button
+                type="button"
+                className={retryButtonClassName}
+                onClick={onRetry}
+              >
+                Retry generation
+              </button>
+            ) : null}
+
+            <button
+              type="button"
+              className={reviewButtonClassName}
+              onClick={onReviewInputs}
+              disabled={state.submissionStatus === "running"}
+            >
+              Review inputs
+            </button>
+
+            <button
+              type="button"
+              className={editButtonClassName}
+              onClick={onEditInputs}
+              disabled={state.submissionStatus === "running"}
+            >
+              Edit inputs
+            </button>
+          </div>
         </section>
 
         {state.submissionStatus === "running" ? (
@@ -681,6 +709,62 @@ export function WebsiteBuilderPreviewPanel({
             </div>
 
             <div className="website-preview-summary-group">
+              <h4>Saved website content</h4>
+              <dl className="website-preview-summary">
+                <div className="is-wide">
+                  <dt>Website description</dt>
+                  <dd>{websiteDescription}</dd>
+                </div>
+                <div>
+                  <dt>Target audience</dt>
+                  <dd>{targetAudience}</dd>
+                </div>
+                <div>
+                  <dt>Primary call to action</dt>
+                  <dd>{state.input.primaryCta.trim() || "Not provided."}</dd>
+                </div>
+                <div className="is-wide">
+                  <dt>Services</dt>
+                  <dd>{services}</dd>
+                </div>
+              </dl>
+            </div>
+
+            <div className="website-preview-summary-group">
+              <h4>Saved profile and contact inputs</h4>
+              <dl className="website-preview-summary">
+                <div>
+                  <dt>Founder</dt>
+                  <dd>{founder}</dd>
+                </div>
+                <div>
+                  <dt>Founder bio</dt>
+                  <dd>{founderBio}</dd>
+                </div>
+                <div>
+                  <dt>Contact email</dt>
+                  <dd>{state.input.contactInfo.email?.trim() || "Not provided."}</dd>
+                </div>
+                <div>
+                  <dt>Contact phone</dt>
+                  <dd>{state.input.contactInfo.phone?.trim() || "Not provided."}</dd>
+                </div>
+                <div>
+                  <dt>Location</dt>
+                  <dd>{state.input.contactInfo.location?.trim() || "Not provided."}</dd>
+                </div>
+                <div className="is-wide">
+                  <dt>Social links</dt>
+                  <dd>{socialLinks}</dd>
+                </div>
+                <div className="is-wide">
+                  <dt>Content constraints</dt>
+                  <dd>{contentConstraints}</dd>
+                </div>
+              </dl>
+            </div>
+
+            <div className="website-preview-summary-group">
               <h4>Design System</h4>
               <dl className="website-preview-summary">
                 <div>
@@ -783,28 +867,6 @@ export function WebsiteBuilderPreviewPanel({
                 <div className="is-wide">
                   <dt>Status</dt>
                   <dd>Metadata will be generated automatically during generation.</dd>
-                </div>
-              </dl>
-            </div>
-
-            <div className="website-preview-summary-group">
-              <h4>Final Actions</h4>
-              <dl className="website-preview-summary">
-                <div>
-                  <dt>Visibility Default</dt>
-                  <dd>Private</dd>
-                </div>
-                <div>
-                  <dt>Editable After Creation</dt>
-                  <dd>Yes</dd>
-                </div>
-                <div>
-                  <dt>Design Saved</dt>
-                  <dd>Yes</dd>
-                </div>
-                <div>
-                  <dt>Content Saved</dt>
-                  <dd>Yes</dd>
                 </div>
               </dl>
             </div>
