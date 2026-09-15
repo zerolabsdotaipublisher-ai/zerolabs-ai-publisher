@@ -4,6 +4,11 @@ import type { SectionLayoutNode } from "@/lib/ai/layout";
 interface SectionLayoutShellProps {
   node?: SectionLayoutNode;
   children: ReactNode;
+  editorSection?: {
+    id: string;
+    selected: boolean;
+    onSelect?: (sectionId: string) => void;
+  };
 }
 
 function classesFromNode(node?: SectionLayoutNode): string {
@@ -19,7 +24,9 @@ function classesFromNode(node?: SectionLayoutNode): string {
   ].join(" ");
 }
 
-export function SectionLayoutShell({ node, children }: SectionLayoutShellProps) {
+export function SectionLayoutShell({ node, children, editorSection }: SectionLayoutShellProps) {
+  const canSelectSection = Boolean(editorSection?.onSelect);
+
   return (
     <div
       className={classesFromNode(node)}
@@ -28,6 +35,25 @@ export function SectionLayoutShell({ node, children }: SectionLayoutShellProps) 
       data-layout-desktop-columns={node?.responsive?.desktop?.columns}
       data-layout-tablet-columns={node?.responsive?.tablet?.columns}
       data-layout-mobile-columns={node?.responsive?.mobile?.columns}
+      data-editor-section-id={editorSection?.id}
+      data-editor-active={editorSection?.selected ? "true" : undefined}
+      contentEditable={editorSection?.selected || undefined}
+      suppressContentEditableWarning={editorSection?.selected || undefined}
+      onClick={
+        canSelectSection
+          ? (event) => {
+              if (!editorSection?.selected) {
+                event.preventDefault();
+                editorSection?.onSelect?.(editorSection.id);
+                return;
+              }
+
+              if ((event.target as HTMLElement).closest("a")) {
+                event.preventDefault();
+              }
+            }
+          : undefined
+      }
     >
       {children}
     </div>

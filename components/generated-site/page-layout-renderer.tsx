@@ -1,11 +1,13 @@
 import type { PageLayoutModel } from "@/lib/ai/layout";
 import type { WebsitePage, WebsiteSection } from "@/lib/ai/structure/types";
+import type { WebsiteInlineEditing } from "./inline-editing";
 import { SectionRenderer } from "./section-renderer";
 import { SectionLayoutShell } from "./section-layout-shell";
 
 interface PageLayoutRendererProps {
   page: WebsitePage;
   layoutPage?: PageLayoutModel;
+  inlineEditing?: WebsiteInlineEditing;
 }
 
 function getRenderableSections(
@@ -34,7 +36,7 @@ function getRenderableSections(
   return [...layoutSections, ...orphanedSections];
 }
 
-export function PageLayoutRenderer({ page, layoutPage }: PageLayoutRendererProps) {
+export function PageLayoutRenderer({ page, layoutPage, inlineEditing }: PageLayoutRendererProps) {
   const visibleSections = getRenderableSections(page, layoutPage);
   const layoutBySectionId = new Map(
     (layoutPage?.sectionLayouts ?? []).map((node) => [node.sectionId, node]),
@@ -51,7 +53,19 @@ export function PageLayoutRenderer({ page, layoutPage }: PageLayoutRendererProps
       data-layout-emphasis={layoutPage?.metadata?.emphasisPattern}
     >
       {visibleSections.map((section) => (
-        <SectionLayoutShell key={section.id} node={layoutBySectionId.get(section.id)}>
+        <SectionLayoutShell
+          key={section.id}
+          node={layoutBySectionId.get(section.id)}
+          editorSection={
+            inlineEditing
+              ? {
+                  id: section.id,
+                  selected: inlineEditing.selectedSectionId === section.id,
+                  onSelect: inlineEditing.onSectionSelect,
+                }
+              : undefined
+          }
+        >
           <SectionRenderer section={section} />
         </SectionLayoutShell>
       ))}

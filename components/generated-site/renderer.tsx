@@ -2,6 +2,7 @@ import type { WebsiteStructure } from "@/lib/ai/structure/types";
 import { normalizeWebsiteStructureForRender } from "@/lib/ai/structure/render-normalization";
 import { resolveWebsitePageByPath } from "@/lib/routing";
 import { LayoutRenderer } from "./layout-renderer";
+import type { WebsiteInlineEditing } from "./inline-editing";
 import { PageRenderer } from "./page-renderer";
 import { NavigationRenderer } from "./navigation-renderer";
 
@@ -10,6 +11,7 @@ interface RendererProps {
   /** URL slug of the page to render. Defaults to "/" (home page). */
   pageSlug?: string;
   strictRoute?: boolean;
+  inlineEditing?: WebsiteInlineEditing;
 }
 
 /**
@@ -19,7 +21,7 @@ interface RendererProps {
  * site-level layout container.  This is the entry point for the
  * AI → structure → render pipeline.
  */
-export function Renderer({ structure, pageSlug = "/", strictRoute = false }: RendererProps) {
+export function Renderer({ structure, pageSlug = "/", strictRoute = false, inlineEditing }: RendererProps) {
   const normalizedStructure = normalizeWebsiteStructureForRender(structure);
   const resolved = resolveWebsitePageByPath(normalizedStructure, pageSlug);
   const pages = Array.isArray(normalizedStructure.pages) ? normalizedStructure.pages : [];
@@ -60,7 +62,7 @@ export function Renderer({ structure, pageSlug = "/", strictRoute = false }: Ren
       <LayoutRenderer layout={normalizedStructure.layout} pageSlug={pageSlug} />
 
       <main className="gs-site-main">
-        <PageRenderer page={page} layoutPage={layoutPage} />
+        <PageRenderer page={page} layoutPage={layoutPage} inlineEditing={inlineEditing} />
       </main>
       {footerItems.length > 0 ? (
         <footer className="gs-site-footer-nav" aria-label="Footer navigation">

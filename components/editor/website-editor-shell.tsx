@@ -3,7 +3,6 @@
 import { useMemo, useReducer } from "react";
 import type { LayoutVariantName } from "@/lib/ai/layout";
 import type { SectionType, StylePreset, TonePreset, WebsiteStructure } from "@/lib/ai/structure";
-import { PublishControls } from "@/components/publish/publish-controls";
 import {
   addSectionToPage,
   buildPreviewStructureFromDraft,
@@ -22,12 +21,12 @@ import {
   validateEditorDraft,
 } from "@/lib/editor";
 import { EditorCanvas } from "./editor-canvas";
+import { EditorActionsPanel } from "./editor-actions-panel";
 import { EditorErrorState } from "./editor-error-state";
 import { EditorNavigationPanel } from "./editor-navigation-panel";
 import { EditorPageSettingsPanel } from "./editor-page-settings-panel";
 import { EditorSidebar } from "./editor-sidebar";
 import { EditorStylePanel } from "./editor-style-panel";
-import { EditorTextPanel } from "./editor-text-panel";
 import { EditorToolbar } from "./editor-toolbar";
 import { EditorUnsavedWarning } from "./editor-unsaved-warning";
 
@@ -118,16 +117,21 @@ export function WebsiteEditorShell({ initialStructure, previewPath, generatedSit
     dispatch({ type: "select-section", sectionId: firstSection?.id });
   }
 
-  function handleSectionTextChange(path: string, value: string) {
-    if (!selection.page || !selection.section) {
+  function handleInlineSectionTextChange(sectionId: string, path: string, value: string) {
+    if (!selection.page) {
       return;
     }
 
-    const nextSection = updateSectionTextValue(selection.section, path, value);
+    const section = selection.page.sections.find((candidate) => candidate.id === sectionId);
+    if (!section) {
+      return;
+    }
+
+    const nextSection = updateSectionTextValue(section, path, value);
     setDraft(
       updateStructurePage(state.draft, selection.page.id, (page) => ({
         ...page,
-        sections: page.sections.map((section) => (section.id === selection.section?.id ? nextSection : section)),
+        sections: page.sections.map((candidate) => (candidate.id === sectionId ? nextSection : candidate)),
       })),
     );
   }
@@ -374,14 +378,10 @@ export function WebsiteEditorShell({ initialStructure, previewPath, generatedSit
         saveStatus={state.saveStatus}
         saveMessage={state.saveMessage}
         dirty={state.dirty}
-        previewPath={previewPath}
-        generatedSitePath={generatedSitePath}
-        onSave={handleSaveDraft}
       />
 
       <EditorUnsavedWarning dirty={state.dirty} />
       <EditorErrorState message={state.saveStatus === "error" ? state.saveMessage : undefined} validationErrors={state.validationErrors} />
-      <PublishControls structure={state.original} hasUnsavedChanges={state.dirty} context="editor" />
 
       <div className="editor-layout">
         <EditorSidebar
@@ -390,54 +390,82 @@ export function WebsiteEditorShell({ initialStructure, previewPath, generatedSit
           selectedSectionId={state.selectedSectionId}
           sections={selection.page?.sections ?? []}
           onPageSelect={(pageId) => dispatch({ type: "select-page", pageId })}
-          onSectionSelect={(sectionId) => dispatch({ type: "select-section", sectionId })}
+          onSectionSelect={(sectionId) => {
+            dispatch({ type: "select-section", sectionId });
+          }}
           onSectionVisibility={handleSectionVisibility}
           onSectionRemove={handleSectionRemove}
           onSectionMoveUp={(sectionId) => handleSectionReorder(sectionId, "up")}
           onSectionMoveDown={(sectionId) => handleSectionReorder(sectionId, "down")}
           onSectionAdd={handleSectionAdd}
+          structureSettings={
+            <>
+              <details className="editor-sidebar-disclosure">
+                <summary>Page settings</summary>
+                <div className="editor-sidebar-disclosure-body">
+                  <EditorPageSettingsPanel
+                    page={selection.page}
+                    onTitleChange={handlePageTitleChange}
+                    onSlugChange={handlePageSlugChange}
+                    onNavigationLabelChange={handlePageNavigationLabelChange}
+                    onVisibilityChange={handlePageVisibilityChange}
+                    onSeoTitleChange={handleSeoTitleChange}
+                    onSeoDescriptionChange={handleSeoDescriptionChange}
+                    onSeoKeywordsChange={handleSeoKeywordsChange}
+                    onCanonicalUrlChange={handleCanonicalUrlChange}
+                  />
+                </div>
+              </details>
+              <details className="editor-sidebar-disclosure">
+                <summary>Navigation</summary>
+                <div className="editor-sidebar-disclosure-body">
+                  <EditorNavigationPanel
+                    structure={state.draft}
+                    onLabelChange={handleNavigationLabelChange}
+                    onMoveUp={(href) => handleNavigationMove(href, "up")}
+                    onMoveDown={(href) => handleNavigationMove(href, "down")}
+                    onTogglePrimary={handleNavigationToggle}
+                  />
+                </div>
+              </details>
+            </>
+          }
+          designControls={
+            <EditorStylePanel
+              tone={state.draft.styleConfig.tone}
+              style={state.draft.styleConfig.style}
+              layoutTemplate={layoutPage?.templateName}
+              themeMode={layoutPage?.metadata.themeMode}
+              onToneChange={handleToneChange}
+              onStyleChange={handleStyleChange}
+              onLayoutTemplateChange={handleLayoutTemplateChange}
+              onThemeModeChange={handleThemeModeChange}
+            />
+          }
         />
 
         <EditorCanvas
           structure={previewStructure}
           pageSlug={selection.page?.slug || "/"}
+          pageTitle={selection.page?.title}
+          pageId={selection.page?.id}
+          selectedSectionId={state.selectedSectionId}
           previewSyncKey={state.previewSyncKey}
+          onSectionSelect={(sectionId) => dispatch({ type: "select-section", sectionId })}
+          onSectionTextChange={handleInlineSectionTextChange}
         />
 
-        <aside className="editor-panels" aria-label="Editor controls">
-          <EditorTextPanel
-            websiteId={state.draft.id}
-            pageId={selection.page?.id}
-            section={selection.section}
-            onChange={handleSectionTextChange}
-          />
-          <EditorPageSettingsPanel
+        <aside className="editor-panels editor-actions-rail" aria-label="Content and publishing actions">
+          <EditorActionsPanel
+            structure={state.original}
             page={selection.page}
-            onTitleChange={handlePageTitleChange}
-            onSlugChange={handlePageSlugChange}
-            onNavigationLabelChange={handlePageNavigationLabelChange}
-            onVisibilityChange={handlePageVisibilityChange}
-            onSeoTitleChange={handleSeoTitleChange}
-            onSeoDescriptionChange={handleSeoDescriptionChange}
-            onSeoKeywordsChange={handleSeoKeywordsChange}
-            onCanonicalUrlChange={handleCanonicalUrlChange}
-          />
-          <EditorNavigationPanel
-            structure={state.draft}
-            onLabelChange={handleNavigationLabelChange}
-            onMoveUp={(href) => handleNavigationMove(href, "up")}
-            onMoveDown={(href) => handleNavigationMove(href, "down")}
-            onTogglePrimary={handleNavigationToggle}
-          />
-          <EditorStylePanel
-            tone={state.draft.styleConfig.tone}
-            style={state.draft.styleConfig.style}
-            layoutTemplate={layoutPage?.templateName}
-            themeMode={layoutPage?.metadata.themeMode}
-            onToneChange={handleToneChange}
-            onStyleChange={handleStyleChange}
-            onLayoutTemplateChange={handleLayoutTemplateChange}
-            onThemeModeChange={handleThemeModeChange}
+            section={selection.section}
+            saveStatus={state.saveStatus}
+            saveMessage={state.saveMessage}
+            dirty={state.dirty}
+            previewPath={previewPath}
+            generatedSitePath={generatedSitePath}
+            onSave={handleSaveDraft}
           />
         </aside>
       </div>
