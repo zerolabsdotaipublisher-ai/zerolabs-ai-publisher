@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { StepContentInput } from "@/components/wizard/steps/step-content-input";
 import { StepPageDesign } from "@/components/wizard/steps/step-page-design";
 import { StepPagesSetup } from "@/components/wizard/steps/step-pages-setup";
@@ -21,14 +21,59 @@ interface GenerationInputPanelProps {
   constraintsText: string;
   errors: string[];
   isEditing: boolean;
+  activePhase: BuilderPhaseId;
+  showPhaseNavigator?: boolean;
   activePageId?: string;
+  onPhaseChange?: (phase: BuilderPhaseId) => void;
   onActivePageChange: (pageId: string) => void;
   onFieldChange: (patch: WebsiteWizardInputPatch) => void;
   onSocialLinksChange: (value: string) => void;
   onConstraintsChange: (value: string) => void;
 }
 
-type BuilderPhaseId = "planning" | "structure" | "design";
+export type BuilderPhaseId = "planning" | "structure" | "design";
+
+export interface BuilderPhaseMetadata {
+  id: BuilderPhaseId;
+  label: string;
+  title: string;
+  cardDescription: string;
+  description: string;
+  helper: string;
+}
+
+export const WEBSITE_BUILDER_PHASES: BuilderPhaseMetadata[] = [
+  {
+    id: "planning",
+    label: "Phase 1",
+    title: "Plan",
+    cardDescription: "Set pages, names, and website identity.",
+    description:
+      "Set pages, names, and website identity before you move into layout and styling.",
+    helper:
+      "Define the website foundation first, then move into build and design decisions.",
+  },
+  {
+    id: "structure",
+    label: "Phase 2",
+    title: "Build",
+    cardDescription: "Create the page structure and layout.",
+    description:
+      "Create the page structure and layout for each page before final visual refinement.",
+    helper:
+      "Each page stays independently editable, and layout choices here flow into the generation payload.",
+  },
+  {
+    id: "design",
+    label: "Phase 3",
+    title: "Design",
+    cardDescription: "Refine visuals, typography, and styling.",
+    description:
+      "Refine visuals, typography, and styling across each page, then add broader creative direction if needed.",
+    helper:
+      "Visual settings stay page-specific, and optional content details remain available without cluttering the main flow.",
+  },
+];
 
 function hasContent(value?: string): boolean {
   return Boolean(value?.trim());
@@ -117,7 +162,7 @@ function validateDesignPhase(data: WebsiteWizardInput): string[] {
   ];
 }
 
-function formatPhaseStatus(errors: string[]): string {
+export function formatPhaseStatus(errors: string[]): string {
   if (errors.length === 0) {
     return "Done";
   }
@@ -125,7 +170,7 @@ function formatPhaseStatus(errors: string[]): string {
   return `${errors.length} ${errors.length === 1 ? "item" : "items"} left`;
 }
 
-function formatPhaseCardMeta(errors: string[]): string {
+export function formatPhaseCardMeta(errors: string[]): string {
   if (errors.length === 0) {
     return "All required inputs complete.";
   }
@@ -133,7 +178,7 @@ function formatPhaseCardMeta(errors: string[]): string {
   return `${errors.length} required ${errors.length === 1 ? "item left" : "items left"}.`;
 }
 
-function getPhaseStateLabel(isActive: boolean, errors: string[]): string {
+export function getPhaseStateLabel(isActive: boolean, errors: string[]): string {
   if (isActive) {
     return "Active";
   }
@@ -142,10 +187,10 @@ function getPhaseStateLabel(isActive: boolean, errors: string[]): string {
     return "Done";
   }
 
-  return "Next";
+  return "Pending";
 }
 
-function getPhaseStateTone(isActive: boolean, errors: string[]): "current" | "ready" | "attention" {
+export function getPhaseStateTone(isActive: boolean, errors: string[]): "current" | "ready" | "attention" {
   if (isActive) {
     return "current";
   }
@@ -157,66 +202,35 @@ function getPhaseStateTone(isActive: boolean, errors: string[]): "current" | "re
   return "attention";
 }
 
+export function getWebsiteBuilderPhaseStates(data: WebsiteWizardInput): Record<BuilderPhaseId, string[]> {
+  return {
+    planning: [...validatePageSetupStep(data), ...validateBusinessInfoStep(data)],
+    structure: validateStructurePhase(data),
+    design: validateDesignPhase(data),
+  };
+}
+
 export function GenerationInputPanel({
   data,
   socialLinksText,
   constraintsText,
   errors,
   isEditing,
+  activePhase,
+  showPhaseNavigator = false,
   activePageId,
+  onPhaseChange,
   onActivePageChange,
   onFieldChange,
   onSocialLinksChange,
   onConstraintsChange,
 }: GenerationInputPanelProps) {
-  const [activePhase, setActivePhase] = useState<BuilderPhaseId>("planning");
-
   const phaseStates = useMemo(() => {
-    const planningErrors = [...validatePageSetupStep(data), ...validateBusinessInfoStep(data)];
-    const structureErrors = validateStructurePhase(data);
-    const designErrors = validateDesignPhase(data);
-
-    return {
-      planning: planningErrors,
-      structure: structureErrors,
-      design: designErrors,
-    } satisfies Record<BuilderPhaseId, string[]>;
+    return getWebsiteBuilderPhaseStates(data);
   }, [data]);
 
-  const phaseMetadata = [
-    {
-      id: "planning" as const,
-      label: "Phase 1",
-      title: "Plan",
-      cardDescription: "Set pages, names, and website identity.",
-      description:
-        "Set pages, names, and website identity before you move into layout and styling.",
-      helper:
-        "Define the website foundation first, then move into build and design decisions.",
-    },
-    {
-      id: "structure" as const,
-      label: "Phase 2",
-      title: "Build",
-      cardDescription: "Create the page structure and layout.",
-      description:
-        "Create the page structure and layout for each page before final visual refinement.",
-      helper:
-        "Each page stays independently editable, and layout choices here flow into the generation payload.",
-    },
-    {
-      id: "design" as const,
-      label: "Phase 3",
-      title: "Design",
-      cardDescription: "Refine visuals, typography, and styling.",
-      description:
-        "Refine visuals, typography, and styling across each page, then add broader creative direction if needed.",
-      helper:
-        "Visual settings stay page-specific, and optional content details remain available without cluttering the main flow.",
-    },
-  ];
-
-  const currentPhase = phaseMetadata.find((phase) => phase.id === activePhase) ?? phaseMetadata[0];
+  const currentPhase =
+    WEBSITE_BUILDER_PHASES.find((phase) => phase.id === activePhase) ?? WEBSITE_BUILDER_PHASES[0];
   function runIfEditing<T>(handler: (value: T) => void, value: T) {
     if (!isEditing) {
       return;
@@ -294,50 +308,78 @@ export function GenerationInputPanel({
     );
   }
 
+  function renderActivePhase() {
+    switch (activePhase) {
+      case "structure":
+        return renderStructurePhase();
+      case "design":
+        return renderDesignPhase();
+      case "planning":
+      default:
+        return renderPlanningPhase();
+    }
+  }
+
   return (
-    <section className="generation-panel" aria-labelledby="generation-inputs-title">
+    <section
+      className={`generation-panel${showPhaseNavigator ? "" : " website-builder-workspace"}`}
+      aria-labelledby="generation-inputs-title"
+    >
       <div className="website-builder-panel-header">
-        <h2 id="generation-inputs-title">Builder tools</h2>
-        <p className="wizard-step-description">
-          Move through plan, build, and design on the left. The right panel stays
-          focused on preview, generation state, and next actions.
-        </p>
+        {showPhaseNavigator ? (
+          <>
+            <h2 id="generation-inputs-title">Builder tools</h2>
+            <p className="wizard-step-description">
+              Move through plan, build, and design on the left. The right panel stays focused on preview, generation state, and next actions.
+            </p>
+          </>
+        ) : (
+          <>
+            <span className="website-builder-workspace-eyebrow">Active builder workspace</span>
+            <h2 id="generation-inputs-title">{currentPhase.title}</h2>
+            <p className="wizard-step-description">
+              Work through the selected phase here. Your review, generation status, and next actions stay in the preview rail.
+            </p>
+          </>
+        )}
       </div>
 
-      <nav className="website-builder-phase-stepper" aria-label="Website builder phases">
-        {phaseMetadata.map((phase, index) => {
-          const isActive = phase.id === activePhase;
-          const phaseErrors = phaseStates[phase.id];
-          const isComplete = phaseErrors.length === 0;
-          const stateLabel = getPhaseStateLabel(isActive, phaseErrors);
-          const stateTone = getPhaseStateTone(isActive, phaseErrors);
-          const phaseSummaryId = `website-builder-phase-${phase.id}-summary`;
+      {showPhaseNavigator ? (
+        <nav className="website-builder-phase-stepper" aria-label="Website builder phases">
+          {WEBSITE_BUILDER_PHASES.map((phase, index) => {
+            const isActive = phase.id === activePhase;
+            const phaseErrors = phaseStates[phase.id];
+            const isComplete = phaseErrors.length === 0;
+            const stateLabel = getPhaseStateLabel(isActive, phaseErrors);
+            const stateTone = getPhaseStateTone(isActive, phaseErrors);
+            const phaseSummaryId = `website-builder-phase-${phase.id}-summary`;
 
-          return (
-            <button
-              key={phase.id}
-              type="button"
-              className={`website-builder-phase-step${isActive ? " is-active" : ""}${isComplete ? " is-complete" : ""}`}
-              data-state={stateTone}
-              onClick={() => setActivePhase(phase.id)}
-              aria-pressed={isActive}
-              aria-current={isActive ? "step" : undefined}
-              aria-describedby={phaseSummaryId}
-            >
-              <span className="website-builder-phase-step-index">{index + 1}</span>
-              <span className="website-builder-phase-step-content">
-                <span className="website-builder-phase-step-eyebrow">{phase.label}</span>
-                <strong>{phase.title}</strong>
-                <span className="website-builder-phase-step-description">{phase.cardDescription}</span>
-                <span className="website-builder-phase-step-meta" id={phaseSummaryId}>
-                  {formatPhaseCardMeta(phaseErrors)}
+            return (
+              <button
+                key={phase.id}
+                type="button"
+                className={`website-builder-phase-step${isActive ? " is-active" : ""}${isComplete ? " is-complete" : ""}`}
+                data-state={stateTone}
+                onClick={() => onPhaseChange?.(phase.id)}
+                aria-pressed={isActive}
+                aria-current={isActive ? "step" : undefined}
+                aria-describedby={phaseSummaryId}
+              >
+                <span className="website-builder-phase-step-index">{index + 1}</span>
+                <span className="website-builder-phase-step-content">
+                  <span className="website-builder-phase-step-eyebrow">{phase.label}</span>
+                  <strong>{phase.title}</strong>
+                  <span className="website-builder-phase-step-description">{phase.cardDescription}</span>
+                  <span className="website-builder-phase-step-meta" id={phaseSummaryId}>
+                    {formatPhaseCardMeta(phaseErrors)}
+                  </span>
                 </span>
-              </span>
-              <span className="website-builder-phase-step-status">{stateLabel}</span>
-            </button>
-          );
-        })}
-      </nav>
+                <span className="website-builder-phase-step-status">{stateLabel}</span>
+              </button>
+            );
+          })}
+        </nav>
+      ) : null}
 
       <section className="wizard-step-panel website-builder-phase-intro" aria-live="polite">
         <div className="website-builder-step-header">
@@ -375,9 +417,7 @@ export function GenerationInputPanel({
         disabled={!isEditing}
         className={`generation-input-fieldset ${!isEditing ? "generation-readonly" : ""}`.trim()}
       >
-        {activePhase === "planning" ? renderPlanningPhase() : null}
-        {activePhase === "structure" ? renderStructurePhase() : null}
-        {activePhase === "design" ? renderDesignPhase() : null}
+        {renderActivePhase()}
       </fieldset>
     </section>
   );
