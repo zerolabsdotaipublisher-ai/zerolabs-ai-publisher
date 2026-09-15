@@ -73,8 +73,10 @@ export function EditorSectionSelector({
                 type="button"
                 className={selectedSectionId === section.id ? "is-active" : undefined}
                 onClick={() => onSelect(section.id)}
+                aria-current={selectedSectionId === section.id ? "true" : undefined}
               >
-                {section.type} #{section.order}
+                <span className="editor-section-type">{section.type}</span>
+                <span className="editor-section-order">Section {section.order}</span>
               </button>
               <div className="editor-inline-actions">
                 <button type="button" onClick={() => onMoveUp(section.id)} aria-label={`Move ${section.type} up`}>
