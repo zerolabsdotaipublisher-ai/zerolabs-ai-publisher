@@ -1,6 +1,7 @@
 import "server-only";
 
 import { routes } from "@/config/routes";
+import { getInsightsSnapshot } from "@/lib/insights/storage";
 import type { WebsiteManagementRecord } from "@/lib/management";
 import { logger } from "@/lib/observability";
 import { toPublishingStatusLabel, type PublishingStatusUiState } from "@/lib/publish/status";
@@ -58,10 +59,6 @@ interface ProjectDesignConfigPreview {
   thumbnailAccentColor?: string;
   thumbnailSurfaceColor?: string;
 }
-
-type CountFilter =
-  | { type: "eq"; column: string; value: string }
-  | { type: "in"; column: string; value: string[] };
 
 function readString(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
@@ -144,132 +141,25 @@ function isMissingSchemaError(error: {
   );
 }
 
-async function listIdsForUser(table: string, userId: string): Promise<string[] | null> {
-  const supabase = getSupabaseServiceClient();
-  const { data, error } = await supabase
-    .from(table)
-    .select("id")
-    .eq("user_id", userId);
-
-  if (error) {
-    if (isMissingSchemaError(error)) {
-      return null;
-    }
-
-    throw error;
-  }
-
-  return (data ?? [])
-    .map((row) => readString((row as { id?: unknown }).id))
-    .filter((value): value is string => Boolean(value));
-}
-
-async function listIdsForFirstAvailableTable(tables: string[], userId: string): Promise<string[] | null> {
-  for (const table of tables) {
-    const ids = await listIdsForUser(table, userId);
-    if (ids !== null) {
-      return ids;
-    }
-  }
-
-  return null;
-}
-
-async function countRows(table: string, filters: CountFilter[] = []): Promise<number | null> {
-  const supabase = getSupabaseServiceClient();
-  let query = supabase.from(table).select("id", { count: "exact", head: true });
-
-  for (const filter of filters) {
-    query =
-      filter.type === "eq"
-        ? query.eq(filter.column, filter.value)
-        : query.in(filter.column, filter.value);
-  }
-
-  const { count, error } = await query;
-  if (error) {
-    if (isMissingSchemaError(error)) {
-      return null;
-    }
-
-    throw error;
-  }
-
-  return typeof count === "number" ? count : 0;
-}
-
-async function countFirstAvailableTable(tables: string[], filters: CountFilter[] = []): Promise<number | null> {
-  for (const table of tables) {
-    const count = await countRows(table, filters);
-    if (count !== null) {
-      return count;
-    }
-  }
-
-  return null;
-}
-
-function createOwnedIdFilter(column: string, values: string[]): CountFilter {
-  if (values.length > 0) {
-    return {
-      type: "in",
-      column,
-      value: values,
-    };
-  }
-
-  return {
-    type: "eq",
-    column,
-    value: "__none__",
-  };
-}
-
-function sumAvailableCounts(...values: Array<number | null>): number | null {
-  const availableValues = values.filter((value): value is number => typeof value === "number");
-  if (availableValues.length === 0) {
+function sumConfiguredCounts(...values: Array<number | null>): number | null {
+  const configuredValues = values.filter((value): value is number => typeof value === "number");
+  if (configuredValues.length !== values.length) {
     return null;
   }
 
-  return availableValues.reduce((total, value) => total + value, 0);
+  return configuredValues.reduce((total, value) => total + value, 0);
 }
 
 async function loadDashboardEngagementMetrics(
   userId: string,
 ): Promise<Pick<DashboardSummary["metrics"], "totalViews" | "totalHearts">> {
   try {
-    const [ownedWebsiteIds, ownedFeedPostIds] = await Promise.all([
-      listIdsForUser("website_structures", userId),
-      listIdsForFirstAvailableTable(["community_posts", "feed_posts"], userId),
-    ]);
-
-    const websiteViewsPromise = ownedWebsiteIds
-      ? countRows("website_view_events", [createOwnedIdFilter("website_id", ownedWebsiteIds)])
-      : Promise.resolve(null);
-    const profileViewsPromise = countRows("profile_view_events", [{ type: "eq", column: "profile_user_id", value: userId }]);
-    const websiteHeartsPromise = ownedWebsiteIds
-      ? countRows("website_reactions", [
-          createOwnedIdFilter("website_id", ownedWebsiteIds),
-          { type: "eq", column: "reaction_type", value: "heart" },
-        ])
-      : Promise.resolve(null);
-    const postHeartsPromise = ownedFeedPostIds
-      ? countFirstAvailableTable(["community_post_reactions", "feed_post_reactions"], [
-          createOwnedIdFilter("post_id", ownedFeedPostIds),
-          { type: "eq", column: "reaction_type", value: "heart" },
-        ])
-      : Promise.resolve(null);
-
-    const [websiteViews, profileViews, websiteHearts, postHearts] = await Promise.all([
-      websiteViewsPromise,
-      profileViewsPromise,
-      websiteHeartsPromise,
-      postHeartsPromise,
-    ]);
+    const insights = await getInsightsSnapshot(userId);
+    const metrics = new Map(insights.metrics.map((metric) => [metric.id, metric.value]));
 
     return {
-      totalViews: sumAvailableCounts(websiteViews, profileViews),
-      totalHearts: sumAvailableCounts(websiteHearts, postHearts),
+      totalViews: sumConfiguredCounts(metrics.get("website-views") ?? null, metrics.get("profile-views") ?? null),
+      totalHearts: sumConfiguredCounts(metrics.get("website-hearts") ?? null, metrics.get("post-hearts") ?? null),
     };
   } catch (error) {
     logger.info("Dashboard is continuing without optional engagement metrics", {

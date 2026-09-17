@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { DashboardMetricCard } from "@/components/dashboard/dashboard-metric-card";
 import { DashboardWebsiteSummarySection } from "@/components/dashboard/dashboard-website-summary";
 import { routes } from "@/config/routes";
+import { formatDashboardAnalyticsMetric, getDashboardAnalyticsMetricHint } from "@/lib/dashboard/metrics";
 import type { DashboardSummary, DashboardWebsiteSummary } from "@/lib/dashboard/types";
 import type { WebsiteLifecycleStatus, WebsiteListPage, WebsiteManagementRecord } from "@/lib/management/types";
 
@@ -32,14 +33,6 @@ function formatTimestamp(value?: string): string | null {
 
   const timestamp = new Date(value);
   return Number.isNaN(timestamp.getTime()) ? null : timestamp.toLocaleString();
-}
-
-function formatDashboardMetric(value: number | null | undefined): number | string {
-  return typeof value === "number" ? value : "Not configured";
-}
-
-function getDashboardMetricHint(value: number | null | undefined, configuredHint: string): string {
-  return typeof value === "number" ? configuredHint : "Analytics not configured yet";
 }
 
 function isDraftWebsiteStatus(status: WebsiteLifecycleStatus): boolean {
@@ -191,13 +184,13 @@ export function DashboardHome({
         />
         <DashboardMetricCard
           label="Total views"
-          value={formatDashboardMetric(summary?.metrics.totalViews)}
-          hint={getDashboardMetricHint(summary?.metrics.totalViews, "Website and profile views from configured analytics tables")}
+          value={formatDashboardAnalyticsMetric(summary?.metrics.totalViews)}
+          hint={getDashboardAnalyticsMetricHint(summary?.metrics.totalViews, "Website and profile views")}
         />
         <DashboardMetricCard
           label="Total hearts"
-          value={formatDashboardMetric(summary?.metrics.totalHearts)}
-          hint={getDashboardMetricHint(summary?.metrics.totalHearts, "Website and feed hearts from configured reaction tables")}
+          value={formatDashboardAnalyticsMetric(summary?.metrics.totalHearts)}
+          hint={getDashboardAnalyticsMetricHint(summary?.metrics.totalHearts, "Website and Feed hearts")}
         />
       </div>
 
