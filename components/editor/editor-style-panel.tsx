@@ -37,6 +37,7 @@ export function EditorStylePanel({
   return (
     <section className="editor-panel">
       <h3>Style and theme</h3>
+      <p className="editor-panel-description">Update the generated website&apos;s existing visual direction and layout settings.</p>
       <div className="editor-panel-fields">
         <label>
           <span>Tone</span>
@@ -82,6 +83,10 @@ export function EditorStylePanel({
             <option value="dark">dark</option>
           </select>
         </label>
+      </div>
+      <div className="editor-planned-style-note">
+        <strong>Theme tokens planned</strong>
+        <p>Color palettes, typography, button treatments, container shapes, and spacing scales are not persisted controls yet.</p>
       </div>
     </section>
   );

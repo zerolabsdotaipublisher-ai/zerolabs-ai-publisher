@@ -8,22 +8,28 @@ interface EditorPageSelectorProps {
 
 export function EditorPageSelector({ pages, selectedPageId, onSelect }: EditorPageSelectorProps) {
   return (
-    <fieldset className="editor-control-group">
-      <legend>Page</legend>
-      <select
-        value={selectedPageId}
-        onChange={(event) => onSelect(event.target.value)}
-        aria-label="Select page"
-      >
+    <section className="editor-page-selector" aria-label="Pages">
+      <div className="editor-page-selector-header">
+        <h3>Pages</h3>
+        <span>{pages.length}</span>
+      </div>
+      <div className="editor-page-list">
         {pages
           .slice()
           .sort((left, right) => left.order - right.order)
           .map((page) => (
-            <option key={page.id} value={page.id}>
-              {page.title} ({page.slug})
-            </option>
+            <button
+              key={page.id}
+              type="button"
+              className={selectedPageId === page.id ? "is-active" : undefined}
+              aria-pressed={selectedPageId === page.id}
+              onClick={() => onSelect(page.id)}
+            >
+              <span>{page.title}</span>
+              <small>{page.slug}</small>
+            </button>
           ))}
-      </select>
-    </fieldset>
+      </div>
+    </section>
   );
 }
