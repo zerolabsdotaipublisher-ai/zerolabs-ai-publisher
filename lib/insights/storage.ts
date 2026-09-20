@@ -67,12 +67,22 @@ function lastSevenDays(): Array<{ date: string; label: string }> {
   });
 }
 
-async function countOwnerRows(table: string, ownerUserId: string): Promise<QueryResult<number>> {
+async function countOwnerRows(
+  table: string,
+  ownerUserId: string,
+  filters: Array<{ column: string; value: string }> = [],
+): Promise<QueryResult<number>> {
   const supabase = await getSupabaseServerClient();
-  const { count, error } = await supabase
+  let query = supabase
     .from(table)
     .select("id", { count: "exact", head: true })
     .eq("owner_user_id", ownerUserId);
+
+  for (const filter of filters) {
+    query = query.eq(filter.column, filter.value);
+  }
+
+  const { count, error } = await query;
 
   if (error) {
     return { value: null, missingTables: toMissingTables(table, error) };
@@ -212,7 +222,7 @@ export async function getInsightsSnapshot(ownerUserId: string): Promise<Insights
     postIds.value === null
       ? Promise.resolve({ value: null, missingTables: postIds.missingTables } satisfies QueryResult<number>)
       : countRowsForPosts("community_post_shares", postIds.value),
-    countOwnerRows("website_reactions", ownerUserId),
+    countOwnerRows("website_reactions", ownerUserId, [{ column: "reaction_type", value: "heart" }]),
     countOwnerRows("website_shares", ownerUserId),
     listOwnerEventsByDay("website_view_events", ownerUserId, startDate),
     listOwnerEventsByDay("profile_view_events", ownerUserId, startDate),

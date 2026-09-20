@@ -1,5 +1,19 @@
 import type { DashboardMetricSummary, DashboardStorageSnapshot, DashboardWebsiteSummary } from "./types";
 
+const DASHBOARD_ANALYTICS_UNAVAILABLE_LABEL = "Setup required";
+const DASHBOARD_ANALYTICS_UNAVAILABLE_HINT = "Analytics source unavailable";
+
+export function formatDashboardAnalyticsMetric(value: number | null | undefined): number | string {
+  return typeof value === "number" ? value : DASHBOARD_ANALYTICS_UNAVAILABLE_LABEL;
+}
+
+export function getDashboardAnalyticsMetricHint(
+  value: number | null | undefined,
+  configuredHint: string,
+): string {
+  return typeof value === "number" ? configuredHint : DASHBOARD_ANALYTICS_UNAVAILABLE_HINT;
+}
+
 export function buildDashboardMetrics(
   snapshot: DashboardStorageSnapshot,
   websiteSummary: Pick<DashboardWebsiteSummary, "total" | "draft" | "published" | "storedPages" | "storedVersions">,
