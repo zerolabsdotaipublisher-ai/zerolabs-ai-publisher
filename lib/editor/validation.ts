@@ -1,6 +1,7 @@
 import { validateWebsiteStructure } from "@/lib/ai/structure/schemas";
 import type { WebsiteSection, WebsiteStructure } from "@/lib/ai/structure";
 import { isReservedRoutePath, isValidRoutePath } from "@/lib/routing";
+import { isContentLinkField, isSafeContentLink } from "./content-links";
 import type { EditorValidationError } from "./types";
 
 function ensureSlugValidation(structure: WebsiteStructure, errors: EditorValidationError[]): void {
@@ -32,6 +33,8 @@ function ensureSlugValidation(structure: WebsiteStructure, errors: EditorValidat
 }
 
 function ensureSectionValidation(section: WebsiteSection, path: string, errors: EditorValidationError[]): void {
+  validateSectionContentLinks(section.content, `${path}.content`, errors);
+
   if (!section.visible) {
     return;
   }
@@ -60,6 +63,30 @@ function ensureSectionValidation(section: WebsiteSection, path: string, errors: 
     errors.push({
       field: `${path}.content`,
       message: "Visible sections must contain at least one non-empty content field.",
+    });
+  }
+
+}
+
+function validateSectionContentLinks(value: unknown, path: string, errors: EditorValidationError[]): void {
+  if (typeof value === "string") {
+    if (isContentLinkField(path) && !isSafeContentLink(value)) {
+      errors.push({
+        field: path,
+        message: "Links cannot use javascript:, vbscript:, or data: URLs.",
+      });
+    }
+    return;
+  }
+
+  if (Array.isArray(value)) {
+    value.forEach((entry, index) => validateSectionContentLinks(entry, `${path}.${index}`, errors));
+    return;
+  }
+
+  if (value && typeof value === "object") {
+    Object.entries(value).forEach(([key, entry]) => {
+      validateSectionContentLinks(entry, `${path}.${key}`, errors);
     });
   }
 }

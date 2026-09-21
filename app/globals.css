@@ -14313,7 +14313,7 @@ body .feed-shell > :last-child {
 .editor-layout {
   display: grid;
   grid-template-areas: "structure canvas actions";
-  grid-template-columns: clamp(16.25rem, 20vw, 20rem) minmax(34rem, 1fr) clamp(20rem, 24vw, 23.75rem);
+  grid-template-columns: clamp(16.25rem, 20vw, 20rem) minmax(34rem, 1fr) clamp(21.25rem, 25vw, 25rem);
   align-items: start;
   gap: clamp(0.85rem, 1.5vw, 1.25rem);
 }
@@ -14883,7 +14883,7 @@ body .feed-shell > :last-child {
 }
 
 .editor-actions-rail {
-  gap: 0.78rem;
+  gap: 1rem;
 }
 
 .editor-action-panel {
@@ -14901,6 +14901,148 @@ body .feed-shell > :last-child {
   font-size: 0.92rem;
   font-weight: 760;
   line-height: 1.25;
+}
+
+.editor-content-panel {
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.editor-content-panel-description {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.editor-content-group {
+  display: grid;
+  gap: 0.78rem;
+  margin: 0;
+  padding-top: 1rem;
+  border-top: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+}
+
+.editor-content-group[data-editor-content-group="buttons"] {
+  padding: 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border));
+  border-radius: 0.82rem;
+  background: color-mix(in srgb, var(--accent) 5%, var(--surface-elevated));
+}
+
+.editor-content-group-heading {
+  display: grid;
+  gap: 0.16rem;
+}
+
+.editor-content-group h4 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  font-weight: 760;
+  line-height: 1.3;
+}
+
+.editor-content-group-heading p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.editor-content-group-fields {
+  display: grid;
+  gap: 0.82rem;
+}
+
+.editor-content-group-field,
+.editor-content-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.editor-content-field {
+  padding: 0.78rem;
+  border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  border-radius: 0.78rem;
+  background: color-mix(in srgb, var(--surface-elevated) 64%, transparent);
+}
+
+.editor-content-field label {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  color: var(--text-secondary);
+  font-size: 0.73rem;
+  font-weight: 720;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.editor-content-field input,
+.editor-content-field textarea {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 0.62rem;
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.79rem;
+  line-height: 1.5;
+}
+
+.editor-content-field input {
+  min-height: 2.6rem;
+  padding: 0.5rem 0.62rem;
+}
+
+.editor-content-field textarea {
+  min-height: 6.25rem;
+  padding: 0.62rem;
+  resize: vertical;
+}
+
+.editor-content-field.is-long-form textarea {
+  min-height: 7.25rem;
+}
+
+.editor-content-field input:focus-visible,
+.editor-content-field textarea:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 58%, transparent);
+  outline-offset: 1px;
+  border-color: color-mix(in srgb, var(--accent) 56%, var(--border));
+}
+
+.editor-content-list-item {
+  color: var(--accent);
+  font-size: 0.65rem;
+  font-weight: 780;
+  letter-spacing: 0.07em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.editor-content-field-error {
+  margin: 0;
+  color: var(--error-text);
+  font-size: 0.71rem;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.editor-actions-rail .editor-media-select-button {
+  justify-self: start;
+  min-height: 2.12rem;
+  padding: 0.34rem 0.54rem;
+  font-size: 0.72rem;
 }
 
 .editor-action-panel > p,
