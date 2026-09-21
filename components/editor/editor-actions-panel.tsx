@@ -6,14 +6,12 @@ import { useState } from "react";
 import { WebsiteDeleteDialog } from "@/components/management/website-delete-dialog";
 import { PublishControls } from "@/components/publish/publish-controls";
 import { routes } from "@/config/routes";
-import type { WebsitePage, WebsiteSection, WebsiteStructure } from "@/lib/ai/structure";
+import type { WebsiteStructure } from "@/lib/ai/structure";
 import type { EditorSaveStatus as SaveStatus } from "@/lib/editor";
 import { EditorSaveStatus } from "./editor-save-status";
 
 interface EditorActionsPanelProps {
   structure: WebsiteStructure;
-  page?: WebsitePage;
-  section?: WebsiteSection;
   saveStatus: SaveStatus;
   saveMessage?: string;
   dirty: boolean;
@@ -40,8 +38,6 @@ function formatTimestamp(value?: string): string | undefined {
 
 export function EditorActionsPanel({
   structure,
-  page,
-  section,
   saveStatus,
   saveMessage,
   dirty,
@@ -112,16 +108,6 @@ export function EditorActionsPanel({
 
   return (
     <>
-      <section className="editor-action-panel editor-selection-summary" aria-label="Selected content">
-        <span className="editor-panel-eyebrow">Selected content</span>
-        <h2>{section ? `${section.type} section` : "Choose a section"}</h2>
-        <p>
-          {section
-            ? `Section ${section.order} on ${page?.title || "this page"}. Click supported copy in the canvas to edit it.`
-            : "Choose a section in the left panel or preview to edit its content in place."}
-        </p>
-      </section>
-
       <section className="editor-action-panel editor-draft-actions" aria-label="Draft actions">
         <div className="editor-action-panel-header">
           <div>

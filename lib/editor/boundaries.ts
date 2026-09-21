@@ -2,6 +2,13 @@ import type { WebsiteSection, WebsiteStructure } from "@/lib/ai/structure";
 import { getValueByPath } from "./mapping";
 import type { EditableBoundaryDefinition, EditableTextField, WebsiteEditorDraft } from "./types";
 
+const NON_EDITABLE_CONTENT_FIELD_NAMES = new Set([
+  "id",
+  "kind",
+  "updatedat",
+  "variant",
+]);
+
 export const editorBoundaries: EditableBoundaryDefinition = {
   editable: [
     "siteTitle",
@@ -75,9 +82,39 @@ function collectStringLeafPaths(value: unknown, prefix: string): string[] {
   return [];
 }
 
+function isEditableContentPath(path: string): boolean {
+  const fieldName = path.split(".").at(-1)?.toLowerCase();
+  return !fieldName || !NON_EDITABLE_CONTENT_FIELD_NAMES.has(fieldName);
+}
+
+function getRendererSupportedLinkFields(section: WebsiteSection): EditableTextField[] {
+  const content = section.content;
+  const hasStringValue = (key: string): boolean => typeof content[key] === "string";
+  const optionalPaths: string[] = [];
+
+  if (section.type === "hero" && hasStringValue("primaryCta")) {
+    optionalPaths.push("content.ctaHref");
+  }
+
+  if (section.type === "cta") {
+    if (hasStringValue("ctaText")) {
+      optionalPaths.push("content.ctaHref");
+    }
+    if (hasStringValue("secondaryCtaText")) {
+      optionalPaths.push("content.secondaryCtaHref");
+    }
+  }
+
+  return optionalPaths.map((path) => ({
+    path,
+    label: toHumanLabel(path.replace(/^content\./, "")),
+    value: typeof getValueByPath(section, path) === "string" ? (getValueByPath(section, path) as string) : "",
+  }));
+}
+
 export function getEditableSectionTextFields(section: WebsiteSection): EditableTextField[] {
-  const paths = collectStringLeafPaths(section.content, "content");
-  return paths
+  const fields = collectStringLeafPaths(section.content, "content")
+    .filter(isEditableContentPath)
     .map((path) => {
       const value = getValueByPath(section, path);
       if (typeof value !== "string") {
@@ -90,4 +127,7 @@ export function getEditableSectionTextFields(section: WebsiteSection): EditableT
       } satisfies EditableTextField;
     })
     .filter((field): field is EditableTextField => Boolean(field));
+
+  const knownPaths = new Set(fields.map((field) => field.path));
+  return [...fields, ...getRendererSupportedLinkFields(section).filter((field) => !knownPaths.has(field.path))];
 }

@@ -56,6 +56,8 @@ export interface EditorSaveResponse {
   structure?: WebsiteStructure;
   error?: string;
   validationErrors?: EditorValidationError[];
+  failureStage?: "structure" | "navigation" | "seo";
+  diagnostic?: string;
 }
 
 export interface EditorRequirementsSummary {

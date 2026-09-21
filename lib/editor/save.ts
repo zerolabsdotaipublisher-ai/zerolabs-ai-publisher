@@ -16,6 +16,8 @@ async function postEditorAction<T>(url: string, payload: T): Promise<EditorSaveR
       ok: false,
       error: body.error || "Request failed",
       validationErrors: body.validationErrors,
+      failureStage: body.failureStage,
+      diagnostic: body.diagnostic,
     };
   }
 
@@ -23,6 +25,8 @@ async function postEditorAction<T>(url: string, payload: T): Promise<EditorSaveR
     ok: true,
     structure: body.structure,
     validationErrors: body.validationErrors,
+    failureStage: body.failureStage,
+    diagnostic: body.diagnostic,
   };
 }
 
