@@ -1,6 +1,7 @@
-import type { WebsiteStructure } from "@/lib/ai/structure";
-import { validateWebsiteStructure } from "@/lib/ai/structure";
-import { buildPublicationFingerprint, type PublicationStructureFingerprint } from "@/lib/publish";
+import type { WebsiteStructure } from "@/lib/ai/structure/types";
+import { validateWebsiteStructure } from "@/lib/ai/structure/schemas";
+import { buildPublicationFingerprint } from "@/lib/publish/versioning";
+import type { PublicationStructureFingerprint } from "@/lib/publish/types";
 import type {
   WebsiteVersionArticleSummary,
   WebsiteVersionBlogSummary,
@@ -148,15 +149,6 @@ export function createWebsiteVersionSnapshot(structure: WebsiteStructure): Websi
   };
 }
 
-export function assertWebsiteVersionSnapshot(snapshot: WebsiteVersionSnapshot): WebsiteStructure {
-  if (snapshot.schemaVersion !== 1) {
-    throw new Error(`Unsupported website version snapshot schema: ${snapshot.schemaVersion}`);
-  }
-
-  const validationErrors = validateWebsiteStructure(snapshot.structure);
-  if (validationErrors.length > 0) {
-    throw new Error(`Stored website version snapshot is invalid: ${validationErrors.join("; ")}`);
-  }
-
-  return snapshot.structure;
-}
+export {
+  assertWebsiteVersionSnapshot,
+} from "./snapshot-contract";

@@ -15506,3 +15506,104 @@ html[data-theme="dark"] .editor-canvas-stage {
     font-size: 0.61rem;
   }
 }
+
+/*
+ * Canonical EditorDocument renderer tokens. These selectors are isolated from
+ * the active WebsiteStructure renderer until a later explicit cutover.
+ */
+.gs-document-width-narrow {
+  max-inline-size: 42rem;
+  margin-inline: auto;
+}
+
+.gs-document-width-content {
+  max-inline-size: 70rem;
+  margin-inline: auto;
+}
+
+.gs-document-width-wide {
+  max-inline-size: 88rem;
+  margin-inline: auto;
+}
+
+.gs-document-width-full {
+  inline-size: 100%;
+}
+
+.gs-document-align-center {
+  text-align: center;
+}
+
+.gs-document-align-balanced {
+  text-align: center;
+  text-wrap: balance;
+}
+
+.gs-document-container-card {
+  border: 1px solid var(--marketing-card-border);
+  border-radius: 1rem;
+  padding: 1.5rem;
+}
+
+.gs-document-container-emphasis {
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
+  border-radius: 1rem;
+  padding: 1.5rem;
+}
+
+.gs-document-spacing-compact {
+  padding-block: 0.75rem;
+}
+
+.gs-document-spacing-comfortable {
+  padding-block: 1.5rem;
+}
+
+.gs-document-spacing-spacious {
+  padding-block: 2.5rem;
+}
+
+.gs-document-columns {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.gs-document-columns-1 {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.gs-document-columns-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.gs-document-columns-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.gs-document-theme-dark {
+  background: var(--foreground);
+  color: var(--background);
+}
+
+@media (min-width: 1025px) {
+  .gs-document-hidden-desktop {
+    display: none !important;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  .gs-document-hidden-tablet {
+    display: none !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .gs-document-hidden-mobile {
+    display: none !important;
+  }
+
+  .gs-document-columns-2,
+  .gs-document-columns-3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

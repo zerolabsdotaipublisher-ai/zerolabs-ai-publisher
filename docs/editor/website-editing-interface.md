@@ -3,7 +3,7 @@
 ## Purpose and scope
 
 The editor is the Layer 1 product-owned editing interface for generated websites.  
-It extends existing generation + preview + storage systems and does **not** introduce a second website model or renderer.
+Its active production path extends existing generation + preview + storage systems and does **not yet** introduce a second website model or renderer.
 
 ## MVP editable requirements
 
@@ -54,6 +54,118 @@ Defined in `lib/editor/boundaries.ts`:
    - `storeWebsiteNavigation`
    - `storeWebsiteSeoMetadata`
 4. Save status and errors are surfaced in editor toolbar/error panel
+
+## Canonical document foundation (Slice 1)
+
+`lib/editor/document/` now defines the versioned, canonical editor-document
+contract planned for the next editor phase. It models stable page and node IDs,
+ordered slots, typed responsive visibility and style tokens, SEO, media asset
+references, global header/footer components, reusable symbols, and navigation
+targets that reference page or node IDs rather than only URL strings.
+
+The Slice 1 adapter, `adaptWebsiteStructureToEditorDocument`, is deliberately
+read-only. It converts an existing `WebsiteStructure` into an
+`EditorDocument` deterministically, without database writes, input mutation,
+render normalization, or synthetic marketing sections. Hidden sections remain
+hidden; legacy or unsupported section types remain explicit `legacy.*` nodes
+with their safe JSON content preserved.
+
+This document is **not yet used** by the current production renderer, Save
+Draft route, or Supabase persistence. `WebsiteStructure` remains the active
+production model. Existing generated websites therefore continue to render
+through the current compatibility path.
+
+Structural validation in `lib/editor/document/validation.ts` verifies schema
+version, stable references, tree cycles, navigation references, visibility,
+and supported style-token shapes.
+
+## Component registry and isolated document renderer (Slice 2)
+
+`lib/editor/registry/` defines the data-only component registry used by the
+canonical document path. Every registered component declares its stable type
+and version, label/category, permitted parents and ordered slots, child limits,
+default props, typed prop schema, generic property-inspector metadata, renderer
+binding, supported style tokens, and visibility capability. The property
+metadata includes labels, help text, controls, groups, options, defaults,
+validation rules, conditional visibility, inline-editability, reset behavior,
+and inherited/global intent. It contains no executable document callbacks and
+does not permit raw CSS values.
+
+The initial coverage includes page/section/container/columns layout; heading,
+paragraph, button, list, and card content; image media; global header/footer;
+and the generated marketing section families: hero, about, services, features,
+benefits, testimonials, FAQ, pricing, CTA, contact, and footer. Existing
+unknown sections and components use explicit `legacy.section.*` or
+`legacy.component.*` exception paths. They remain safe JSON data and render
+through a compatibility fallback rather than being dropped.
+
+`validateEditorDocument` now includes registry validation by default. It
+returns structured issues with a document path and, when applicable, a node
+ID. Validation rejects unregistered current types, invalid slot containment or
+cardinality, invalid typed props/link targets, unsupported style tokens, and
+missing asset or reusable-symbol references. Legacy exception nodes are only
+accepted when they carry explicit legacy metadata and kind.
+
+`components/generated-site/document-renderer.tsx` is an isolated,
+registry-backed renderer for `EditorDocument`. It recursively renders ordered
+slots, globals, typed navigation, supported media, visibility, and tokenized
+styles. It reuses the established section views for compatible generated
+section payloads and uses a text-only, escaped fallback for unknown legacy
+content. Links are restricted to safe internal, fragment, HTTP(S), mailto, or
+tel destinations; document props are never spread onto DOM attributes and no
+raw HTML or raw CSS is rendered.
+
+This renderer is covered by unit/parity tests but is deliberately **not
+imported by the active WebsiteStructure renderer, editor canvas, routes, or
+persistence path**. Slice 2 changes no production rendering or persistence
+behavior. Atomic canonical-document persistence remains a later reviewed
+slice.
+
+## Canonical persistence projections (Slice 3A)
+
+`EditorDocument` is the planned source of truth for editor-owned website
+content. `WebsiteStructure` remains the active production compatibility format
+for the current renderer, routes, Save Draft API, and database writes.
+
+`lib/editor/document/projection.ts` now provides pure, deterministic,
+read-only projections for the future persistence boundary:
+
+```text
+EditorDocument
+→ WebsiteStructure compatibility representation
+→ WebsiteNavigation artifact
+→ Website SEO package and metadata-row artifacts
+→ version snapshot v2
+```
+
+The reverse projection accepts explicitly supplied, trusted server state for
+ownership, lifecycle/publication state, generation input, semantic version,
+timestamps, and existing compatibility metadata. It never takes these values
+from the editor document or browser request. It preserves stable legacy IDs,
+page/section order and visibility, routes, page/site SEO, navigation intent,
+supported CTA/component/media content, and existing explicit legacy sections.
+
+During this transition only **projectable** canonical documents may be saved:
+
+- adapter-derived marketing sections and legacy sections/components with stable
+  source IDs are compatible;
+- typed page/node navigation resolves current page paths and stable legacy
+  anchors; safe unresolved legacy links are retained;
+- generic nested containers, columns, symbols, custom navigation locations,
+  responsive-only visibility, independent component visibility, raw generic
+  styling, and global overrides not represented by `WebsiteStructure` return
+  structured projectability errors rather than being flattened or dropped.
+
+The future Save Draft contract is defined in
+`lib/editor/persistence-contract.ts`, including optimistic-revision conflicts
+(`409`) and validation/projectability failures (`422`). Snapshot schema v2
+stores both the canonical document and the compatibility structure; schema v1
+snapshots remain readable through the version snapshot contract.
+
+Slice 3A is intentionally not connected to `POST /api/editor/save`, Supabase,
+or the active renderer. It creates no migration and changes no production
+persistence behavior. The atomic RPC, revision column, database transaction,
+and feature-flagged route cutover remain later approved work.
 
 ## Regenerate vs edit workflow
 
