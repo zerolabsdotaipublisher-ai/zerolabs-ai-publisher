@@ -11,3 +11,4 @@ export * from "./save";
 export * from "./preview-sync";
 export * from "./dirty";
 export * from "./scenarios";
+export * from "./persistence-contract";

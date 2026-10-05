@@ -1,4 +1,16 @@
 export { adaptWebsiteStructureToEditorDocument } from "./adapter";
+export {
+  getEditorDocumentProjectabilityIssues,
+  projectEditorDocumentNavigation,
+  projectEditorDocumentSeo,
+  projectEditorDocumentToWebsiteStructure,
+  trustedWebsiteStructureState,
+  type EditorProjectionIssue,
+  type EditorProjectionIssueCode,
+  type EditorProjectionResult,
+  type TrustedWebsiteStructureState,
+  type WebsiteSeoArtifactProjection,
+} from "./projection";
 export { validateEditorDocument } from "./validation";
 export { validateEditorDocumentRegistry } from "@/lib/editor/registry";
 export {

@@ -121,6 +121,52 @@ persistence path**. Slice 2 changes no production rendering or persistence
 behavior. Atomic canonical-document persistence remains a later reviewed
 slice.
 
+## Canonical persistence projections (Slice 3A)
+
+`EditorDocument` is the planned source of truth for editor-owned website
+content. `WebsiteStructure` remains the active production compatibility format
+for the current renderer, routes, Save Draft API, and database writes.
+
+`lib/editor/document/projection.ts` now provides pure, deterministic,
+read-only projections for the future persistence boundary:
+
+```text
+EditorDocument
+→ WebsiteStructure compatibility representation
+→ WebsiteNavigation artifact
+→ Website SEO package and metadata-row artifacts
+→ version snapshot v2
+```
+
+The reverse projection accepts explicitly supplied, trusted server state for
+ownership, lifecycle/publication state, generation input, semantic version,
+timestamps, and existing compatibility metadata. It never takes these values
+from the editor document or browser request. It preserves stable legacy IDs,
+page/section order and visibility, routes, page/site SEO, navigation intent,
+supported CTA/component/media content, and existing explicit legacy sections.
+
+During this transition only **projectable** canonical documents may be saved:
+
+- adapter-derived marketing sections and legacy sections/components with stable
+  source IDs are compatible;
+- typed page/node navigation resolves current page paths and stable legacy
+  anchors; safe unresolved legacy links are retained;
+- generic nested containers, columns, symbols, custom navigation locations,
+  responsive-only visibility, independent component visibility, raw generic
+  styling, and global overrides not represented by `WebsiteStructure` return
+  structured projectability errors rather than being flattened or dropped.
+
+The future Save Draft contract is defined in
+`lib/editor/persistence-contract.ts`, including optimistic-revision conflicts
+(`409`) and validation/projectability failures (`422`). Snapshot schema v2
+stores both the canonical document and the compatibility structure; schema v1
+snapshots remain readable through the version snapshot contract.
+
+Slice 3A is intentionally not connected to `POST /api/editor/save`, Supabase,
+or the active renderer. It creates no migration and changes no production
+persistence behavior. The atomic RPC, revision column, database transaction,
+and feature-flagged route cutover remain later approved work.
+
 ## Regenerate vs edit workflow
 
 - Generation remains in `/generate` and `/api/ai/*`

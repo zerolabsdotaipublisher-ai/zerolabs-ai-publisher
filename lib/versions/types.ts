@@ -1,4 +1,5 @@
 import type { WebsiteStructure } from "@/lib/ai/structure";
+import type { EditorDocument } from "@/lib/editor/document/types";
 import type {
   PublicationDeploymentMetadata,
   PublicationStructureFingerprint,
@@ -25,13 +26,33 @@ export interface WebsiteVersionArticleSummary {
   qualityStatus?: string;
 }
 
-export interface WebsiteVersionSnapshot {
+/** Historical snapshot format retained for every existing version row. */
+export interface LegacyWebsiteVersionSnapshot {
   schemaVersion: 1;
   capturedAt: string;
   structure: WebsiteStructure;
   blog?: WebsiteVersionBlogSummary;
   article?: WebsiteVersionArticleSummary;
 }
+
+/**
+ * Future atomic editor-save snapshot. `structure` remains so existing version
+ * restore/render paths can read this snapshot without a renderer cutover.
+ */
+export interface CanonicalWebsiteVersionSnapshot {
+  schemaVersion: 2;
+  capturedAt: string;
+  structure: WebsiteStructure;
+  canonicalDocument: EditorDocument;
+  canonicalDocumentSchemaVersion: EditorDocument["schemaVersion"];
+  editorRevision: number;
+  blog?: WebsiteVersionBlogSummary;
+  article?: WebsiteVersionArticleSummary;
+}
+
+export type WebsiteVersionSnapshot =
+  | LegacyWebsiteVersionSnapshot
+  | CanonicalWebsiteVersionSnapshot;
 
 export interface WebsiteVersionSummary {
   pageCount: number;

@@ -134,6 +134,30 @@ The normal unit suite also validates the isolated canonical document boundary:
 These are local render/contract tests only. The document renderer is not the
 production website renderer and does not save to Supabase in this slice.
 
+## Canonical persistence projection coverage (Slice 3A)
+
+The local unit suite now proves the future persistence boundary without a
+database connection:
+
+- deterministic, non-mutating `EditorDocument → WebsiteStructure`
+  compatibility projection;
+- supported `WebsiteStructure → EditorDocument → WebsiteStructure` semantic
+  round trips for pages, sections, hidden/reordered content, CTA/media data,
+  navigation, SEO, and existing legacy sections;
+- explicit projectability failures for canonical layout/visibility/global
+  changes that the active renderer cannot represent;
+- typed navigation resolution after page-route changes, including safe external
+  destinations and menu ordering/visibility;
+- deterministic current SEO package/row projections and supported Open Graph
+  data;
+- version snapshot v2 alongside schema-v1 recognition/read compatibility;
+- future atomic-save HTTP contract mapping for stale revisions (`409`) and
+  validation/projectability failures (`422`).
+
+These tests do not call Supabase and do not alter the active Save Draft route.
+Database rollback/failure-injection tests remain a separate Slice 3B task on
+isolated Supabase infrastructure.
+
 ## Scenario references
 
 - Scenario definitions: `lib/editor/scenarios.ts`
