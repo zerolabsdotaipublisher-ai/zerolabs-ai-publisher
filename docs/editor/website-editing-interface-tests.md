@@ -108,13 +108,16 @@ shared production data.
    - Confirm the pre-request structure, navigation, SEO, and version records
      are identical after the request.
 
-The repository has test folders but no configured executable test runner or
-test command. Automate these scenarios only after selecting a runner and
-provisioning dedicated Supabase test credentials. The current implementation
-validates before the structure write, which protects case 7. Artifact writes
-occur after the structure write, and version snapshots are best-effort, so an
-artifact-storage outage can still leave an updated structure without all
-artifacts; that is a separate atomicity/retry improvement.
+Vitest now automates the local unit-testable contract through `npm test` and
+`npm run test:unit`, including route auth/ownership boundaries, validation
+short-circuiting, projections, version-snapshot inputs, and failure-stage
+behavior. Database integration remains isolated: `npm run test:integration`
+is reserved for a dedicated, non-production Supabase project and never runs
+from the normal test command. The current implementation validates before the
+structure write, which protects case 7. Artifact writes occur after the
+structure write, and version snapshots are best-effort, so an artifact-storage
+outage can still leave an updated structure without all artifacts; that is a
+separate atomicity/retry improvement.
 
 ## Scenario references
 

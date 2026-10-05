@@ -3,7 +3,7 @@
 ## Purpose and scope
 
 The editor is the Layer 1 product-owned editing interface for generated websites.  
-It extends existing generation + preview + storage systems and does **not** introduce a second website model or renderer.
+Its active production path extends existing generation + preview + storage systems and does **not yet** introduce a second website model or renderer.
 
 ## MVP editable requirements
 
@@ -54,6 +54,32 @@ Defined in `lib/editor/boundaries.ts`:
    - `storeWebsiteNavigation`
    - `storeWebsiteSeoMetadata`
 4. Save status and errors are surfaced in editor toolbar/error panel
+
+## Canonical document foundation (Slice 1)
+
+`lib/editor/document/` now defines the versioned, canonical editor-document
+contract planned for the next editor phase. It models stable page and node IDs,
+ordered slots, typed responsive visibility and style tokens, SEO, media asset
+references, global header/footer components, reusable symbols, and navigation
+targets that reference page or node IDs rather than only URL strings.
+
+The Slice 1 adapter, `adaptWebsiteStructureToEditorDocument`, is deliberately
+read-only. It converts an existing `WebsiteStructure` into an
+`EditorDocument` deterministically, without database writes, input mutation,
+render normalization, or synthetic marketing sections. Hidden sections remain
+hidden; legacy or unsupported section types remain explicit `legacy.*` nodes
+with their safe JSON content preserved.
+
+This document is **not yet used** by the current renderer, Save Draft route,
+or Supabase persistence. `WebsiteStructure` remains the active production
+model until a later reviewed slice introduces registry-backed rendering and
+transactional canonical-document persistence. Existing generated websites
+therefore continue to render through the current compatibility path.
+
+Structural validation in `lib/editor/document/validation.ts` verifies schema
+version, stable references, tree cycles, navigation references, visibility,
+and supported style-token shapes. Component registry rules are intentionally
+out of scope until Slice 2.
 
 ## Regenerate vs edit workflow
 

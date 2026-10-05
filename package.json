@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --exclude tests/integration/**",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run tests/integration --passWithNoTests"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1045.0",
@@ -30,6 +33,7 @@
     "eslint-config-next": "16.2.1",
     "postcss": "^8.5.14",
     "tailwindcss": "^4.3.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.11"
   }
 }
