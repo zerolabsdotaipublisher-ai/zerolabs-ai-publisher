@@ -1,4 +1,5 @@
 import type { SectionType, WebsitePage, WebsiteSection, WebsiteStructure } from "@/lib/ai/structure";
+import { getEditableSectionTextFields } from "./boundaries";
 import { reorderById, setValueByPath } from "./mapping";
 
 const REQUIRED_SECTION_TYPES: SectionType[] = ["hero"];
@@ -146,6 +147,11 @@ export function updateSectionVisibility(page: WebsitePage, sectionId: string, vi
 }
 
 export function updateSectionTextValue(section: WebsiteSection, path: string, value: string): WebsiteSection {
+  const isCanonicalEditablePath = getEditableSectionTextFields(section).some((field) => field.path === path);
+  if (!isCanonicalEditablePath) {
+    return section;
+  }
+
   return setValueByPath(section, path, value);
 }
 

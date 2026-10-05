@@ -27,6 +27,7 @@ import { EditorNavigationPanel } from "./editor-navigation-panel";
 import { EditorPageSettingsPanel } from "./editor-page-settings-panel";
 import { EditorSidebar } from "./editor-sidebar";
 import { EditorStylePanel } from "./editor-style-panel";
+import { EditorTextPanel } from "./editor-text-panel";
 import { EditorToolbar } from "./editor-toolbar";
 import { EditorUnsavedWarning } from "./editor-unsaved-warning";
 
@@ -86,7 +87,7 @@ export function WebsiteEditorShell({ initialStructure, previewPath, generatedSit
     if (!response.ok || !response.structure) {
       dispatch({
         type: "set-error",
-        message: response.error || "Failed to save draft.",
+        message: response.diagnostic || response.error || "Failed to save draft.",
       });
       if (response.validationErrors?.length) {
         dispatch({ type: "set-validation-errors", errors: response.validationErrors });
@@ -456,10 +457,18 @@ export function WebsiteEditorShell({ initialStructure, previewPath, generatedSit
         />
 
         <aside className="editor-panels editor-actions-rail" aria-label="Content and publishing actions">
+          <EditorTextPanel
+            websiteId={state.draft.id}
+            pageId={selection.page?.id}
+            section={selection.section}
+            onChange={(path, value) => {
+              if (selection.section) {
+                handleInlineSectionTextChange(selection.section.id, path, value);
+              }
+            }}
+          />
           <EditorActionsPanel
             structure={state.original}
-            page={selection.page}
-            section={selection.section}
             saveStatus={state.saveStatus}
             saveMessage={state.saveMessage}
             dirty={state.dirty}

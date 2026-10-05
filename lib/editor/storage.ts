@@ -2,6 +2,7 @@ import "server-only";
 
 import { config } from "@/config";
 import { storeWebsiteNavigation } from "@/lib/ai/navigation";
+import { generateNavigation } from "@/lib/ai/structure/navigation";
 import { storeWebsiteSeoMetadata } from "@/lib/ai/seo";
 import type { WebsiteSeoPackage } from "@/lib/ai/seo";
 import { getWebsiteStructure, updateWebsiteStructure } from "@/lib/ai/structure";
@@ -14,6 +15,57 @@ import { createWebsiteVersion } from "@/lib/versions/storage";
 import { applySystemManagedBoundaries } from "./boundaries";
 import type { EditorValidationError } from "./types";
 import { validateEditorDraft } from "./validation";
+
+type EditorDraftPersistenceStage = "structure" | "navigation" | "seo";
+
+interface EditorPersistenceErrorDetails {
+  code?: string;
+  message: string;
+}
+
+function getEditorPersistenceErrorDetails(error: unknown): EditorPersistenceErrorDetails {
+  const candidate = error as { code?: unknown; message?: unknown } | null;
+  const code = typeof candidate?.code === "string" ? candidate.code : undefined;
+  const message =
+    error instanceof Error
+      ? error.message
+      : typeof candidate?.message === "string"
+        ? candidate.message
+        : "Unknown persistence error";
+
+  return { code, message };
+}
+
+function developmentDiagnostic(stage: EditorDraftPersistenceStage, error: unknown): string | undefined {
+  if (config.app.environment !== "development") {
+    return undefined;
+  }
+
+  const details = getEditorPersistenceErrorDetails(error);
+  const code = details.code ? ` (${details.code})` : "";
+  return `Draft save failed during ${stage} persistence${code}: ${details.message}`;
+}
+
+/**
+ * Stored structures created before navigation hierarchy support can still have
+ * valid primary/footer navigation but no hierarchy or menus. The navigation
+ * read model requires both JSON columns, so derive only that storage payload
+ * from the current canonical pages without modifying the editor draft.
+ */
+function getNavigationForArtifactPersistence(structure: WebsiteStructure): WebsiteStructure["navigation"] {
+  const navigation = structure.navigation;
+  if (navigation.hierarchy && navigation.menus?.length) {
+    return navigation;
+  }
+
+  const generated = generateNavigation(structure.websiteType, structure.pages, structure.siteTitle);
+  return {
+    ...generated,
+    primary: navigation.primary.length ? navigation.primary : generated.primary,
+    footer: navigation.footer?.length ? navigation.footer : generated.footer,
+    activePath: navigation.activePath ?? generated.activePath,
+  };
+}
 
 function buildCanonicalUrl(baseUrl: string, slug: string): string {
   const normalizedBase = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
@@ -74,16 +126,22 @@ function toSeoPackage(structure: WebsiteStructure): WebsiteSeoPackage {
   };
 }
 
-export async function persistWebsiteStructureArtifacts(structure: WebsiteStructure, userId: string): Promise<void> {
+export async function persistWebsiteStructureArtifacts(
+  structure: WebsiteStructure,
+  userId: string,
+  onStage?: (stage: Exclude<EditorDraftPersistenceStage, "structure">) => void,
+): Promise<void> {
+  onStage?.("navigation");
   await storeWebsiteNavigation({
     structureId: structure.id,
     userId,
-    navigation: structure.navigation,
+    navigation: getNavigationForArtifactPersistence(structure),
     version: structure.version,
     createdAt: structure.generatedAt,
     updatedAt: structure.updatedAt,
   });
 
+  onStage?.("seo");
   await storeWebsiteSeoMetadata(toSeoPackage(structure));
 }
 
@@ -101,6 +159,8 @@ export interface SaveEditorStructureResult {
   validationErrors: EditorValidationError[];
   error?: string;
   versionId?: string;
+  failureStage?: EditorDraftPersistenceStage;
+  diagnostic?: string;
 }
 
 export async function saveEditorStructureDraft(userId: string, structure: WebsiteStructure): Promise<SaveEditorStructureResult> {
@@ -139,9 +199,13 @@ export async function saveEditorStructureDraft(userId: string, structure: Websit
     };
   }
 
+  let failureStage: EditorDraftPersistenceStage = "structure";
+
   try {
     const updated = await updateWebsiteStructure(routed.structure);
-    await persistWebsiteStructureArtifacts(updated, userId);
+    await persistWebsiteStructureArtifacts(updated, userId, (stage) => {
+      failureStage = stage;
+    });
     let versionId: string | undefined;
 
     try {
@@ -172,20 +236,25 @@ export async function saveEditorStructureDraft(userId: string, structure: Websit
       versionId,
     };
   } catch (error) {
+    const details = getEditorPersistenceErrorDetails(error);
     logger.error("Failed to save editor draft", {
       category: "error",
       service: "editor",
       userId,
       structureId: structure.id,
+      failureStage,
+      failureCode: details.code,
       error: {
         name: "EditorSaveDraftError",
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: details.message,
       },
     });
 
     return {
       validationErrors: [],
       error: "Failed to save draft changes.",
+      failureStage,
+      diagnostic: developmentDiagnostic(failureStage, error),
     };
   }
 }

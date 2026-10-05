@@ -42,6 +42,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         ok: false,
         error: result.error,
         validationErrors: result.validationErrors,
+        failureStage: result.failureStage,
+        diagnostic: result.diagnostic,
       },
       { status: 422 },
     );
@@ -52,6 +54,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       {
         ok: false,
         error: result.error || "Unable to save draft",
+        failureStage: result.failureStage,
+        diagnostic: result.diagnostic,
       },
       { status: 500 },
     );
