@@ -235,4 +235,6 @@ export interface EditorDocument {
 export interface EditorDocumentValidationError {
   path: string;
   message: string;
+  /** Present when the issue can be addressed directly in the node tree. */
+  nodeId?: EditorNodeId;
 }

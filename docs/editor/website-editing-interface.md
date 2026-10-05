@@ -70,16 +70,56 @@ render normalization, or synthetic marketing sections. Hidden sections remain
 hidden; legacy or unsupported section types remain explicit `legacy.*` nodes
 with their safe JSON content preserved.
 
-This document is **not yet used** by the current renderer, Save Draft route,
-or Supabase persistence. `WebsiteStructure` remains the active production
-model until a later reviewed slice introduces registry-backed rendering and
-transactional canonical-document persistence. Existing generated websites
-therefore continue to render through the current compatibility path.
+This document is **not yet used** by the current production renderer, Save
+Draft route, or Supabase persistence. `WebsiteStructure` remains the active
+production model. Existing generated websites therefore continue to render
+through the current compatibility path.
 
 Structural validation in `lib/editor/document/validation.ts` verifies schema
 version, stable references, tree cycles, navigation references, visibility,
-and supported style-token shapes. Component registry rules are intentionally
-out of scope until Slice 2.
+and supported style-token shapes.
+
+## Component registry and isolated document renderer (Slice 2)
+
+`lib/editor/registry/` defines the data-only component registry used by the
+canonical document path. Every registered component declares its stable type
+and version, label/category, permitted parents and ordered slots, child limits,
+default props, typed prop schema, generic property-inspector metadata, renderer
+binding, supported style tokens, and visibility capability. The property
+metadata includes labels, help text, controls, groups, options, defaults,
+validation rules, conditional visibility, inline-editability, reset behavior,
+and inherited/global intent. It contains no executable document callbacks and
+does not permit raw CSS values.
+
+The initial coverage includes page/section/container/columns layout; heading,
+paragraph, button, list, and card content; image media; global header/footer;
+and the generated marketing section families: hero, about, services, features,
+benefits, testimonials, FAQ, pricing, CTA, contact, and footer. Existing
+unknown sections and components use explicit `legacy.section.*` or
+`legacy.component.*` exception paths. They remain safe JSON data and render
+through a compatibility fallback rather than being dropped.
+
+`validateEditorDocument` now includes registry validation by default. It
+returns structured issues with a document path and, when applicable, a node
+ID. Validation rejects unregistered current types, invalid slot containment or
+cardinality, invalid typed props/link targets, unsupported style tokens, and
+missing asset or reusable-symbol references. Legacy exception nodes are only
+accepted when they carry explicit legacy metadata and kind.
+
+`components/generated-site/document-renderer.tsx` is an isolated,
+registry-backed renderer for `EditorDocument`. It recursively renders ordered
+slots, globals, typed navigation, supported media, visibility, and tokenized
+styles. It reuses the established section views for compatible generated
+section payloads and uses a text-only, escaped fallback for unknown legacy
+content. Links are restricted to safe internal, fragment, HTTP(S), mailto, or
+tel destinations; document props are never spread onto DOM attributes and no
+raw HTML or raw CSS is rendered.
+
+This renderer is covered by unit/parity tests but is deliberately **not
+imported by the active WebsiteStructure renderer, editor canvas, routes, or
+persistence path**. Slice 2 changes no production rendering or persistence
+behavior. Atomic canonical-document persistence remains a later reviewed
+slice.
 
 ## Regenerate vs edit workflow
 

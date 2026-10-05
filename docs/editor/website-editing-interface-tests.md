@@ -119,6 +119,21 @@ structure write, and version snapshots are best-effort, so an artifact-storage
 outage can still leave an updated structure without all artifacts; that is a
 separate atomicity/retry improvement.
 
+## Canonical document registry/renderer coverage (Slice 2)
+
+The normal unit suite also validates the isolated canonical document boundary:
+
+- component registry lookup/default cloning, required/typed props, safe links,
+  slot containment, style capability restrictions, assets, and symbols;
+- recursive document rendering with ordered children, visibility, global
+  header/footer, typed page/node/external navigation, CTA links, and media;
+- adapter parity for representative generated sites, multiple routes, hidden
+  and reordered sections, SEO metadata availability, and explicit legacy
+  fallback content.
+
+These are local render/contract tests only. The document renderer is not the
+production website renderer and does not save to Supabase in this slice.
+
 ## Scenario references
 
 - Scenario definitions: `lib/editor/scenarios.ts`

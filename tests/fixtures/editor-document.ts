@@ -29,6 +29,7 @@ export function createStandardMarketingSiteFixture(): WebsiteStructure {
       ...section,
       content: {
         ...section.content,
+        variant: "with-image",
         ctaHref: "/contact",
         image: {
           src: "https://cdn.example.test/sprintboard-hero.png",
@@ -153,5 +154,17 @@ export function createLegacyUnknownSectionFixture(): WebsiteStructure {
   } as unknown as WebsiteSection;
 
   structure.pages[0].sections = [...structure.pages[0].sections, unknownSection];
+  return structure;
+}
+
+export function createVisibleLegacyUnknownSectionFixture(): WebsiteStructure {
+  const structure = createLegacyUnknownSectionFixture();
+  const legacySection = structure.pages[0].sections.find(
+    (section) => section.id === "sec_legacy_announcement_001",
+  );
+
+  if (legacySection) {
+    legacySection.visible = true;
+  }
   return structure;
 }

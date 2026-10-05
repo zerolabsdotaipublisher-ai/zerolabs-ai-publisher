@@ -1,5 +1,6 @@
 export { adaptWebsiteStructureToEditorDocument } from "./adapter";
 export { validateEditorDocument } from "./validation";
+export { validateEditorDocumentRegistry } from "@/lib/editor/registry";
 export {
   EDITOR_DOCUMENT_SCHEMA_VERSION,
   type AlignmentToken,

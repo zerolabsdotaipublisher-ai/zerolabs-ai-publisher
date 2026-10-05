@@ -34,6 +34,17 @@ const RECOGNIZED_SECTION_TYPES = new Set([
   "footer",
 ]);
 
+/** Current WebsiteStructure component types with a first-class Slice 2 definition. */
+const RECOGNIZED_COMPONENT_TYPES = new Set([
+  "heading",
+  "paragraph",
+  "button",
+  "image",
+  "list",
+  "card",
+  "form",
+]);
+
 type SectionReference = {
   nodeId: EditorNodeId;
   pageId: string;
@@ -300,11 +311,14 @@ function createComponentNodesFromSectionNode(sectionNode: EditorNode): EditorNod
       return [];
     }
 
+    const recognized = RECOGNIZED_COMPONENT_TYPES.has(component.type);
     return [
       {
         id: component.id,
-        type: `component.${sanitizeToken(component.type)}`,
-        kind: "component",
+        type: recognized
+          ? `component.${sanitizeToken(component.type)}`
+          : `legacy.component.${sanitizeToken(component.type)}`,
+        kind: recognized ? "component" : "legacy",
         props: isRecord(component.props) ? (component.props as EditorValueObject) : {},
         visibility: { base: true },
         slots: {},
@@ -315,7 +329,7 @@ function createComponentNodesFromSectionNode(sectionNode: EditorNode): EditorNod
           source: "website-structure",
           sourceId: component.id,
           sourceType: component.type,
-          ...(component.type === "custom" ? { unsupported: true } : {}),
+          ...(recognized ? {} : { unsupported: true }),
         },
       },
     ];

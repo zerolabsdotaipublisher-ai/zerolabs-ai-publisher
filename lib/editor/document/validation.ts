@@ -10,6 +10,11 @@ import {
   type ResponsiveVisibility,
   type SiteStyleTokens,
 } from "./types";
+import {
+  editorComponentRegistry,
+  validateEditorDocumentRegistry,
+  type ComponentRegistry,
+} from "@/lib/editor/registry";
 
 const TONES = new Set(["professional", "casual", "premium", "friendly", "bold", "custom"]);
 const VISUAL_STYLES = new Set(["minimalist", "modern", "corporate", "editorial", "playful", "custom"]);
@@ -31,8 +36,13 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function push(errors: EditorDocumentValidationError[], path: string, message: string): void {
-  errors.push({ path, message });
+function push(
+  errors: EditorDocumentValidationError[],
+  path: string,
+  message: string,
+  nodeId?: EditorNodeId,
+): void {
+  errors.push({ path, message, ...(nodeId ? { nodeId } : {}) });
 }
 
 function validateEditorValue(value: unknown, path: string, errors: EditorDocumentValidationError[]): value is EditorValue {
@@ -152,10 +162,14 @@ function validateNavigationItem(
 }
 
 /**
- * Validates document graph integrity without making any registry-specific
- * assumptions. Registry validation belongs to the next implementation slice.
+ * Validates document graph integrity and, by default, the registered component
+ * contract. Passing `registry: false` is useful only for low-level migration
+ * diagnostics where an intentionally unregistered legacy node is expected.
  */
-export function validateEditorDocument(document: EditorDocument): EditorDocumentValidationError[] {
+export function validateEditorDocument(
+  document: EditorDocument,
+  options: { registry?: ComponentRegistry | false } = {},
+): EditorDocumentValidationError[] {
   const errors: EditorDocumentValidationError[] = [];
 
   if (document.schemaVersion !== EDITOR_DOCUMENT_SCHEMA_VERSION) {
@@ -182,11 +196,15 @@ export function validateEditorDocument(document: EditorDocument): EditorDocument
 
   Object.entries(document.nodes).forEach(([nodeId, node]) => {
     const path = `nodes.${nodeId}`;
-    if (!node.id || node.id !== nodeId) push(errors, `${path}.id`, "Node ID must match its document key.");
-    if (!node.type) push(errors, `${path}.type`, "Node type is required.");
+    if (!node.id || node.id !== nodeId) push(errors, `${path}.id`, "Node ID must match its document key.", nodeId);
+    if (!node.type) push(errors, `${path}.type`, "Node type is required.", nodeId);
     validateVisibility(node.visibility, `${path}.visibility`, errors);
     validateNodeStyles(node.styles, `${path}.styles`, errors);
     validateEditorValue(node.props, `${path}.props`, errors);
+
+    if (node.symbolReference && !document.globals.symbols[node.symbolReference.symbolId]) {
+      push(errors, `${path}.symbolReference.symbolId`, "Node references a missing reusable symbol.", nodeId);
+    }
 
     const children: EditorNodeId[] = [];
     Object.entries(node.slots).forEach(([slotName, slot]) => {
@@ -271,6 +289,10 @@ export function validateEditorDocument(document: EditorDocument): EditorDocument
     if (asset.id !== assetId) push(errors, `assets.${assetId}.id`, "Asset ID must match its document key.");
     if (!asset.url) push(errors, `assets.${assetId}.url`, "Asset URL is required.");
   });
+
+  if (options.registry !== false) {
+    errors.push(...validateEditorDocumentRegistry(document, options.registry ?? editorComponentRegistry));
+  }
 
   return errors;
 }
