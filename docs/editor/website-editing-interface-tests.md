@@ -158,6 +158,45 @@ These tests do not call Supabase and do not alter the active Save Draft route.
 Database rollback/failure-injection tests remain a separate Slice 3B task on
 isolated Supabase infrastructure.
 
+## Isolated atomic-persistence foundation (Slice 3B)
+
+`tests/integration/editor-save/isolated-atomic-persistence.test.ts` provides a
+database-only, disposable schema test for the future
+`save_editor_document` transaction. It is deliberately not connected to the
+current production Save Draft route, live tables, migration ledger, renderer,
+or deployment path.
+
+Before it makes any destructive connection, the harness requires exact
+`ZERO_ENV=test`, distinct `ZERO_TEST_*` credentials, and either a local target
+or an explicit `ZERO_TEST_PROJECT=dedicated` marker. It rejects a missing or
+unsafe environment marker (`prod`, `production`, `qa`, or any non-`test`
+value), placeholders, and credentials that duplicate normal application
+configuration. It then constructs and removes its own `zero_slice3b` schema;
+the integration test is skipped with a reason when the required non-production
+Supabase/`psql` setup is absent.
+
+The executable cases establish the following transaction contract:
+
+- an owner save commits the canonical document, compatibility structure,
+  navigation projection, SEO rows, v2 snapshot, and exactly one revision;
+- stale revisions return an in-transaction conflict without a write;
+- anonymous, non-owner, malformed-document, and preflight-unprojectable cases
+  leave stored state unchanged;
+- disposable trigger failpoints at structure, navigation, SEO, and version
+  stages roll back all preceding writes; and
+- a legacy direct structure write increments `editor_revision`, so an older
+  editor session receives a conflict rather than overwriting it.
+
+The tested RPC is explicitly `SECURITY INVOKER`, derives identity only from
+`auth.uid()`, has no browser-supplied user ID parameter, retains RLS on every
+test table, revokes `PUBLIC`/`anon` execution, and grants execution only to
+`authenticated`. The test-only seed, state-inspection, legacy-write, and
+failure-injection helpers are restricted to `service_role`; they are not part
+of the future production interface. This proves the proposed invoker/RLS model
+against Supabase semantics, but a production migration is intentionally
+deferred until Slice 3C, after review of this harness and its exact schema
+mapping.
+
 ## Scenario references
 
 - Scenario definitions: `lib/editor/scenarios.ts`
