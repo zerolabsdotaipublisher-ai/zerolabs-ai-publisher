@@ -40,3 +40,6 @@ or anonymous RPC callers and must never be browser-visible.
 Run `npm run test:integration` only after exporting those isolated variables.
 The required persistence scenarios are documented in
 `docs/editor/website-editing-interface-tests.md`.
+Use `npm run test:integration` only after supplying dedicated test-project
+credentials and a disposable owner/non-owner fixture. The required persistence
+scenarios are documented in `docs/editor/website-editing-interface-tests.md`.
