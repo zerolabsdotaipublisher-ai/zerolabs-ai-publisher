@@ -154,6 +154,6 @@ export async function applyIsolatedAtomicTestSchema(target: IsolatedTestTarget):
 export async function removeIsolatedAtomicTestSchema(target: IsolatedTestTarget): Promise<void> {
   await runPsql(target.databaseUrl, [
     "--command",
-    "drop schema if exists zero_slice3b cascade; drop function if exists public.zero_slice3b_seed_structure(uuid, uuid, jsonb); drop function if exists public.zero_slice3b_set_failpoint(uuid, text); drop function if exists public.zero_slice3b_clear_failpoint(uuid); drop function if exists public.zero_slice3b_legacy_touch(uuid); drop function if exists public.zero_slice3b_read_state(uuid); drop function if exists public.zero_slice3b_security_contract(); drop function if exists public.save_editor_document(uuid, bigint, jsonb, jsonb, jsonb, jsonb, text);",
+    "drop schema if exists zero_slice3b cascade; drop function if exists public.zero_slice3b_seed_structure(uuid, uuid, jsonb); drop function if exists public.zero_slice3b_set_failpoint(uuid, text); drop function if exists public.zero_slice3b_clear_failpoint(uuid); drop function if exists public.zero_slice3b_legacy_touch(uuid); drop function if exists public.zero_slice3b_read_state(uuid); drop function if exists public.zero_slice3b_security_contract(); drop function if exists public.save_editor_document(uuid, bigint, jsonb, jsonb, jsonb, jsonb, jsonb);",
   ]);
 }
