@@ -23,6 +23,17 @@ const SPACING = new Set(["compact", "comfortable", "spacious"]);
 const ALIGNMENT = new Set(["left", "center", "balanced"]);
 const WIDTHS = new Set(["narrow", "content", "wide", "full"]);
 const CONTAINERS = new Set(["default", "card", "plain", "emphasis"]);
+const SPACE_TOKENS = new Set(["none", "xs", "sm", "md", "lg", "xl", "2xl"]);
+const RADIUS_TOKENS = new Set(["none", "sm", "md", "lg", "pill"]);
+const SHADOW_TOKENS = new Set(["none", "sm", "md", "lg"]);
+const FONT_FAMILIES = new Set(["inherit", "sans", "serif", "mono"]);
+const FONT_SIZES = new Set(["xs", "sm", "base", "lg", "xl", "2xl", "3xl", "4xl"]);
+const FONT_WEIGHTS = new Set([400, 500, 600, 700, 800]);
+const LINE_HEIGHTS = new Set(["tight", "normal", "relaxed"]);
+const LETTER_SPACINGS = new Set(["tight", "normal", "wide"]);
+const COMPONENT_SIZES = new Set(["sm", "md", "lg"]);
+const HEIGHTS = new Set(["auto", "content", "screen"]);
+const MIN_HEIGHTS = new Set(["none", "short", "medium", "tall", "screen"]);
 const PAGE_TEMPLATES = new Set([
   "hero-first",
   "content-heavy",
@@ -101,6 +112,21 @@ function validateSiteStyles(
   if (!VISUAL_STYLES.has(styles.visualStyle)) push(errors, `${path}.visualStyle`, "Unsupported visual style token.");
   if (!THEME_MODES.has(styles.themeMode)) push(errors, `${path}.themeMode`, "Unsupported theme mode token.");
   if (!SPACING.has(styles.spacing)) push(errors, `${path}.spacing`, "Unsupported spacing token.");
+  if (styles.palette) {
+    Object.entries(styles.palette).forEach(([key, value]) => {
+      if (value !== undefined && !isHexColor(value)) push(errors, `${path}.palette.${key}`, "Colors must be hexadecimal values.");
+    });
+  }
+  if (styles.typography?.fontFamily && !FONT_FAMILIES.has(styles.typography.fontFamily)) {
+    push(errors, `${path}.typography.fontFamily`, "Unsupported font family token.");
+  }
+  if (styles.typography?.scale && !["compact", "default", "generous"].includes(styles.typography.scale)) {
+    push(errors, `${path}.typography.scale`, "Unsupported typography scale token.");
+  }
+}
+
+function isHexColor(value: string): boolean {
+  return /^#[0-9a-fA-F]{3,8}$/.test(value);
 }
 
 function validateNodeStyles(
@@ -116,6 +142,28 @@ function validateNodeStyles(
   if (styles.spacing !== undefined && !SPACING.has(styles.spacing)) push(errors, `${path}.spacing`, "Unsupported spacing token.");
   if (styles.columns !== undefined && ![1, 2, 3].includes(styles.columns)) push(errors, `${path}.columns`, "Unsupported column token.");
   if (styles.themeMode !== undefined && !THEME_MODES.has(styles.themeMode)) push(errors, `${path}.themeMode`, "Unsupported theme mode token.");
+  (["backgroundColor", "textColor", "accentColor", "borderColor"] as const).forEach((key) => {
+    if (styles[key] !== undefined && !isHexColor(styles[key])) push(errors, `${path}.${key}`, "Colors must be hexadecimal values.");
+  });
+  if (styles.borderWidth !== undefined && (!Number.isInteger(styles.borderWidth) || styles.borderWidth < 0 || styles.borderWidth > 24)) {
+    push(errors, `${path}.borderWidth`, "Border width must be an integer between 0 and 24.");
+  }
+  if (styles.radius !== undefined && !RADIUS_TOKENS.has(styles.radius)) push(errors, `${path}.radius`, "Unsupported radius token.");
+  if (styles.shadow !== undefined && !SHADOW_TOKENS.has(styles.shadow)) push(errors, `${path}.shadow`, "Unsupported shadow token.");
+  if (styles.opacity !== undefined && (styles.opacity < 0 || styles.opacity > 1 || !Number.isFinite(styles.opacity))) {
+    push(errors, `${path}.opacity`, "Opacity must be between 0 and 1.");
+  }
+  (["padding", "margin", "gap"] as const).forEach((key) => {
+    if (styles[key] !== undefined && !SPACE_TOKENS.has(styles[key])) push(errors, `${path}.${key}`, "Unsupported spacing token.");
+  });
+  if (styles.height !== undefined && !HEIGHTS.has(styles.height)) push(errors, `${path}.height`, "Unsupported height token.");
+  if (styles.minHeight !== undefined && !MIN_HEIGHTS.has(styles.minHeight)) push(errors, `${path}.minHeight`, "Unsupported minimum height token.");
+  if (styles.fontFamily !== undefined && !FONT_FAMILIES.has(styles.fontFamily)) push(errors, `${path}.fontFamily`, "Unsupported font family token.");
+  if (styles.fontSize !== undefined && !FONT_SIZES.has(styles.fontSize)) push(errors, `${path}.fontSize`, "Unsupported font size token.");
+  if (styles.fontWeight !== undefined && !FONT_WEIGHTS.has(styles.fontWeight)) push(errors, `${path}.fontWeight`, "Unsupported font weight token.");
+  if (styles.lineHeight !== undefined && !LINE_HEIGHTS.has(styles.lineHeight)) push(errors, `${path}.lineHeight`, "Unsupported line-height token.");
+  if (styles.letterSpacing !== undefined && !LETTER_SPACINGS.has(styles.letterSpacing)) push(errors, `${path}.letterSpacing`, "Unsupported letter-spacing token.");
+  if (styles.size !== undefined && !COMPONENT_SIZES.has(styles.size)) push(errors, `${path}.size`, "Unsupported component size token.");
 }
 
 function validatePageStyles(

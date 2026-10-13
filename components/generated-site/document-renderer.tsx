@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import type {
   DocumentPageSeo,
   EditorDocument,
@@ -21,6 +21,8 @@ export interface EditorDocumentRendererProps {
   /** Stable page ID takes precedence over pagePath when provided. */
   pageId?: string;
   strictRoute?: boolean;
+  /** Editor-only affordance for inspecting a page that is hidden in the live site. */
+  renderHiddenPage?: boolean;
 }
 
 export interface EditorDocumentPageMetadata {
@@ -74,6 +76,59 @@ function nodeClasses(node: EditorNode, additional?: string): string {
   ]
     .filter(Boolean)
     .join(" ");
+}
+
+type DocumentStyleVariables = CSSProperties & Record<`--${string}`, string | number | undefined>;
+
+/** Maps only typed, tokenized presentation values to local CSS variables. */
+function nodeStyleVariables(node: EditorNode): DocumentStyleVariables | undefined {
+  const styles = node.styles;
+  if (!styles) return undefined;
+  const componentSize = styles.size
+    ? node.type === "component.image"
+      ? { width: `var(--gs-editor-image-size-${styles.size})` }
+      : { fontSize: `var(--gs-editor-component-size-${styles.size})` }
+    : {};
+
+  return {
+    ...(styles.backgroundColor || (node.type === "component.button" && styles.accentColor)
+      ? { backgroundColor: styles.backgroundColor ?? styles.accentColor }
+      : {}),
+    ...(styles.textColor ? { color: styles.textColor } : {}),
+    ...(styles.accentColor ? { "--gs-editor-node-accent": styles.accentColor } : {}),
+    ...(styles.borderColor ? { borderColor: styles.borderColor, borderStyle: "solid" } : {}),
+    ...(styles.borderWidth !== undefined ? { borderWidth: `${styles.borderWidth}px`, borderStyle: "solid" } : {}),
+    ...(styles.opacity !== undefined ? { opacity: styles.opacity } : {}),
+    ...(styles.padding ? { padding: `var(--gs-editor-space-${styles.padding})` } : {}),
+    ...(styles.margin ? { margin: `var(--gs-editor-space-${styles.margin})` } : {}),
+    ...(styles.gap ? { gap: `var(--gs-editor-space-${styles.gap})` } : {}),
+    ...(styles.radius ? { borderRadius: `var(--gs-editor-radius-${styles.radius})` } : {}),
+    ...(styles.shadow ? { boxShadow: `var(--gs-editor-shadow-${styles.shadow})` } : {}),
+    ...(styles.height ? { height: `var(--gs-editor-height-${styles.height})` } : {}),
+    ...(styles.minHeight ? { minHeight: `var(--gs-editor-min-height-${styles.minHeight})` } : {}),
+    ...(styles.fontFamily ? { fontFamily: `var(--gs-editor-font-${styles.fontFamily})` } : {}),
+    ...(styles.fontSize ? { fontSize: `var(--gs-editor-font-size-${styles.fontSize})` } : {}),
+    ...(styles.fontWeight ? { fontWeight: styles.fontWeight } : {}),
+    ...(styles.lineHeight ? { lineHeight: `var(--gs-editor-line-height-${styles.lineHeight})` } : {}),
+    ...(styles.letterSpacing ? { letterSpacing: `var(--gs-editor-letter-spacing-${styles.letterSpacing})` } : {}),
+    ...componentSize,
+  };
+}
+
+function siteStyleVariables(document: EditorDocument): DocumentStyleVariables | undefined {
+  const palette = document.site.styles.palette;
+  const typography = document.site.styles.typography;
+  if (!palette && !typography) return undefined;
+
+  return {
+    ...(palette?.primary ? { "--accent": palette.primary, "--gs-editor-site-primary": palette.primary } : {}),
+    ...(palette?.secondary ? { "--gs-editor-site-secondary": palette.secondary } : {}),
+    ...(palette?.background ? { backgroundColor: palette.background, "--background": palette.background } : {}),
+    ...(palette?.surface ? { "--surface": palette.surface, "--gs-editor-site-surface": palette.surface } : {}),
+    ...(palette?.text ? { color: palette.text, "--foreground": palette.text } : {}),
+    ...(palette?.mutedText ? { "--text-muted": palette.mutedText, "--gs-editor-site-muted-text": palette.mutedText } : {}),
+    ...(typography?.fontFamily ? { fontFamily: `var(--gs-editor-font-${typography.fontFamily})` } : {}),
+  };
 }
 
 /** Stable fragment anchor for typed node-target navigation. */
@@ -193,6 +248,7 @@ function DocumentHeader({ document, page, node }: { document: EditorDocument; pa
     <header
       className={node ? nodeClasses(node, "gs-site-header") : "gs-site-header"}
       data-editor-node-id={node?.id}
+      style={node ? nodeStyleVariables(node) : undefined}
     >
       <nav className="gs-site-nav" aria-label="Primary navigation">
         <div className="gs-site-brand-stack">
@@ -214,6 +270,7 @@ function DocumentFooter({ document, node }: { document: EditorDocument; node?: E
     <footer
       className={node ? nodeClasses(node, "gs-site-footer-nav") : "gs-site-footer-nav"}
       data-editor-node-id={node?.id}
+      style={node ? nodeStyleVariables(node) : undefined}
       aria-label="Footer navigation"
     >
       <div className="gs-site-footer-nav-inner">
@@ -251,6 +308,7 @@ function LegacyFallback({ node, children }: { node: EditorNode; children: ReactN
       className={nodeClasses(node, "gs-document-legacy")}
       data-editor-node-id={node.id}
       data-legacy-node={node.type}
+      style={nodeStyleVariables(node)}
     >
       {headline ? <h2 className="gs-section-headline">{headline}</h2> : null}
       {description ? <p className="gs-about-body">{description}</p> : null}
@@ -363,25 +421,25 @@ function DocumentNode({
   switch (rendererKey) {
     case "page-root":
       return (
-        <div className={nodeClasses(node, "gs-page")} data-editor-node-id={node.id}>
+        <div className={nodeClasses(node, "gs-page")} data-editor-node-id={node.id} style={nodeStyleVariables(node)}>
           {renderSlot("default")}
         </div>
       );
     case "container":
       return (
-        <section id={getEditorDocumentNodeAnchorId(node)} className={nodeClasses(node)} data-editor-node-id={node.id}>
+        <section id={getEditorDocumentNodeAnchorId(node)} className={nodeClasses(node)} data-editor-node-id={node.id} style={nodeStyleVariables(node)}>
           {allSlots()}
         </section>
       );
     case "columns":
       return (
-        <div className={nodeClasses(node, "gs-document-columns")} data-editor-node-id={node.id}>
+        <div className={nodeClasses(node, "gs-document-columns")} data-editor-node-id={node.id} style={nodeStyleVariables(node)}>
           {renderSlot("default")}
         </div>
       );
     case "column":
       return (
-        <div className={nodeClasses(node, "gs-document-column")} data-editor-node-id={node.id}>
+        <div className={nodeClasses(node, "gs-document-column")} data-editor-node-id={node.id} style={nodeStyleVariables(node)}>
           {renderSlot("default")}
         </div>
       );
@@ -395,6 +453,7 @@ function DocumentNode({
           className={nodeClasses(node, "gs-document-section")}
           data-editor-node-id={node.id}
           data-legacy-source-id={node.legacy?.sourceId}
+          style={nodeStyleVariables(node)}
         >
           <SectionRenderer section={toCompatibilitySection(node)} />
           {allSlots()}
@@ -403,10 +462,10 @@ function DocumentNode({
     case "heading": {
       const level = node.props.level;
       const Heading = (typeof level === "number" && level >= 1 && level <= 4 ? `h${level}` : "h2") as "h1" | "h2" | "h3" | "h4";
-      return <Heading className={nodeClasses(node, "gs-component gs-component-heading")} data-editor-node-id={node.id}>{asString(node.props.text) ?? ""}</Heading>;
+      return <Heading className={nodeClasses(node, "gs-component gs-component-heading")} data-editor-node-id={node.id} style={nodeStyleVariables(node)}>{asString(node.props.text) ?? ""}</Heading>;
     }
     case "paragraph":
-      return <p className={nodeClasses(node, "gs-component gs-component-paragraph")} data-editor-node-id={node.id}>{asString(node.props.text) ?? ""}</p>;
+      return <p className={nodeClasses(node, "gs-component gs-component-paragraph")} data-editor-node-id={node.id} style={nodeStyleVariables(node)}>{asString(node.props.text) ?? ""}</p>;
     case "button": {
       const link = resolveNodeLink(document, node);
       const label = asString(node.props.label) ?? "";
@@ -415,16 +474,17 @@ function DocumentNode({
           className={nodeClasses(node, "gs-component gs-component-button")}
           data-editor-node-id={node.id}
           href={link.href}
+          style={nodeStyleVariables(node)}
           {...(link.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
         >
           {label}
         </a>
-      ) : <span className={nodeClasses(node, "gs-component gs-component-button")} data-editor-node-id={node.id}>{label}</span>;
+      ) : <span className={nodeClasses(node, "gs-component gs-component-button")} data-editor-node-id={node.id} style={nodeStyleVariables(node)}>{label}</span>;
     }
     case "list": {
       const items = Array.isArray(node.props.items) ? node.props.items : [];
       return (
-        <ul className={nodeClasses(node, "gs-component gs-component-list")} data-editor-node-id={node.id}>
+        <ul className={nodeClasses(node, "gs-component gs-component-list")} data-editor-node-id={node.id} style={nodeStyleVariables(node)}>
           {items.map((item, index) => <li key={`${node.id}-${index}`}>{typeof item === "string" ? item : valueToText(item).join(" ")}</li>)}
         </ul>
       );
@@ -436,12 +496,12 @@ function DocumentNode({
       if (!src) return null;
       return (
         // eslint-disable-next-line @next/next/no-img-element
-        <img className={nodeClasses(node, "gs-component gs-component-image")} data-editor-node-id={node.id} src={toWebsiteAssetRenderableUrl(src)} alt={asString(node.props.alt) ?? ""} />
+        <img className={nodeClasses(node, "gs-component gs-component-image")} data-editor-node-id={node.id} style={{ ...nodeStyleVariables(node), ...(asString(node.props.fit) ? { "--gs-editor-node-object-fit": asString(node.props.fit) } : {}) }} src={toWebsiteAssetRenderableUrl(src)} alt={asString(node.props.alt) ?? ""} />
       );
     }
     case "card":
       return (
-        <article className={nodeClasses(node, "gs-component gs-component-card")} data-editor-node-id={node.id}>
+        <article className={nodeClasses(node, "gs-component gs-component-card")} data-editor-node-id={node.id} style={nodeStyleVariables(node)}>
           {asString(node.props.title) ? <h3>{asString(node.props.title)}</h3> : null}
           {asString(node.props.body) ? <p>{asString(node.props.body)}</p> : null}
           {allSlots()}
@@ -465,12 +525,13 @@ export function EditorDocumentRenderer({
   pagePath = "/",
   pageId,
   strictRoute = false,
+  renderHiddenPage = false,
 }: EditorDocumentRendererProps) {
   const page = pageId
     ? document.pages.find((candidate) => candidate.id === pageId)
     : document.pages.find((candidate) => candidate.path === pagePath);
   const selectedPage = page ?? (strictRoute ? undefined : document.pages[0]);
-  if (!selectedPage || !isVisible(selectedPage.visibility)) {
+  if (!selectedPage || (!isVisible(selectedPage.visibility) && !renderHiddenPage)) {
     return <div className="gs-error"><p>Page not found.</p></div>;
   }
 
@@ -485,6 +546,7 @@ export function EditorDocumentRenderer({
       data-editor-schema-version={document.schemaVersion}
       data-style-preset={document.site.styles.visualStyle}
       data-tone-preset={document.site.styles.tone}
+      style={siteStyleVariables(document)}
     >
       <div
         className="gs-document-render-metadata"
