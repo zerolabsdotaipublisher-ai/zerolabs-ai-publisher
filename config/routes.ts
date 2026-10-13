@@ -36,6 +36,7 @@ export const routes = {
   previewShared: (token: string) => `/preview/share/${token}`,
   editor: "/editor",
   editorSite: (id: string) => `/editor/${id}`,
+  editorVisual: (id: string) => `/editor/${encodeURIComponent(id)}/visual`,
   profile: "/profile",
   generatedSites: "/generated-sites",
   generatedSite: (id: string) => `/generated-sites/${id}`,

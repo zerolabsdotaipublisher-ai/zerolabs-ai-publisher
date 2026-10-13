@@ -35,6 +35,33 @@ export type AlignmentToken = "left" | "center" | "balanced";
 export type WidthToken = "narrow" | "content" | "wide" | "full";
 export type ContainerToken = "default" | "card" | "plain" | "emphasis";
 export type ColumnToken = 1 | 2 | 3;
+export type SpaceToken = "none" | "xs" | "sm" | "md" | "lg" | "xl" | "2xl";
+export type RadiusToken = "none" | "sm" | "md" | "lg" | "pill";
+export type ShadowToken = "none" | "sm" | "md" | "lg";
+export type FontFamilyToken = "inherit" | "sans" | "serif" | "mono";
+export type FontSizeToken = "xs" | "sm" | "base" | "lg" | "xl" | "2xl" | "3xl" | "4xl";
+export type FontWeightToken = 400 | 500 | 600 | 700 | 800;
+export type LineHeightToken = "tight" | "normal" | "relaxed";
+export type LetterSpacingToken = "tight" | "normal" | "wide";
+export type ComponentSizeToken = "sm" | "md" | "lg";
+export type HeightToken = "auto" | "content" | "screen";
+export type MinHeightToken = "none" | "short" | "medium" | "tall" | "screen";
+/** Hex colors are used instead of arbitrary CSS so persisted documents stay safe and portable. */
+export type ColorToken = string;
+
+export interface SitePaletteTokens {
+  primary?: ColorToken;
+  secondary?: ColorToken;
+  background?: ColorToken;
+  surface?: ColorToken;
+  text?: ColorToken;
+  mutedText?: ColorToken;
+}
+
+export interface SiteTypographyTokens {
+  fontFamily?: FontFamilyToken;
+  scale?: "compact" | "default" | "generous";
+}
 
 export interface SiteStyleTokens {
   tone: ToneToken;
@@ -43,6 +70,8 @@ export interface SiteStyleTokens {
   spacing: SpacingToken;
   colorMood?: string;
   typographyMood?: string;
+  palette?: SitePaletteTokens;
+  typography?: SiteTypographyTokens;
 }
 
 /** Supported presentation tokens. Raw CSS is deliberately not part of this contract. */
@@ -53,6 +82,25 @@ export interface NodeStyleTokens {
   spacing?: SpacingToken;
   columns?: ColumnToken;
   themeMode?: ThemeModeToken;
+  backgroundColor?: ColorToken;
+  textColor?: ColorToken;
+  accentColor?: ColorToken;
+  borderColor?: ColorToken;
+  borderWidth?: number;
+  radius?: RadiusToken;
+  shadow?: ShadowToken;
+  opacity?: number;
+  padding?: SpaceToken;
+  margin?: SpaceToken;
+  gap?: SpaceToken;
+  height?: HeightToken;
+  minHeight?: MinHeightToken;
+  fontFamily?: FontFamilyToken;
+  fontSize?: FontSizeToken;
+  fontWeight?: FontWeightToken;
+  lineHeight?: LineHeightToken;
+  letterSpacing?: LetterSpacingToken;
+  size?: ComponentSizeToken;
 }
 
 export interface PageStyleTokens {

@@ -22,6 +22,8 @@ export type EditorControlType =
   | "alignment"
   | "width"
   | "container"
+  | "color"
+  | "shadow"
   | "responsive-visibility";
 
 export type RegistryPropValueType =
@@ -89,7 +91,7 @@ export interface EditablePropDefinition {
   control: EditorControlType;
   valueType: RegistryPropValueType;
   required?: boolean;
-  group: "content" | "actions" | "media" | "layout" | "advanced";
+  group: "content" | "actions" | "media" | "layout" | "style" | "typography" | "visibility" | "advanced";
   options?: readonly EditorControlOption[];
   defaultValue?: EditorValue;
   validation?: PropertyValidationRule;

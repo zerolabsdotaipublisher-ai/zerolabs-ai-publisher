@@ -1240,6 +1240,307 @@ html[data-theme="dark"] .auth-panel-list {
   }
 }
 
+/* Slice 4 visual editor. This is intentionally scoped to /editor/[id]/visual. */
+.visual-editor-shell {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  min-block-size: calc(100vh - 2rem);
+  background: var(--surface);
+  color: var(--text-primary);
+}
+
+.visual-editor-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: grid;
+  grid-template-columns: minmax(12rem, 1fr) minmax(10rem, 16rem) auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.65rem 0.9rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  background: color-mix(in srgb, var(--surface-elevated) 94%, var(--surface));
+}
+
+.visual-editor-toolbar-site,
+.visual-editor-toolbar-controls,
+.visual-editor-viewport-controls,
+.visual-editor-canvas-meta,
+.visual-editor-layer-row,
+.visual-editor-navigation-item-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.visual-editor-toolbar button,
+.visual-editor-toolbar select,
+.visual-editor-left-panel button,
+.visual-editor-properties button,
+.visual-editor-properties input,
+.visual-editor-properties textarea,
+.visual-editor-properties select,
+.visual-editor-navigation-panel input,
+.visual-editor-navigation-panel select {
+  min-block-size: 2.15rem;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.78rem;
+}
+
+.visual-editor-toolbar button,
+.visual-editor-left-panel button,
+.visual-editor-properties button {
+  padding: 0.35rem 0.58rem;
+  cursor: pointer;
+}
+
+.visual-editor-toolbar select,
+.visual-editor-properties input,
+.visual-editor-properties textarea,
+.visual-editor-properties select,
+.visual-editor-navigation-panel input,
+.visual-editor-navigation-panel select {
+  inline-size: 100%;
+  padding: 0.38rem 0.52rem;
+}
+
+.visual-editor-toolbar button:hover:not(:disabled),
+.visual-editor-toolbar button:focus-visible,
+.visual-editor-left-panel button:hover,
+.visual-editor-left-panel button:focus-visible,
+.visual-editor-properties button:hover,
+.visual-editor-properties button:focus-visible,
+.visual-editor-properties input:focus-visible,
+.visual-editor-properties textarea:focus-visible,
+.visual-editor-properties select:focus-visible,
+.visual-editor-navigation-panel input:focus-visible,
+.visual-editor-navigation-panel select:focus-visible {
+  border-color: color-mix(in srgb, var(--accent) 66%, var(--border));
+  outline: 2px solid color-mix(in srgb, var(--accent) 42%, transparent);
+  outline-offset: 1px;
+}
+
+.visual-editor-toolbar button.is-active,
+.visual-editor-viewport-controls button.is-active,
+.visual-editor-left-tabs button.is-active,
+.visual-editor-property-tabs button.is-active,
+.visual-editor-page-list button.is-selected,
+.visual-editor-layer-select.is-selected,
+.visual-editor-global-list button.is-selected {
+  border-color: color-mix(in srgb, var(--accent) 72%, var(--border));
+  background: color-mix(in srgb, var(--accent) 13%, var(--surface));
+  color: var(--text-primary);
+}
+
+.visual-editor-site-button {
+  overflow: hidden;
+  max-inline-size: 16rem;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--text-primary);
+  font-size: 0.86rem !important;
+  font-weight: 760;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.visual-editor-draft-status,
+.visual-editor-canvas-meta span,
+.visual-editor-layer-select small {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 1.45rem;
+  padding-inline: 0.4rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-elevated) 88%, var(--surface));
+  color: var(--text-secondary);
+  font-size: 0.66rem;
+  font-weight: 720;
+}
+
+.visual-editor-draft-status[data-dirty="true"] {
+  background: color-mix(in srgb, var(--warning-text) 15%, var(--surface));
+  color: var(--warning-text);
+}
+
+.visual-editor-toolbar-controls { justify-content: flex-end; }
+.visual-editor-viewport-controls { padding-inline-end: 0.3rem; border-inline-end: 1px solid var(--border); }
+.visual-editor-save-button:disabled { cursor: not-allowed; opacity: 0.68; }
+
+.visual-editor-safety-banner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  padding: 0.52rem 0.9rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--warning-text) 25%, var(--border));
+  background: color-mix(in srgb, var(--warning-text) 8%, var(--surface));
+  color: var(--text-secondary);
+  font-size: 0.74rem;
+  line-height: 1.45;
+}
+
+.visual-editor-projectability-note { color: var(--warning-text); font-weight: 700; }
+
+.visual-editor-workspace {
+  display: grid;
+  grid-template-columns: minmax(15rem, 18rem) minmax(0, 1fr) minmax(17rem, 21rem);
+  min-block-size: 0;
+}
+
+.visual-editor-left-panel,
+.visual-editor-properties {
+  min-block-size: 0;
+  border-color: var(--border);
+  background: color-mix(in srgb, var(--surface-elevated) 78%, var(--surface));
+}
+
+.visual-editor-left-panel { border-inline-end: 1px solid var(--border); }
+.visual-editor-properties { border-inline-start: 1px solid var(--border); }
+.visual-editor-left-tabs,
+.visual-editor-property-tabs { display: flex; gap: 0.22rem; overflow-x: auto; padding: 0.55rem; border-bottom: 1px solid var(--border); }
+.visual-editor-left-tabs button,
+.visual-editor-property-tabs button { flex: 0 0 auto; min-block-size: 1.9rem; border-color: transparent; background: transparent; color: var(--text-muted); }
+.visual-editor-left-scroll,
+.visual-editor-properties-scroll { block-size: calc(100vh - 10rem); padding: 0.82rem; overflow-y: auto; overscroll-behavior: contain; }
+
+.visual-editor-left-scroll h2,
+.visual-editor-properties header h2,
+.visual-editor-navigation-panel h2 { margin: 0; color: var(--text-primary); font-size: 0.86rem; line-height: 1.35; }
+.visual-editor-left-scroll section + section { margin-block-start: 1.15rem; }
+.visual-editor-page-list,
+.visual-editor-layer-tree,
+.visual-editor-layer-children,
+.visual-editor-global-list,
+.visual-editor-navigation-menu ol,
+.visual-editor-navigation-children { display: grid; gap: 0.25rem; margin: 0.55rem 0 0; padding: 0; list-style: none; }
+.visual-editor-page-list button,
+.visual-editor-global-list button,
+.visual-editor-layer-select { display: flex; flex: 1; align-items: center; justify-content: space-between; gap: 0.35rem; inline-size: 100%; border-color: transparent; background: transparent; color: var(--text-secondary); text-align: start; }
+.visual-editor-layer-item { min-inline-size: 0; }
+.visual-editor-layer-row { min-inline-size: 0; }
+.visual-editor-layer-expand,
+.visual-editor-layer-expand-spacer { flex: 0 0 1.75rem; inline-size: 1.75rem; min-block-size: 1.75rem !important; padding: 0 !important; text-align: center; }
+.visual-editor-layer-expand { border-color: transparent !important; background: transparent !important; color: var(--text-muted); }
+.visual-editor-layer-select > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.visual-editor-layer-select small { min-block-size: 1.2rem; padding-inline: 0.28rem; font-size: 0.57rem; }
+.visual-editor-layer-select small.is-warning { background: color-mix(in srgb, var(--warning-text) 18%, var(--surface)); color: var(--warning-text); }
+.visual-editor-layer-children { margin: 0 0 0 0.85rem; padding-inline-start: 0.45rem; border-inline-start: 1px solid color-mix(in srgb, var(--border) 70%, transparent); }
+.visual-editor-muted-note,
+.visual-editor-warning { margin: 0.5rem 0; color: var(--text-muted); font-size: 0.74rem; line-height: 1.45; }
+.visual-editor-warning { color: var(--warning-text); }
+
+.visual-editor-canvas { display: grid; grid-template-rows: auto minmax(0, 1fr); min-inline-size: 0; min-block-size: 0; padding: 0.82rem; background: radial-gradient(circle at top, color-mix(in srgb, var(--accent) 9%, transparent), transparent 38rem), var(--surface); }
+.visual-editor-canvas-meta { justify-content: space-between; padding: 0 0 0.58rem; }
+.visual-editor-canvas-scroll { display: grid; min-block-size: 0; overflow: auto; border: 1px solid color-mix(in srgb, var(--border) 72%, transparent); border-radius: 0.8rem; background: repeating-conic-gradient(color-mix(in srgb, var(--border) 22%, transparent) 0 25%, transparent 0 50%) 50% / 1.25rem 1.25rem; }
+.visual-editor-canvas-frame { position: relative; inline-size: min(100%, 80rem); min-block-size: 100%; margin: auto; overflow: hidden; border-inline: 1px solid color-mix(in srgb, var(--border) 60%, transparent); background: #fff; transition: inline-size 180ms ease; }
+.visual-editor-canvas-frame.visual-editor-viewport-tablet { inline-size: min(100%, 48rem); }
+.visual-editor-canvas-frame.visual-editor-viewport-mobile { inline-size: min(100%, 24.375rem); }
+.visual-editor-canvas-frame:not(.is-preview) [data-editor-node-id] { position: relative; cursor: pointer; outline: 1px solid transparent; outline-offset: 2px; transition: outline-color 110ms ease, box-shadow 110ms ease; }
+.visual-editor-canvas-frame:not(.is-preview) [data-editor-node-id][data-visual-editor-hovered] { outline: 1px solid color-mix(in srgb, var(--accent) 58%, #fff); }
+.visual-editor-canvas-frame:not(.is-preview) [data-editor-node-id][data-visual-editor-selected] { z-index: 2; outline: 2px solid var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 17%, transparent); }
+.visual-editor-canvas-frame:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 55%, transparent); outline-offset: 3px; }
+.visual-editor-canvas-empty { position: absolute; inset: 5rem 1rem auto; padding: 0.8rem; border: 1px dashed color-mix(in srgb, var(--accent) 55%, var(--border)); border-radius: 0.6rem; background: color-mix(in srgb, #fff 92%, transparent); color: #334155; font-size: 0.8rem; text-align: center; }
+
+.visual-editor-properties header { display: grid; gap: 0.15rem; padding: 0.82rem 0.82rem 0.62rem; }
+.visual-editor-properties header p { margin: 0; color: var(--text-muted); font-size: 0.67rem; font-weight: 760; letter-spacing: 0.06em; text-transform: uppercase; }
+.visual-editor-property-section { display: grid; gap: 0.65rem; padding-block: 0.1rem 1rem; }
+.visual-editor-property-section + .visual-editor-property-section { padding-block-start: 1rem; border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent); }
+.visual-editor-property-section h3 { margin: 0; color: var(--text-primary); font-size: 0.78rem; }
+.visual-editor-property-section > div { display: grid; gap: 0.68rem; }
+.visual-editor-property-field,
+.visual-editor-navigation-item > label { display: grid; gap: 0.32rem; color: var(--text-secondary); font-size: 0.72rem; font-weight: 680; line-height: 1.35; }
+.visual-editor-property-field > small { color: var(--text-muted); font-size: 0.67rem; font-weight: 500; }
+.visual-editor-property-field textarea { min-block-size: 5.5rem; resize: vertical; }
+.visual-editor-property-color input { block-size: 2.35rem; padding: 0.14rem; cursor: pointer; }
+.visual-editor-toggle-field { display: flex !important; align-items: center; gap: 0.48rem; min-block-size: 1.85rem; color: var(--text-secondary); font-size: 0.74rem; font-weight: 650; }
+.visual-editor-toggle-field input { flex: 0 0 auto; inline-size: 1rem !important; min-block-size: 1rem !important; padding: 0 !important; accent-color: var(--accent); }
+.visual-editor-link-target { display: grid; gap: 0.4rem; }
+
+.visual-editor-navigation-menu + .visual-editor-navigation-menu { margin-block-start: 1rem; padding-block-start: 1rem; border-top: 1px solid var(--border); }
+.visual-editor-navigation-menu h3 { margin: 0; color: var(--text-primary); font-size: 0.77rem; }
+.visual-editor-navigation-item { display: grid; gap: 0.46rem; padding: 0.58rem; border: 1px solid color-mix(in srgb, var(--border) 72%, transparent); border-radius: 0.55rem; background: color-mix(in srgb, var(--surface) 70%, transparent); }
+.visual-editor-navigation-item-heading > span { color: var(--text-muted); font-size: 0.68rem; font-weight: 760; }
+.visual-editor-navigation-item-heading label { flex: 1; display: grid; gap: 0.3rem; color: var(--text-secondary); font-size: 0.72rem; font-weight: 680; }
+.visual-editor-navigation-children { margin-inline-start: 0.75rem; }
+
+/* Typed canonical-document design tokens, consumed by the existing renderer. */
+.gs-document-site {
+  --gs-editor-space-none: 0;
+  --gs-editor-space-xs: 0.25rem;
+  --gs-editor-space-sm: 0.5rem;
+  --gs-editor-space-md: 1rem;
+  --gs-editor-space-lg: 1.5rem;
+  --gs-editor-space-xl: 2rem;
+  --gs-editor-space-2xl: 3rem;
+  --gs-editor-radius-none: 0;
+  --gs-editor-radius-sm: 0.25rem;
+  --gs-editor-radius-md: 0.6rem;
+  --gs-editor-radius-lg: 1rem;
+  --gs-editor-radius-pill: 999px;
+  --gs-editor-shadow-none: none;
+  --gs-editor-shadow-sm: 0 2px 7px rgb(15 23 42 / 12%);
+  --gs-editor-shadow-md: 0 8px 24px rgb(15 23 42 / 16%);
+  --gs-editor-shadow-lg: 0 18px 40px rgb(15 23 42 / 21%);
+  --gs-editor-font-inherit: inherit;
+  --gs-editor-font-sans: ui-sans-serif, system-ui, sans-serif;
+  --gs-editor-font-serif: ui-serif, Georgia, serif;
+  --gs-editor-font-mono: ui-monospace, SFMono-Regular, monospace;
+  --gs-editor-font-size-xs: 0.75rem;
+  --gs-editor-font-size-sm: 0.875rem;
+  --gs-editor-font-size-base: 1rem;
+  --gs-editor-font-size-lg: 1.125rem;
+  --gs-editor-font-size-xl: 1.25rem;
+  --gs-editor-font-size-2xl: 1.5rem;
+  --gs-editor-font-size-3xl: 1.875rem;
+  --gs-editor-font-size-4xl: 2.25rem;
+  --gs-editor-line-height-tight: 1.1;
+  --gs-editor-line-height-normal: 1.5;
+  --gs-editor-line-height-relaxed: 1.75;
+  --gs-editor-letter-spacing-tight: -0.02em;
+  --gs-editor-letter-spacing-normal: normal;
+  --gs-editor-letter-spacing-wide: 0.06em;
+  --gs-editor-height-auto: auto;
+  --gs-editor-height-content: fit-content;
+  --gs-editor-height-screen: 100vh;
+  --gs-editor-min-height-none: 0;
+  --gs-editor-min-height-short: 12rem;
+  --gs-editor-min-height-medium: 24rem;
+  --gs-editor-min-height-tall: 36rem;
+  --gs-editor-min-height-screen: 100vh;
+  --gs-editor-component-size-sm: 0.82rem;
+  --gs-editor-component-size-md: 1rem;
+  --gs-editor-component-size-lg: 1.15rem;
+  --gs-editor-image-size-sm: 10rem;
+  --gs-editor-image-size-md: 18rem;
+  --gs-editor-image-size-lg: 28rem;
+  background-color: var(--gs-editor-site-background, transparent);
+  color: var(--gs-editor-site-text, inherit);
+  font-family: var(--gs-editor-site-font-family, inherit);
+}
+
+.gs-document-node.gs-component-image { max-inline-size: 100%; object-fit: var(--gs-editor-node-object-fit, cover); }
+
+@media (max-width: 1100px) {
+  .visual-editor-workspace { grid-template-columns: minmax(13rem, 16rem) minmax(0, 1fr); }
+  .visual-editor-properties { grid-column: 1 / -1; border-top: 1px solid var(--border); border-inline-start: 0; }
+  .visual-editor-properties-scroll { block-size: auto; max-block-size: 29rem; }
+}
+
+@media (max-width: 760px) {
+  .visual-editor-toolbar { grid-template-columns: 1fr; }
+  .visual-editor-toolbar-controls { justify-content: flex-start; flex-wrap: wrap; }
+  .visual-editor-workspace { grid-template-columns: 1fr; }
+  .visual-editor-left-panel { border-inline-end: 0; border-bottom: 1px solid var(--border); }
+  .visual-editor-left-scroll { block-size: auto; max-block-size: 20rem; }
+  .visual-editor-canvas { min-block-size: 32rem; }
+  .visual-editor-canvas-frame.visual-editor-viewport-tablet,
+  .visual-editor-canvas-frame.visual-editor-viewport-mobile { inline-size: 100%; }
+}
+
 @media (min-width: 768px) {
   .marketing-nav-links {
     display: flex;
