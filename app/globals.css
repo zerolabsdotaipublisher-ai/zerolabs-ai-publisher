@@ -1410,6 +1410,7 @@ html[data-theme="dark"] .auth-panel-list {
 .visual-editor-left-scroll h2,
 .visual-editor-properties header h2,
 .visual-editor-navigation-panel h2 { margin: 0; color: var(--text-primary); font-size: 0.86rem; line-height: 1.35; }
+.visual-editor-pages-heading { display: flex; align-items: center; justify-content: space-between; gap: 0.45rem; }
 .visual-editor-left-scroll section + section { margin-block-start: 1.15rem; }
 .visual-editor-page-list,
 .visual-editor-layer-tree,
@@ -1420,6 +1421,22 @@ html[data-theme="dark"] .auth-panel-list {
 .visual-editor-page-list button,
 .visual-editor-global-list button,
 .visual-editor-layer-select { display: flex; flex: 1; align-items: center; justify-content: space-between; gap: 0.35rem; inline-size: 100%; border-color: transparent; background: transparent; color: var(--text-secondary); text-align: start; }
+.visual-editor-pages-heading button,
+.visual-editor-page-actions button {
+  min-block-size: 2rem;
+  padding: 0.3rem 0.44rem;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 0.48rem;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  color: var(--text-primary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.71rem;
+}
+.visual-editor-page-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.35rem; margin-block-start: 0.55rem; }
+.visual-editor-page-actions .visual-editor-structure-guard { grid-column: 1 / -1; }
+.visual-editor-page-actions button:disabled { cursor: not-allowed; opacity: 0.56; }
+.visual-editor-page-actions button.is-danger { border-color: color-mix(in srgb, var(--error-text) 46%, var(--border)); color: var(--error-text); }
 .visual-editor-layer-item { min-inline-size: 0; }
 .visual-editor-layer-row { min-inline-size: 0; }
 .visual-editor-layer-expand,
@@ -1442,8 +1459,15 @@ html[data-theme="dark"] .auth-panel-list {
 .visual-editor-canvas-frame:not(.is-preview) [data-editor-node-id] { position: relative; cursor: pointer; outline: 1px solid transparent; outline-offset: 2px; transition: outline-color 110ms ease, box-shadow 110ms ease; }
 .visual-editor-canvas-frame:not(.is-preview) [data-editor-node-id][data-visual-editor-hovered] { outline: 1px solid color-mix(in srgb, var(--accent) 58%, #fff); }
 .visual-editor-canvas-frame:not(.is-preview) [data-editor-node-id][data-visual-editor-selected] { z-index: 2; outline: 2px solid var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 17%, transparent); }
+.gs-document-symbol-instance { display: contents; }
+.visual-editor-canvas-frame:not(.is-preview) [data-editor-symbol-instance-id] > [data-editor-node-id] { position: relative; cursor: pointer; outline: 1px solid transparent; outline-offset: 2px; transition: outline-color 110ms ease, box-shadow 110ms ease; }
+.visual-editor-canvas-frame:not(.is-preview) [data-editor-symbol-instance-id][data-visual-editor-hovered] > [data-editor-node-id] { outline: 1px solid color-mix(in srgb, var(--accent) 58%, #fff); }
+.visual-editor-canvas-frame:not(.is-preview) [data-editor-symbol-instance-id][data-visual-editor-selected] > [data-editor-node-id] { z-index: 2; outline: 2px solid var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 17%, transparent); }
 .visual-editor-canvas-frame:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 55%, transparent); outline-offset: 3px; }
 .visual-editor-canvas-empty { position: absolute; inset: 5rem 1rem auto; padding: 0.8rem; border: 1px dashed color-mix(in srgb, var(--accent) 55%, var(--border)); border-radius: 0.6rem; background: color-mix(in srgb, #fff 92%, transparent); color: #334155; font-size: 0.8rem; text-align: center; }
+.visual-editor-canvas-empty > p,
+.visual-editor-canvas-context > p { margin: 0; }
+.visual-editor-canvas-context { position: absolute; z-index: 4; inset: 0.75rem auto auto 0.75rem; display: grid; gap: 0.45rem; inline-size: min(26rem, calc(100% - 1.5rem)); padding: 0.62rem; border: 1px solid color-mix(in srgb, var(--accent) 46%, var(--border)); border-radius: 0.62rem; background: color-mix(in srgb, #fff 96%, var(--surface)); box-shadow: 0 0.65rem 1.6rem color-mix(in srgb, #0f172a 15%, transparent); color: var(--text-primary); font-size: 0.71rem; }
 
 .visual-editor-properties header { display: grid; gap: 0.15rem; padding: 0.82rem 0.82rem 0.62rem; }
 .visual-editor-properties header p { margin: 0; color: var(--text-muted); font-size: 0.67rem; font-weight: 760; letter-spacing: 0.06em; text-transform: uppercase; }
@@ -1461,11 +1485,83 @@ html[data-theme="dark"] .auth-panel-list {
 .visual-editor-link-target { display: grid; gap: 0.4rem; }
 
 .visual-editor-navigation-menu + .visual-editor-navigation-menu { margin-block-start: 1rem; padding-block-start: 1rem; border-top: 1px solid var(--border); }
+.visual-editor-navigation-menu-heading { display: flex; align-items: center; justify-content: space-between; gap: 0.45rem; }
 .visual-editor-navigation-menu h3 { margin: 0; color: var(--text-primary); font-size: 0.77rem; }
 .visual-editor-navigation-item { display: grid; gap: 0.46rem; padding: 0.58rem; border: 1px solid color-mix(in srgb, var(--border) 72%, transparent); border-radius: 0.55rem; background: color-mix(in srgb, var(--surface) 70%, transparent); }
 .visual-editor-navigation-item-heading > span { color: var(--text-muted); font-size: 0.68rem; font-weight: 760; }
 .visual-editor-navigation-item-heading label { flex: 1; display: grid; gap: 0.3rem; color: var(--text-secondary); font-size: 0.72rem; font-weight: 680; }
 .visual-editor-navigation-children { margin-inline-start: 0.75rem; }
+.visual-editor-navigation-reorder { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.22rem; }
+.visual-editor-navigation-reorder button,
+.visual-editor-navigation-menu-heading button,
+.visual-editor-structure-panel button,
+.visual-editor-structure-panel select,
+.visual-editor-add-picker button,
+.visual-editor-add-picker select,
+.visual-editor-node-action-bar button {
+  min-block-size: 2rem;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 0.48rem;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.71rem;
+}
+.visual-editor-navigation-reorder button,
+.visual-editor-navigation-menu-heading button,
+.visual-editor-structure-panel button,
+.visual-editor-add-picker button,
+.visual-editor-node-action-bar button { padding: 0.3rem 0.44rem; cursor: pointer; }
+.visual-editor-navigation-reorder button:disabled,
+.visual-editor-navigation-menu-heading button:disabled,
+.visual-editor-structure-panel button:disabled,
+.visual-editor-structure-panel select:disabled,
+.visual-editor-add-picker button:disabled,
+.visual-editor-add-picker select:disabled,
+.visual-editor-node-action-bar button:disabled { cursor: not-allowed; opacity: 0.56; }
+.visual-editor-structure-panel { display: grid; gap: 0.65rem; padding: 0.72rem; border: 1px solid color-mix(in srgb, var(--border) 74%, transparent); border-radius: 0.68rem; background: color-mix(in srgb, var(--surface) 62%, transparent); }
+.visual-editor-structure-panel h2 { margin: 0; color: var(--text-primary); font-size: 0.8rem; }
+.visual-editor-structure-panel .visual-editor-muted-note { margin-block: 0.2rem 0; }
+.visual-editor-structure-add { display: grid; gap: 0.5rem; }
+.visual-editor-structure-add label { display: grid; gap: 0.28rem; color: var(--text-secondary); font-size: 0.71rem; font-weight: 680; }
+.visual-editor-structure-add select { inline-size: 100%; padding: 0.35rem 0.45rem; }
+.visual-editor-structure-add > button { border-color: color-mix(in srgb, var(--accent) 52%, var(--border)); background: color-mix(in srgb, var(--accent) 12%, var(--surface)); }
+.visual-editor-structure-actions { display: grid; gap: 0.45rem; padding-block-start: 0.58rem; border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent); }
+.visual-editor-structure-actions > p,
+.visual-editor-structure-guard { margin: 0; color: var(--text-secondary); font-size: 0.71rem; line-height: 1.4; overflow-wrap: anywhere; }
+.visual-editor-structure-actions > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.35rem; }
+.visual-editor-structure-panel button.is-danger { border-color: color-mix(in srgb, var(--error-text) 46%, var(--border)); color: var(--error-text); }
+.visual-editor-structure-guard { color: var(--warning-text); }
+.visual-editor-navigation-reorder button.is-danger { border-color: color-mix(in srgb, var(--error-text) 46%, var(--border)); color: var(--error-text); }
+.visual-editor-add-picker { display: grid; gap: 0.5rem; }
+.visual-editor-add-picker label { display: grid; gap: 0.28rem; color: var(--text-secondary); font-size: 0.71rem; font-weight: 680; }
+.visual-editor-add-picker select { inline-size: 100%; padding: 0.35rem 0.45rem; }
+.visual-editor-add-picker > button { border-color: color-mix(in srgb, var(--accent) 52%, var(--border)); background: color-mix(in srgb, var(--accent) 12%, var(--surface)); }
+.visual-editor-node-action-bar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.35rem; }
+.visual-editor-node-action-label,
+.visual-editor-node-action-bar .visual-editor-structure-guard { grid-column: 1 / -1; color: var(--text-secondary); font-size: 0.71rem; line-height: 1.4; overflow-wrap: anywhere; }
+.visual-editor-node-action-bar button.is-danger { border-color: color-mix(in srgb, var(--error-text) 46%, var(--border)); color: var(--error-text); }
+.visual-editor-add-picker.is-compact { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; align-items: end; }
+.visual-editor-add-picker.is-compact > button { min-block-size: 2rem; }
+.visual-editor-symbols-panel,
+.visual-editor-symbol-create,
+.visual-editor-symbol-insert,
+.visual-editor-symbol-instance,
+.visual-editor-symbol-list,
+.visual-editor-symbol-list li { display: grid; gap: 0.58rem; }
+.visual-editor-symbols-panel > section { padding: 0.72rem; border: 1px solid color-mix(in srgb, var(--border) 74%, transparent); border-radius: 0.68rem; background: color-mix(in srgb, var(--surface) 62%, transparent); }
+.visual-editor-symbols-panel h3 { margin: 0; color: var(--text-primary); font-size: 0.76rem; }
+.visual-editor-symbols-panel label { display: grid; gap: 0.28rem; color: var(--text-secondary); font-size: 0.71rem; font-weight: 680; }
+.visual-editor-symbols-panel input,
+.visual-editor-symbols-panel select { inline-size: 100%; min-block-size: 2rem; padding: 0.35rem 0.45rem; border: 1px solid color-mix(in srgb, var(--border) 88%, transparent); border-radius: 0.48rem; background: color-mix(in srgb, var(--surface) 92%, transparent); color: var(--text-primary); font: inherit; font-size: 0.74rem; }
+.visual-editor-symbols-panel button { min-block-size: 2rem; padding: 0.3rem 0.44rem; border: 1px solid color-mix(in srgb, var(--border) 88%, transparent); border-radius: 0.48rem; background: color-mix(in srgb, var(--surface) 92%, transparent); color: var(--text-primary); font: inherit; font-size: 0.71rem; cursor: pointer; }
+.visual-editor-symbols-panel button:disabled,
+.visual-editor-symbols-panel input:disabled { cursor: not-allowed; opacity: 0.56; }
+.visual-editor-symbol-list ul { display: grid; gap: 0.55rem; margin: 0; padding: 0; list-style: none; }
+.visual-editor-symbol-list li { padding: 0.58rem; border: 1px solid color-mix(in srgb, var(--border) 70%, transparent); border-radius: 0.56rem; background: color-mix(in srgb, var(--surface-elevated) 74%, var(--surface)); }
+.visual-editor-symbol-list li > p { margin: 0; color: var(--text-muted); font-size: 0.69rem; line-height: 1.4; overflow-wrap: anywhere; }
+.visual-editor-symbol-list li > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.35rem; }
+.visual-editor-symbols-panel button.is-danger { border-color: color-mix(in srgb, var(--error-text) 46%, var(--border)); color: var(--error-text); }
 
 /* Typed canonical-document design tokens, consumed by the existing renderer. */
 .gs-document-site {
@@ -11993,6 +12089,11 @@ html[data-theme="dark"] .generation-shell {
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.gs-site-footer-nav-legal {
+  color: color-mix(in srgb, currentColor 62%, transparent);
+  font-size: 0.72rem;
 }
 
 .gs-site-footer-nav .gs-site-nav-list {

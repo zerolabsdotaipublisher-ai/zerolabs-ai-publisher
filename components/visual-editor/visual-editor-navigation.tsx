@@ -5,6 +5,9 @@ import type { EditorDocument, EditorNavigationItem, EditorNavigationTarget } fro
 interface VisualEditorNavigationProps {
   document: EditorDocument;
   onUpdate: (menuId: string, itemId: string, patch: Partial<Pick<EditorNavigationItem, "label" | "visible" | "target">>) => void;
+  onAdd: (menuId: string, parentItemId?: string) => void;
+  onRemove: (menuId: string, itemId: string) => void;
+  onMove: (menuId: string, itemId: string, direction: "up" | "down") => void;
 }
 
 function targetKind(target: EditorNavigationTarget): EditorNavigationTarget["kind"] {
@@ -21,15 +24,23 @@ function NavigationItemEditor({
   menuId,
   item,
   index,
+  siblingCount,
   depth = 0,
   onUpdate,
+  onAdd,
+  onRemove,
+  onMove,
 }: {
   document: EditorDocument;
   menuId: string;
   item: EditorNavigationItem;
   index: number;
+  siblingCount: number;
   depth?: number;
   onUpdate: VisualEditorNavigationProps["onUpdate"];
+  onAdd: VisualEditorNavigationProps["onAdd"];
+  onRemove: VisualEditorNavigationProps["onRemove"];
+  onMove: VisualEditorNavigationProps["onMove"];
 }) {
   const kind = targetKind(item.target);
   const updateTarget = (target: EditorNavigationTarget) => onUpdate(menuId, item.id, { target });
@@ -41,6 +52,14 @@ function NavigationItemEditor({
           <span>Label</span>
           <input value={item.label} onChange={(event) => onUpdate(menuId, item.id, { label: event.target.value })} />
         </label>
+        <div className="visual-editor-navigation-reorder" aria-label={`Reorder ${item.label || "navigation item"}`}>
+          <button type="button" onClick={() => onMove(menuId, item.id, "up")} disabled={index === 0}>Move up</button>
+          <button type="button" onClick={() => onMove(menuId, item.id, "down")} disabled={index === siblingCount - 1}>Move down</button>
+          <button type="button" onClick={() => onAdd(menuId, item.id)}>Add child</button>
+          <button type="button" className="is-danger" onClick={() => {
+            if (window.confirm(`Delete “${item.label || "this navigation item"}” and its child items from the local draft?`)) onRemove(menuId, item.id);
+          }}>Delete</button>
+        </div>
       </div>
       <label>
         <span>Destination</span>
@@ -50,7 +69,7 @@ function NavigationItemEditor({
             const nextKind = event.target.value as "page" | "node" | "external";
             if (nextKind === "page") updateTarget({ kind: "page", pageId: document.pages[0]?.id ?? "" });
             else if (nextKind === "node") updateTarget({ kind: "node", nodeId: Object.keys(document.nodes)[0] ?? "" });
-            else updateTarget({ kind: "external", url: "" });
+            else updateTarget({ kind: "external", url: "https://example.com" });
           }}
         >
           <option value="page">Page</option>
@@ -81,24 +100,29 @@ function NavigationItemEditor({
       </label>
       {item.children.length ? (
         <ul className="visual-editor-navigation-children">
-          {item.children.map((child, childIndex) => <NavigationItemEditor key={child.id} document={document} menuId={menuId} item={child} index={childIndex} depth={depth + 1} onUpdate={onUpdate} />)}
+          {item.children.map((child, childIndex) => <NavigationItemEditor key={child.id} document={document} menuId={menuId} item={child} index={childIndex} siblingCount={item.children.length} depth={depth + 1} onUpdate={onUpdate} onAdd={onAdd} onRemove={onRemove} onMove={onMove} />)}
         </ul>
       ) : null}
     </li>
   );
 }
 
-export function VisualEditorNavigation({ document, onUpdate }: VisualEditorNavigationProps) {
+export function VisualEditorNavigation({ document, onUpdate, onAdd, onRemove, onMove }: VisualEditorNavigationProps) {
   return (
     <section className="visual-editor-navigation-panel" aria-labelledby="visual-editor-navigation-heading">
       <h2 id="visual-editor-navigation-heading">Navigation</h2>
-      <p className="visual-editor-muted-note">Edit labels, visibility, and typed destinations. Reordering arrives with Slice 5.</p>
+      <p className="visual-editor-muted-note">Edit labels, visibility, typed destinations, and item order. Changes remain in this local draft.</p>
       {document.navigation.menus.map((menu) => (
         <section key={menu.id} className="visual-editor-navigation-menu" aria-label={`${menu.location} navigation`}>
-          <h3>{menu.label || `${menu.location[0].toUpperCase()}${menu.location.slice(1)} menu`}</h3>
-          <ol>
-            {menu.items.map((item, index) => <NavigationItemEditor key={item.id} document={document} menuId={menu.id} item={item} index={index} onUpdate={onUpdate} />)}
-          </ol>
+          <div className="visual-editor-navigation-menu-heading">
+            <h3>{menu.label || `${menu.location[0].toUpperCase()}${menu.location.slice(1)} menu`}</h3>
+            <button type="button" onClick={() => onAdd(menu.id)}>Add item</button>
+          </div>
+          {menu.items.length ? (
+            <ol>
+              {menu.items.map((item, index) => <NavigationItemEditor key={item.id} document={document} menuId={menu.id} item={item} index={index} siblingCount={menu.items.length} onUpdate={onUpdate} onAdd={onAdd} onRemove={onRemove} onMove={onMove} />)}
+            </ol>
+          ) : <p className="visual-editor-empty-state">This menu is empty. Add an item to start building its navigation.</p>}
         </section>
       ))}
     </section>

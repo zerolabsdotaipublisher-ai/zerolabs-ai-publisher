@@ -178,6 +178,23 @@ function validatePageStyles(
   if (styles.spacing !== undefined && !SPACING.has(styles.spacing)) push(errors, `${path}.spacing`, "Unsupported spacing token.");
 }
 
+function validateOpenGraph(openGraph: unknown, path: string, errors: EditorDocumentValidationError[]): void {
+  if (openGraph === undefined) return;
+  if (!isRecord(openGraph)) {
+    push(errors, path, "Open Graph metadata must be an object.");
+    return;
+  }
+  (["title", "description", "url"] as const).forEach((key) => {
+    if (typeof openGraph[key] !== "string") push(errors, `${path}.${key}`, "Open Graph metadata requires a string value.");
+  });
+  if (openGraph.type !== "website" && openGraph.type !== "article") {
+    push(errors, `${path}.type`, "Open Graph metadata requires a supported type.");
+  }
+  if (openGraph.image !== undefined && typeof openGraph.image !== "string") {
+    push(errors, `${path}.image`, "Open Graph image must be a string.");
+  }
+}
+
 function validateNavigationItem(
   item: EditorNavigationItem,
   path: string,
@@ -227,15 +244,20 @@ export function validateEditorDocument(
   if (!document.id) push(errors, "id", "Document ID is required.");
   if (!document.site.name) push(errors, "site.name", "Site name is required.");
   validateSiteStyles(document.site.styles, "site.styles", errors);
+  validateOpenGraph(document.site.seo.openGraph, "site.seo.openGraph", errors);
 
   const pageIds = new Set<string>();
+  const pagePaths = new Set<string>();
   document.pages.forEach((page, index) => {
     const path = `pages.${index}`;
     if (!page.id || pageIds.has(page.id)) push(errors, `${path}.id`, "Page IDs must be unique and non-empty.");
     pageIds.add(page.id);
     if (!page.path.startsWith("/")) push(errors, `${path}.path`, "Page paths must start with '/'.");
+    if (!page.path || pagePaths.has(page.path)) push(errors, `${path}.path`, "Page paths must be unique and non-empty.");
+    pagePaths.add(page.path);
     validateVisibility(page.visibility, `${path}.visibility`, errors);
     validatePageStyles(page.styles, `${path}.styles`, errors);
+    validateOpenGraph(page.seo.openGraph, `${path}.seo.openGraph`, errors);
   });
 
   const nodeIds = new Set(Object.keys(document.nodes));

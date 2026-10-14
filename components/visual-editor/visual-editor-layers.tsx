@@ -3,7 +3,22 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
 import type { EditorDocument, EditorNodeId, EditorPageId } from "@/lib/editor/document";
-import { getVisualEditorGlobalLayers, getVisualEditorPageLayers, type VisualEditorLayerNode } from "@/lib/editor/visual";
+import {
+  findVisualEditorNodePageId,
+  getVisualEditorDuplicateBlocker,
+  getVisualEditorGlobalLayers,
+  getVisualEditorInsertOptions,
+  getVisualEditorMoveAvailability,
+  getVisualEditorNestBlocker,
+  getVisualEditorPageLayers,
+  getVisualEditorPageInsertTargets,
+  getVisualEditorPageRemovalBlocker,
+  getVisualEditorRemovalBlocker,
+  getVisualEditorUnnestBlocker,
+  type VisualEditorInsertTarget,
+  type VisualEditorLayerNode,
+} from "@/lib/editor/visual";
+import { VisualEditorSymbols } from "./visual-editor-symbols";
 
 type LeftPanelTab = "layers" | "globals" | "navigation" | "symbols";
 
@@ -13,9 +28,117 @@ interface VisualEditorLayersProps {
   selectedNodeId?: EditorNodeId;
   expandedNodeIds: string[];
   onSelectPage: (pageId: EditorPageId) => void;
+  onAddPage: () => void;
+  onDuplicatePage: (pageId: EditorPageId) => void;
+  onMovePage: (pageId: EditorPageId, direction: "up" | "down") => void;
+  onRemovePage: (pageId: EditorPageId) => void;
   onSelectNode: (nodeId: EditorNodeId, pageId?: EditorPageId) => void;
   onToggleExpanded: (nodeId: EditorNodeId) => void;
+  onInsertNode: (target: VisualEditorInsertTarget, nodeType: string) => void;
+  onDuplicateNode: (nodeId: EditorNodeId) => void;
+  onMoveNode: (nodeId: EditorNodeId, direction: "up" | "down") => void;
+  onNestNode: (nodeId: EditorNodeId) => void;
+  onUnnestNode: (nodeId: EditorNodeId) => void;
+  onRemoveNode: (nodeId: EditorNodeId) => void;
+  onCreateSymbol: (nodeId: EditorNodeId, name?: string) => void;
+  onInsertSymbol: (target: VisualEditorInsertTarget, symbolId: string) => void;
+  onRenameSymbol: (symbolId: string, name: string) => void;
+  onRemoveSymbol: (symbolId: string) => void;
+  onUnlinkSymbolInstance: (nodeId: EditorNodeId) => void;
   navigationPanel: ReactNode;
+}
+
+function targetKey(target: VisualEditorInsertTarget): string {
+  return `${target.parentId}:${target.slotName}`;
+}
+
+function VisualEditorStructurePanel({
+  document,
+  pageId,
+  nodeId,
+  onInsertNode,
+  onDuplicateNode,
+  onMoveNode,
+  onNestNode,
+  onUnnestNode,
+  onRemoveNode,
+}: {
+  document: EditorDocument;
+  pageId: EditorPageId;
+  nodeId?: EditorNodeId;
+  onInsertNode: VisualEditorLayersProps["onInsertNode"];
+  onDuplicateNode: VisualEditorLayersProps["onDuplicateNode"];
+  onMoveNode: VisualEditorLayersProps["onMoveNode"];
+  onNestNode: VisualEditorLayersProps["onNestNode"];
+  onUnnestNode: VisualEditorLayersProps["onUnnestNode"];
+  onRemoveNode: VisualEditorLayersProps["onRemoveNode"];
+}) {
+  const [selectedTargetKey, setSelectedTargetKey] = useState<string>();
+  const [selectedType, setSelectedType] = useState<string>();
+  const selectedNode = nodeId ? document.nodes[nodeId] : undefined;
+  const selectedNodeTargets = selectedNode
+    ? Object.keys(selectedNode.slots).map((slotName) => ({ parentId: selectedNode.id, slotName, label: `Inside selected element · ${slotName}` }))
+    : [];
+  const pageTargets = getVisualEditorPageInsertTargets(document, pageId).map((target) => ({ ...target, label: `Page · ${target.label}` }));
+  const targets = [...selectedNodeTargets, ...pageTargets].filter((target, index, candidates) =>
+    candidates.findIndex((candidate) => targetKey(candidate) === targetKey(target)) === index && getVisualEditorInsertOptions(document, target).length > 0,
+  );
+  const activeTarget = targets.find((target) => targetKey(target) === selectedTargetKey) ?? targets[0];
+  const insertOptions = activeTarget ? getVisualEditorInsertOptions(document, activeTarget) : [];
+  const activeType = insertOptions.some((option) => option.type === selectedType) ? selectedType : insertOptions[0]?.type;
+  const duplicateBlocker = selectedNode ? getVisualEditorDuplicateBlocker(document, selectedNode.id) : undefined;
+  const removalBlocker = selectedNode ? getVisualEditorRemovalBlocker(document, selectedNode.id) : undefined;
+  const moveAvailability = selectedNode ? getVisualEditorMoveAvailability(document, selectedNode.id) : { up: false, down: false };
+  const nestBlocker = selectedNode ? getVisualEditorNestBlocker(document, selectedNode.id) : undefined;
+  const unnestBlocker = selectedNode ? getVisualEditorUnnestBlocker(document, selectedNode.id) : undefined;
+
+  return (
+    <section className="visual-editor-structure-panel" aria-labelledby="visual-editor-structure-heading">
+      <div>
+        <h2 id="visual-editor-structure-heading">Structure</h2>
+        <p className="visual-editor-muted-note">These changes affect only the local draft and can be undone.</p>
+      </div>
+      <div className="visual-editor-structure-add">
+        <label>
+          <span>Insert into</span>
+          <select value={activeTarget ? targetKey(activeTarget) : ""} disabled={!targets.length} onChange={(event) => setSelectedTargetKey(event.target.value)}>
+            {targets.map((target) => <option key={targetKey(target)} value={targetKey(target)}>{target.label}</option>)}
+          </select>
+        </label>
+        <label>
+          <span>Element</span>
+          <select value={activeType ?? ""} disabled={!insertOptions.length} onChange={(event) => setSelectedType(event.target.value)}>
+            {insertOptions.map((option) => <option key={option.type} value={option.type}>{option.label}</option>)}
+          </select>
+        </label>
+        <button type="button" onClick={() => activeTarget && activeType && onInsertNode(activeTarget, activeType)} disabled={!activeTarget || !activeType}>Add element</button>
+      </div>
+      {selectedNode ? (
+        <div className="visual-editor-structure-actions">
+          <p>Selected: <strong>{selectedNode.type}</strong></p>
+          <div>
+            <button type="button" onClick={() => onMoveNode(selectedNode.id, "up")} disabled={!moveAvailability.up} title={moveAvailability.up ? "Move up" : "This element is already first"}>Move up</button>
+            <button type="button" onClick={() => onMoveNode(selectedNode.id, "down")} disabled={!moveAvailability.down} title={moveAvailability.down ? "Move down" : "This element is already last"}>Move down</button>
+            <button type="button" onClick={() => onNestNode(selectedNode.id)} disabled={Boolean(nestBlocker)} title={nestBlocker}>Nest</button>
+            <button type="button" onClick={() => onUnnestNode(selectedNode.id)} disabled={Boolean(unnestBlocker)} title={unnestBlocker}>Unnest</button>
+            <button type="button" onClick={() => onDuplicateNode(selectedNode.id)} disabled={Boolean(duplicateBlocker)} title={duplicateBlocker}>Duplicate</button>
+            <button
+              type="button"
+              className="is-danger"
+              onClick={() => {
+                if (window.confirm("Delete this element and its nested contents from the local draft? You can undo this change.")) onRemoveNode(selectedNode.id);
+              }}
+              disabled={Boolean(removalBlocker)}
+              title={removalBlocker}
+            >
+              Delete
+            </button>
+          </div>
+          {duplicateBlocker || removalBlocker || nestBlocker || unnestBlocker ? <p className="visual-editor-structure-guard">{removalBlocker ?? duplicateBlocker ?? nestBlocker ?? unnestBlocker}</p> : null}
+        </div>
+      ) : null}
+    </section>
+  );
 }
 
 function LayerNode({
@@ -72,8 +195,23 @@ export function VisualEditorLayers({
   selectedNodeId,
   expandedNodeIds,
   onSelectPage,
+  onAddPage,
+  onDuplicatePage,
+  onMovePage,
+  onRemovePage,
   onSelectNode,
   onToggleExpanded,
+  onInsertNode,
+  onDuplicateNode,
+  onMoveNode,
+  onNestNode,
+  onUnnestNode,
+  onRemoveNode,
+  onCreateSymbol,
+  onInsertSymbol,
+  onRenameSymbol,
+  onRemoveSymbol,
+  onUnlinkSymbolInstance,
   navigationPanel,
 }: VisualEditorLayersProps) {
   const [tab, setTab] = useState<LeftPanelTab>("layers");
@@ -81,6 +219,8 @@ export function VisualEditorLayers({
   const globalLayers = getVisualEditorGlobalLayers(document);
   const header = document.globals.header ? document.nodes[document.globals.header.nodeId] : undefined;
   const footer = document.globals.footer ? document.nodes[document.globals.footer.nodeId] : undefined;
+  const selectedPageIndex = document.pages.findIndex((page) => page.id === selectedPageId);
+  const selectedPageRemovalBlocker = getVisualEditorPageRemovalBlocker(document, selectedPageId);
 
   return (
     <aside className="visual-editor-left-panel" aria-label="Pages and layers">
@@ -94,7 +234,10 @@ export function VisualEditorLayers({
       {tab === "layers" ? (
         <div className="visual-editor-left-scroll">
           <section aria-labelledby="visual-editor-pages-heading">
-            <h2 id="visual-editor-pages-heading">Pages</h2>
+            <div className="visual-editor-pages-heading">
+              <h2 id="visual-editor-pages-heading">Pages</h2>
+              <button type="button" onClick={onAddPage}>Add page</button>
+            </div>
             <ul className="visual-editor-page-list">
               {document.pages.map((page) => (
                 <li key={page.id}>
@@ -104,6 +247,15 @@ export function VisualEditorLayers({
                 </li>
               ))}
             </ul>
+            <div className="visual-editor-page-actions" aria-label="Selected page actions">
+              <button type="button" onClick={() => onMovePage(selectedPageId, "up")} disabled={selectedPageIndex <= 0}>Move up</button>
+              <button type="button" onClick={() => onMovePage(selectedPageId, "down")} disabled={selectedPageIndex < 0 || selectedPageIndex === document.pages.length - 1}>Move down</button>
+              <button type="button" onClick={() => onDuplicatePage(selectedPageId)}>Duplicate page</button>
+              <button type="button" className="is-danger" disabled={Boolean(selectedPageRemovalBlocker)} title={selectedPageRemovalBlocker} onClick={() => {
+                if (window.confirm("Delete this page and its local draft content? You can undo this change.")) onRemovePage(selectedPageId);
+              }}>Delete page</button>
+              {selectedPageRemovalBlocker ? <p className="visual-editor-structure-guard">{selectedPageRemovalBlocker}</p> : null}
+            </div>
           </section>
           <section aria-labelledby="visual-editor-layers-heading">
             <h2 id="visual-editor-layers-heading">Layers</h2>
@@ -113,6 +265,17 @@ export function VisualEditorLayers({
               {globalLayers.slice(1).map((layer) => <LayerNode key={layer.id} node={layer} selectedNodeId={selectedNodeId} expandedNodeIds={expandedNodeIds} pageId={selectedPageId} depth={0} onSelect={onSelectNode} onToggle={onToggleExpanded} />)}
             </ul>
           </section>
+          <VisualEditorStructurePanel
+            document={document}
+            pageId={selectedPageId}
+            nodeId={selectedNodeId}
+            onInsertNode={onInsertNode}
+            onDuplicateNode={onDuplicateNode}
+            onMoveNode={onMoveNode}
+            onNestNode={onNestNode}
+            onUnnestNode={onUnnestNode}
+            onRemoveNode={onRemoveNode}
+          />
         </div>
       ) : null}
       {tab === "globals" ? (
@@ -127,8 +290,17 @@ export function VisualEditorLayers({
       {tab === "navigation" ? <div className="visual-editor-left-scroll">{navigationPanel}</div> : null}
       {tab === "symbols" ? (
         <div className="visual-editor-left-scroll">
-          <h2>Reusable components</h2>
-          <p className="visual-editor-muted-note">Symbols will be managed here in Slice 6. No reusable components are changed by this draft-only editor.</p>
+          <VisualEditorSymbols
+            document={document}
+            selectedPageId={selectedPageId}
+            selectedNodeId={selectedNodeId}
+            onCreate={onCreateSymbol}
+            onInsert={onInsertSymbol}
+            onRename={onRenameSymbol}
+            onRemove={onRemoveSymbol}
+            onSelectSource={(nodeId) => onSelectNode(nodeId, findVisualEditorNodePageId(document, nodeId))}
+            onUnlinkInstance={onUnlinkSymbolInstance}
+          />
         </div>
       ) : null}
     </aside>

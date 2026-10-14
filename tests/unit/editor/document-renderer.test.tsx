@@ -125,12 +125,32 @@ describe("EditorDocumentRenderer", () => {
       slots: {},
     }, "container_editor_test");
 
-    const html = render(complete);
+    const withAssetReference: EditorDocument = {
+      ...complete,
+      assets: {
+        ...complete.assets,
+        draft_image_asset: {
+          id: "draft_image_asset",
+          source: "external",
+          url: "https://cdn.example.test/referenced-image.png",
+          alt: "Referenced image",
+        },
+      },
+      nodes: {
+        ...complete.nodes,
+        image_editor_test: {
+          ...complete.nodes.image_editor_test,
+          props: { ...complete.nodes.image_editor_test.props, src: "draft_image_asset", alt: "Referenced image" },
+        },
+      },
+    };
+    const html = render(withAssetReference);
 
     expect(html).toContain("Registry heading");
     expect(html).toContain("Unsafe URL");
     expect(html).not.toContain("javascript:alert");
-    expect(html).toContain('src="https://cdn.example.test/generic-image.png"');
+    expect(html).toContain('src="https://cdn.example.test/referenced-image.png"');
+    expect(html).toContain('alt="Referenced image"');
     expect(html).toContain("gs-document-hidden-mobile");
     expect(html.indexOf("Registry heading")).toBeLessThan(html.indexOf("Unsafe URL"));
   });
@@ -142,5 +162,43 @@ describe("EditorDocumentRenderer", () => {
     expect(html).toContain("Legacy announcement");
     expect(html).toContain("This content must not disappear during adaptation.");
     expect(html).toContain('href="/legacy"');
+  });
+
+  it("renders linked reusable instances from their source while retaining the instance selection marker", () => {
+    const document = adaptWebsiteStructureToEditorDocument(createStandardMarketingSiteFixture());
+    const rootId = document.pages[0].rootNodeIds[0];
+    const source: EditorNode = {
+      id: "shared_feature_source",
+      type: "layout.section",
+      kind: "section",
+      props: {},
+      visibility: { base: true },
+      slots: { default: { name: "default", childIds: ["shared_feature_heading"] } },
+    };
+    const withSource = addNode(document, source, rootId);
+    const withHeading = addNode(withSource, {
+      id: "shared_feature_heading",
+      type: "component.heading",
+      kind: "component",
+      props: { text: "Shared feature", level: 2 },
+      visibility: { base: true },
+      slots: {},
+    }, source.id);
+    const instance: EditorNode = {
+      id: "shared_feature_instance",
+      type: "layout.section",
+      kind: "section",
+      props: {},
+      visibility: { base: true },
+      slots: { default: { name: "default", childIds: [] } },
+      symbolReference: { symbolId: "shared_feature" },
+    };
+    const complete = addNode(withHeading, instance, rootId);
+    complete.globals.symbols.shared_feature = { id: "shared_feature", name: "Shared feature", rootNodeId: source.id };
+
+    const html = render(complete);
+
+    expect(html).toMatch(/data-editor-symbol-instance-id="shared_feature_instance"[^>]*>[\s\S]*Shared feature/);
+    expect(html).toContain('data-editor-symbol-instance-id="shared_feature_instance"');
   });
 });
