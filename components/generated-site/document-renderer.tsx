@@ -266,6 +266,8 @@ function DocumentHeader({ document, page, node }: { document: EditorDocument; pa
 function DocumentFooter({ document, node }: { document: EditorDocument; node?: EditorNode }) {
   if (node && !isVisible(node.visibility)) return null;
   const menu = document.navigation.menus.find((candidate) => candidate.location === "footer");
+  const label = asString(node?.props.label) || "Explore";
+  const legalText = asString(node?.props.legalText);
   return (
     <footer
       className={node ? nodeClasses(node, "gs-site-footer-nav") : "gs-site-footer-nav"}
@@ -274,8 +276,9 @@ function DocumentFooter({ document, node }: { document: EditorDocument; node?: E
       aria-label="Footer navigation"
     >
       <div className="gs-site-footer-nav-inner">
-        <span className="gs-site-footer-nav-label">Explore</span>
+        <span className="gs-site-footer-nav-label">{label}</span>
         <NavigationItems document={document} items={menu?.items ?? []} activePageId={document.navigation.activePageId} />
+        {legalText ? <small className="gs-site-footer-nav-legal">{legalText}</small> : null}
       </div>
     </footer>
   );
@@ -400,7 +403,11 @@ function DocumentNode({
     if (!symbol || renderedSymbols.has(symbol.id)) return null;
     const nextSymbols = new Set(renderedSymbols);
     nextSymbols.add(symbol.id);
-    return <DocumentNode document={document} nodeId={symbol.rootNodeId} renderedSymbols={nextSymbols} />;
+    return (
+      <div className="gs-document-symbol-instance" data-editor-symbol-instance-id={node.id}>
+        <DocumentNode document={document} nodeId={symbol.rootNodeId} renderedSymbols={nextSymbols} />
+      </div>
+    );
   }
 
   const renderSlot = (slotName: string): ReactNode => {
@@ -490,7 +497,8 @@ function DocumentNode({
       );
     }
     case "image": {
-      const fromProps = toSafeDocumentUrl(node.props.src);
+      const sourceReference = asString(node.props.src);
+      const fromProps = toSafeDocumentUrl(sourceReference) ?? (sourceReference ? toSafeDocumentUrl(document.assets[sourceReference]?.url) : undefined);
       const fromAsset = node.assetIds?.map((assetId) => document.assets[assetId]?.url).find((url) => Boolean(toSafeDocumentUrl(url)));
       const src = fromProps ?? (fromAsset ? toSafeDocumentUrl(fromAsset) : undefined);
       if (!src) return null;

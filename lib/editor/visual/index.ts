@@ -14,3 +14,43 @@ export {
 export { findVisualEditorNodePageId, getVisualEditorGlobalLayers, getVisualEditorPageLayers, type VisualEditorLayerNode } from "./layers";
 export { getValueAtPath, getVisualEditorNodeControls, isHexColor, type VisualEditorNodeControls, type VisualEditorStyleControl } from "./properties";
 export { getVisualEditorCompatibilityNotice, type VisualEditorCompatibilityNotice } from "./compatibility";
+export {
+  addVisualEditorNavigationItem,
+  removeVisualEditorNavigationItem,
+  type VisualEditorNavigationItemInput,
+} from "./navigation";
+export {
+  createVisualEditorPage,
+  duplicateVisualEditorPage,
+  getVisualEditorPageRemovalBlocker,
+  moveVisualEditorPage,
+  removeVisualEditorPage,
+  renameVisualEditorPage,
+  updateVisualEditorPagePath,
+  type VisualEditorPageChange,
+} from "./pages";
+export {
+  createVisualEditorSymbol,
+  executeVisualEditorStructuralCommand,
+  getVisualEditorDuplicateBlocker,
+  getVisualEditorInsertOptions,
+  getVisualEditorInsertableSymbols,
+  getVisualEditorMoveAvailability,
+  getVisualEditorNestBlocker,
+  getVisualEditorNodeLocation,
+  getVisualEditorPageInsertTargets,
+  getVisualEditorRemovalBlocker,
+  getVisualEditorSymbolCreateBlocker,
+  getVisualEditorSymbolRemovalBlocker,
+  getVisualEditorSymbols,
+  getVisualEditorUnnestBlocker,
+  insertVisualEditorSymbol,
+  removeVisualEditorSymbol,
+  renameVisualEditorSymbol,
+  unlinkVisualEditorSymbolInstance,
+  type VisualEditorInsertOption,
+  type VisualEditorInsertTarget,
+  type VisualEditorStructuralCommand,
+  type VisualEditorStructuralCommandResult,
+  type VisualEditorSymbolOption,
+} from "./structure";

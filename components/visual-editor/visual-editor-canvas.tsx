@@ -3,7 +3,8 @@
 import { useEffect, useRef } from "react";
 import { EditorDocumentRenderer } from "@/components/generated-site/document-renderer";
 import type { EditorDocument, EditorNodeId, EditorPageId } from "@/lib/editor/document";
-import type { VisualEditorViewport } from "@/lib/editor/visual";
+import type { VisualEditorInsertTarget, VisualEditorViewport } from "@/lib/editor/visual";
+import { VisualEditorAddElementPicker, VisualEditorNodeActionBar } from "./visual-editor-structure-controls";
 
 interface VisualEditorCanvasProps {
   document: EditorDocument;
@@ -15,11 +16,22 @@ interface VisualEditorCanvasProps {
   onSelectNode: (nodeId: EditorNodeId) => void;
   onSelectPage: () => void;
   onHoverNode: (nodeId?: EditorNodeId) => void;
+  onInsertNode: (target: VisualEditorInsertTarget, nodeType: string) => void;
+  onDuplicateNode: (nodeId: EditorNodeId) => void;
+  onMoveNode: (nodeId: EditorNodeId, direction: "up" | "down") => void;
+  onNestNode: (nodeId: EditorNodeId) => void;
+  onUnnestNode: (nodeId: EditorNodeId) => void;
+  onRemoveNode: (nodeId: EditorNodeId) => void;
 }
 
 function nodeIdFromEventTarget(target: EventTarget | null): string | undefined {
   if (!(target instanceof Element)) return undefined;
-  return target.closest<HTMLElement>("[data-editor-node-id]")?.dataset.editorNodeId;
+  return target.closest<HTMLElement>("[data-editor-symbol-instance-id]")?.dataset.editorSymbolInstanceId
+    ?? target.closest<HTMLElement>("[data-editor-node-id]")?.dataset.editorNodeId;
+}
+
+function isCanvasControlTarget(target: EventTarget | null): boolean {
+  return target instanceof Element && Boolean(target.closest("[data-visual-editor-control]"));
 }
 
 function hasRenderableChildren(document: EditorDocument, pageId: string): boolean {
@@ -37,15 +49,22 @@ export function VisualEditorCanvas({
   onSelectNode,
   onSelectPage,
   onHoverNode,
+  onInsertNode,
+  onDuplicateNode,
+  onMoveNode,
+  onNestNode,
+  onUnnestNode,
+  onRemoveNode,
 }: VisualEditorCanvasProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const hasContent = hasRenderableChildren(document, pageId);
+  const selectedNode = selectedNodeId ? document.nodes[selectedNodeId] : undefined;
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    canvas.querySelectorAll<HTMLElement>("[data-editor-node-id]").forEach((element) => {
-      const nodeId = element.dataset.editorNodeId;
+    canvas.querySelectorAll<HTMLElement>("[data-editor-node-id], [data-editor-symbol-instance-id]").forEach((element) => {
+      const nodeId = element.dataset.editorSymbolInstanceId ?? element.dataset.editorNodeId;
       element.toggleAttribute("data-visual-editor-selected", !previewMode && Boolean(nodeId && nodeId === selectedNodeId));
       element.toggleAttribute("data-visual-editor-hovered", !previewMode && Boolean(nodeId && nodeId === hoveredNodeId && nodeId !== selectedNodeId));
     });
@@ -64,6 +83,7 @@ export function VisualEditorCanvas({
           tabIndex={0}
           onClickCapture={(event) => {
             if (previewMode) return;
+            if (isCanvasControlTarget(event.target)) return;
             event.preventDefault();
             const nodeId = nodeIdFromEventTarget(event.target);
             if (nodeId) onSelectNode(nodeId);
@@ -74,12 +94,13 @@ export function VisualEditorCanvas({
           }}
           onMouseLeave={() => onHoverNode(undefined)}
           onFocusCapture={(event) => {
-            if (!previewMode) {
+            if (!previewMode && !isCanvasControlTarget(event.target)) {
               const nodeId = nodeIdFromEventTarget(event.target);
               if (nodeId) onSelectNode(nodeId);
             }
           }}
           onKeyDownCapture={(event) => {
+            if (isCanvasControlTarget(event.target)) return;
             if (event.key === "Escape") {
               event.preventDefault();
               onSelectPage();
@@ -94,8 +115,34 @@ export function VisualEditorCanvas({
             }
           }}
         >
+          {!previewMode && selectedNode ? (
+            <div className="visual-editor-canvas-context" data-visual-editor-control>
+              <p>Selected canvas element</p>
+              <VisualEditorNodeActionBar
+                document={document}
+                nodeId={selectedNode.id}
+                onDuplicateNode={onDuplicateNode}
+                onMoveNode={onMoveNode}
+                onNestNode={onNestNode}
+                onUnnestNode={onUnnestNode}
+                onDeleteNode={onRemoveNode}
+              />
+              <VisualEditorAddElementPicker
+                document={document}
+                pageId={pageId}
+                destinationNodeId={selectedNode.id}
+                onInsertNode={onInsertNode}
+                compact
+              />
+            </div>
+          ) : null}
           <EditorDocumentRenderer document={document} pageId={pageId} renderHiddenPage />
-          {!hasContent ? <div className="visual-editor-canvas-empty">This page has no sections yet. Structural editing arrives in Slice 5.</div> : null}
+          {!hasContent ? (
+            <div className="visual-editor-canvas-empty" data-visual-editor-control>
+              <p>This page has no sections yet.</p>
+              <VisualEditorAddElementPicker document={document} pageId={pageId} onInsertNode={onInsertNode} />
+            </div>
+          ) : null}
         </div>
       </div>
     </main>

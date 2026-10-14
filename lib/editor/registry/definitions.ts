@@ -123,7 +123,7 @@ const marketingSections: readonly ComponentDefinition[] = [
     field("content.primaryCta", "Primary CTA label", "text", "string", "actions", { inlineEditable: true }),
     field("content.ctaHref", "Primary CTA destination", "url", "url", "actions"),
     field("content.secondaryCta", "Secondary CTA label", "text", "string", "actions", { inlineEditable: true }),
-    field("content.image", "Hero media", "media", "media", "media"),
+    field("content.image", "Hero media URL or reference", "media", "media", "media"),
   ]),
   sectionDefinition("about", "About", [
     field("content.headline", "Headline", "rich-text", "string", "content", { inlineEditable: true }),
@@ -303,7 +303,7 @@ const definitions: readonly ComponentDefinition[] = [
     kind: "component",
     allowedParentTypes: ["layout.section", "layout.container", "layout.column", "section.*"],
     slots: LEAF_SLOTS,
-    defaultProps: { text: "" },
+    defaultProps: { text: "Start writing your paragraph." },
     propSchema: [field("text", "Text", "rich-text", "string", "content", { required: true, inlineEditable: true })],
     editableProps: [field("text", "Text", "rich-text", "string", "content", { required: true, inlineEditable: true })],
     renderer: { key: "paragraph" },
@@ -379,7 +379,7 @@ const definitions: readonly ComponentDefinition[] = [
     slots: LEAF_SLOTS,
     defaultProps: { src: "", alt: "", fit: "cover" },
     propSchema: [
-      field("src", "Image source", "media", "media", "media", { required: true }),
+      field("src", "Image URL or asset reference", "media", "media", "media", { required: true }),
       field("alt", "Alternative text", "text", "string", "media", { required: true, inlineEditable: true }),
       field("fit", "Image fit", "select", "string", "layout", {
         options: [
@@ -391,7 +391,7 @@ const definitions: readonly ComponentDefinition[] = [
       }),
     ],
     editableProps: [
-      field("src", "Image source", "media", "media", "media", { required: true }),
+      field("src", "Image URL or asset reference", "media", "media", "media", { required: true }),
       field("alt", "Alternative text", "text", "string", "media", { required: true, inlineEditable: true }),
       field("fit", "Image fit", "select", "string", "layout", {
         options: [
@@ -439,7 +439,7 @@ const definitions: readonly ComponentDefinition[] = [
       field("tagline", "Tagline", "text", "string", "content", { inherited: true }),
     ],
     renderer: { key: "global-header" },
-    styleCapabilities: ["width", "spacing", "themeMode"],
+    styleCapabilities: ALL_STYLE_CAPABILITIES,
     supportsVisibility: true,
   },
   {
@@ -449,11 +449,17 @@ const definitions: readonly ComponentDefinition[] = [
     category: "global",
     kind: "global",
     slots: LEAF_SLOTS,
-    defaultProps: {},
-    propSchema: [],
-    editableProps: [],
+    defaultProps: { label: "Explore", legalText: "" },
+    propSchema: [
+      field("label", "Navigation heading", "text", "string", "content"),
+      field("legalText", "Legal text", "textarea", "string", "content"),
+    ],
+    editableProps: [
+      field("label", "Navigation heading", "text", "string", "content"),
+      field("legalText", "Legal text", "textarea", "string", "content"),
+    ],
     renderer: { key: "global-footer" },
-    styleCapabilities: ["width", "spacing", "themeMode"],
+    styleCapabilities: ALL_STYLE_CAPABILITIES,
     supportsVisibility: true,
   },
   ...marketingSections,

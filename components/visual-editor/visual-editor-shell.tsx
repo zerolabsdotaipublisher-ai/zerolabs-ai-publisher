@@ -33,14 +33,40 @@ export function VisualEditorShell({ initialDocument, initialPageId, projectabili
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
       const target = event.target;
       if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement) return;
-      dispatch({ type: "clear-node-selection" });
+      const hasCommandModifier = event.metaKey || event.ctrlKey;
+
+      if (hasCommandModifier && event.key.toLowerCase() === "z") {
+        event.preventDefault();
+        dispatch({ type: event.shiftKey ? "redo" : "undo" });
+        return;
+      }
+      if (hasCommandModifier && event.key.toLowerCase() === "y") {
+        event.preventDefault();
+        dispatch({ type: "redo" });
+        return;
+      }
+      if (event.key === "Escape") {
+        dispatch({ type: "clear-node-selection" });
+        return;
+      }
+      if (state.previewMode || !state.selectedNodeId) return;
+      if (hasCommandModifier && event.key.toLowerCase() === "d") {
+        event.preventDefault();
+        dispatch({ type: "duplicate-node", nodeId: state.selectedNodeId });
+        return;
+      }
+      if (event.key === "Delete" || event.key === "Backspace") {
+        event.preventDefault();
+        if (window.confirm("Delete this element and its nested contents from the local draft? You can undo this change.")) {
+          dispatch({ type: "remove-node", nodeId: state.selectedNodeId });
+        }
+      }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+  }, [state.previewMode, state.selectedNodeId]);
 
   return (
     <div className="visual-editor-shell">
@@ -70,9 +96,32 @@ export function VisualEditorShell({ initialDocument, initialPageId, projectabili
           selectedNodeId={state.selectedNodeId}
           expandedNodeIds={state.expandedNodeIds}
           onSelectPage={(pageId) => dispatch({ type: "select-page", pageId })}
+          onAddPage={() => dispatch({ type: "add-page" })}
+          onDuplicatePage={(pageId) => dispatch({ type: "duplicate-page", pageId })}
+          onMovePage={(pageId, direction) => dispatch({ type: "move-page", pageId, direction })}
+          onRemovePage={(pageId) => dispatch({ type: "remove-page", pageId })}
           onSelectNode={(nodeId, pageId) => dispatch({ type: "select-node", nodeId, pageId })}
           onToggleExpanded={(nodeId) => dispatch({ type: "toggle-node-expanded", nodeId })}
-          navigationPanel={<VisualEditorNavigation document={state.document} onUpdate={(menuId, itemId, patch) => dispatch({ type: "update-navigation-item", menuId, itemId, patch })} />}
+          onInsertNode={(target, nodeType) => dispatch({ type: "insert-node", target, nodeType })}
+          onDuplicateNode={(nodeId) => dispatch({ type: "duplicate-node", nodeId })}
+          onMoveNode={(nodeId, direction) => dispatch({ type: "move-node", nodeId, direction })}
+          onNestNode={(nodeId) => dispatch({ type: "nest-node", nodeId })}
+          onUnnestNode={(nodeId) => dispatch({ type: "unnest-node", nodeId })}
+          onRemoveNode={(nodeId) => dispatch({ type: "remove-node", nodeId })}
+          onCreateSymbol={(nodeId, name) => dispatch({ type: "create-symbol", nodeId, name })}
+          onInsertSymbol={(target, symbolId) => dispatch({ type: "insert-symbol", target, symbolId })}
+          onRenameSymbol={(symbolId, name) => dispatch({ type: "rename-symbol", symbolId, name })}
+          onRemoveSymbol={(symbolId) => dispatch({ type: "remove-symbol", symbolId })}
+          onUnlinkSymbolInstance={(nodeId) => dispatch({ type: "unlink-symbol-instance", nodeId })}
+          navigationPanel={
+            <VisualEditorNavigation
+              document={state.document}
+              onUpdate={(menuId, itemId, patch) => dispatch({ type: "update-navigation-item", menuId, itemId, patch })}
+              onAdd={(menuId, parentItemId) => dispatch({ type: "add-navigation-item", menuId, parentItemId })}
+              onRemove={(menuId, itemId) => dispatch({ type: "remove-navigation-item", menuId, itemId })}
+              onMove={(menuId, itemId, direction) => dispatch({ type: "move-navigation-item", menuId, itemId, direction })}
+            />
+          }
         />
         <VisualEditorCanvas
           document={state.document}
@@ -84,6 +133,12 @@ export function VisualEditorShell({ initialDocument, initialPageId, projectabili
           onSelectNode={(nodeId) => dispatch({ type: "select-node", nodeId, pageId: findVisualEditorNodePageId(state.document, nodeId) })}
           onSelectPage={() => dispatch({ type: "clear-node-selection" })}
           onHoverNode={(nodeId) => dispatch({ type: "hover-node", nodeId })}
+          onInsertNode={(target, nodeType) => dispatch({ type: "insert-node", target, nodeType })}
+          onDuplicateNode={(nodeId) => dispatch({ type: "duplicate-node", nodeId })}
+          onMoveNode={(nodeId, direction) => dispatch({ type: "move-node", nodeId, direction })}
+          onNestNode={(nodeId) => dispatch({ type: "nest-node", nodeId })}
+          onUnnestNode={(nodeId) => dispatch({ type: "unnest-node", nodeId })}
+          onRemoveNode={(nodeId) => dispatch({ type: "remove-node", nodeId })}
         />
         <VisualEditorProperties
           document={state.document}
