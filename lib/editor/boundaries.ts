@@ -92,8 +92,13 @@ function getRendererSupportedLinkFields(section: WebsiteSection): EditableTextFi
   const hasStringValue = (key: string): boolean => typeof content[key] === "string";
   const optionalPaths: string[] = [];
 
-  if (section.type === "hero" && hasStringValue("primaryCta")) {
-    optionalPaths.push("content.ctaHref");
+  if (section.type === "hero") {
+    if (hasStringValue("primaryCta")) {
+      optionalPaths.push("content.ctaHref");
+    }
+    if (hasStringValue("secondaryCta")) {
+      optionalPaths.push("content.secondaryCtaHref");
+    }
   }
 
   if (section.type === "cta") {

@@ -38,6 +38,7 @@ export type ColumnToken = 1 | 2 | 3;
 export type SpaceToken = "none" | "xs" | "sm" | "md" | "lg" | "xl" | "2xl";
 export type RadiusToken = "none" | "sm" | "md" | "lg" | "pill";
 export type ShadowToken = "none" | "sm" | "md" | "lg";
+export type BorderStyleToken = "solid" | "dashed" | "dotted";
 export type FontFamilyToken = "inherit" | "sans" | "serif" | "mono";
 export type FontSizeToken = "xs" | "sm" | "base" | "lg" | "xl" | "2xl" | "3xl" | "4xl";
 export type FontWeightToken = 400 | 500 | 600 | 700 | 800;
@@ -46,20 +47,35 @@ export type LetterSpacingToken = "tight" | "normal" | "wide";
 export type ComponentSizeToken = "sm" | "md" | "lg";
 export type HeightToken = "auto" | "content" | "screen";
 export type MinHeightToken = "none" | "short" | "medium" | "tall" | "screen";
+export type JustifyContentToken = "start" | "center" | "end" | "between";
+export type AlignItemsToken = "start" | "center" | "end" | "stretch";
 /** Hex colors are used instead of arbitrary CSS so persisted documents stay safe and portable. */
 export type ColorToken = string;
 
 export interface SitePaletteTokens {
+  /** Primary is retained as the compatible semantic accent token. */
   primary?: ColorToken;
   secondary?: ColorToken;
+  accent?: ColorToken;
   background?: ColorToken;
   surface?: ColorToken;
+  elevatedSurface?: ColorToken;
+  /** `text` is the original primary-text token and remains supported. */
   text?: ColorToken;
+  primaryText?: ColorToken;
+  secondaryText?: ColorToken;
   mutedText?: ColorToken;
+  border?: ColorToken;
+  success?: ColorToken;
+  warning?: ColorToken;
+  error?: ColorToken;
 }
 
 export interface SiteTypographyTokens {
+  /** Legacy shared family. New documents can select heading and body families independently. */
   fontFamily?: FontFamilyToken;
+  headingFontFamily?: FontFamilyToken;
+  bodyFontFamily?: FontFamilyToken;
   scale?: "compact" | "default" | "generous";
 }
 
@@ -68,6 +84,8 @@ export interface SiteStyleTokens {
   visualStyle: VisualStyleToken;
   themeMode: ThemeModeToken;
   spacing: SpacingToken;
+  /** Shared default shape for generated controls that support rounded corners. */
+  radius?: RadiusToken;
   colorMood?: string;
   typographyMood?: string;
   palette?: SitePaletteTokens;
@@ -87,8 +105,12 @@ export interface NodeStyleTokens {
   accentColor?: ColorToken;
   borderColor?: ColorToken;
   borderWidth?: number;
+  borderStyle?: BorderStyleToken;
   radius?: RadiusToken;
   shadow?: ShadowToken;
+  hoverBackgroundColor?: ColorToken;
+  hoverTextColor?: ColorToken;
+  focusColor?: ColorToken;
   opacity?: number;
   padding?: SpaceToken;
   margin?: SpaceToken;
@@ -101,6 +123,8 @@ export interface NodeStyleTokens {
   lineHeight?: LineHeightToken;
   letterSpacing?: LetterSpacingToken;
   size?: ComponentSizeToken;
+  justifyContent?: JustifyContentToken;
+  alignItems?: AlignItemsToken;
 }
 
 export interface PageStyleTokens {
@@ -221,6 +245,8 @@ export interface EditorNavigationItem {
   label: string;
   target: EditorNavigationTarget;
   visible: boolean;
+  /** A button item is a typed visual variant, not a raw class or CSS override. */
+  variant?: "link" | "button";
   children: EditorNavigationItem[];
   legacyHref?: string;
 }

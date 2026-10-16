@@ -167,6 +167,7 @@ function mapSectionContent(
           secondaryCta: hero.secondaryCta,
           supportingCopy: hero.supportingCopy,
           ctaHref: hero.ctaHref,
+          secondaryCtaHref: hero.secondaryCtaHref,
           image: hero.image,
         },
       };

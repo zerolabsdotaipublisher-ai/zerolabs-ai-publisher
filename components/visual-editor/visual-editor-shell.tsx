@@ -94,8 +94,10 @@ export function VisualEditorShell({ initialDocument, initialPageId, projectabili
           document={state.document}
           selectedPageId={state.selectedPageId}
           selectedNodeId={state.selectedNodeId}
+          selectedScope={state.selectedScope}
           expandedNodeIds={state.expandedNodeIds}
           onSelectPage={(pageId) => dispatch({ type: "select-page", pageId })}
+          onSelectSite={() => dispatch({ type: "select-site" })}
           onAddPage={() => dispatch({ type: "add-page" })}
           onDuplicatePage={(pageId) => dispatch({ type: "duplicate-page", pageId })}
           onMovePage={(pageId, direction) => dispatch({ type: "move-page", pageId, direction })}

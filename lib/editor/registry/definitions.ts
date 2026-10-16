@@ -18,8 +18,12 @@ const ALL_STYLE_CAPABILITIES: readonly NodeStyleCapability[] = [
   "accentColor",
   "borderColor",
   "borderWidth",
+  "borderStyle",
   "radius",
   "shadow",
+  "hoverBackgroundColor",
+  "hoverTextColor",
+  "focusColor",
   "opacity",
   "padding",
   "margin",
@@ -32,6 +36,8 @@ const ALL_STYLE_CAPABILITIES: readonly NodeStyleCapability[] = [
   "lineHeight",
   "letterSpacing",
   "size",
+  "justifyContent",
+  "alignItems",
 ];
 
 const CONTENT_STYLE_CAPABILITIES: readonly NodeStyleCapability[] = [
@@ -44,8 +50,12 @@ const CONTENT_STYLE_CAPABILITIES: readonly NodeStyleCapability[] = [
   "accentColor",
   "borderColor",
   "borderWidth",
+  "borderStyle",
   "radius",
   "shadow",
+  "hoverBackgroundColor",
+  "hoverTextColor",
+  "focusColor",
   "opacity",
   "padding",
   "margin",
@@ -58,6 +68,8 @@ const CONTENT_STYLE_CAPABILITIES: readonly NodeStyleCapability[] = [
   "lineHeight",
   "letterSpacing",
   "size",
+  "justifyContent",
+  "alignItems",
 ];
 
 const LEAF_SLOTS = {} as const;
@@ -123,6 +135,7 @@ const marketingSections: readonly ComponentDefinition[] = [
     field("content.primaryCta", "Primary CTA label", "text", "string", "actions", { inlineEditable: true }),
     field("content.ctaHref", "Primary CTA destination", "url", "url", "actions"),
     field("content.secondaryCta", "Secondary CTA label", "text", "string", "actions", { inlineEditable: true }),
+    field("content.secondaryCtaHref", "Secondary CTA destination", "url", "url", "actions"),
     field("content.image", "Hero media URL or reference", "media", "media", "media"),
   ]),
   sectionDefinition("about", "About", [
@@ -240,7 +253,7 @@ const definitions: readonly ComponentDefinition[] = [
     propSchema: [],
     editableProps: [],
     renderer: { key: "columns" },
-    styleCapabilities: ["columns", "spacing", "width", "themeMode"],
+    styleCapabilities: ALL_STYLE_CAPABILITIES,
     supportsVisibility: true,
   },
   {
@@ -433,10 +446,44 @@ const definitions: readonly ComponentDefinition[] = [
     propSchema: [
       field("siteName", "Site name", "text", "string", "content", { required: true, inherited: true }),
       field("tagline", "Tagline", "text", "string", "content", { inherited: true }),
+      field("navigationAlignment", "Navigation alignment", "select", "string", "layout", {
+        options: [
+          { label: "Start", value: "start" },
+          { label: "Center", value: "center" },
+          { label: "End", value: "end" },
+          { label: "Space between", value: "between" },
+        ],
+      }),
+      field("navigationItemStyle", "Navigation item style", "select", "string", "style", {
+        options: [
+          { label: "Links", value: "links" },
+          { label: "Pills", value: "pills" },
+          { label: "Buttons", value: "buttons" },
+        ],
+      }),
+      field("navigationLinkColor", "Navigation link color", "color", "color", "style"),
+      field("navigationActiveColor", "Navigation active color", "color", "color", "style"),
     ],
     editableProps: [
       field("siteName", "Site name", "text", "string", "content", { required: true, inherited: true }),
       field("tagline", "Tagline", "text", "string", "content", { inherited: true }),
+      field("navigationAlignment", "Navigation alignment", "select", "string", "layout", {
+        options: [
+          { label: "Start", value: "start" },
+          { label: "Center", value: "center" },
+          { label: "End", value: "end" },
+          { label: "Space between", value: "between" },
+        ],
+      }),
+      field("navigationItemStyle", "Navigation item style", "select", "string", "style", {
+        options: [
+          { label: "Links", value: "links" },
+          { label: "Pills", value: "pills" },
+          { label: "Buttons", value: "buttons" },
+        ],
+      }),
+      field("navigationLinkColor", "Navigation link color", "color", "color", "style"),
+      field("navigationActiveColor", "Navigation active color", "color", "color", "style"),
     ],
     renderer: { key: "global-header" },
     styleCapabilities: ALL_STYLE_CAPABILITIES,

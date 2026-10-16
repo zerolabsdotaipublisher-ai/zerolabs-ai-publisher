@@ -17,17 +17,21 @@ import {
   getVisualEditorUnnestBlocker,
   type VisualEditorInsertTarget,
   type VisualEditorLayerNode,
+  type VisualEditorSelectionScope,
 } from "@/lib/editor/visual";
+import { VisualEditorOperationNote } from "./visual-editor-operation-note";
 import { VisualEditorSymbols } from "./visual-editor-symbols";
 
-type LeftPanelTab = "layers" | "globals" | "navigation" | "symbols";
+type LeftPanelTab = "layers" | "design" | "globals" | "navigation" | "symbols";
 
 interface VisualEditorLayersProps {
   document: EditorDocument;
   selectedPageId: EditorPageId;
   selectedNodeId?: EditorNodeId;
+  selectedScope: VisualEditorSelectionScope;
   expandedNodeIds: string[];
   onSelectPage: (pageId: EditorPageId) => void;
+  onSelectSite: () => void;
   onAddPage: () => void;
   onDuplicatePage: (pageId: EditorPageId) => void;
   onMovePage: (pageId: EditorPageId, direction: "up" | "down") => void;
@@ -91,6 +95,13 @@ function VisualEditorStructurePanel({
   const moveAvailability = selectedNode ? getVisualEditorMoveAvailability(document, selectedNode.id) : { up: false, down: false };
   const nestBlocker = selectedNode ? getVisualEditorNestBlocker(document, selectedNode.id) : undefined;
   const unnestBlocker = selectedNode ? getVisualEditorUnnestBlocker(document, selectedNode.id) : undefined;
+  const addBlocker = !activeTarget
+    ? "Add element is unavailable: no registry-compatible destination is available here."
+    : !activeType
+      ? "Add element is unavailable: this destination has no supported element types."
+      : undefined;
+  const moveUpBlocker = moveAvailability.up ? undefined : "Move up is unavailable: there is no earlier editable sibling.";
+  const moveDownBlocker = moveAvailability.down ? undefined : "Move down is unavailable: there is no later editable sibling.";
 
   return (
     <section className="visual-editor-structure-panel" aria-labelledby="visual-editor-structure-heading">
@@ -101,24 +112,25 @@ function VisualEditorStructurePanel({
       <div className="visual-editor-structure-add">
         <label>
           <span>Insert into</span>
-          <select value={activeTarget ? targetKey(activeTarget) : ""} disabled={!targets.length} onChange={(event) => setSelectedTargetKey(event.target.value)}>
+          <select value={activeTarget ? targetKey(activeTarget) : ""} disabled={!targets.length} title={!targets.length ? addBlocker : undefined} onChange={(event) => setSelectedTargetKey(event.target.value)}>
             {targets.map((target) => <option key={targetKey(target)} value={targetKey(target)}>{target.label}</option>)}
           </select>
         </label>
         <label>
           <span>Element</span>
-          <select value={activeType ?? ""} disabled={!insertOptions.length} onChange={(event) => setSelectedType(event.target.value)}>
+          <select value={activeType ?? ""} disabled={!insertOptions.length} title={!insertOptions.length ? addBlocker : undefined} onChange={(event) => setSelectedType(event.target.value)}>
             {insertOptions.map((option) => <option key={option.type} value={option.type}>{option.label}</option>)}
           </select>
         </label>
-        <button type="button" onClick={() => activeTarget && activeType && onInsertNode(activeTarget, activeType)} disabled={!activeTarget || !activeType}>Add element</button>
+        <button type="button" onClick={() => activeTarget && activeType && onInsertNode(activeTarget, activeType)} disabled={!activeTarget || !activeType} title={addBlocker}>Add element</button>
+        <VisualEditorOperationNote messages={[addBlocker]} />
       </div>
       {selectedNode ? (
         <div className="visual-editor-structure-actions">
           <p>Selected: <strong>{selectedNode.type}</strong></p>
           <div>
-            <button type="button" onClick={() => onMoveNode(selectedNode.id, "up")} disabled={!moveAvailability.up} title={moveAvailability.up ? "Move up" : "This element is already first"}>Move up</button>
-            <button type="button" onClick={() => onMoveNode(selectedNode.id, "down")} disabled={!moveAvailability.down} title={moveAvailability.down ? "Move down" : "This element is already last"}>Move down</button>
+            <button type="button" onClick={() => onMoveNode(selectedNode.id, "up")} disabled={!moveAvailability.up} title={moveUpBlocker}>Move up</button>
+            <button type="button" onClick={() => onMoveNode(selectedNode.id, "down")} disabled={!moveAvailability.down} title={moveDownBlocker}>Move down</button>
             <button type="button" onClick={() => onNestNode(selectedNode.id)} disabled={Boolean(nestBlocker)} title={nestBlocker}>Nest</button>
             <button type="button" onClick={() => onUnnestNode(selectedNode.id)} disabled={Boolean(unnestBlocker)} title={unnestBlocker}>Unnest</button>
             <button type="button" onClick={() => onDuplicateNode(selectedNode.id)} disabled={Boolean(duplicateBlocker)} title={duplicateBlocker}>Duplicate</button>
@@ -134,7 +146,14 @@ function VisualEditorStructurePanel({
               Delete
             </button>
           </div>
-          {duplicateBlocker || removalBlocker || nestBlocker || unnestBlocker ? <p className="visual-editor-structure-guard">{removalBlocker ?? duplicateBlocker ?? nestBlocker ?? unnestBlocker}</p> : null}
+          <VisualEditorOperationNote messages={[
+            moveUpBlocker,
+            moveDownBlocker,
+            nestBlocker ? `Nest is unavailable: ${nestBlocker}` : undefined,
+            unnestBlocker ? `Unnest is unavailable: ${unnestBlocker}` : undefined,
+            duplicateBlocker ? `Duplicate is unavailable: ${duplicateBlocker}` : undefined,
+            removalBlocker ? `Delete is unavailable: ${removalBlocker}` : undefined,
+          ]} />
         </div>
       ) : null}
     </section>
@@ -193,8 +212,10 @@ export function VisualEditorLayers({
   document,
   selectedPageId,
   selectedNodeId,
+  selectedScope,
   expandedNodeIds,
   onSelectPage,
+  onSelectSite,
   onAddPage,
   onDuplicatePage,
   onMovePage,
@@ -221,13 +242,17 @@ export function VisualEditorLayers({
   const footer = document.globals.footer ? document.nodes[document.globals.footer.nodeId] : undefined;
   const selectedPageIndex = document.pages.findIndex((page) => page.id === selectedPageId);
   const selectedPageRemovalBlocker = getVisualEditorPageRemovalBlocker(document, selectedPageId);
+  const pageMoveUpBlocker = selectedPageIndex <= 0 ? "Move up is unavailable: this page is already first." : undefined;
+  const pageMoveDownBlocker = selectedPageIndex < 0 || selectedPageIndex === document.pages.length - 1
+    ? "Move down is unavailable: this page is already last."
+    : undefined;
 
   return (
     <aside className="visual-editor-left-panel" aria-label="Pages and layers">
       <div className="visual-editor-left-tabs" role="tablist" aria-label="Editor navigation">
-        {(["layers", "globals", "navigation", "symbols"] as LeftPanelTab[]).map((candidate) => (
+        {(["layers", "design", "globals", "navigation", "symbols"] as LeftPanelTab[]).map((candidate) => (
           <button key={candidate} type="button" role="tab" aria-selected={tab === candidate} className={tab === candidate ? "is-active" : undefined} onClick={() => setTab(candidate)}>
-            {candidate === "layers" ? "Pages" : candidate === "globals" ? "Globals" : candidate === "navigation" ? "Navigation" : "Symbols"}
+            {candidate === "layers" ? "Pages" : candidate === "design" ? "Design" : candidate === "globals" ? "Globals" : candidate === "navigation" ? "Navigation" : "Symbols"}
           </button>
         ))}
       </div>
@@ -248,13 +273,17 @@ export function VisualEditorLayers({
               ))}
             </ul>
             <div className="visual-editor-page-actions" aria-label="Selected page actions">
-              <button type="button" onClick={() => onMovePage(selectedPageId, "up")} disabled={selectedPageIndex <= 0}>Move up</button>
-              <button type="button" onClick={() => onMovePage(selectedPageId, "down")} disabled={selectedPageIndex < 0 || selectedPageIndex === document.pages.length - 1}>Move down</button>
+              <button type="button" onClick={() => onMovePage(selectedPageId, "up")} disabled={selectedPageIndex <= 0} title={pageMoveUpBlocker}>Move up</button>
+              <button type="button" onClick={() => onMovePage(selectedPageId, "down")} disabled={selectedPageIndex < 0 || selectedPageIndex === document.pages.length - 1} title={pageMoveDownBlocker}>Move down</button>
               <button type="button" onClick={() => onDuplicatePage(selectedPageId)}>Duplicate page</button>
               <button type="button" className="is-danger" disabled={Boolean(selectedPageRemovalBlocker)} title={selectedPageRemovalBlocker} onClick={() => {
                 if (window.confirm("Delete this page and its local draft content? You can undo this change.")) onRemovePage(selectedPageId);
               }}>Delete page</button>
-              {selectedPageRemovalBlocker ? <p className="visual-editor-structure-guard">{selectedPageRemovalBlocker}</p> : null}
+              <VisualEditorOperationNote messages={[
+                pageMoveUpBlocker,
+                pageMoveDownBlocker,
+                selectedPageRemovalBlocker ? `Delete page is unavailable: ${selectedPageRemovalBlocker}` : undefined,
+              ]} />
             </div>
           </section>
           <section aria-labelledby="visual-editor-layers-heading">
@@ -278,10 +307,20 @@ export function VisualEditorLayers({
           />
         </div>
       ) : null}
+      {tab === "design" ? (
+        <div className="visual-editor-left-scroll">
+          <section className="visual-editor-design-panel" aria-labelledby="visual-editor-design-heading">
+            <h2 id="visual-editor-design-heading">Site Design / Theme</h2>
+            <p className="visual-editor-muted-note">Set the palette, page and surface defaults, global typography, and supported spacing scale. Components without local overrides inherit these tokens.</p>
+            <button type="button" className={`visual-editor-design-select${selectedScope === "site" ? " is-selected" : ""}`} onClick={onSelectSite}>Open Site Design / Theme</button>
+          </section>
+        </div>
+      ) : null}
       {tab === "globals" ? (
         <div className="visual-editor-left-scroll">
           <h2>Global components</h2>
           <div className="visual-editor-global-list">
+            <button type="button" className={selectedScope === "site" ? "is-selected" : undefined} onClick={onSelectSite}>Site Design / Theme</button>
             {header ? <button type="button" className={selectedNodeId === header.id ? "is-selected" : undefined} onClick={() => onSelectNode(header.id)}>Header</button> : null}
             {footer ? <button type="button" className={selectedNodeId === footer.id ? "is-selected" : undefined} onClick={() => onSelectNode(footer.id)}>Footer</button> : null}
           </div>

@@ -33,7 +33,12 @@ export const VISUAL_EDITOR_HISTORY_LIMIT = 80;
 export const VISUAL_EDITOR_PERSISTENCE_ENABLED = false;
 
 export type VisualEditorViewport = "desktop" | "tablet" | "mobile";
-export type VisualEditorPanelTab = "properties" | "content" | "layout" | "style" | "typography" | "visibility";
+/**
+ * Inspector groups deliberately mirror registry metadata.  `actions` is
+ * labelled "Link / Action" in the UI so destinations never get mixed into
+ * content fields.
+ */
+export type VisualEditorPanelTab = "content" | "layout" | "style" | "typography" | "effects" | "visibility" | "actions";
 export type VisualEditorSelectionScope = "site" | "page" | "node";
 
 export interface VisualEditorState {
@@ -69,8 +74,8 @@ export type VisualEditorAction =
   | { type: "remove-page"; pageId: EditorPageId }
   | { type: "move-page"; pageId: EditorPageId; direction: "up" | "down" }
   | { type: "update-page"; pageId: EditorPageId; path: string; value: EditorValue }
-  | { type: "update-site"; path: string; value: EditorValue }
-  | { type: "update-navigation-item"; menuId: string; itemId: string; patch: Partial<Pick<EditorNavigationItem, "label" | "visible" | "target">> }
+  | { type: "update-site"; path: string; value: EditorValue | undefined }
+  | { type: "update-navigation-item"; menuId: string; itemId: string; patch: Partial<Pick<EditorNavigationItem, "label" | "visible" | "target" | "variant">> }
   | { type: "add-navigation-item"; menuId: string; parentItemId?: string }
   | { type: "remove-navigation-item"; menuId: string; itemId: string }
   | { type: "move-navigation-item"; menuId: string; itemId: string; direction: "up" | "down" }
@@ -92,14 +97,15 @@ function equalJson(left: unknown, right: unknown): boolean {
   return JSON.stringify(left) === JSON.stringify(right);
 }
 
-function setPath<T extends Record<string, unknown>>(source: T, path: string, value: EditorValue): T {
+function setPath<T extends Record<string, unknown>>(source: T, path: string, value: EditorValue | undefined): T {
   const keys = path.split(".").filter(Boolean);
   if (!keys.length) return source;
   const root = structuredClone(source) as Record<string, unknown>;
   let cursor = root;
   keys.forEach((key, index) => {
     if (index === keys.length - 1) {
-      cursor[key] = value;
+      if (value === undefined) delete cursor[key];
+      else cursor[key] = value;
       return;
     }
     const next = cursor[key];
@@ -112,7 +118,7 @@ function setPath<T extends Record<string, unknown>>(source: T, path: string, val
 function updateMenuItems(
   items: EditorNavigationItem[],
   itemId: string,
-  patch: Partial<Pick<EditorNavigationItem, "label" | "visible" | "target">>,
+  patch: Partial<Pick<EditorNavigationItem, "label" | "visible" | "target" | "variant">>,
 ): EditorNavigationItem[] {
   return items.map((item) => ({
     ...item,
@@ -203,7 +209,7 @@ export function createVisualEditorState(document: EditorDocument, selectedPageId
     selectedPageId: pageId,
     selectedScope: "page",
     activeViewport: "desktop",
-    panelTab: "properties",
+    panelTab: "content",
     previewMode: false,
     expandedNodeIds: document.pages.flatMap((page) => page.rootNodeIds),
     undoStack: [],
@@ -225,7 +231,7 @@ export function getVisualEditorSaveState(state: VisualEditorState): { disabled: 
 export function visualEditorReducer(state: VisualEditorState, action: VisualEditorAction): VisualEditorState {
   switch (action.type) {
     case "select-site":
-      return { ...state, selectedScope: "site", selectedNodeId: undefined };
+      return { ...state, selectedScope: "site", selectedNodeId: undefined, panelTab: "style" };
     case "select-page":
       return { ...state, selectedPageId: action.pageId, selectedScope: "page", selectedNodeId: undefined };
     case "select-node":
@@ -347,7 +353,7 @@ export function visualEditorReducer(state: VisualEditorState, action: VisualEdit
       return replaceDocument(state, {
         ...state.document,
         site: setPath(state.document.site as unknown as Record<string, unknown>, action.path, action.value) as unknown as EditorDocument["site"],
-        ...(mirrorsHeaderIdentity && header
+        ...(mirrorsHeaderIdentity && header && action.value !== undefined
           ? {
               nodes: {
                 ...state.document.nodes,

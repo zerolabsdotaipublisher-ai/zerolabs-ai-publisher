@@ -67,6 +67,8 @@ export function VisualEditorCanvas({
       const nodeId = element.dataset.editorSymbolInstanceId ?? element.dataset.editorNodeId;
       element.toggleAttribute("data-visual-editor-selected", !previewMode && Boolean(nodeId && nodeId === selectedNodeId));
       element.toggleAttribute("data-visual-editor-hovered", !previewMode && Boolean(nodeId && nodeId === hoveredNodeId && nodeId !== selectedNodeId));
+      if (nodeId && document.nodes[nodeId]) element.dataset.visualEditorLabel = document.nodes[nodeId].type;
+      else delete element.dataset.visualEditorLabel;
     });
   }, [document, hoveredNodeId, previewMode, selectedNodeId]);
 

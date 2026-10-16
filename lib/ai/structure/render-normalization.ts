@@ -227,6 +227,7 @@ function normalizeHeroContent(
     secondaryCta: readString(content.secondaryCta) ?? "Learn more",
     supportingCopy: readString(content.supportingCopy) ?? context.description,
     ctaHref: readString(content.ctaHref) ?? "#contact",
+    secondaryCtaHref: readString(content.secondaryCtaHref) ?? "#about",
     image: {
       src: readString(image.src),
       alt: readString(image.alt) ?? `${context.siteTitle} hero illustration`,

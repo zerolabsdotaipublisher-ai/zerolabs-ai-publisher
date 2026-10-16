@@ -29,6 +29,7 @@ export const CONTENT_OUTPUT_CONTRACT_EXAMPLE = {
           primaryCta: "Book a call",
           secondaryCta: "Learn more",
           ctaHref: "#contact",
+          secondaryCtaHref: "#about",
           image: {
             alt: "Editorial illustration of a team reviewing weekly plans",
             promptHint: "Editorial product illustration with a clear, modern workflow scene",

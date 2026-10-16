@@ -43,7 +43,7 @@ const STYLE_CONTROLS: Record<NodeStyleCapability, VisualEditorStyleControl> = {
     options: [{ label: "Compact", value: "compact" }, { label: "Comfortable", value: "comfortable" }, { label: "Spacious", value: "spacious" }],
   },
   columns: {
-    key: "columns", label: "Columns", control: "number", group: "layout",
+    key: "columns", label: "Columns", control: "select", group: "layout",
     options: [{ label: "One", value: 1 }, { label: "Two", value: 2 }, { label: "Three", value: 3 }],
   },
   themeMode: {
@@ -55,15 +55,22 @@ const STYLE_CONTROLS: Record<NodeStyleCapability, VisualEditorStyleControl> = {
   accentColor: { key: "accentColor", label: "Accent color", control: "color", group: "style" },
   borderColor: { key: "borderColor", label: "Border color", control: "color", group: "style" },
   borderWidth: { key: "borderWidth", label: "Border width", control: "number", group: "style" },
+  borderStyle: {
+    key: "borderStyle", label: "Border style", control: "border-style", group: "style",
+    options: [{ label: "Solid", value: "solid" }, { label: "Dashed", value: "dashed" }, { label: "Dotted", value: "dotted" }],
+  },
   radius: {
     key: "radius", label: "Corner radius", control: "select", group: "style",
-    options: [{ label: "None", value: "none" }, { label: "Small", value: "sm" }, { label: "Medium", value: "md" }, { label: "Large", value: "lg" }, { label: "Pill", value: "pill" }],
+    options: [{ label: "Square", value: "none" }, { label: "Slight", value: "sm" }, { label: "Rounded", value: "md" }, { label: "Large", value: "lg" }, { label: "Pill", value: "pill" }],
   },
   shadow: {
-    key: "shadow", label: "Shadow", control: "shadow", group: "style",
+    key: "shadow", label: "Shadow", control: "shadow", group: "effects",
     options: [{ label: "None", value: "none" }, { label: "Small", value: "sm" }, { label: "Medium", value: "md" }, { label: "Large", value: "lg" }],
   },
-  opacity: { key: "opacity", label: "Opacity", control: "number", group: "style" },
+  hoverBackgroundColor: { key: "hoverBackgroundColor", label: "Hover background", control: "color", group: "effects" },
+  hoverTextColor: { key: "hoverTextColor", label: "Hover text", control: "color", group: "effects" },
+  focusColor: { key: "focusColor", label: "Focus color", control: "color", group: "effects" },
+  opacity: { key: "opacity", label: "Opacity", control: "number", group: "effects" },
   padding: { key: "padding", label: "Padding", control: "spacing", group: "layout", options: SPACE_OPTIONS },
   margin: { key: "margin", label: "Margin", control: "spacing", group: "layout", options: SPACE_OPTIONS },
   gap: { key: "gap", label: "Gap", control: "spacing", group: "layout", options: SPACE_OPTIONS },
@@ -98,6 +105,14 @@ const STYLE_CONTROLS: Record<NodeStyleCapability, VisualEditorStyleControl> = {
   size: {
     key: "size", label: "Size", control: "select", group: "layout",
     options: [{ label: "Small", value: "sm" }, { label: "Medium", value: "md" }, { label: "Large", value: "lg" }],
+  },
+  justifyContent: {
+    key: "justifyContent", label: "Horizontal alignment", control: "select", group: "layout",
+    options: [{ label: "Start", value: "start" }, { label: "Center", value: "center" }, { label: "End", value: "end" }, { label: "Space between", value: "between" }],
+  },
+  alignItems: {
+    key: "alignItems", label: "Vertical alignment", control: "select", group: "layout",
+    options: [{ label: "Start", value: "start" }, { label: "Center", value: "center" }, { label: "End", value: "end" }, { label: "Stretch", value: "stretch" }],
   },
 };
 

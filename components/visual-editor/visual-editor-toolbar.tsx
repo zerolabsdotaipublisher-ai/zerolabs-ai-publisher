@@ -2,6 +2,7 @@
 
 import type { EditorDocument, EditorPageId } from "@/lib/editor/document";
 import type { VisualEditorViewport } from "@/lib/editor/visual";
+import { VisualEditorOperationNote } from "./visual-editor-operation-note";
 
 interface VisualEditorToolbarProps {
   document: EditorDocument;
@@ -40,11 +41,15 @@ export function VisualEditorToolbar({
   onRedo,
   onPreviewToggle,
 }: VisualEditorToolbarProps) {
+  const undoBlocker = canUndo ? undefined : "Undo is unavailable: this local draft has no earlier change.";
+  const redoBlocker = canRedo ? undefined : "Redo is unavailable: there is no undone change to restore.";
+  const saveBlocker = "Save is unavailable: the atomic draft persistence safety gate is not complete yet.";
+
   return (
     <header className="visual-editor-toolbar">
       <div className="visual-editor-toolbar-site">
-        <button type="button" className="visual-editor-site-button" aria-label="Select site settings" onClick={onSiteSelect}>
-          {document.site.name || "Untitled site"}
+        <button type="button" className="visual-editor-site-button" aria-label={`Open Design / Theme for ${document.site.name || "this site"}`} title="Open site Design / Theme" onClick={onSiteSelect}>
+          Design / Theme
         </button>
         <span className="visual-editor-draft-status" data-dirty={dirty ? "true" : "false"}>
           {dirty ? "Unsaved local draft" : "Draft-only mode"}
@@ -70,14 +75,15 @@ export function VisualEditorToolbar({
             </button>
           ))}
         </div>
-        <button type="button" onClick={onUndo} disabled={!canUndo} aria-label="Undo latest change">Undo</button>
-        <button type="button" onClick={onRedo} disabled={!canRedo} aria-label="Redo latest change">Redo</button>
+        <button type="button" onClick={onUndo} disabled={!canUndo} aria-label="Undo latest change" title={undoBlocker}>Undo</button>
+        <button type="button" onClick={onRedo} disabled={!canRedo} aria-label="Redo latest change" title={redoBlocker}>Redo</button>
         <button type="button" className={previewMode ? "is-active" : undefined} aria-pressed={previewMode} onClick={onPreviewToggle}>
           {previewMode ? "Exit preview" : "Preview"}
         </button>
-        <button type="button" className="visual-editor-save-button" disabled title="Atomic draft persistence is not available yet">
+        <button type="button" className="visual-editor-save-button" disabled title={saveBlocker}>
           Save disabled
         </button>
+        <VisualEditorOperationNote messages={[undoBlocker, redoBlocker, saveBlocker]} />
       </div>
     </header>
   );

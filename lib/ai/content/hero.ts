@@ -14,6 +14,7 @@ export function createHeroFallback(input: WebsiteGenerationInput): HeroSectionCo
     primaryCta: resolvedInput.primaryCta,
     secondaryCta: "Learn more",
     ctaHref: "#contact",
+    secondaryCtaHref: "#about",
     image:
       resolvedInput.websiteType === "landing-page"
         ? {
@@ -43,6 +44,7 @@ export function normalizeHeroSectionContent(
     primaryCta: content?.primaryCta?.trim() || fallback.primaryCta,
     secondaryCta: content?.secondaryCta?.trim() || fallback.secondaryCta,
     ctaHref: content?.ctaHref?.trim() || fallback.ctaHref,
+    secondaryCtaHref: content?.secondaryCtaHref?.trim() || fallback.secondaryCtaHref,
     image:
       content?.image?.alt?.trim() || content?.image?.promptHint?.trim()
         ? {

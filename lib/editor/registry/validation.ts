@@ -37,6 +37,10 @@ function isLinkTarget(value: unknown, document: EditorDocument): boolean {
   return value.kind === "external" && isSafeDocumentUrl(value.url);
 }
 
+function isHexColor(value: unknown): value is string {
+  return typeof value === "string" && /^#[0-9a-fA-F]{3,8}$/.test(value);
+}
+
 function matchesValueType(
   value: unknown,
   valueType: RegistryPropValueType,
@@ -55,6 +59,8 @@ function matchesValueType(
       return Array.isArray(value);
     case "url":
       return isSafeDocumentUrl(value);
+    case "color":
+      return isHexColor(value);
     case "link-target":
       return isLinkTarget(value, document);
     case "media":

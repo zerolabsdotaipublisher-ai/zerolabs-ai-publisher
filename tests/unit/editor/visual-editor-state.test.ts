@@ -105,11 +105,23 @@ describe("visual editor draft state", () => {
     const document = documentWithButton();
     const button = document.nodes.visual_editor_button;
     const controls = getVisualEditorNodeControls(button);
+    let state = createVisualEditorState(document);
 
-    expect(controls?.props.map((property) => property.path)).toContain("label");
-    expect(controls?.props.map((property) => property.path)).toContain("target");
+    expect(controls?.props.map((property) => property.path)).toEqual(["label", "href", "target"]);
+    expect(controls?.props.map((property) => property.path)).not.toContain("content.headline");
+    expect(controls?.props.find((property) => property.path === "target")?.group).toBe("actions");
     expect(controls?.styles.map((property) => property.key)).toContain("backgroundColor");
     expect(controls?.styles.map((property) => property.key)).toContain("fontWeight");
+    expect(controls?.styles.map((property) => property.key)).not.toEqual(expect.arrayContaining(["columns", "container"]));
+    expect(controls?.styles.find((property) => property.key === "shadow")?.group).toBe("effects");
+    expect(state.panelTab).toBe("content");
+
+    state = visualEditorReducer(state, { type: "set-panel-tab", tab: "effects" });
+    state = visualEditorReducer(state, { type: "set-panel-tab", tab: "actions" });
+    expect(state.panelTab).toBe("actions");
+
+    state = visualEditorReducer(state, { type: "select-site" });
+    expect(state).toMatchObject({ selectedScope: "site", selectedNodeId: undefined, panelTab: "style" });
   });
 
   it("updates text, button properties, colors, typography, and spacing in the local document", () => {
@@ -201,6 +213,8 @@ describe("visual editor draft state", () => {
     state = visualEditorReducer(state, { type: "update-page", pageId: page.id, path: "visibility.base", value: false });
     state = visualEditorReducer(state, { type: "update-site", path: "styles.palette.primary", value: "#1a73e8" });
     state = visualEditorReducer(state, { type: "update-site", path: "tagline", value: "A local tagline" });
+    state = visualEditorReducer(state, { type: "update-node-visibility", nodeId: hero.id, breakpoint: "desktop", value: false });
+    state = visualEditorReducer(state, { type: "update-node-visibility", nodeId: hero.id, breakpoint: "tablet", value: true });
     state = visualEditorReducer(state, { type: "update-node-visibility", nodeId: hero.id, breakpoint: "mobile", value: false });
 
     expect(state.document.pages[1].seo.title).toBe("About locally");
@@ -214,7 +228,48 @@ describe("visual editor draft state", () => {
     expect(state.document.site.styles.palette?.primary).toBe("#1a73e8");
     expect(state.document.site.tagline).toBe("A local tagline");
     expect(state.document.nodes[state.document.globals.header!.nodeId].props.tagline).toBe("A local tagline");
+    expect(state.document.nodes[hero.id].visibility.desktop).toBe(false);
+    expect(state.document.nodes[hero.id].visibility.tablet).toBe(true);
     expect(state.document.nodes[hero.id].visibility.mobile).toBe(false);
+    expect(validateEditorDocument(state.document)).toEqual([]);
+  });
+
+  it("keeps the expanded semantic palette and generic header/navigation controls typed", () => {
+    const document = adaptWebsiteStructureToEditorDocument(createStandardMarketingSiteFixture());
+    const headerId = document.globals.header!.nodeId;
+    const headerControls = getVisualEditorNodeControls(document.nodes[headerId]);
+    const headerMenu = document.navigation.menus.find((menu) => menu.location === "header")!;
+    const headerItem = headerMenu.items[0]!;
+    let state = createVisualEditorState(document);
+
+    state = visualEditorReducer(state, { type: "update-site", path: "styles.palette.accent", value: "#0f766e" });
+    state = visualEditorReducer(state, { type: "update-site", path: "styles.palette.elevatedSurface", value: "#f8fafc" });
+    state = visualEditorReducer(state, { type: "update-site", path: "styles.palette.primaryText", value: "#0f172a" });
+    state = visualEditorReducer(state, { type: "update-site", path: "styles.palette.border", value: "#cbd5e1" });
+    state = visualEditorReducer(state, { type: "update-site", path: "styles.radius", value: "pill" });
+    state = visualEditorReducer(state, { type: "update-site", path: "styles.typography.headingFontFamily", value: "serif" });
+    state = visualEditorReducer(state, { type: "update-site", path: "styles.typography.bodyFontFamily", value: "sans" });
+    state = visualEditorReducer(state, { type: "update-node-prop", nodeId: headerId, path: "navigationItemStyle", value: "buttons" });
+    state = visualEditorReducer(state, { type: "update-node-prop", nodeId: headerId, path: "navigationLinkColor", value: "#115e59" });
+    state = visualEditorReducer(state, { type: "update-node-style", nodeId: headerId, key: "borderStyle", value: "dashed" });
+    state = visualEditorReducer(state, { type: "update-node-style", nodeId: headerId, key: "hoverBackgroundColor", value: "#ccfbf1" });
+    state = visualEditorReducer(state, { type: "update-node-style", nodeId: headerId, key: "justifyContent", value: "between" });
+    state = visualEditorReducer(state, { type: "update-navigation-item", menuId: headerMenu.id, itemId: headerItem.id, patch: { variant: "button" } });
+
+    expect(headerControls?.props.map((property) => property.path)).toEqual(expect.arrayContaining([
+      "navigationAlignment",
+      "navigationItemStyle",
+      "navigationLinkColor",
+      "navigationActiveColor",
+    ]));
+    expect(state.document.site.styles.palette).toMatchObject({ accent: "#0f766e", elevatedSurface: "#f8fafc", primaryText: "#0f172a", border: "#cbd5e1" });
+    expect(state.document.site.styles.radius).toBe("pill");
+    expect(state.document.nodes[headerId].styles).toMatchObject({ borderStyle: "dashed", hoverBackgroundColor: "#ccfbf1", justifyContent: "between" });
+    expect(state.document.navigation.menus.find((menu) => menu.id === headerMenu.id)?.items[0].variant).toBe("button");
+    expect(validateEditorDocument(state.document)).toEqual([]);
+
+    state = visualEditorReducer(state, { type: "update-site", path: "styles.radius", value: undefined });
+    expect(state.document.site.styles.radius).toBeUndefined();
     expect(validateEditorDocument(state.document)).toEqual([]);
   });
 
@@ -246,6 +301,7 @@ describe("visual editor draft state", () => {
     expect(saveState.disabled).toBe(true);
     expect(saveState.label).toBe("Save disabled");
     expect(getVisualEditorCompatibilityNotice(document, issues).message).toContain("unsupported legacy node");
+    expect(getVisualEditorCompatibilityNotice(document, issues).message).toContain("No content has been dropped.");
     expect(Object.values(document.nodes).some((node) => node.legacy?.unsupported)).toBe(true);
   });
 

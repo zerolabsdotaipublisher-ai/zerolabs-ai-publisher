@@ -10,6 +10,7 @@ import {
   getVisualEditorSymbols,
   type VisualEditorInsertTarget,
 } from "@/lib/editor/visual";
+import { VisualEditorOperationNote } from "./visual-editor-operation-note";
 
 interface VisualEditorSymbolsProps {
   document: EditorDocument;
@@ -54,6 +55,11 @@ export function VisualEditorSymbols({
   const availableSymbols = activeTarget ? getVisualEditorInsertableSymbols(document, activeTarget) : [];
   const activeSymbolId = availableSymbols.some((symbol) => symbol.id === selectedSymbolId) ? selectedSymbolId : availableSymbols[0]?.id;
   const symbols = getVisualEditorSymbols(document);
+  const insertBlocker = !activeTarget
+    ? "Insert linked instance is unavailable: no compatible destination is available for the reusable components in this draft."
+    : !activeSymbolId
+      ? "Insert linked instance is unavailable: no reusable component fits the selected destination."
+      : undefined;
 
   return (
     <section className="visual-editor-symbols-panel" aria-labelledby="visual-editor-symbols-heading">
@@ -65,10 +71,10 @@ export function VisualEditorSymbols({
         <h3 id="visual-editor-symbol-create-heading">Make selected element reusable</h3>
         <label>
           <span>Name</span>
-          <input value={newSymbolName} placeholder="Reusable component" onChange={(event) => setNewSymbolName(event.target.value)} disabled={!selectedNode || Boolean(sourceBlocker)} />
+          <input value={newSymbolName} placeholder="Reusable component" onChange={(event) => setNewSymbolName(event.target.value)} disabled={!selectedNode || Boolean(sourceBlocker)} title={sourceBlocker} />
         </label>
-        <button type="button" onClick={() => selectedNode && onCreate(selectedNode.id, newSymbolName)} disabled={!selectedNode || Boolean(sourceBlocker)}>Create reusable component</button>
-        {sourceBlocker ? <p className="visual-editor-structure-guard">{sourceBlocker}</p> : null}
+        <button type="button" onClick={() => selectedNode && onCreate(selectedNode.id, newSymbolName)} disabled={!selectedNode || Boolean(sourceBlocker)} title={sourceBlocker}>Create reusable component</button>
+        <VisualEditorOperationNote messages={[sourceBlocker ? `Create reusable component is unavailable: ${sourceBlocker}` : undefined]} />
       </section>
       {selectedNode?.symbolReference ? (
         <section className="visual-editor-symbol-instance">
@@ -80,17 +86,18 @@ export function VisualEditorSymbols({
         <h3 id="visual-editor-symbol-insert-heading">Insert a linked instance</h3>
         <label>
           <span>Insert into</span>
-          <select value={activeTarget ? targetKey(activeTarget) : ""} disabled={!targets.length} onChange={(event) => setSelectedTargetKey(event.target.value)}>
+          <select value={activeTarget ? targetKey(activeTarget) : ""} disabled={!targets.length} title={!targets.length ? insertBlocker : undefined} onChange={(event) => setSelectedTargetKey(event.target.value)}>
             {targets.map((target) => <option key={targetKey(target)} value={targetKey(target)}>{target.label}</option>)}
           </select>
         </label>
         <label>
           <span>Reusable component</span>
-          <select value={activeSymbolId ?? ""} disabled={!availableSymbols.length} onChange={(event) => setSelectedSymbolId(event.target.value)}>
+          <select value={activeSymbolId ?? ""} disabled={!availableSymbols.length} title={!availableSymbols.length ? insertBlocker : undefined} onChange={(event) => setSelectedSymbolId(event.target.value)}>
             {availableSymbols.map((symbol) => <option key={symbol.id} value={symbol.id}>{symbol.name}</option>)}
           </select>
         </label>
-        <button type="button" onClick={() => activeTarget && activeSymbolId && onInsert(activeTarget, activeSymbolId)} disabled={!activeTarget || !activeSymbolId}>Insert linked instance</button>
+        <button type="button" onClick={() => activeTarget && activeSymbolId && onInsert(activeTarget, activeSymbolId)} disabled={!activeTarget || !activeSymbolId} title={insertBlocker}>Insert linked instance</button>
+        <VisualEditorOperationNote messages={[insertBlocker]} />
       </section>
       <section className="visual-editor-symbol-list" aria-labelledby="visual-editor-symbol-list-heading">
         <h3 id="visual-editor-symbol-list-heading">Library</h3>
@@ -119,7 +126,7 @@ export function VisualEditorSymbols({
                       Delete
                     </button>
                   </div>
-                  {removalBlocker ? <p className="visual-editor-structure-guard">{removalBlocker}</p> : null}
+                  <VisualEditorOperationNote messages={[removalBlocker ? `Delete reusable component is unavailable: ${removalBlocker}` : undefined]} />
                 </li>
               );
             })}

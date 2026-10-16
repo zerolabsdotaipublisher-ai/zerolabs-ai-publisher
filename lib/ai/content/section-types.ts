@@ -12,7 +12,7 @@ export const SECTION_CONTENT_CONTRACTS: SectionContentContract[] = [
   {
     sectionType: "hero",
     requiredFields: ["headline", "subheadline", "supportingCopy", "primaryCta"],
-    optionalFields: ["secondaryCta", "eyebrow", "ctaHref", "image"],
+    optionalFields: ["secondaryCta", "secondaryCtaHref", "eyebrow", "ctaHref", "image"],
     sectionGoal: "Lead with value proposition and conversion-focused action.",
     supportedVariants: ["text-only", "with-image"],
   },
