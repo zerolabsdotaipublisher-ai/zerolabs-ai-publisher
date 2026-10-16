@@ -8,6 +8,7 @@ interface HeroContent {
   subheadline?: string;
   primaryCta?: string;
   secondaryCta?: string;
+  secondaryCtaHref?: string;
   supportingCopy?: string;
   ctaHref?: string;
   image?: {
@@ -341,7 +342,7 @@ function HeroSectionView({ content }: { content: HeroContent }) {
             </a>
           ) : null}
           {content.secondaryCta ? (
-            <a className="gs-btn gs-btn-secondary" href="#about">
+            <a className="gs-btn gs-btn-secondary" href={content.secondaryCtaHref || "#about"}>
               {content.secondaryCta}
             </a>
           ) : null}

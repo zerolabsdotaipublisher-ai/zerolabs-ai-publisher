@@ -24,6 +24,7 @@ export type EditorControlType =
   | "container"
   | "color"
   | "shadow"
+  | "border-style"
   | "responsive-visibility";
 
 export type RegistryPropValueType =
@@ -33,6 +34,7 @@ export type RegistryPropValueType =
   | "object"
   | "list"
   | "url"
+  | "color"
   | "link-target"
   | "media";
 
@@ -91,7 +93,7 @@ export interface EditablePropDefinition {
   control: EditorControlType;
   valueType: RegistryPropValueType;
   required?: boolean;
-  group: "content" | "actions" | "media" | "layout" | "style" | "typography" | "visibility" | "advanced";
+  group: "content" | "actions" | "media" | "layout" | "style" | "typography" | "effects" | "visibility" | "advanced";
   options?: readonly EditorControlOption[];
   defaultValue?: EditorValue;
   validation?: PropertyValidationRule;

@@ -51,6 +51,7 @@ export interface HeroSectionContent {
   primaryCta: string;
   secondaryCta?: string;
   ctaHref?: string;
+  secondaryCtaHref?: string;
   image?: {
     alt: string;
     src?: string;

@@ -13,6 +13,7 @@ import {
   type VisualEditorInsertOption,
   type VisualEditorInsertTarget,
 } from "@/lib/editor/visual";
+import { VisualEditorOperationNote } from "./visual-editor-operation-note";
 
 interface VisualEditorNodeActionCallbacks {
   onDuplicateNode: (nodeId: EditorNodeId) => void;
@@ -66,18 +67,23 @@ export function VisualEditorAddElementPicker({
   const insertOptions = activeTarget ? getVisualEditorInsertOptions(document, activeTarget) : [];
   const activeType = insertOptions.some((option) => option.type === selectedType) ? selectedType : insertOptions[0]?.type;
   const groups = optionsByCategory(insertOptions);
+  const addBlocker = !activeTarget
+    ? "Add element is unavailable: no registry-compatible destination is available here."
+    : !activeType
+      ? "Add element is unavailable: this destination has no supported element types."
+      : undefined;
 
   return (
     <div className={`visual-editor-add-picker${compact ? " is-compact" : ""}`}>
       <label>
         <span>Insert into</span>
-        <select value={activeTarget ? targetKey(activeTarget) : ""} disabled={!targets.length} onChange={(event) => setSelectedTargetKey(event.target.value)}>
+        <select value={activeTarget ? targetKey(activeTarget) : ""} disabled={!targets.length} title={!targets.length ? addBlocker : undefined} onChange={(event) => setSelectedTargetKey(event.target.value)}>
           {targets.map((target) => <option key={targetKey(target)} value={targetKey(target)}>{target.label}</option>)}
         </select>
       </label>
       <label>
         <span>Element</span>
-        <select value={activeType ?? ""} disabled={!insertOptions.length} onChange={(event) => setSelectedType(event.target.value)}>
+        <select value={activeType ?? ""} disabled={!insertOptions.length} title={!insertOptions.length ? addBlocker : undefined} onChange={(event) => setSelectedType(event.target.value)}>
           {groups.map(([category, options]) => (
             <optgroup key={category} label={category[0].toUpperCase() + category.slice(1)}>
               {options.map((option) => <option key={option.type} value={option.type}>{option.label}</option>)}
@@ -85,7 +91,8 @@ export function VisualEditorAddElementPicker({
           ))}
         </select>
       </label>
-      <button type="button" onClick={() => activeTarget && activeType && onInsertNode(activeTarget, activeType)} disabled={!activeTarget || !activeType}>Add element</button>
+      <button type="button" onClick={() => activeTarget && activeType && onInsertNode(activeTarget, activeType)} disabled={!activeTarget || !activeType} title={addBlocker}>Add element</button>
+      <VisualEditorOperationNote messages={[addBlocker]} />
     </div>
   );
 }
@@ -107,12 +114,14 @@ export function VisualEditorNodeActionBar({
   const moveAvailability = getVisualEditorMoveAvailability(document, node.id);
   const nestBlocker = getVisualEditorNestBlocker(document, node.id);
   const unnestBlocker = getVisualEditorUnnestBlocker(document, node.id);
+  const moveUpBlocker = moveAvailability.up ? undefined : "Move up is unavailable: there is no earlier editable sibling.";
+  const moveDownBlocker = moveAvailability.down ? undefined : "Move down is unavailable: there is no later editable sibling.";
 
   return (
     <div className="visual-editor-node-action-bar" role="toolbar" aria-label={`Actions for ${node.type}`}>
       <span className="visual-editor-node-action-label">{node.type}</span>
-      <button type="button" onClick={() => onMoveNode(node.id, "up")} disabled={!moveAvailability.up} title={moveAvailability.up ? "Move up" : "This element is already first"}>Move up</button>
-      <button type="button" onClick={() => onMoveNode(node.id, "down")} disabled={!moveAvailability.down} title={moveAvailability.down ? "Move down" : "This element is already last"}>Move down</button>
+      <button type="button" onClick={() => onMoveNode(node.id, "up")} disabled={!moveAvailability.up} title={moveUpBlocker}>Move up</button>
+      <button type="button" onClick={() => onMoveNode(node.id, "down")} disabled={!moveAvailability.down} title={moveDownBlocker}>Move down</button>
       <button type="button" onClick={() => onNestNode(node.id)} disabled={Boolean(nestBlocker)} title={nestBlocker}>Nest</button>
       <button type="button" onClick={() => onUnnestNode(node.id)} disabled={Boolean(unnestBlocker)} title={unnestBlocker}>Unnest</button>
       <button type="button" onClick={() => onDuplicateNode(node.id)} disabled={Boolean(duplicateBlocker)} title={duplicateBlocker}>Duplicate</button>
@@ -127,7 +136,14 @@ export function VisualEditorNodeActionBar({
       >
         Delete
       </button>
-      {duplicateBlocker || removalBlocker || nestBlocker || unnestBlocker ? <p className="visual-editor-structure-guard">{removalBlocker ?? duplicateBlocker ?? nestBlocker ?? unnestBlocker}</p> : null}
+      <VisualEditorOperationNote messages={[
+        moveUpBlocker,
+        moveDownBlocker,
+        nestBlocker ? `Nest is unavailable: ${nestBlocker}` : undefined,
+        unnestBlocker ? `Unnest is unavailable: ${unnestBlocker}` : undefined,
+        duplicateBlocker ? `Duplicate is unavailable: ${duplicateBlocker}` : undefined,
+        removalBlocker ? `Delete is unavailable: ${removalBlocker}` : undefined,
+      ]} />
     </div>
   );
 }

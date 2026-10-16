@@ -49,19 +49,24 @@ function sanitizeClassToken(value: string): string {
 }
 
 function isVisible(visibility: EditorNode["visibility"] | EditorPage["visibility"]): boolean {
-  return visibility.base;
+  return visibility.base || visibility.desktop === true || visibility.tablet === true || visibility.mobile === true;
 }
 
 function visibilityClasses(visibility: EditorNode["visibility"] | EditorPage["visibility"]): string[] {
   return [
+    visibility.base === false ? "gs-document-hidden-base" : undefined,
     visibility.desktop === false ? "gs-document-hidden-desktop" : undefined,
     visibility.tablet === false ? "gs-document-hidden-tablet" : undefined,
     visibility.mobile === false ? "gs-document-hidden-mobile" : undefined,
+    visibility.desktop === true ? "gs-document-visible-desktop" : undefined,
+    visibility.tablet === true ? "gs-document-visible-tablet" : undefined,
+    visibility.mobile === true ? "gs-document-visible-mobile" : undefined,
   ].filter((value): value is string => Boolean(value));
 }
 
 function nodeClasses(node: EditorNode, additional?: string): string {
   const styles = node.styles;
+  const inheritsSiteSpacing = node.type.startsWith("layout.") && !styles?.padding && !styles?.margin && !styles?.gap && !styles?.spacing;
   return [
     "gs-document-node",
     `gs-document-type-${sanitizeClassToken(node.type)}`,
@@ -71,6 +76,11 @@ function nodeClasses(node: EditorNode, additional?: string): string {
     styles?.spacing ? `gs-document-spacing-${styles.spacing}` : undefined,
     styles?.columns ? `gs-document-columns-${styles.columns}` : undefined,
     styles?.themeMode ? `gs-document-theme-${styles.themeMode}` : undefined,
+    styles?.backgroundColor ? "gs-document-has-local-background" : undefined,
+    styles?.borderColor || styles?.borderWidth !== undefined || styles?.borderStyle ? "gs-document-has-local-border" : undefined,
+    styles?.radius ? "gs-document-has-local-radius" : undefined,
+    styles?.shadow ? "gs-document-has-local-shadow" : undefined,
+    inheritsSiteSpacing ? "gs-document-inherits-site-spacing" : undefined,
     ...visibilityClasses(node.visibility),
     additional,
   ]
@@ -84,6 +94,10 @@ type DocumentStyleVariables = CSSProperties & Record<`--${string}`, string | num
 function nodeStyleVariables(node: EditorNode): DocumentStyleVariables | undefined {
   const styles = node.styles;
   if (!styles) return undefined;
+  const hasBorder = Boolean(styles.borderColor || styles.borderWidth !== undefined || styles.borderStyle);
+  const borderStyle = styles.borderStyle ?? (hasBorder ? "solid" : undefined);
+  const borderWidth = styles.borderWidth ?? (hasBorder ? 1 : undefined);
+  const justifyContent = styles.justifyContent === "between" ? "space-between" : styles.justifyContent;
   const componentSize = styles.size
     ? node.type === "component.image"
       ? { width: `var(--gs-editor-image-size-${styles.size})` }
@@ -92,18 +106,25 @@ function nodeStyleVariables(node: EditorNode): DocumentStyleVariables | undefine
 
   return {
     ...(styles.backgroundColor || (node.type === "component.button" && styles.accentColor)
-      ? { backgroundColor: styles.backgroundColor ?? styles.accentColor }
+      ? { backgroundColor: styles.backgroundColor ?? styles.accentColor, "--gs-editor-node-background": styles.backgroundColor ?? styles.accentColor }
       : {}),
-    ...(styles.textColor ? { color: styles.textColor } : {}),
-    ...(styles.accentColor ? { "--gs-editor-node-accent": styles.accentColor } : {}),
-    ...(styles.borderColor ? { borderColor: styles.borderColor, borderStyle: "solid" } : {}),
-    ...(styles.borderWidth !== undefined ? { borderWidth: `${styles.borderWidth}px`, borderStyle: "solid" } : {}),
+    ...(styles.textColor ? { color: styles.textColor, "--gs-ink": styles.textColor, "--gs-muted": styles.textColor, "--gs-editor-node-button-text": styles.textColor } : {}),
+    ...(styles.accentColor ? { "--gs-editor-node-accent": styles.accentColor, "--gs-accent": styles.accentColor } : {}),
+    ...(hasBorder ? {
+      borderColor: styles.borderColor ?? "currentColor",
+      borderStyle: borderStyle!,
+      borderWidth: `${borderWidth}px`,
+      "--gs-border": styles.borderColor ?? "currentColor",
+      "--gs-editor-node-border": styles.borderColor ?? "currentColor",
+      "--gs-editor-node-border-style": borderStyle!,
+      "--gs-editor-node-border-width": `${borderWidth}px`,
+    } : {}),
     ...(styles.opacity !== undefined ? { opacity: styles.opacity } : {}),
-    ...(styles.padding ? { padding: `var(--gs-editor-space-${styles.padding})` } : {}),
-    ...(styles.margin ? { margin: `var(--gs-editor-space-${styles.margin})` } : {}),
-    ...(styles.gap ? { gap: `var(--gs-editor-space-${styles.gap})` } : {}),
-    ...(styles.radius ? { borderRadius: `var(--gs-editor-radius-${styles.radius})` } : {}),
-    ...(styles.shadow ? { boxShadow: `var(--gs-editor-shadow-${styles.shadow})` } : {}),
+    ...(styles.padding ? { padding: `var(--gs-editor-local-space-${styles.padding})` } : {}),
+    ...(styles.margin ? { margin: `var(--gs-editor-local-space-${styles.margin})` } : {}),
+    ...(styles.gap ? { gap: `var(--gs-editor-local-space-${styles.gap})` } : {}),
+    ...(styles.radius ? { borderRadius: `var(--gs-editor-radius-${styles.radius})`, "--gs-editor-node-radius": `var(--gs-editor-radius-${styles.radius})` } : {}),
+    ...(styles.shadow ? { boxShadow: `var(--gs-editor-shadow-${styles.shadow})`, "--gs-editor-node-shadow": `var(--gs-editor-shadow-${styles.shadow})` } : {}),
     ...(styles.height ? { height: `var(--gs-editor-height-${styles.height})` } : {}),
     ...(styles.minHeight ? { minHeight: `var(--gs-editor-min-height-${styles.minHeight})` } : {}),
     ...(styles.fontFamily ? { fontFamily: `var(--gs-editor-font-${styles.fontFamily})` } : {}),
@@ -111,6 +132,11 @@ function nodeStyleVariables(node: EditorNode): DocumentStyleVariables | undefine
     ...(styles.fontWeight ? { fontWeight: styles.fontWeight } : {}),
     ...(styles.lineHeight ? { lineHeight: `var(--gs-editor-line-height-${styles.lineHeight})` } : {}),
     ...(styles.letterSpacing ? { letterSpacing: `var(--gs-editor-letter-spacing-${styles.letterSpacing})` } : {}),
+    ...(styles.hoverBackgroundColor ? { "--gs-editor-node-hover-background": styles.hoverBackgroundColor } : {}),
+    ...(styles.hoverTextColor ? { "--gs-editor-node-hover-text": styles.hoverTextColor } : {}),
+    ...(styles.focusColor ? { "--gs-editor-node-focus": styles.focusColor } : {}),
+    ...(justifyContent ? { justifyContent } : {}),
+    ...(styles.alignItems ? { alignItems: styles.alignItems } : {}),
     ...componentSize,
   };
 }
@@ -118,16 +144,59 @@ function nodeStyleVariables(node: EditorNode): DocumentStyleVariables | undefine
 function siteStyleVariables(document: EditorDocument): DocumentStyleVariables | undefined {
   const palette = document.site.styles.palette;
   const typography = document.site.styles.typography;
-  if (!palette && !typography) return undefined;
+  const spacing = document.site.styles.spacing;
+  const radius = document.site.styles.radius;
+  if (!palette && !typography && !spacing && !radius) return undefined;
+  const accent = palette?.accent ?? palette?.primary;
+  const primaryText = palette?.primaryText ?? palette?.text;
+  const bodyFont = typography?.bodyFontFamily ?? typography?.fontFamily;
+  const typeScale = typography?.scale === "compact" ? "0.9375rem" : typography?.scale === "generous" ? "1.125rem" : "1rem";
+  const spacingVariables = spacing === "compact"
+    ? { "--gs-editor-site-space-xs": "0.1875rem", "--gs-editor-site-space-sm": "0.375rem", "--gs-editor-site-space-md": "0.75rem", "--gs-editor-site-space-lg": "1.125rem", "--gs-editor-site-space-xl": "1.5rem", "--gs-editor-site-space-2xl": "2.25rem" }
+    : spacing === "spacious"
+      ? { "--gs-editor-site-space-xs": "0.3125rem", "--gs-editor-site-space-sm": "0.625rem", "--gs-editor-site-space-md": "1.25rem", "--gs-editor-site-space-lg": "1.875rem", "--gs-editor-site-space-xl": "2.5rem", "--gs-editor-site-space-2xl": "3.75rem" }
+      : {};
 
   return {
-    ...(palette?.primary ? { "--accent": palette.primary, "--gs-editor-site-primary": palette.primary } : {}),
-    ...(palette?.secondary ? { "--gs-editor-site-secondary": palette.secondary } : {}),
-    ...(palette?.background ? { backgroundColor: palette.background, "--background": palette.background } : {}),
-    ...(palette?.surface ? { "--surface": palette.surface, "--gs-editor-site-surface": palette.surface } : {}),
-    ...(palette?.text ? { color: palette.text, "--foreground": palette.text } : {}),
-    ...(palette?.mutedText ? { "--text-muted": palette.mutedText, "--gs-editor-site-muted-text": palette.mutedText } : {}),
-    ...(typography?.fontFamily ? { fontFamily: `var(--gs-editor-font-${typography.fontFamily})` } : {}),
+    ...spacingVariables,
+    ...(accent ? { "--accent": accent, "--gs-accent": accent, "--gs-accent-strong": accent, "--gs-editor-site-primary": accent } : {}),
+    ...(palette?.secondary ? { "--gs-editor-site-secondary": palette.secondary, "--gs-highlight": palette.secondary } : {}),
+    ...(palette?.background ? { backgroundColor: palette.background, "--background": palette.background, "--gs-bg": palette.background, "--gs-bg-deep": palette.background, "--gs-editor-site-background": palette.background } : {}),
+    ...(palette?.surface ? { "--surface": palette.surface, "--gs-surface": palette.surface, "--gs-editor-site-surface": palette.surface } : {}),
+    ...(palette?.elevatedSurface ? { "--gs-surface-strong": palette.elevatedSurface } : {}),
+    ...(primaryText ? { color: primaryText, "--foreground": primaryText, "--gs-ink": primaryText, "--gs-editor-site-text": primaryText } : {}),
+    ...(palette?.secondaryText ? { "--gs-editor-site-secondary-text": palette.secondaryText } : {}),
+    ...(palette?.mutedText ? { "--text-muted": palette.mutedText, "--gs-muted": palette.mutedText, "--gs-editor-site-muted-text": palette.mutedText } : {}),
+    ...(palette?.border ? { "--gs-border": palette.border, "--gs-border-strong": palette.border } : {}),
+    ...(palette?.success ? { "--gs-editor-site-success": palette.success } : {}),
+    ...(palette?.warning ? { "--gs-editor-site-warning": palette.warning } : {}),
+    ...(palette?.error ? { "--gs-editor-site-error": palette.error } : {}),
+    ...(typography?.headingFontFamily ? { "--font-heading": `var(--gs-editor-font-${typography.headingFontFamily})` } : {}),
+    ...(bodyFont ? { fontFamily: `var(--gs-editor-font-${bodyFont})`, "--gs-editor-site-font-family": `var(--gs-editor-font-${bodyFont})` } : {}),
+    ...(radius ? { "--gs-editor-global-radius": `var(--gs-editor-radius-${radius})` } : {}),
+    "--gs-editor-site-font-size": typeScale,
+  };
+}
+
+function headerStyleVariables(node?: EditorNode): DocumentStyleVariables | undefined {
+  if (!node) return undefined;
+  const styles = node.styles;
+  const alignment = asString(node.props.navigationAlignment);
+  const navigationAlignment = alignment === "start" || alignment === "center" || alignment === "end" || alignment === "between"
+    ? alignment === "between" ? "space-between" : alignment
+    : undefined;
+  const linkColor = asString(node.props.navigationLinkColor);
+  const activeColor = asString(node.props.navigationActiveColor);
+
+  return {
+    ...(styles?.gap ? { "--gs-editor-nav-gap": `var(--gs-editor-local-space-${styles.gap})` } : {}),
+    ...(styles?.alignment ? { "--gs-editor-nav-text-align": styles.alignment === "left" ? "start" : "center" } : {}),
+    ...(styles?.fontFamily ? { "--gs-editor-nav-font-family": `var(--gs-editor-font-${styles.fontFamily})` } : {}),
+    ...(styles?.fontSize ? { "--gs-editor-nav-font-size": `var(--gs-editor-font-size-${styles.fontSize})` } : {}),
+    ...(styles?.fontWeight ? { "--gs-editor-nav-font-weight": styles.fontWeight } : {}),
+    ...(navigationAlignment ? { "--gs-editor-nav-justify": navigationAlignment } : {}),
+    ...(linkColor ? { "--gs-editor-nav-link-color": linkColor } : {}),
+    ...(activeColor ? { "--gs-editor-nav-active-color": activeColor } : {}),
   };
 }
 
@@ -211,7 +280,7 @@ function NavigationItems({
         const active = item.target.kind === "page" && item.target.pageId === activePageId;
         const content = target ? (
           <a
-            className={`gs-site-nav-link${active ? " is-active" : ""}`}
+            className={`gs-site-nav-link${active ? " is-active" : ""}${item.variant === "button" ? " is-button" : ""}`}
             href={target.href}
             aria-current={active ? "page" : undefined}
             data-active={active ? "true" : "false"}
@@ -248,7 +317,8 @@ function DocumentHeader({ document, page, node }: { document: EditorDocument; pa
     <header
       className={node ? nodeClasses(node, "gs-site-header") : "gs-site-header"}
       data-editor-node-id={node?.id}
-      style={node ? nodeStyleVariables(node) : undefined}
+      data-navigation-style={asString(node?.props.navigationItemStyle) ?? "pills"}
+      style={node ? { ...nodeStyleVariables(node), ...headerStyleVariables(node) } : undefined}
     >
       <nav className="gs-site-nav" aria-label="Primary navigation">
         <div className="gs-site-brand-stack">
@@ -554,6 +624,8 @@ export function EditorDocumentRenderer({
       data-editor-schema-version={document.schemaVersion}
       data-style-preset={document.site.styles.visualStyle}
       data-tone-preset={document.site.styles.tone}
+      data-theme-mode={document.site.styles.themeMode}
+      data-editor-has-global-radius={document.site.styles.radius ? "true" : undefined}
       style={siteStyleVariables(document)}
     >
       <div

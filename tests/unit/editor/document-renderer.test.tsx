@@ -201,4 +201,73 @@ describe("EditorDocumentRenderer", () => {
     expect(html).toMatch(/data-editor-symbol-instance-id="shared_feature_instance"[^>]*>[\s\S]*Shared feature/);
     expect(html).toContain('data-editor-symbol-instance-id="shared_feature_instance"');
   });
+
+  it("binds semantic palette, typography, header navigation, and interaction tokens to the live document canvas", () => {
+    const document = adaptWebsiteStructureToEditorDocument(createStandardMarketingSiteFixture());
+    const headerId = document.globals.header!.nodeId;
+    const headerMenu = document.navigation.menus.find((menu) => menu.location === "header")!;
+    const headerItem = headerMenu.items[0]!;
+    document.site.styles = {
+      ...document.site.styles,
+      themeMode: "dark",
+      spacing: "spacious",
+      radius: "lg",
+      palette: {
+        primary: "#2563eb",
+        accent: "#0f766e",
+        background: "#0f172a",
+        surface: "#1e293b",
+        elevatedSurface: "#334155",
+        primaryText: "#f8fafc",
+        secondaryText: "#cbd5e1",
+        mutedText: "#94a3b8",
+        border: "#475569",
+        success: "#16a34a",
+        warning: "#f59e0b",
+        error: "#dc2626",
+      },
+      typography: { headingFontFamily: "serif", bodyFontFamily: "sans", scale: "generous" },
+    };
+    document.nodes[headerId] = {
+      ...document.nodes[headerId],
+      props: { ...document.nodes[headerId].props, navigationItemStyle: "buttons", navigationLinkColor: "#e2e8f0", navigationActiveColor: "#fef08a" },
+      styles: { backgroundColor: "#111827", textColor: "#f8fafc", borderStyle: "dashed", borderWidth: 2, gap: "sm", hoverBackgroundColor: "#1f2937", focusColor: "#fef08a" },
+    };
+    headerMenu.items[0] = { ...headerItem, variant: "button" };
+
+    const html = render(document);
+
+    expect(html).toContain('data-theme-mode="dark"');
+    expect(html).toContain('data-editor-has-global-radius="true"');
+    expect(html).toContain('--gs-accent:#0f766e');
+    expect(html).toContain('--gs-bg:#0f172a');
+    expect(html).toContain('--gs-surface-strong:#334155');
+    expect(html).toContain('--gs-editor-site-space-md:1.25rem');
+    expect(html).toContain('--gs-editor-global-radius:var(--gs-editor-radius-lg)');
+    expect(html).toContain('--font-heading:var(--gs-editor-font-serif)');
+    expect(html).toContain('data-navigation-style="buttons"');
+    expect(html).toContain('--gs-editor-nav-link-color:#e2e8f0');
+    expect(html).toContain('--gs-editor-nav-gap:var(--gs-editor-local-space-sm)');
+    expect(html).toContain('gs-site-nav-link is-active is-button');
+    expect(html).toContain('--gs-editor-node-hover-background:#1f2937');
+    expect(html).toContain('border-style:dashed');
+  });
+
+  it("keeps breakpoint-specific visibility renderable and applies the editable hero secondary CTA target", () => {
+    const document = adaptWebsiteStructureToEditorDocument(createStandardMarketingSiteFixture());
+    const hero = Object.values(document.nodes).find((node) => node.type === "section.hero")!;
+    const heroContent = hero.props.content as Record<string, string>;
+    document.nodes[hero.id] = {
+      ...hero,
+      props: { ...hero.props, content: { ...heroContent, secondaryCtaHref: "https://example.test/learn-more" } },
+      visibility: { base: false, desktop: true, mobile: false },
+    };
+
+    const html = render(document);
+
+    expect(html).toContain('href="https://example.test/learn-more"');
+    expect(html).toContain("gs-document-hidden-base");
+    expect(html).toContain("gs-document-visible-desktop");
+    expect(html).toContain("gs-document-hidden-mobile");
+  });
 });
