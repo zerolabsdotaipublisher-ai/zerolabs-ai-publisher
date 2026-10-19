@@ -15,6 +15,7 @@ import {
   getVisualEditorPageRemovalBlocker,
   getVisualEditorRemovalBlocker,
   getVisualEditorUnnestBlocker,
+  VISUAL_EDITOR_PRIMARY_AREAS,
   type VisualEditorInsertTarget,
   type VisualEditorLayerNode,
   type VisualEditorSelectionScope,
@@ -318,7 +319,8 @@ export function VisualEditorLayers({
       ) : null}
       {tab === "globals" ? (
         <div className="visual-editor-left-scroll">
-          <h2>Global components</h2>
+          <h2>Globals</h2>
+          <p className="visual-editor-muted-note">Edit shared website elements. The Site Header is the header at the top of your preview, not the application toolbar.</p>
           <div className="visual-editor-global-list">
             <button type="button" className={selectedScope === "site" ? "is-selected" : undefined} onClick={onSelectSite}>Site Design / Theme</button>
             {header ? <button type="button" className={selectedNodeId === header.id ? "is-selected" : undefined} onClick={() => onSelectNode(header.id)}>Header</button> : null}

@@ -294,7 +294,7 @@ describe("visual editor draft state", () => {
   it("keeps Save disabled and reports legacy projection risks without persistence", () => {
     const structure = createLegacyUnknownSectionFixture();
     const document = adaptWebsiteStructureToEditorDocument(structure);
-    const saveState = getVisualEditorSaveState(createVisualEditorState(document));
+    const saveState = getVisualEditorSaveState();
     const issues = getEditorDocumentProjectabilityIssues(document, trustedWebsiteStructureState(structure));
 
     expect(VISUAL_EDITOR_PERSISTENCE_ENABLED).toBe(false);

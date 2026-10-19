@@ -35,7 +35,7 @@ export function toWebsiteManagementRecord(
     lastPublishedAt: publishStatus.timestamps.lastPublishedAt,
     liveUrl: publishStatus.liveUrl,
     previewPath: routes.previewSite(structure.id),
-    editorPath: routes.editorSite(structure.id),
+    editorPath: routes.editorPrimary(structure.id),
     generatedSitePath: routes.generatedSite(structure.id),
     deletedAt: structure.management?.deletedAt,
     deletionState: isSoftDeleted(structure) ? "deleted" : "active",

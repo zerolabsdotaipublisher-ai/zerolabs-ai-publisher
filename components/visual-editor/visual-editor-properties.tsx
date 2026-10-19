@@ -2,7 +2,14 @@
 
 import { useState, type ChangeEvent, type ReactNode } from "react";
 import type { EditorDocument, EditorNavigationTarget, EditorNode, EditorPage, EditorValue, NodeStyleTokens } from "@/lib/editor/document";
-import { getValueAtPath, getVisualEditorNodeControls, type VisualEditorPanelTab, type VisualEditorStyleControl } from "@/lib/editor/visual";
+import {
+  getValueAtPath,
+  getVisualEditorNodeControls,
+  VISUAL_EDITOR_DESIGN_SECTIONS,
+  VISUAL_EDITOR_PROPERTY_GROUPS,
+  type VisualEditorPanelTab,
+  type VisualEditorStyleControl,
+} from "@/lib/editor/visual";
 import type { EditablePropDefinition } from "@/lib/editor/registry";
 
 type ControlDefinition = Pick<EditablePropDefinition, "label" | "description" | "control" | "options" | "group" | "resettable">;
@@ -160,8 +167,8 @@ function Field({ definition, value, document, onChange, onClear }: { definition:
   );
 }
 
-function PropertySection({ title, children }: { title: string; children: ReactNode }) {
-  return <section className="visual-editor-property-section"><h3>{title}</h3><div>{children}</div></section>;
+function PropertySection({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
+  return <section className="visual-editor-property-section"><h3>{title}</h3>{description ? <p className="visual-editor-property-description">{description}</p> : null}<div>{children}</div></section>;
 }
 
 function visibilityField(label: string, checked: boolean, onChange: (value: boolean) => void) {

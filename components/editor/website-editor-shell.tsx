@@ -35,6 +35,7 @@ interface WebsiteEditorShellProps {
   initialStructure: WebsiteStructure;
   previewPath: string;
   generatedSitePath: string;
+  visualEditorPath: string;
 }
 
 function moveItem(ids: string[], targetId: string, direction: "up" | "down"): string[] {
@@ -54,7 +55,7 @@ function moveItem(ids: string[], targetId: string, direction: "up" | "down"): st
   return next;
 }
 
-export function WebsiteEditorShell({ initialStructure, previewPath, generatedSitePath }: WebsiteEditorShellProps) {
+export function WebsiteEditorShell({ initialStructure, previewPath, generatedSitePath, visualEditorPath }: WebsiteEditorShellProps) {
   const [state, dispatch] = useReducer(reduceWebsiteEditorState, initialStructure, createInitialEditorState);
   const selection = useMemo(() => getEditorSelection(state), [state]);
 
@@ -379,6 +380,7 @@ export function WebsiteEditorShell({ initialStructure, previewPath, generatedSit
         saveStatus={state.saveStatus}
         saveMessage={state.saveMessage}
         dirty={state.dirty}
+        visualEditorPath={visualEditorPath}
       />
 
       <EditorUnsavedWarning dirty={state.dirty} />

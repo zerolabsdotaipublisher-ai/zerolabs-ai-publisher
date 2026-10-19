@@ -28,7 +28,7 @@ export function VisualEditorShell({ initialDocument, initialPageId, projectabili
     { document: initialDocument, pageId: initialPageId },
     ({ document, pageId }) => createVisualEditorState(document, pageId),
   );
-  const saveState = getVisualEditorSaveState(state);
+  const saveState = getVisualEditorSaveState();
   const compatibilityNotice = getVisualEditorCompatibilityNotice(state.document, projectabilityIssues);
 
   useEffect(() => {
@@ -86,7 +86,7 @@ export function VisualEditorShell({ initialDocument, initialPageId, projectabili
         onPreviewToggle={() => dispatch({ type: "toggle-preview" })}
       />
       <div className="visual-editor-safety-banner" role="status">
-        <strong>Draft-only visual editor.</strong> {saveState.message}
+        <strong>Draft-only mode.</strong> {saveState.message.replace("Draft-only mode. ", "")}
         {compatibilityNotice.message ? <span className="visual-editor-projectability-note">{compatibilityNotice.message}</span> : null}
       </div>
       <div className="visual-editor-workspace">
