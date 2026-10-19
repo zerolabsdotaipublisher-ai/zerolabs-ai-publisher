@@ -1,7 +1,7 @@
 "use client";
 
 import type { EditorDocument, EditorPageId } from "@/lib/editor/document";
-import type { VisualEditorViewport } from "@/lib/editor/visual";
+import { VISUAL_EDITOR_DRAFT_ONLY_MESSAGE, type VisualEditorViewport } from "@/lib/editor/visual";
 import { VisualEditorOperationNote } from "./visual-editor-operation-note";
 
 interface VisualEditorToolbarProps {
@@ -43,7 +43,7 @@ export function VisualEditorToolbar({
 }: VisualEditorToolbarProps) {
   const undoBlocker = canUndo ? undefined : "Undo is unavailable: this local draft has no earlier change.";
   const redoBlocker = canRedo ? undefined : "Redo is unavailable: there is no undone change to restore.";
-  const saveBlocker = "Save is unavailable: the atomic draft persistence safety gate is not complete yet.";
+  const saveBlocker = VISUAL_EDITOR_DRAFT_ONLY_MESSAGE;
 
   return (
     <header className="visual-editor-toolbar">

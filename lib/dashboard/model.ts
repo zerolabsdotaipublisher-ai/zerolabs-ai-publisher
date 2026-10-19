@@ -526,7 +526,7 @@ async function buildDashboardWebsiteSummary(
       liveUrl: legacyWebsite?.liveUrl,
       generatedSitePath: structureId ? routes.generatedSite(structureId) : legacyWebsite?.generatedSitePath,
       previewPath: structureId ? routes.previewSite(structureId) : legacyWebsite?.previewPath,
-      editorPath: structureId ? routes.editorSite(structureId) : legacyWebsite?.editorPath,
+      editorPath: structureId ? routes.editorPrimary(structureId) : legacyWebsite?.editorPath,
       visibility: project.visibility ?? (structureId ? visibilityMap.get(structureId) : undefined) ?? "private",
       pageCount: pageCountFromPages ?? pageCountFromProject ?? pageCountFromStructure,
       pageCountSource,

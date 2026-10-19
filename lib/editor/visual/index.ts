@@ -15,6 +15,13 @@ export { findVisualEditorNodePageId, getVisualEditorGlobalLayers, getVisualEdito
 export { getValueAtPath, getVisualEditorNodeControls, isHexColor, type VisualEditorNodeControls, type VisualEditorStyleControl } from "./properties";
 export { getVisualEditorCompatibilityNotice, type VisualEditorCompatibilityNotice } from "./compatibility";
 export {
+  VISUAL_EDITOR_DESIGN_SECTIONS,
+  VISUAL_EDITOR_DRAFT_ONLY_MESSAGE,
+  VISUAL_EDITOR_LEGACY_HANDOFF,
+  VISUAL_EDITOR_PRIMARY_AREAS,
+  VISUAL_EDITOR_PROPERTY_GROUPS,
+} from "./presentation";
+export {
   addVisualEditorNavigationItem,
   removeVisualEditorNavigationItem,
   type VisualEditorNavigationItemInput,

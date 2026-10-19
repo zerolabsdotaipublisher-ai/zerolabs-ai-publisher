@@ -22,6 +22,7 @@ export default async function WebsiteEditorPage({ params }: PageProps) {
       initialStructure={structure}
       previewPath={routes.previewSite(id)}
       generatedSitePath={routes.generatedSite(id)}
+      visualEditorPath={routes.editorPrimary(id)}
     />
   );
 }

@@ -107,7 +107,7 @@ export default async function ActivityPage() {
                       </p>
                     </div>
                     <div className="admin-list-meta">
-                      <Link href={routes.editorSite(website.id)} className="dashboard-action-button dashboard-action-button-secondary">
+                      <Link href={routes.editorPrimary(website.id)} className="dashboard-action-button dashboard-action-button-secondary">
                         Edit
                       </Link>
                       <Link href={routes.previewSite(website.id)} className="dashboard-action-button dashboard-action-button-secondary">

@@ -53,7 +53,7 @@ function resolveStructureQuickActions(structureId: string | undefined): Publishi
       id: `edit_${structureId}`,
       label: "Edit",
       kind: "link",
-      href: routes.editorSite(structureId),
+      href: routes.editorPrimary(structureId),
     },
     {
       id: `preview_${structureId}`,

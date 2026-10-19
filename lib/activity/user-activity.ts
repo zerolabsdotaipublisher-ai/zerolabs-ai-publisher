@@ -1,3 +1,4 @@
+import { routes } from "@/config/routes";
 import { listManagedWebsites, type WebsiteManagementRecord } from "@/lib/management";
 import { getSupabaseServiceClient } from "@/lib/supabase/server";
 
@@ -63,7 +64,7 @@ export async function getUserPublishingActivityOverview(userId: string): Promise
             publicationState,
             numberOfPages: p.number_of_pages,
             previewPath: `/preview/${routeId}`,
-            editorPath: `/editor/${routeId}`,
+            editorPath: routes.editorPrimary(routeId),
             generatedSitePath: `/preview/${routeId}`,
         } : {
             id: p.id,
@@ -89,7 +90,7 @@ export async function getUserPublishingActivityOverview(userId: string): Promise
             lastUpdatedAt: p.updated_at,
             generatedAt: p.created_at,
             previewPath: `/preview/${routeId}`,
-            editorPath: `/editor/${routeId}`,
+            editorPath: routes.editorPrimary(routeId),
             generatedSitePath: `/preview/${routeId}`,
             deletionState: 'active',
             supportsBulkActions: false,

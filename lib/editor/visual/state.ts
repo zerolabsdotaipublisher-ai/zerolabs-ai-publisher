@@ -20,6 +20,7 @@ import {
   type VisualEditorInsertTarget,
 } from "./structure";
 import { addVisualEditorNavigationItem, removeVisualEditorNavigationItem } from "./navigation";
+import { VISUAL_EDITOR_DRAFT_ONLY_MESSAGE } from "./presentation";
 import {
   createVisualEditorPage,
   duplicateVisualEditorPage,
@@ -218,13 +219,11 @@ export function createVisualEditorState(document: EditorDocument, selectedPageId
   };
 }
 
-export function getVisualEditorSaveState(state: VisualEditorState): { disabled: boolean; label: string; message: string } {
+export function getVisualEditorSaveState(): { disabled: boolean; label: string; message: string } {
   return {
     disabled: !VISUAL_EDITOR_PERSISTENCE_ENABLED,
     label: VISUAL_EDITOR_PERSISTENCE_ENABLED ? "Save draft" : "Save disabled",
-    message: state.dirty
-      ? "Draft changes are local to this browser session until the atomic save safety gate is complete."
-      : "Draft-only mode. Saving is unavailable until the atomic save safety gate is complete.",
+    message: VISUAL_EDITOR_DRAFT_ONLY_MESSAGE,
   };
 }
 

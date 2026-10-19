@@ -37,6 +37,7 @@ export const routes = {
   editor: "/editor",
   editorSite: (id: string) => `/editor/${id}`,
   editorVisual: (id: string) => `/editor/${encodeURIComponent(id)}/visual`,
+  editorPrimary: (id: string) => `/editor/${encodeURIComponent(id)}/visual`,
   profile: "/profile",
   generatedSites: "/generated-sites",
   generatedSite: (id: string) => `/generated-sites/${id}`,

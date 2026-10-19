@@ -119,14 +119,23 @@ function NavigationItemEditor({
 }
 
 export function VisualEditorNavigation({ document, onUpdate, onAdd, onRemove, onMove }: VisualEditorNavigationProps) {
+  const menuLocationLabel = (location: EditorDocument["navigation"]["menus"][number]["location"]) => {
+    if (location === "header") return "Website Header Navigation";
+    if (location === "footer") return "Website Footer Navigation";
+    return `${location[0].toUpperCase()}${location.slice(1)} Navigation`;
+  };
+
   return (
     <section className="visual-editor-navigation-panel" aria-labelledby="visual-editor-navigation-heading">
       <h2 id="visual-editor-navigation-heading">Navigation</h2>
-      <p className="visual-editor-muted-note">Edit labels, visibility, typed destinations, and item order. Changes remain in this local draft.</p>
+      <p className="visual-editor-muted-note">Edit labels, destinations, ordering, nesting, and styling. Header navigation appears in the Site Header at the top of the website preview. Changes remain in this local draft.</p>
       {document.navigation.menus.map((menu) => (
         <section key={menu.id} className="visual-editor-navigation-menu" aria-label={`${menu.location} navigation`}>
           <div className="visual-editor-navigation-menu-heading">
-            <h3>{menu.label || `${menu.location[0].toUpperCase()}${menu.location.slice(1)} menu`}</h3>
+            <div>
+              <h3>{menuLocationLabel(menu.location)}</h3>
+              {menu.label ? <p className="visual-editor-muted-note">{menu.label}</p> : null}
+            </div>
             <button type="button" onClick={() => onAdd(menu.id)}>Add item</button>
           </div>
           {menu.items.length ? (

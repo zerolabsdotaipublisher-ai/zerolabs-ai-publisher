@@ -133,7 +133,7 @@ export function WebsitePreviewShell({ model, requestId }: WebsitePreviewShellPro
         }
         links={[
           ...(model.accessLevel === "owner"
-            ? [{ label: "Edit site", href: routes.editorSite(model.structure.id) }]
+            ? [{ label: "Edit site", href: routes.editorPrimary(model.structure.id) }]
             : []),
           {
             label: "Standalone view",
