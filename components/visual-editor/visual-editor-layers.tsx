@@ -25,13 +25,6 @@ import { VisualEditorSymbols } from "./visual-editor-symbols";
 
 type LeftPanelTab = "layers" | "design" | "globals" | "navigation" | "symbols";
 
-const PRIMARY_AREA_BY_TAB = {
-  layers: VISUAL_EDITOR_PRIMARY_AREAS[0],
-  design: VISUAL_EDITOR_PRIMARY_AREAS[1],
-  globals: VISUAL_EDITOR_PRIMARY_AREAS[2],
-  navigation: VISUAL_EDITOR_PRIMARY_AREAS[3],
-} as const;
-
 interface VisualEditorLayersProps {
   document: EditorDocument;
   selectedPageId: EditorPageId;
@@ -259,11 +252,8 @@ export function VisualEditorLayers({
     <aside className="visual-editor-left-panel" aria-label="Pages and layers">
       <div className="visual-editor-left-tabs" role="tablist" aria-label="Editor navigation">
         {(["layers", "design", "globals", "navigation", "symbols"] as LeftPanelTab[]).map((candidate) => (
-          <button key={candidate} type="button" role="tab" aria-selected={tab === candidate} className={tab === candidate ? "is-active" : undefined} title={candidate === "symbols" ? "Reusable components" : PRIMARY_AREA_BY_TAB[candidate].description} onClick={() => {
-            setTab(candidate);
-            if (candidate === "design") onSelectSite();
-          }}>
-            {candidate === "symbols" ? "Symbols" : PRIMARY_AREA_BY_TAB[candidate].label}
+          <button key={candidate} type="button" role="tab" aria-selected={tab === candidate} className={tab === candidate ? "is-active" : undefined} onClick={() => setTab(candidate)}>
+            {candidate === "layers" ? "Pages" : candidate === "design" ? "Design" : candidate === "globals" ? "Globals" : candidate === "navigation" ? "Navigation" : "Symbols"}
           </button>
         ))}
       </div>
@@ -321,12 +311,9 @@ export function VisualEditorLayers({
       {tab === "design" ? (
         <div className="visual-editor-left-scroll">
           <section className="visual-editor-design-panel" aria-labelledby="visual-editor-design-heading">
-            <h2 id="visual-editor-design-heading">Design</h2>
-            <p className="visual-editor-muted-note">Colors, typography, shape, spacing, and theme controls are open in the properties panel. Components without local overrides inherit these site defaults.</p>
-            <div className="visual-editor-design-summary" aria-label="Design controls">
-              <span>Colors</span><span>Typography</span><span>Shape</span><span>Spacing</span><span>Theme</span>
-            </div>
-            <button type="button" className={`visual-editor-design-select${selectedScope === "site" ? " is-selected" : ""}`} onClick={onSelectSite}>Edit Site Design</button>
+            <h2 id="visual-editor-design-heading">Site Design / Theme</h2>
+            <p className="visual-editor-muted-note">Set the palette, page and surface defaults, global typography, and supported spacing scale. Components without local overrides inherit these tokens.</p>
+            <button type="button" className={`visual-editor-design-select${selectedScope === "site" ? " is-selected" : ""}`} onClick={onSelectSite}>Open Site Design / Theme</button>
           </section>
         </div>
       ) : null}
@@ -335,9 +322,9 @@ export function VisualEditorLayers({
           <h2>Globals</h2>
           <p className="visual-editor-muted-note">Edit shared website elements. The Site Header is the header at the top of your preview, not the application toolbar.</p>
           <div className="visual-editor-global-list">
-            <button type="button" className={selectedScope === "site" ? "is-selected" : undefined} onClick={onSelectSite}>Site Design</button>
-            {header ? <button type="button" className={selectedNodeId === header.id ? "is-selected" : undefined} onClick={() => onSelectNode(header.id)}>Site Header</button> : null}
-            {footer ? <button type="button" className={selectedNodeId === footer.id ? "is-selected" : undefined} onClick={() => onSelectNode(footer.id)}>Site Footer</button> : null}
+            <button type="button" className={selectedScope === "site" ? "is-selected" : undefined} onClick={onSelectSite}>Site Design / Theme</button>
+            {header ? <button type="button" className={selectedNodeId === header.id ? "is-selected" : undefined} onClick={() => onSelectNode(header.id)}>Header</button> : null}
+            {footer ? <button type="button" className={selectedNodeId === footer.id ? "is-selected" : undefined} onClick={() => onSelectNode(footer.id)}>Footer</button> : null}
           </div>
         </div>
       ) : null}

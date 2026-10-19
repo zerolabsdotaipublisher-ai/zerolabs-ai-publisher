@@ -28,10 +28,15 @@ interface VisualEditorPropertiesProps {
   onSiteChange: (path: string, value: EditorValue | undefined) => void;
 }
 
-const PANEL_TABS: Array<{ id: VisualEditorPanelTab; label: string }> = Object.entries(VISUAL_EDITOR_PROPERTY_GROUPS).map(([id, group]) => ({
-  id: id as VisualEditorPanelTab,
-  label: group.label,
-}));
+const PANEL_TABS: Array<{ id: VisualEditorPanelTab; label: string }> = [
+  { id: "content", label: "Content" },
+  { id: "layout", label: "Layout" },
+  { id: "style", label: "Style" },
+  { id: "typography", label: "Typography" },
+  { id: "effects", label: "Effects" },
+  { id: "visibility", label: "Visibility" },
+  { id: "actions", label: "Link / Action" },
+];
 
 function asInputValue(value: EditorValue | undefined): string {
   return typeof value === "string" || typeof value === "number" ? String(value) : "";
@@ -43,7 +48,7 @@ function groupForControl(group: ControlDefinition["group"]): VisualEditorPanelTa
 }
 
 function panelTabsForSelection(selectedScope: VisualEditorPropertiesProps["selectedScope"], selectedNode: EditorNode | undefined): VisualEditorPanelTab[] {
-  if (selectedScope === "site") return ["style", "content"];
+  if (selectedScope === "site") return ["content", "layout", "style", "typography"];
   if (selectedScope === "page") return ["content", "visibility"];
 
   const controls = selectedNode ? getVisualEditorNodeControls(selectedNode) : undefined;
@@ -196,13 +201,13 @@ function NodeProperties({ node, document, panelTab, onPropChange, onStyleChange,
   };
   return (
     <>
-      {visible("content") && content.length ? <PropertySection title="Content" description={VISUAL_EDITOR_PROPERTY_GROUPS.content.description}>{content.map(renderControl)}</PropertySection> : null}
-      {visible("layout") && layout.length ? <PropertySection title="Layout" description={VISUAL_EDITOR_PROPERTY_GROUPS.layout.description}>{layout.map(renderControl)}</PropertySection> : null}
-      {visible("style") && style.length ? <PropertySection title="Style" description={VISUAL_EDITOR_PROPERTY_GROUPS.style.description}>{style.map(renderControl)}</PropertySection> : null}
-      {visible("typography") && typography.length ? <PropertySection title="Typography" description={VISUAL_EDITOR_PROPERTY_GROUPS.typography.description}>{typography.map(renderControl)}</PropertySection> : null}
-      {visible("effects") && effects.length ? <PropertySection title="Effects" description={VISUAL_EDITOR_PROPERTY_GROUPS.effects.description}>{effects.map(renderControl)}</PropertySection> : null}
-      {visible("visibility") && controls.supportsVisibility ? <PropertySection title="Visibility" description={VISUAL_EDITOR_PROPERTY_GROUPS.visibility.description}>{visibilityField("Default", node.visibility.base, (value) => onVisibilityChange(node.id, "base", value))}{visibilityField("Desktop", node.visibility.desktop !== false, (value) => onVisibilityChange(node.id, "desktop", value))}{visibilityField("Tablet", node.visibility.tablet !== false, (value) => onVisibilityChange(node.id, "tablet", value))}{visibilityField("Mobile", node.visibility.mobile !== false, (value) => onVisibilityChange(node.id, "mobile", value))}</PropertySection> : null}
-      {visible("actions") && actions.length ? <PropertySection title="Link / Action" description={VISUAL_EDITOR_PROPERTY_GROUPS.actions.description}>{actions.map(renderControl)}</PropertySection> : null}
+      {visible("content") && content.length ? <PropertySection title="Content">{content.map(renderControl)}</PropertySection> : null}
+      {visible("layout") && layout.length ? <PropertySection title="Layout">{layout.map(renderControl)}</PropertySection> : null}
+      {visible("style") && style.length ? <PropertySection title="Style">{style.map(renderControl)}</PropertySection> : null}
+      {visible("typography") && typography.length ? <PropertySection title="Typography">{typography.map(renderControl)}</PropertySection> : null}
+      {visible("effects") && effects.length ? <PropertySection title="Effects">{effects.map(renderControl)}</PropertySection> : null}
+      {visible("visibility") && controls.supportsVisibility ? <PropertySection title="Responsive visibility"><p className="visual-editor-muted-note">Choose which previews should render this element.</p>{visibilityField("Show by default", node.visibility.base, (value) => onVisibilityChange(node.id, "base", value))}{visibilityField("Show on Desktop", node.visibility.desktop !== false, (value) => onVisibilityChange(node.id, "desktop", value))}{visibilityField("Show on Tablet", node.visibility.tablet !== false, (value) => onVisibilityChange(node.id, "tablet", value))}{visibilityField("Show on Mobile", node.visibility.mobile !== false, (value) => onVisibilityChange(node.id, "mobile", value))}</PropertySection> : null}
+      {visible("actions") && actions.length ? <PropertySection title="Link / Action">{actions.map(renderControl)}</PropertySection> : null}
     </>
   );
 }
@@ -212,37 +217,9 @@ function SiteProperties({ document, panelTab, onChange }: { document: EditorDocu
   const colorField = (label: string, path: string, value: string | undefined) => <Field key={path} definition={{ label, control: "color", group: "style" }} value={value} document={document} onChange={(next) => onChange(path, next)} />;
   return <>
     {panelTab === "content" ? <PropertySection title="Site details"><Field definition={{ label: "Site name", control: "text", group: "content" }} value={site.name} document={document} onChange={(value) => onChange("name", value)} /><Field definition={{ label: "Tagline", control: "text", group: "content" }} value={site.tagline} document={document} onChange={(value) => onChange("tagline", value)} /></PropertySection> : null}
-    {panelTab === "style" ? <>
-      <PropertySection title={VISUAL_EDITOR_DESIGN_SECTIONS.colors.label}>
-        {colorField("Primary", "styles.palette.primary", site.styles.palette?.primary)}
-        {colorField("Secondary", "styles.palette.secondary", site.styles.palette?.secondary)}
-        {colorField("Accent", "styles.palette.accent", site.styles.palette?.accent)}
-        {colorField("Page Background", "styles.palette.background", site.styles.palette?.background)}
-        {colorField("Surface", "styles.palette.surface", site.styles.palette?.surface)}
-        {colorField("Elevated Surface", "styles.palette.elevatedSurface", site.styles.palette?.elevatedSurface)}
-        {colorField("Primary Text", "styles.palette.primaryText", site.styles.palette?.primaryText ?? site.styles.palette?.text)}
-        {colorField("Secondary Text", "styles.palette.secondaryText", site.styles.palette?.secondaryText)}
-        {colorField("Muted Text", "styles.palette.mutedText", site.styles.palette?.mutedText)}
-        {colorField("Border", "styles.palette.border", site.styles.palette?.border)}
-        {colorField("Success", "styles.palette.success", site.styles.palette?.success)}
-        {colorField("Warning", "styles.palette.warning", site.styles.palette?.warning)}
-        {colorField("Error", "styles.palette.error", site.styles.palette?.error)}
-      </PropertySection>
-      <PropertySection title={VISUAL_EDITOR_DESIGN_SECTIONS.typography.label}>
-        <Field definition={{ label: "Heading Font", control: "select", group: "typography", options: [{ label: "Inherited", value: "inherit" }, { label: "Sans serif", value: "sans" }, { label: "Serif", value: "serif" }, { label: "Monospace", value: "mono" }] }} value={site.styles.typography?.headingFontFamily} document={document} onChange={(value) => onChange("styles.typography.headingFontFamily", value)} />
-        <Field definition={{ label: "Body Font", control: "select", group: "typography", options: [{ label: "Inherited", value: "inherit" }, { label: "Sans serif", value: "sans" }, { label: "Serif", value: "serif" }, { label: "Monospace", value: "mono" }] }} value={site.styles.typography?.bodyFontFamily ?? site.styles.typography?.fontFamily} document={document} onChange={(value) => onChange("styles.typography.bodyFontFamily", value)} />
-        <Field definition={{ label: "Typography Scale", control: "select", group: "typography", options: [{ label: "Compact", value: "compact" }, { label: "Default", value: "default" }, { label: "Generous", value: "generous" }] }} value={site.styles.typography?.scale} document={document} onChange={(value) => onChange("styles.typography.scale", value)} />
-      </PropertySection>
-      <PropertySection title={VISUAL_EDITOR_DESIGN_SECTIONS.shape.label}>
-        <Field definition={{ label: "Global Corner Shape", control: "select", group: "style", options: [{ label: "Square", value: "none" }, { label: "Slight", value: "sm" }, { label: "Rounded", value: "md" }, { label: "Large", value: "lg" }, { label: "Pill", value: "pill" }] }} value={site.styles.radius} document={document} onChange={(value) => onChange("styles.radius", value)} onClear={() => onChange("styles.radius", undefined)} />
-      </PropertySection>
-      <PropertySection title={VISUAL_EDITOR_DESIGN_SECTIONS.spacing.label}>
-        <Field definition={{ label: "Global Spacing Scale", control: "select", group: "layout", options: [{ label: "Compact", value: "compact" }, { label: "Comfortable", value: "comfortable" }, { label: "Spacious", value: "spacious" }] }} value={site.styles.spacing} document={document} onChange={(value) => onChange("styles.spacing", value)} />
-      </PropertySection>
-      <PropertySection title={VISUAL_EDITOR_DESIGN_SECTIONS.theme.label}>
-        <Field definition={{ label: "Theme", control: "select", group: "style", options: [{ label: "Light", value: "light" }, { label: "Dark", value: "dark" }, { label: "Automatic", value: "auto" }] }} value={site.styles.themeMode} document={document} onChange={(value) => onChange("styles.themeMode", value)} />
-      </PropertySection>
-    </> : null}
+    {panelTab === "style" ? <PropertySection title="Site design & palette">{colorField("Primary", "styles.palette.primary", site.styles.palette?.primary)}{colorField("Secondary", "styles.palette.secondary", site.styles.palette?.secondary)}{colorField("Accent", "styles.palette.accent", site.styles.palette?.accent)}{colorField("Page background", "styles.palette.background", site.styles.palette?.background)}{colorField("Surface", "styles.palette.surface", site.styles.palette?.surface)}{colorField("Elevated surface", "styles.palette.elevatedSurface", site.styles.palette?.elevatedSurface)}{colorField("Primary text", "styles.palette.primaryText", site.styles.palette?.primaryText ?? site.styles.palette?.text)}{colorField("Secondary text", "styles.palette.secondaryText", site.styles.palette?.secondaryText)}{colorField("Muted text", "styles.palette.mutedText", site.styles.palette?.mutedText)}{colorField("Border", "styles.palette.border", site.styles.palette?.border)}{colorField("Success", "styles.palette.success", site.styles.palette?.success)}{colorField("Warning", "styles.palette.warning", site.styles.palette?.warning)}{colorField("Error", "styles.palette.error", site.styles.palette?.error)}<Field definition={{ label: "Theme mode", control: "select", group: "style", options: [{ label: "Light", value: "light" }, { label: "Dark", value: "dark" }, { label: "Automatic", value: "auto" }] }} value={site.styles.themeMode} document={document} onChange={(value) => onChange("styles.themeMode", value)} /><Field definition={{ label: "Global corner shape", control: "select", group: "style", options: [{ label: "Square", value: "none" }, { label: "Slight", value: "sm" }, { label: "Rounded", value: "md" }, { label: "Large", value: "lg" }, { label: "Pill", value: "pill" }] }} value={site.styles.radius} document={document} onChange={(value) => onChange("styles.radius", value)} onClear={() => onChange("styles.radius", undefined)} /></PropertySection> : null}
+    {panelTab === "layout" ? <PropertySection title="Global spacing"><Field definition={{ label: "Spacing scale", control: "select", group: "layout", options: [{ label: "Compact", value: "compact" }, { label: "Comfortable", value: "comfortable" }, { label: "Spacious", value: "spacious" }] }} value={site.styles.spacing} document={document} onChange={(value) => onChange("styles.spacing", value)} /></PropertySection> : null}
+    {panelTab === "typography" ? <PropertySection title="Global typography"><Field definition={{ label: "Heading font", control: "select", group: "typography", options: [{ label: "Inherited", value: "inherit" }, { label: "Sans serif", value: "sans" }, { label: "Serif", value: "serif" }, { label: "Monospace", value: "mono" }] }} value={site.styles.typography?.headingFontFamily} document={document} onChange={(value) => onChange("styles.typography.headingFontFamily", value)} /><Field definition={{ label: "Body font", control: "select", group: "typography", options: [{ label: "Inherited", value: "inherit" }, { label: "Sans serif", value: "sans" }, { label: "Serif", value: "serif" }, { label: "Monospace", value: "mono" }] }} value={site.styles.typography?.bodyFontFamily ?? site.styles.typography?.fontFamily} document={document} onChange={(value) => onChange("styles.typography.bodyFontFamily", value)} /><Field definition={{ label: "Type scale", control: "select", group: "typography", options: [{ label: "Compact", value: "compact" }, { label: "Default", value: "default" }, { label: "Generous", value: "generous" }] }} value={site.styles.typography?.scale} document={document} onChange={(value) => onChange("styles.typography.scale", value)} /></PropertySection> : null}
   </>;
 }
 
@@ -257,9 +234,8 @@ function PageProperties({ page, document, panelTab, onChange }: { page: EditorPa
 export function VisualEditorProperties(props: VisualEditorPropertiesProps) {
   const selectedNode = props.selectedNodeId ? props.document.nodes[props.selectedNodeId] : undefined;
   const selectedPage = props.document.pages.find((page) => page.id === props.selectedPageId);
-  const title = props.selectedScope === "node" && selectedNode ? selectedNode.type : props.selectedScope === "site" ? "Site Design" : selectedPage?.name || "Page settings";
+  const title = props.selectedScope === "node" && selectedNode ? selectedNode.type : props.selectedScope === "site" ? "Site Design / Theme" : selectedPage?.name || "Page settings";
   const availableTabs = panelTabsForSelection(props.selectedScope, selectedNode);
   const activeTab = availableTabs.includes(props.panelTab) ? props.panelTab : availableTabs[0] ?? "content";
-  const availableTabDefinitions = availableTabs.map((id) => PANEL_TABS.find((tab) => tab.id === id)!).filter(Boolean);
-  return <aside className="visual-editor-properties" aria-label="Properties"><header><p>Properties</p><h2>{title}</h2></header><div className="visual-editor-property-tabs" role="tablist" aria-label="Property groups">{availableTabDefinitions.map((tab) => <button key={tab.id} type="button" role="tab" id={`visual-editor-tab-${tab.id}`} aria-controls="visual-editor-properties-panel" aria-selected={activeTab === tab.id} className={activeTab === tab.id ? "is-active" : undefined} onClick={() => props.onPanelTabChange(tab.id)}>{props.selectedScope === "site" && tab.id === "style" ? "Design" : tab.label}</button>)}</div><div id="visual-editor-properties-panel" className="visual-editor-properties-scroll" role="tabpanel" aria-labelledby={`visual-editor-tab-${activeTab}`}>{props.selectedScope === "node" && selectedNode ? <NodeProperties node={selectedNode} document={props.document} panelTab={activeTab} onPropChange={(path, value) => props.onNodePropChange(selectedNode.id, path, value)} onStyleChange={(key, value) => props.onNodeStyleChange(selectedNode.id, key, value)} onVisibilityChange={props.onNodeVisibilityChange} /> : props.selectedScope === "site" ? <SiteProperties document={props.document} panelTab={activeTab} onChange={props.onSiteChange} /> : selectedPage ? <PageProperties page={selectedPage} document={props.document} panelTab={activeTab} onChange={props.onPageChange} /> : <p className="visual-editor-warning">Select a page or element to edit its properties.</p>}</div></aside>;
+  return <aside className="visual-editor-properties" aria-label="Properties"><header><p>Properties</p><h2>{title}</h2></header><div className="visual-editor-property-tabs" role="tablist" aria-label="Property groups">{PANEL_TABS.filter((tab) => availableTabs.includes(tab.id)).map((tab) => <button key={tab.id} type="button" role="tab" id={`visual-editor-tab-${tab.id}`} aria-controls="visual-editor-properties-panel" aria-selected={activeTab === tab.id} className={activeTab === tab.id ? "is-active" : undefined} onClick={() => props.onPanelTabChange(tab.id)}>{tab.label}</button>)}</div><div id="visual-editor-properties-panel" className="visual-editor-properties-scroll" role="tabpanel" aria-labelledby={`visual-editor-tab-${activeTab}`}>{props.selectedScope === "node" && selectedNode ? <NodeProperties node={selectedNode} document={props.document} panelTab={activeTab} onPropChange={(path, value) => props.onNodePropChange(selectedNode.id, path, value)} onStyleChange={(key, value) => props.onNodeStyleChange(selectedNode.id, key, value)} onVisibilityChange={props.onNodeVisibilityChange} /> : props.selectedScope === "site" ? <SiteProperties document={props.document} panelTab={activeTab} onChange={props.onSiteChange} /> : selectedPage ? <PageProperties page={selectedPage} document={props.document} panelTab={activeTab} onChange={props.onPageChange} /> : <p className="visual-editor-warning">Select a page or element to edit its properties.</p>}</div></aside>;
 }

@@ -1469,8 +1469,6 @@ html[data-theme="dark"] .auth-panel-list {
 .visual-editor-design-panel { display: grid; gap: 0.65rem; padding: 0.72rem; border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border)); border-radius: 0.68rem; background: color-mix(in srgb, var(--accent) 6%, var(--surface)); }
 .visual-editor-design-panel h2 { margin: 0; color: var(--text-primary); font-size: 0.82rem; }
 .visual-editor-design-panel .visual-editor-muted-note { margin: 0; }
-.visual-editor-design-summary { display: flex; flex-wrap: wrap; gap: 0.35rem; }
-.visual-editor-design-summary span { padding: 0.22rem 0.4rem; border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border)); border-radius: 999px; background: color-mix(in srgb, var(--surface-elevated) 78%, transparent); color: var(--text-secondary); font-size: 0.67rem; font-weight: 680; }
 .visual-editor-design-select { min-block-size: 2rem; padding: 0.3rem 0.44rem; border: 1px solid color-mix(in srgb, var(--accent) 52%, var(--border)); border-radius: 0.48rem; background: color-mix(in srgb, var(--accent) 12%, var(--surface)); color: var(--text-primary); cursor: pointer; font: inherit; font-size: 0.72rem; font-weight: 700; text-align: start; }
 .visual-editor-design-select.is-selected { border-color: color-mix(in srgb, var(--accent) 72%, var(--border)); background: color-mix(in srgb, var(--accent) 18%, var(--surface)); }
 
