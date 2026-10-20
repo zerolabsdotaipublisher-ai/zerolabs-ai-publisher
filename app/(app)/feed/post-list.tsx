@@ -115,7 +115,7 @@ export function PostList({ posts, currentUserId, savedPostIds }: PostListProps) 
                   <strong>{post.author.displayName}</strong>
                   {shouldShowAuthorUsername ? <span>@{authorUsername}</span> : null}
                   <div className="feed-post-meta">
-                    <span>{formatPostDate(post.created_at)}</span>
+                    <time dateTime={post.created_at}>{formatPostDate(post.created_at)}</time>
                     <span className={`feed-post-visibility is-${post.visibility}`}>{post.visibility}</span>
                   </div>
                 </div>

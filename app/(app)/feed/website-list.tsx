@@ -29,8 +29,8 @@ export function PublicWebsiteList({ websites }: PublicWebsiteListProps) {
       {websites.map((site) => (
         <article key={site.id} className="feed-website-card">
           <div className="feed-website-card-copy">
-            <strong>{site.site_title || "Untitled website"}</strong>
-            <p>
+            <h3>{site.site_title || "Untitled website"}</h3>
+            <p className="feed-website-meta">
               Generated {formatDate(site.generated_at)}
               {site.updated_at ? ` | Updated ${formatDate(site.updated_at)}` : ""}
             </p>

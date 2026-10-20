@@ -27,11 +27,11 @@ export default async function FeedPage() {
 
   return (
     <div className="feed-shell">
-      <aside className="feed-panel feed-sticky-panel" aria-label="Community overview">
+      <aside className="feed-panel feed-community-panel feed-sticky-panel" aria-label="Community overview">
         <div className="feed-panel-heading">
           <span className="feed-panel-kicker">Zero Labs community</span>
           <h2>Community</h2>
-          <p>Share text updates today, and see the planned media and project formats that will be supported later.</p>
+          <p>A focused place to share build notes, launches, questions, and ideas.</p>
         </div>
 
         <div className="feed-profile-card">
@@ -44,28 +44,28 @@ export default async function FeedPage() {
           </div>
         </div>
 
-        <div className="feed-panel-note">
-          Feed is currently text-first. Images, code snippets, projects, docs, GIFs, and video stay visible here as planned capabilities, not fake uploads.
-        </div>
+        <p className="feed-panel-note">
+          Text posts are ready today. Attachment and website-share options reflect the workspace capabilities shown in the composer.
+        </p>
       </aside>
 
       <main className="feed-main">
         <PostComposer websites={publicWebsites.filter((website) => website.owner_id === user.id)} />
 
-        <section className="feed-panel" aria-label="Recent posts">
+        <section className="feed-posts-section" aria-labelledby="community-posts-heading">
           <div className="feed-panel-heading">
             <span className="feed-panel-kicker">Community posts</span>
-            <h2>Recent Posts</h2>
-            <p>Public posts and your own private posts appear here when the current schema allows them.</p>
+            <h2 id="community-posts-heading">Recent posts</h2>
+            <p>Public posts and your own private posts appear here when available.</p>
           </div>
           <PostList posts={posts} currentUserId={user.id} savedPostIds={savedPostIds} />
         </section>
       </main>
 
-      <aside className="feed-panel feed-sticky-panel" aria-label="Public websites">
+      <aside className="feed-panel feed-explore-panel feed-sticky-panel" aria-labelledby="public-websites-heading">
         <div className="feed-panel-heading">
           <span className="feed-panel-kicker">Explore</span>
-          <h2>Public Websites</h2>
+          <h2 id="public-websites-heading">Public Websites</h2>
           <p>Discover websites other users have chosen to share publicly.</p>
         </div>
         <PublicWebsiteList websites={publicWebsites} />
