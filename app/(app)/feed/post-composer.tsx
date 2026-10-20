@@ -5,14 +5,14 @@ import { createCommunityPost } from "./actions";
 import type { PublicWebsiteRecord } from "./types";
 
 const postTypes = [
-  ["text", "Text"],
-  ["image", "Image"],
-  ["code", "Code"],
-  ["project", "Project"],
-  ["docs", "Docs"],
-  ["gif", "GIF"],
-  ["video", "Video"],
-  ["website", "Website"],
+  { value: "text", label: "Text", status: "Ready", statusClass: "is-ready" },
+  { value: "image", label: "Image", status: "Attachment", statusClass: "is-attachment" },
+  { value: "code", label: "Code", status: "Attachment", statusClass: "is-attachment" },
+  { value: "project", label: "Project", status: "Link", statusClass: "is-attachment" },
+  { value: "docs", label: "Docs", status: "Attachment", statusClass: "is-attachment" },
+  { value: "gif", label: "GIF", status: "Attachment", statusClass: "is-attachment" },
+  { value: "video", label: "Video", status: "Attachment", statusClass: "is-attachment" },
+  { value: "website", label: "Website", status: "Share", statusClass: "is-share" },
 ] as const;
 
 export function PostComposer({ websites }: { websites: PublicWebsiteRecord[] }) {
@@ -39,14 +39,21 @@ export function PostComposer({ websites }: { websites: PublicWebsiteRecord[] }) 
       <div className="feed-panel-heading">
         <span className="feed-panel-kicker">Create</span>
         <h2>Share with the community</h2>
-        <p>Share an update or use the configured community attachment storage for media, files, and website shares.</p>
+        <p>Share an update, attach supported work, or post one of your public websites.</p>
       </div>
 
-      <div className="feed-type-row" aria-label="Supported post types">
-        {postTypes.map(([value, label]) => (
-          <button key={value} type="button" className={`feed-type-pill ${postType === value ? "is-active" : ""}`} onClick={() => setPostType(value)} disabled={isPending}>
+      <div className="feed-type-row" role="group" aria-label="Post type">
+        {postTypes.map(({ value, label, status, statusClass }) => (
+          <button
+            key={value}
+            type="button"
+            className={`feed-type-pill ${postType === value ? "is-active" : ""}`}
+            onClick={() => setPostType(value)}
+            disabled={isPending}
+            aria-pressed={postType === value}
+          >
             {label}
-            {value !== "text" ? <span>{value === "website" ? "Share" : "Attachment"}</span> : null}
+            <span className={`feed-type-status ${statusClass}`}>{status}</span>
           </button>
         ))}
       </div>
@@ -54,7 +61,7 @@ export function PostComposer({ websites }: { websites: PublicWebsiteRecord[] }) 
       <form ref={formRef} action={handleSubmit} className="feed-composer-form">
         <input type="hidden" name="post_type" value={postType} />
         <label className="feed-field">
-          <span>Title</span>
+          <span>Title <em>(optional)</em></span>
           <input
             type="text"
             name="title"
@@ -101,7 +108,7 @@ export function PostComposer({ websites }: { websites: PublicWebsiteRecord[] }) 
             name="body"
             placeholder="Share a build update, launch note, question, or idea."
             required
-            rows={5}
+            rows={4}
             className="feed-textarea"
             disabled={isPending}
           />
@@ -131,7 +138,7 @@ export function PostComposer({ websites }: { websites: PublicWebsiteRecord[] }) 
             {error}
           </p>
         ) : (
-          <p className="feed-form-message">Uploads are limited to the configured community attachment bucket and are validated server-side.</p>
+          <p className="feed-form-message">Attachment formats use the workspace&apos;s configured community storage and are validated before posting.</p>
         )}
       </form>
     </section>
