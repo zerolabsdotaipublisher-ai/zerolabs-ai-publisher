@@ -16,12 +16,12 @@ export default async function FeedPage() {
   const user = await requireUser(routes.feed);
   const profile = await getSafeProfile(user).catch(() => createFallbackProfile(user));
 
-  const [posts, publicWebsites, savedItems] = await Promise.all([
+  const [posts, publicWebsites, savedItemsResult] = await Promise.all([
     getCommunityFeed(),
     getPublicWebsites(),
     getSavedCommunityItems(user.id),
   ]);
-  const savedPostIds = savedItems
+  const savedPostIds = savedItemsResult.items
     .filter((item) => item.item_type === "post")
     .map((item) => item.item_id);
 
@@ -45,12 +45,12 @@ export default async function FeedPage() {
         </div>
 
         <p className="feed-panel-note">
-          Text posts are ready today. Attachment and website-share options reflect the workspace capabilities shown in the composer.
+          Text posts are ready today. Attachment and website-share options are unavailable until their workspace capabilities are configured.
         </p>
       </aside>
 
       <main className="feed-main">
-        <PostComposer websites={publicWebsites.filter((website) => website.owner_id === user.id)} />
+        <PostComposer />
 
         <section className="feed-posts-section" aria-labelledby="community-posts-heading">
           <div className="feed-panel-heading">
@@ -58,7 +58,12 @@ export default async function FeedPage() {
             <h2 id="community-posts-heading">Recent posts</h2>
             <p>Public posts and your own private posts appear here when available.</p>
           </div>
-          <PostList posts={posts} currentUserId={user.id} savedPostIds={savedPostIds} />
+          <PostList
+            posts={posts}
+            currentUserId={user.id}
+            savedPostIds={savedPostIds}
+            savedItemsAvailable={savedItemsResult.isAvailable}
+          />
         </section>
       </main>
 
