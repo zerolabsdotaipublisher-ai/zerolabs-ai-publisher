@@ -13408,6 +13408,10 @@ html[data-theme="light"] .auth-form select option {
   color: var(--error-text);
 }
 
+.feed-form-message.is-success {
+  color: var(--success-text);
+}
+
 .feed-type-row,
 .feed-composer-footer,
 .feed-post-header,
@@ -13439,7 +13443,7 @@ html[data-theme="light"] .auth-form select option {
   white-space: nowrap;
 }
 
-.feed-type-pill span,
+.feed-type-pill .feed-type-status,
 .feed-post-action em {
   font-style: normal;
   color: var(--text-muted);
@@ -13447,7 +13451,7 @@ html[data-theme="light"] .auth-form select option {
   font-weight: 600;
 }
 
-.feed-type-pill span {
+.feed-type-pill .feed-type-status {
   display: inline-flex;
   align-items: center;
   padding-left: 0.35rem;
@@ -14544,11 +14548,13 @@ body .feed-panel-note {
 
 body .feed-type-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 7.3rem), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.75rem), 1fr));
   gap: 0.45rem;
 }
 
 body .feed-type-pill {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   justify-content: space-between;
   min-height: 2.55rem;
   padding: 0.45rem 0.62rem 0.45rem 0.75rem;
@@ -14557,9 +14563,18 @@ body .feed-type-pill {
   white-space: normal;
 }
 
+body .feed-type-label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: start;
+}
+
 body .feed-type-status {
   display: inline-flex;
   align-items: center;
+  justify-self: end;
+  min-width: 0;
+  max-width: 100%;
   padding: 0.16rem 0.36rem;
   border-radius: 999px;
   background: color-mix(in srgb, var(--text-muted) 10%, transparent);
@@ -14655,6 +14670,22 @@ body .feed-post-actions {
 
 body .feed-post-action {
   min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+body .feed-post-action > span,
+body .feed-post-action > em {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+body .feed-post-author-copy strong,
+body .feed-website-card h3,
+body .feed-post-meta time {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 body .feed-website-card-footer {
@@ -14736,7 +14767,7 @@ body:has(.feed-shell) .app-nav-link[aria-current="page"] {
 
   body .feed-type-row,
   body .feed-post-actions {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.75rem), 1fr));
   }
 
   body .feed-type-pill {
@@ -14771,6 +14802,16 @@ body:has(.feed-shell) .app-nav-link[aria-current="page"] {
 
   body .feed-comment-form {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 360px) {
+  body .feed-post-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  body .feed-type-pill {
+    grid-template-columns: minmax(0, 1fr) max-content;
   }
 }
 .dashboard-metric-value.is-muted {

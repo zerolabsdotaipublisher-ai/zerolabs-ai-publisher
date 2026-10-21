@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type FormEvent } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { MessageCircle, Heart, Bookmark, Share2, Trash2 } from "lucide-react";
@@ -12,6 +12,7 @@ interface PostListProps {
   posts: CommunityPostRecord[];
   currentUserId: string;
   savedPostIds: string[];
+  savedItemsAvailable: boolean;
 }
 
 function formatPostDate(value: string): string {
@@ -19,9 +20,9 @@ function formatPostDate(value: string): string {
   return Number.isNaN(date.getTime()) ? "Unknown date" : date.toLocaleString();
 }
 
-export function PostList({ posts, currentUserId, savedPostIds }: PostListProps) {
+export function PostList({ posts, currentUserId, savedPostIds, savedItemsAvailable }: PostListProps) {
   const [busyPostId, setBusyPostId] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<{ message: string; tone: "error" | "success" } | null>(null);
   const [expandedPostId, setExpandedPostId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -30,54 +31,101 @@ export function PostList({ posts, currentUserId, savedPostIds }: PostListProps) 
       return;
     }
 
-    setMessage(null);
+    setFeedback(null);
     setBusyPostId(postId);
     startTransition(async () => {
       const result = await deleteCommunityPost(postId);
       if (result.error) {
-        setMessage(result.error);
+        setFeedback({ message: result.error, tone: "error" });
+      } else {
+        setFeedback({ message: "Post deleted.", tone: "success" });
       }
       setBusyPostId(null);
     });
   };
 
   const handleToggleSave = (postId: string, save: boolean) => {
-    setMessage(null);
+    setFeedback(null);
     setBusyPostId(postId);
     startTransition(async () => {
       const result = await toggleSavedCommunityPost(postId, save);
       if (result.error) {
-        setMessage(result.error);
+        setFeedback({ message: result.error, tone: "error" });
+      } else {
+        setFeedback({ message: save ? "Post saved." : "Post removed from saved items.", tone: "success" });
       }
       setBusyPostId(null);
     });
   };
 
   const handleReaction = (postId: string, reacted: boolean) => {
-    setMessage(null);
+    setFeedback(null);
     setBusyPostId(postId);
     startTransition(async () => {
       const result = await toggleCommunityPostReaction(postId, reacted);
-      if (result.error) setMessage(result.error);
+      setFeedback(result.error
+        ? { message: result.error, tone: "error" }
+        : { message: reacted ? "Heart removed." : "Heart added.", tone: "success" });
       setBusyPostId(null);
     });
   };
 
-  const handleShare = (postId: string) => {
-    setMessage(null);
-    setBusyPostId(postId);
+  const handleShare = async (post: CommunityPostRecord) => {
+    setFeedback(null);
+    setBusyPostId(post.id);
+    const shareUrl = `${window.location.origin}${routes.feed}#feed-post-${post.id}`;
+
+    try {
+      if (typeof navigator.share === "function") {
+        await navigator.share({
+          title: post.title || "Zero Labs community post",
+          text: post.body,
+          url: shareUrl,
+        });
+      } else if (navigator.clipboard?.writeText) {
+        try {
+          await navigator.clipboard.writeText(shareUrl);
+        } catch {
+          window.prompt("Copy this community post link:", shareUrl);
+        }
+      } else {
+        window.prompt("Copy this community post link:", shareUrl);
+      }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        setFeedback({ message: "Sharing was cancelled.", tone: "success" });
+      } else {
+        setFeedback({ message: "Unable to share this post.", tone: "error" });
+      }
+      setBusyPostId(null);
+      return;
+    }
+
     startTransition(async () => {
-      const result = await shareCommunityPost(postId);
-      if (result.error) setMessage(result.error);
+      const result = await shareCommunityPost(post.id);
+      setFeedback(result.error
+        ? { message: "Post shared, but its share count could not be recorded.", tone: "success" }
+        : { message: typeof navigator.share === "function" ? "Post shared." : "Post link copied.", tone: "success" });
       setBusyPostId(null);
     });
   };
 
-  const handleComment = async (formData: FormData) => {
-    setMessage(null);
+  const handleComment = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const postId = formData.get("post_id");
+    setFeedback(null);
+    setBusyPostId(typeof postId === "string" ? postId : null);
     startTransition(async () => {
       const result = await createCommunityPostComment(formData);
-      if (result.error) setMessage(result.error);
+      if (result.error) {
+        setFeedback({ message: result.error, tone: "error" });
+      } else {
+        form.reset();
+        setFeedback({ message: "Comment added.", tone: "success" });
+      }
+      setBusyPostId(null);
     });
   };
 
@@ -92,19 +140,19 @@ export function PostList({ posts, currentUserId, savedPostIds }: PostListProps) 
 
   return (
     <div className="feed-post-list">
-      {message ? <p className="feed-form-message is-error">{message}</p> : null}
+      {feedback ? <p className={`feed-form-message is-${feedback.tone}`} role={feedback.tone === "error" ? "alert" : "status"}>{feedback.message}</p> : null}
 
       {posts.map((post) => {
         const isOwner = post.user_id === currentUserId;
         const isSaved = savedPostIds.includes(post.id);
-        const isBusy = isPending && busyPostId === post.id;
+        const isBusy = busyPostId === post.id;
         const authorUsername = post.author.username?.trim();
         const shouldShowAuthorUsername = Boolean(
           authorUsername && authorUsername.localeCompare(post.author.displayName, undefined, { sensitivity: "accent" }) !== 0,
         );
 
         return (
-          <article key={post.id} className="feed-post-card">
+          <article key={post.id} id={`feed-post-${post.id}`} className="feed-post-card">
             <div className="feed-post-header">
               <div className="feed-post-author">
                 <div className="feed-post-avatar" aria-hidden="true">
@@ -141,7 +189,7 @@ export function PostList({ posts, currentUserId, savedPostIds }: PostListProps) 
               <div className="feed-post-attachments">
                 {post.attachments.map((attachment) => {
                   const websiteId = typeof attachment.metadata?.website_id === "string" ? attachment.metadata.website_id : null;
-                  if (websiteId) return <Link key={attachment.id} href={routes.previewSite(websiteId)} className="feed-attachment-link">View shared website</Link>;
+                  if (websiteId) return <Link key={attachment.id} href={routes.liveSite(websiteId)} target="_blank" rel="noreferrer" className="feed-attachment-link">View shared website</Link>;
                   if (!attachment.public_url) return <span key={attachment.id} className="feed-attachment-file">{attachment.file_name || "Attachment unavailable"}</span>;
                   if (attachment.attachment_type === "image" || attachment.attachment_type === "gif") return <Image key={attachment.id} src={attachment.public_url} alt={attachment.file_name || "Post attachment"} width={1200} height={800} unoptimized className="feed-attachment-image" />;
                   if (attachment.attachment_type === "video") return <video key={attachment.id} src={attachment.public_url} controls className="feed-attachment-video" />;
@@ -151,17 +199,23 @@ export function PostList({ posts, currentUserId, savedPostIds }: PostListProps) 
             ) : null}
 
             <div className="feed-post-actions">
-              <button type="button" className={`feed-post-action ${post.reactedByCurrentUser ? "is-active" : ""}`} onClick={() => handleReaction(post.id, Boolean(post.reactedByCurrentUser))} disabled={isBusy || post.reactedByCurrentUser === null}>
+              <button type="button" className={`feed-post-action ${post.reactedByCurrentUser ? "is-active" : ""}`} onClick={() => handleReaction(post.id, Boolean(post.reactedByCurrentUser))} disabled={isBusy || post.reactedByCurrentUser === null} title={post.reactedByCurrentUser === null ? "Hearts are unavailable until Feed interactions are configured." : undefined}>
                 <Heart size={15} />
                 <span>Heart</span>
                 <em>{post.reactionCount === null ? "Not configured" : post.reactionCount}</em>
               </button>
-              <button type="button" className="feed-post-action" onClick={() => setExpandedPostId((current) => current === post.id ? null : post.id)}>
+              <button
+                type="button"
+                className="feed-post-action"
+                onClick={() => setExpandedPostId((current) => current === post.id ? null : post.id)}
+                disabled={post.commentCount === null}
+                title={post.commentCount === null ? "Comments are unavailable until Feed interactions are configured." : undefined}
+              >
                 <MessageCircle size={15} />
                 <span>Comment</span>
                 <em>{post.commentCount === null ? "Not configured" : post.commentCount}</em>
               </button>
-              <button type="button" className="feed-post-action" onClick={() => handleShare(post.id)} disabled={isBusy || post.shareCount === null}>
+              <button type="button" className="feed-post-action" onClick={() => void handleShare(post)} disabled={isBusy}>
                 <Share2 size={15} />
                 <span>Share</span>
                 <em>{post.shareCount === null ? "Not configured" : post.shareCount}</em>
@@ -170,7 +224,8 @@ export function PostList({ posts, currentUserId, savedPostIds }: PostListProps) 
                 type="button"
                 className="feed-post-action is-save"
                 onClick={() => handleToggleSave(post.id, !isSaved)}
-                disabled={isBusy}
+                disabled={isBusy || !savedItemsAvailable}
+                title={!savedItemsAvailable ? "Saved posts are unavailable until Feed interactions are configured." : undefined}
               >
                 <Bookmark size={15} />
                 <span>{isSaved ? "Saved" : "Save"}</span>
@@ -183,7 +238,7 @@ export function PostList({ posts, currentUserId, savedPostIds }: PostListProps) 
                 {post.commentCount === null ? <p className="feed-form-message">Comments are not configured yet.</p> : null}
                 {post.comments.map((comment) => <p key={comment.id} className="feed-comment"><strong>{comment.user_id === currentUserId ? "You" : "Community member"}</strong>{comment.body}</p>)}
                 {post.commentCount !== null ? (
-                  <form action={handleComment} className="feed-comment-form">
+                  <form onSubmit={handleComment} className="feed-comment-form">
                     <input type="hidden" name="post_id" value={post.id} />
                     <input name="body" className="feed-input" placeholder="Write a comment" required disabled={isPending} />
                     <button type="submit" className="feed-submit-button" disabled={isPending}>Comment</button>
