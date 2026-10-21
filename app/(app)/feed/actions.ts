@@ -24,7 +24,14 @@ function readText(formData: FormData, name: string): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function getAttachmentType(postType: string): "image" | "gif" | "video" | "document" | "code" | "project" | null {
+const communityPostTypes = ["text", "image", "code", "project", "docs", "gif", "video", "website"] as const;
+type CommunityPostType = (typeof communityPostTypes)[number];
+
+function isCommunityPostType(value: string): value is CommunityPostType {
+  return (communityPostTypes as readonly string[]).includes(value);
+}
+
+function getAttachmentType(postType: CommunityPostType): "image" | "gif" | "video" | "document" | "code" | "project" | null {
   if (postType === "image") return "image";
   if (postType === "gif") return "gif";
   if (postType === "video") return "video";
@@ -66,7 +73,12 @@ async function insertAttachment(supabase: Awaited<ReturnType<typeof getSupabaseS
     metadata,
   });
 
-  if (error) throw error;
+  if (error) {
+    await supabase.storage.from("community-attachments").remove([storagePath]);
+    throw error;
+  }
+
+  return storagePath;
 }
 
 export async function createCommunityPost(formData: FormData) {
@@ -76,7 +88,11 @@ export async function createCommunityPost(formData: FormData) {
   const postType = readText(formData, "post_type") || "text";
   const visibility = normalizeVisibility(formData.get("visibility"));
 
-  if (postType === "text" && !body) {
+  if (!isCommunityPostType(postType)) {
+    return { error: "Select a supported post type." };
+  }
+
+  if (!body) {
     return { error: "Post body is required." };
   }
 
@@ -85,20 +101,25 @@ export async function createCommunityPost(formData: FormData) {
   const file = fileEntry instanceof File && fileEntry.size > 0 ? fileEntry : null;
   if (attachmentType && attachmentType !== "project" && attachmentType !== "code" && !file) return { error: "Select a file before posting." };
   if (file && attachmentType && !isAllowedAttachment(file, attachmentType)) return { error: "This file type or size is not supported." };
+  const projectUrl = postType === "project" ? readText(formData, "project_url") : "";
+  if (postType === "project" && !/^https?:\/\//i.test(projectUrl)) return { error: "Enter a valid project link." };
 
   const supabase = await getSupabaseServerClient();
+  let website: { id: string; site_title: string | null; visibility: string | null; status: string | null } | null = null;
   if (postType === "website") {
     const websiteId = readText(formData, "website_id");
     if (!websiteId) return { error: "Select a website before posting." };
-    const { data: website, error: websiteError } = await supabase
+    const { data, error: websiteError } = await supabase
       .from("website_structures")
-      .select("id, visibility")
+      .select("id, site_title, visibility, status")
       .eq("id", websiteId)
       .eq("user_id", user.id)
       .maybeSingle();
     if (websiteError) return { error: "Unable to verify website visibility." };
+    website = data;
     if (!website) return { error: "You are not allowed to share this website." };
     if (website.visibility !== "public") return { error: "Make the website public before sharing it to Feed." };
+    if (website.status !== "published") return { error: "Publish the website before sharing it to Feed." };
   }
   const { data: post, error } = await supabase.from("community_posts").insert({
     user_id: user.id,
@@ -116,22 +137,13 @@ export async function createCommunityPost(formData: FormData) {
     return { error: "Feed tables are not configured." };
   }
 
+  const uploadedStoragePaths: string[] = [];
   try {
-    if (file && attachmentType) await insertAttachment(supabase, post.id, user.id, attachmentType, file, { post_type: postType });
-    if (postType === "code" && !file) {
-      const { error: codeError } = await supabase.from("community_post_attachments").insert({
-        post_id: post.id,
-        user_id: user.id,
-        attachment_type: "code",
-        storage_path: `code:${crypto.randomUUID()}`,
-        metadata: { post_type: "code", code: body },
-      });
-      if (codeError) throw codeError;
+    if (file && attachmentType) {
+      uploadedStoragePaths.push(await insertAttachment(supabase, post.id, user.id, attachmentType, file, { post_type: postType }));
     }
     if (postType === "project") {
-      const projectUrl = readText(formData, "project_url");
-      if (!/^https?:\/\//i.test(projectUrl)) return { error: "Enter a valid project link." };
-      await supabase.from("community_post_attachments").insert({
+      const { error: projectError } = await supabase.from("community_post_attachments").insert({
         post_id: post.id,
         user_id: user.id,
         attachment_type: "project",
@@ -139,19 +151,11 @@ export async function createCommunityPost(formData: FormData) {
         public_url: projectUrl,
         metadata: { kind: "project-link" },
       });
+      if (projectError) throw projectError;
     }
     if (postType === "website") {
-      const websiteId = readText(formData, "website_id");
-      if (!websiteId) return { error: "Select a website before posting." };
-      const { data: website } = await supabase
-        .from("website_structures")
-        .select("id, site_title, visibility")
-        .eq("id", websiteId)
-        .eq("user_id", user.id)
-        .maybeSingle();
-      if (!website) return { error: "You are not allowed to share this website." };
-      if (website.visibility !== "public") return { error: "Make the website public before sharing it to Feed." };
-      await supabase.from("community_post_attachments").insert({
+      if (!website) throw new Error("Website ownership could not be verified.");
+      const { error: websiteAttachmentError } = await supabase.from("community_post_attachments").insert({
         post_id: post.id,
         user_id: user.id,
         attachment_type: "project",
@@ -159,8 +163,13 @@ export async function createCommunityPost(formData: FormData) {
         file_name: website.site_title,
         metadata: { website_id: website.id, kind: "generated-website" },
       });
+      if (websiteAttachmentError) throw websiteAttachmentError;
     }
   } catch (attachmentError) {
+    if (uploadedStoragePaths.length > 0) {
+      await supabase.storage.from("community-attachments").remove(uploadedStoragePaths);
+    }
+    await supabase.from("community_posts").delete().eq("id", post.id).eq("user_id", user.id);
     logFeedActionError("create attachment", attachmentError instanceof Error ? attachmentError : null);
     return { error: attachmentError instanceof Error && attachmentError.message === "Upload failed." ? "Upload failed." : "Feed attachments are not configured." };
   }
@@ -177,7 +186,7 @@ export async function shareWebsiteToFeed(structureId: string, title: string) {
   const supabase = await getSupabaseServerClient();
   const { data: website, error: websiteError } = await supabase
     .from("website_structures")
-    .select("id, site_title, visibility")
+    .select("id, site_title, visibility, status")
     .eq("id", websiteId)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -188,6 +197,7 @@ export async function shareWebsiteToFeed(structureId: string, title: string) {
   }
   if (!website) return { error: "You are not allowed to share this website." };
   if (website.visibility !== "public") return { error: "Make the website public before sharing it to Feed." };
+  if (website.status !== "published") return { error: "Publish the website before sharing it to Feed." };
 
   const { data: post, error: postError } = await supabase
     .from("community_posts")
@@ -215,6 +225,7 @@ export async function shareWebsiteToFeed(structureId: string, title: string) {
   });
 
   if (attachmentError) {
+    await supabase.from("community_posts").delete().eq("id", post.id).eq("user_id", user.id);
     logFeedActionError("share website attachment", attachmentError);
     return { error: "Feed attachments are not configured." };
   }
@@ -267,6 +278,12 @@ export async function deleteCommunityPost(postId: string) {
   const user = await requireUser(routes.feed);
   const supabase = await getSupabaseServerClient();
 
+  const { data: attachments } = await supabase
+    .from("community_post_attachments")
+    .select("storage_path")
+    .eq("post_id", postId)
+    .eq("user_id", user.id);
+
   const { error } = await supabase
     .from("community_posts")
     .delete()
@@ -280,6 +297,13 @@ export async function deleteCommunityPost(postId: string) {
     }
 
     return { error: "Failed to delete post." };
+  }
+
+  const storagePaths = (attachments ?? [])
+    .map((attachment) => attachment.storage_path)
+    .filter((storagePath): storagePath is string => Boolean(storagePath) && !storagePath.startsWith("link:") && !storagePath.startsWith("website:"));
+  if (storagePaths.length > 0) {
+    await supabase.storage.from("community-attachments").remove(storagePaths);
   }
 
   revalidatePath(routes.feed);

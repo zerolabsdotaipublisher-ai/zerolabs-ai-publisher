@@ -90,6 +90,7 @@ export async function getPublicWebsites(): Promise<PublicWebsiteRecord[]> {
     .from("website_structures")
     .select("id, site_title, visibility, updated_at, generated_at, status, user_id")
     .eq("visibility", "public")
+    .eq("status", "published")
     .order("generated_at", { ascending: false })
     .limit(10);
 
@@ -104,7 +105,29 @@ export async function getPublicWebsites(): Promise<PublicWebsiteRecord[]> {
   }));
 }
 
-export async function getSavedCommunityItems(userId: string): Promise<CommunitySavedItemRecord[]> {
+export async function getPublicWebsitesForOwner(userId: string): Promise<PublicWebsiteRecord[]> {
+  const supabase = await getSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from("website_structures")
+    .select("id, site_title, visibility, updated_at, generated_at, status, user_id")
+    .eq("visibility", "public")
+    .eq("user_id", userId)
+    .eq("status", "published")
+    .order("generated_at", { ascending: false });
+
+  if (error) {
+    logOptionalFeedError("current user's public websites", error);
+    return [];
+  }
+
+  return (data ?? []).map((row) => ({
+    ...(row as Omit<PublicWebsiteRecord, "owner_id"> & { user_id?: string | null }),
+    owner_id: (row as { user_id?: string | null }).user_id,
+  }));
+}
+
+export async function getSavedCommunityItems(userId: string): Promise<{ items: CommunitySavedItemRecord[]; isAvailable: boolean }> {
   const supabase = await getSupabaseServerClient();
 
   const { data, error } = await supabase
@@ -114,8 +137,8 @@ export async function getSavedCommunityItems(userId: string): Promise<CommunityS
 
   if (error) {
     logOptionalFeedError("saved community items", error);
-    return [];
+    return { items: [], isAvailable: false };
   }
 
-  return (data ?? []) as CommunitySavedItemRecord[];
+  return { items: (data ?? []) as CommunitySavedItemRecord[], isAvailable: true };
 }
