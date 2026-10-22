@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import { PostComposer } from "./post-composer";
 import { PostList } from "./post-list";
-import { getCommunityFeed, getPublicWebsites, getSavedCommunityItems } from "./queries";
+import { getCommunityFeed, getPublicWebsites, getPublicWebsitesForOwner, getSavedCommunityItems } from "./queries";
 import { PublicWebsiteList } from "./website-list";
 import { routes } from "@/config/routes";
 import { requireUser } from "@/lib/supabase/auth";
@@ -16,9 +16,10 @@ export default async function FeedPage() {
   const user = await requireUser(routes.feed);
   const profile = await getSafeProfile(user).catch(() => createFallbackProfile(user));
 
-  const [posts, publicWebsites, savedItemsResult] = await Promise.all([
+  const [posts, publicWebsites, shareableWebsites, savedItemsResult] = await Promise.all([
     getCommunityFeed(),
     getPublicWebsites(),
+    getPublicWebsitesForOwner(user.id),
     getSavedCommunityItems(user.id),
   ]);
   const savedPostIds = savedItemsResult.items
@@ -45,12 +46,12 @@ export default async function FeedPage() {
         </div>
 
         <p className="feed-panel-note">
-          Text posts are ready today. Attachment and website-share options are unavailable until their workspace capabilities are configured.
+          Share text, files, project links, and your published public websites with the community.
         </p>
       </aside>
 
       <main className="feed-main">
-        <PostComposer />
+        <PostComposer websites={shareableWebsites} />
 
         <section className="feed-posts-section" aria-labelledby="community-posts-heading">
           <div className="feed-panel-heading">

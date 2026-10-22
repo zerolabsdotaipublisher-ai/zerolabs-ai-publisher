@@ -41,22 +41,19 @@ describe("community feed productization", () => {
     expect(composer).toContain("Post created.");
   });
 
-  it("keeps unavailable attachment and website post types disabled with clear wording", () => {
+  it("enables attachment and website post types with their backed input controls", () => {
     for (const label of ["image", "code", "project", "docs", "gif", "video", "website"]) {
       expect(composer).toContain(`value: "${label}"`);
     }
 
-    expect(composer).toContain('status: "Unavailable"');
-    expect(composer).toContain("isAvailable: false");
-    expect(composer).toContain("disabled={isPending || !isAvailable}");
-    expect(composer).toContain("aria-pressed={isAvailable ? postType === value : undefined}");
-    expect(composer).toContain("onClick={isAvailable ? () => setPostType(value) : undefined}");
-    expect(composer).toContain("Attachment and website sharing are not configured for this workspace.");
-    expect(composer).not.toContain('name="attachment"');
-    expect(composer).not.toContain('name="project_url"');
-    expect(composer).not.toContain('name="website_id"');
-    expect(page).toContain("<PostComposer />");
-    expect(page).not.toContain("getPublicWebsitesForOwner(user.id)");
+    expect(composer).not.toContain('status: "Unavailable"');
+    expect(composer).not.toContain("isAvailable: false");
+    expect(composer).toContain('name="attachment"');
+    expect(composer).toContain('name="project_url"');
+    expect(composer).toContain('name="website_id"');
+    expect(composer).toContain('encType="multipart/form-data"');
+    expect(page).toContain("getPublicWebsitesForOwner(user.id)");
+    expect(page).toContain("<PostComposer websites={shareableWebsites} />");
   });
 
   it("keeps top navigation routes valid", () => {
