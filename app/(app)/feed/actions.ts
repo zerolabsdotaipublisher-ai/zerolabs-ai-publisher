@@ -49,7 +49,8 @@ function isAllowedAttachment(file: File, type: string): boolean {
   if (type === "gif") return file.type === "image/gif";
   if (type === "video") return file.type.startsWith("video/");
   if (type === "document") return file.type === "application/pdf" || file.type.startsWith("text/") || file.type.includes("document") || file.type.includes("spreadsheet");
-  return true;
+  if (type === "code") return file.type.startsWith("text/") || ["application/json", "application/javascript", "application/typescript", "application/xml"].includes(file.type);
+  return false;
 }
 
 async function insertAttachment(supabase: Awaited<ReturnType<typeof getSupabaseServerClient>>, postId: string, userId: string, type: string, file: File, metadata: Record<string, unknown> = {}) {
