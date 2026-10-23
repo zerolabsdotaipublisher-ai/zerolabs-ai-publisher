@@ -2,49 +2,78 @@
 
 import { useRef, useState, useTransition } from "react";
 import { createCommunityPost } from "./actions";
+import {
+  getAttachmentType,
+  getAttachmentValidationError,
+  getFileAccept,
+  isFilePostType,
+  maxAttachmentSizeLabel,
+  type CommunityPostType,
+} from "./post-config";
 import type { PublicWebsiteRecord } from "./types";
 
 const postTypes = [
-  { value: "text", label: "Text", status: "Ready", statusClass: "is-ready", isAvailable: true },
-  { value: "image", label: "Image", status: "Ready", statusClass: "is-ready", isAvailable: true },
-  { value: "code", label: "Code", status: "Ready", statusClass: "is-ready", isAvailable: true },
-  { value: "project", label: "Project", status: "Ready", statusClass: "is-ready", isAvailable: true },
-  { value: "docs", label: "Docs", status: "Ready", statusClass: "is-ready", isAvailable: true },
-  { value: "gif", label: "GIF", status: "Ready", statusClass: "is-ready", isAvailable: true },
-  { value: "video", label: "Video", status: "Ready", statusClass: "is-ready", isAvailable: true },
-  { value: "website", label: "Website", status: "Ready", statusClass: "is-ready", isAvailable: true },
+  { value: "text", label: "Text" },
+  { value: "image", label: "Image" },
+  { value: "code", label: "Code" },
+  { value: "project", label: "Project" },
+  { value: "docs", label: "Docs" },
+  { value: "gif", label: "GIF" },
+  { value: "video", label: "Video" },
+  { value: "website", label: "Website" },
 ] as const;
-
-const filePostTypes = new Set(["image", "code", "docs", "gif", "video"]);
-
-function getFileAccept(postType: string): string | undefined {
-  if (postType === "image") return "image/jpeg,image/png,image/webp,image/avif";
-  if (postType === "code") return ".txt,.md,.js,.jsx,.ts,.tsx,.json,.xml,text/plain,text/markdown,application/json,application/javascript,application/typescript,application/xml";
-  if (postType === "docs") return ".pdf,.txt,.md,.doc,.docx,.xls,.xlsx,application/pdf,text/*,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-  if (postType === "gif") return "image/gif";
-  if (postType === "video") return "video/*";
-  return undefined;
-}
 
 export function PostComposer({ websites }: { websites: PublicWebsiteRecord[] }) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [postType, setPostType] = useState("text");
+  const [postType, setPostType] = useState<CommunityPostType>("text");
   const formRef = useRef<HTMLFormElement>(null);
+  const isSubmittingRef = useRef(false);
 
-  const handleSubmit = async (formData: FormData) => {
+  const selectPostType = (nextPostType: CommunityPostType) => {
+    setPostType(nextPostType);
+    setFileError(null);
+    setError(null);
+    setMessage(null);
+  };
+
+  const handleFileChange = (file: File | null) => {
+    const attachmentType = getAttachmentType(postType);
+    const validationError = file && attachmentType && attachmentType !== "project"
+      ? getAttachmentValidationError(file, attachmentType)
+      : null;
+    setFileError(validationError);
+    setError(validationError);
+    setMessage(null);
+  };
+
+  const handleSubmit = (formData: FormData) => {
+    if (isSubmittingRef.current) return;
+    if (fileError) {
+      setError(fileError);
+      return;
+    }
+
+    isSubmittingRef.current = true;
     setError(null);
     setMessage(null);
     startTransition(async () => {
-      const result = await createCommunityPost(formData);
-      if (result.error) {
-        setError(result.error);
-        return;
-      }
+      try {
+        const result = await createCommunityPost(formData);
+        if ("error" in result) {
+          setError(result.error);
+          return;
+        }
 
-      formRef.current?.reset();
-      setMessage("Post created.");
+        formRef.current?.reset();
+        setMessage("Post created.");
+      } catch {
+        setError("Unable to create your post. Please try again.");
+      } finally {
+        isSubmittingRef.current = false;
+      }
     });
   };
 
@@ -57,25 +86,31 @@ export function PostComposer({ websites }: { websites: PublicWebsiteRecord[] }) 
       </div>
 
       <div className="feed-type-row" role="group" aria-label="Post type">
-        {postTypes.map(({ value, label, status, statusClass, isAvailable }) => {
+        {postTypes.map(({ value, label }) => {
+          const isWebsiteUnavailable = value === "website" && websites.length === 0;
+          const isAvailable = !isWebsiteUnavailable;
+          const isSelected = postType === value;
           return (
             <button
               key={value}
               type="button"
-              className={`feed-type-pill ${postType === value ? "is-active" : ""}`}
-              onClick={isAvailable ? () => setPostType(value) : undefined}
+              className={`feed-type-pill ${isSelected ? "is-active" : ""}`}
+              onClick={isAvailable ? () => selectPostType(value) : undefined}
               disabled={isPending || !isAvailable}
-              aria-pressed={isAvailable ? postType === value : undefined}
-              title={!isAvailable ? "This post type is not available in this workspace yet." : undefined}
+              aria-pressed={isSelected}
+              aria-label={`${label}${isSelected ? ", selected" : ""}${isWebsiteUnavailable ? ", unavailable: no published public websites" : ""}`}
+              title={isWebsiteUnavailable ? "Publish a website and set it to public before sharing it to Feed." : undefined}
             >
               <span className="feed-type-label">{label}</span>
-              <span className={`feed-type-status ${statusClass}`}>{status}</span>
+              <span className={`feed-type-status ${isWebsiteUnavailable ? "is-unavailable" : "is-ready"}`}>
+                {isWebsiteUnavailable ? "No sites" : "Ready"}
+              </span>
             </button>
           );
         })}
       </div>
 
-      <p className="feed-form-message">All feed post types are available. Files are private at rest and appear only with posts you share publicly.</p>
+      <p className="feed-form-message">Files are private at rest and appear only with posts you share publicly. File uploads support files up to {maxAttachmentSizeLabel}.</p>
 
       <form ref={formRef} action={handleSubmit} className="feed-composer-form" encType="multipart/form-data">
         <input type="hidden" name="post_type" value={postType} />
@@ -102,16 +137,26 @@ export function PostComposer({ websites }: { websites: PublicWebsiteRecord[] }) 
           />
         </label>
 
-        {filePostTypes.has(postType) ? (
+        {isFilePostType(postType) ? (
           <label className="feed-field">
             <span>File {postType === "code" ? <em>(optional)</em> : null}</span>
             <input
+              key={postType}
               type="file"
               name="attachment"
               accept={getFileAccept(postType)}
               required={postType !== "code"}
               className="feed-input"
               disabled={isPending}
+              onChange={(event) => {
+                const selectedFile = event.currentTarget.files?.[0] ?? null;
+                const attachmentType = getAttachmentType(postType);
+                const validationError = selectedFile && attachmentType && attachmentType !== "project"
+                  ? getAttachmentValidationError(selectedFile, attachmentType)
+                  : null;
+                event.currentTarget.setCustomValidity(validationError ?? "");
+                handleFileChange(selectedFile);
+              }}
             />
           </label>
         ) : null}
@@ -133,11 +178,10 @@ export function PostComposer({ websites }: { websites: PublicWebsiteRecord[] }) 
         {postType === "website" ? (
           <label className="feed-field">
             <span>Published public website</span>
-            <select name="website_id" required className="feed-select" disabled={isPending || websites.length === 0} defaultValue="">
-              <option value="" disabled>{websites.length === 0 ? "No published public websites available" : "Select a website"}</option>
+            <select name="website_id" required className="feed-select" disabled={isPending} defaultValue="">
+              <option value="" disabled>Select a website</option>
               {websites.map((website) => <option key={website.id} value={website.id}>{website.site_title || "Untitled website"}</option>)}
             </select>
-            {websites.length === 0 ? <small className="feed-form-message">Publish a website and set it to public before sharing it here.</small> : null}
           </label>
         ) : null}
 
@@ -155,17 +199,17 @@ export function PostComposer({ websites }: { websites: PublicWebsiteRecord[] }) 
             </select>
           </label>
 
-          <button type="submit" disabled={isPending} className="feed-submit-button">
+          <button type="submit" disabled={isPending || Boolean(fileError)} className="feed-submit-button" aria-disabled={isPending || Boolean(fileError)}>
             {isPending ? "Posting..." : "Post"}
           </button>
         </div>
 
         {error ? (
-          <p className="feed-form-message is-error" role="alert">
+          <p className="feed-form-message is-error" role="alert" aria-live="assertive">
             {error}
           </p>
         ) : message ? (
-          <p className="feed-form-message is-success" role="status">
+          <p className="feed-form-message is-success" role="status" aria-live="polite">
             {message}
           </p>
         ) : (

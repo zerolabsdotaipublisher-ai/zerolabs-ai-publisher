@@ -4,9 +4,11 @@ const mocks = vi.hoisted(() => ({
   getSupabaseServerClient: vi.fn(),
   revalidatePath: vi.fn(),
   requireUser: vi.fn(),
+  logger: { warn: vi.fn() },
 }));
 
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
+vi.mock("@/lib/observability", () => ({ logger: mocks.logger }));
 vi.mock("@/lib/supabase/auth", () => ({ requireUser: mocks.requireUser }));
 vi.mock("@/lib/supabase/server", () => ({ getSupabaseServerClient: mocks.getSupabaseServerClient }));
 
@@ -19,6 +21,7 @@ import {
   toggleCommunityPostReaction,
   toggleSavedCommunityPost,
 } from "@/app/(app)/feed/actions";
+import { maxAttachmentSize } from "@/app/(app)/feed/post-config";
 
 const user = { id: "user_fixture" };
 
@@ -72,6 +75,219 @@ describe("community feed actions", () => {
       visibility: "public",
     });
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/feed");
+  });
+
+  it("returns a structured error when post creation fails", async () => {
+    const single = vi.fn().mockResolvedValue({ data: null, error: { code: "42501", message: "RLS denied" } });
+    const select = vi.fn().mockReturnValue({ single });
+    const insert = vi.fn().mockReturnValue({ select });
+    const from = vi.fn().mockReturnValue({ insert });
+    mocks.getSupabaseServerClient.mockResolvedValue({ from });
+    const formData = new FormData();
+    formData.set("post_type", "text");
+    formData.set("body", "The site is live.");
+
+    await expect(createCommunityPost(formData)).resolves.toEqual({ error: "Feed posting is temporarily unavailable." });
+  });
+
+  it("requires an image file before creating a post record", async () => {
+    const formData = new FormData();
+    formData.set("post_type", "image");
+    formData.set("body", "A new image.");
+
+    await expect(createCommunityPost(formData)).resolves.toEqual({ error: "Select a file before posting." });
+    expect(mocks.getSupabaseServerClient).not.toHaveBeenCalled();
+  });
+
+  it("rejects invalid image MIME types safely before creating a post record", async () => {
+    const formData = new FormData();
+    formData.set("post_type", "image");
+    formData.set("body", "A new image.");
+    formData.set("attachment", new File(["not an image"], "notes.txt", { type: "text/plain" }));
+
+    await expect(createCommunityPost(formData)).resolves.toEqual({ error: "Images must be JPEG, PNG, WebP, or AVIF files." });
+    expect(mocks.getSupabaseServerClient).not.toHaveBeenCalled();
+  });
+
+  it("rejects oversized image files safely before creating a post record", async () => {
+    const formData = new FormData();
+    formData.set("post_type", "image");
+    formData.set("body", "A new image.");
+    formData.set("attachment", new File([new Uint8Array(maxAttachmentSize + 1)], "large.png", { type: "image/png" }));
+
+    await expect(createCommunityPost(formData)).resolves.toEqual({ error: "Files must be 4 MB or smaller." });
+    expect(mocks.getSupabaseServerClient).not.toHaveBeenCalled();
+  });
+
+  it("returns a structured error and compensates when image storage upload fails", async () => {
+    const single = vi.fn().mockResolvedValue({ data: { id: "post_fixture" }, error: null });
+    const select = vi.fn().mockReturnValue({ single });
+    const createPost = vi.fn().mockReturnValue({ select });
+    const deletePostForUser = vi.fn().mockResolvedValue({ error: null });
+    const deletePostForId = vi.fn().mockReturnValue({ eq: deletePostForUser });
+    const deletePost = vi.fn().mockReturnValue({ eq: deletePostForId });
+    const deleteAttachmentForUser = vi.fn().mockResolvedValue({ error: null });
+    const deleteAttachmentForPost = vi.fn().mockReturnValue({ eq: deleteAttachmentForUser });
+    const deleteAttachment = vi.fn().mockReturnValue({ eq: deleteAttachmentForPost });
+    const insertAttachment = vi.fn();
+    const from = vi.fn((table: string) => table === "community_posts"
+      ? { insert: createPost, delete: deletePost }
+      : { insert: insertAttachment, delete: deleteAttachment });
+    const upload = vi.fn().mockResolvedValue({ error: { code: "403", message: "RLS denied" } });
+    const remove = vi.fn().mockResolvedValue({ error: null });
+    mocks.getSupabaseServerClient.mockResolvedValue({
+      from,
+      storage: { from: vi.fn().mockReturnValue({ upload, remove }) },
+    });
+    const formData = new FormData();
+    formData.set("post_type", "image");
+    formData.set("body", "A new image.");
+    formData.set("attachment", new File(["png"], "image.png", { type: "image/png" }));
+
+    await expect(createCommunityPost(formData)).resolves.toEqual({ error: "Unable to save the attachment. Please try again." });
+    expect(upload).toHaveBeenCalledOnce();
+    expect(remove).toHaveBeenCalledWith([expect.stringMatching(/^user_fixture\/post_fixture\//)]);
+    expect(deleteAttachment).toHaveBeenCalledOnce();
+    expect(deletePost).toHaveBeenCalledOnce();
+  });
+
+  it("does not reject the server action when Storage throws unexpectedly", async () => {
+    const single = vi.fn().mockResolvedValue({ data: { id: "post_fixture" }, error: null });
+    const select = vi.fn().mockReturnValue({ single });
+    const createPost = vi.fn().mockReturnValue({ select });
+    const deletePostForUser = vi.fn().mockResolvedValue({ error: null });
+    const deletePostForId = vi.fn().mockReturnValue({ eq: deletePostForUser });
+    const deletePost = vi.fn().mockReturnValue({ eq: deletePostForId });
+    const deleteAttachmentForUser = vi.fn().mockResolvedValue({ error: null });
+    const deleteAttachmentForPost = vi.fn().mockReturnValue({ eq: deleteAttachmentForUser });
+    const deleteAttachment = vi.fn().mockReturnValue({ eq: deleteAttachmentForPost });
+    const from = vi.fn((table: string) => table === "community_posts"
+      ? { insert: createPost, delete: deletePost }
+      : { delete: deleteAttachment });
+    const upload = vi.fn().mockRejectedValue(new Error("Storage connection lost"));
+    const remove = vi.fn().mockResolvedValue({ error: null });
+    mocks.getSupabaseServerClient.mockResolvedValue({
+      from,
+      storage: { from: vi.fn().mockReturnValue({ upload, remove }) },
+    });
+    const formData = new FormData();
+    formData.set("post_type", "image");
+    formData.set("body", "A new image.");
+    formData.set("attachment", new File(["png"], "image.png", { type: "image/png" }));
+
+    await expect(createCommunityPost(formData)).resolves.toEqual({ error: "Unable to save the attachment. Please try again." });
+    expect(remove).toHaveBeenCalledOnce();
+    expect(deleteAttachment).toHaveBeenCalledOnce();
+    expect(deletePost).toHaveBeenCalledOnce();
+  });
+
+  it("returns a structured error and compensates when image attachment metadata cannot be inserted", async () => {
+    const single = vi.fn().mockResolvedValue({ data: { id: "post_fixture" }, error: null });
+    const select = vi.fn().mockReturnValue({ single });
+    const createPost = vi.fn().mockReturnValue({ select });
+    const deletePostForUser = vi.fn().mockResolvedValue({ error: null });
+    const deletePostForId = vi.fn().mockReturnValue({ eq: deletePostForUser });
+    const deletePost = vi.fn().mockReturnValue({ eq: deletePostForId });
+    const deleteAttachmentForUser = vi.fn().mockResolvedValue({ error: null });
+    const deleteAttachmentForPost = vi.fn().mockReturnValue({ eq: deleteAttachmentForUser });
+    const deleteAttachment = vi.fn().mockReturnValue({ eq: deleteAttachmentForPost });
+    const insertAttachment = vi.fn().mockResolvedValue({ error: { code: "42501", message: "RLS denied" } });
+    const from = vi.fn((table: string) => table === "community_posts"
+      ? { insert: createPost, delete: deletePost }
+      : { insert: insertAttachment, delete: deleteAttachment });
+    const upload = vi.fn().mockResolvedValue({ error: null });
+    const remove = vi.fn().mockResolvedValue({ error: null });
+    mocks.getSupabaseServerClient.mockResolvedValue({
+      from,
+      storage: { from: vi.fn().mockReturnValue({ upload, remove }) },
+    });
+    const formData = new FormData();
+    formData.set("post_type", "image");
+    formData.set("body", "A new image.");
+    formData.set("attachment", new File(["png"], "image.png", { type: "image/png" }));
+
+    await expect(createCommunityPost(formData)).resolves.toEqual({ error: "Feed attachments are temporarily unavailable." });
+    expect(upload).toHaveBeenCalledOnce();
+    expect(insertAttachment).toHaveBeenCalledOnce();
+    expect(remove).toHaveBeenCalledWith([expect.stringMatching(/^user_fixture\/post_fixture\//)]);
+    expect(deleteAttachment).toHaveBeenCalledOnce();
+    expect(deletePost).toHaveBeenCalledOnce();
+  });
+
+  it("creates an image post, stores its private object, and records attachment metadata", async () => {
+    const single = vi.fn().mockResolvedValue({ data: { id: "post_fixture" }, error: null });
+    const select = vi.fn().mockReturnValue({ single });
+    const createPost = vi.fn().mockReturnValue({ select });
+    const insertAttachment = vi.fn().mockResolvedValue({ error: null });
+    const from = vi.fn((table: string) => table === "community_posts" ? { insert: createPost } : { insert: insertAttachment });
+    const upload = vi.fn().mockResolvedValue({ error: null });
+    mocks.getSupabaseServerClient.mockResolvedValue({
+      from,
+      storage: { from: vi.fn().mockReturnValue({ upload }) },
+    });
+    const file = new File(["png"], "image.png", { type: "image/png" });
+    const formData = new FormData();
+    formData.set("post_type", "image");
+    formData.set("title", "Image launch");
+    formData.set("body", "A new image.");
+    formData.set("visibility", "public");
+    formData.set("attachment", file);
+
+    await expect(createCommunityPost(formData)).resolves.toEqual({ success: true });
+    expect(upload).toHaveBeenCalledWith(expect.stringMatching(/^user_fixture\/post_fixture\//), file, {
+      contentType: "image/png",
+      upsert: false,
+    });
+    expect(insertAttachment).toHaveBeenCalledWith(expect.objectContaining({
+      post_id: "post_fixture",
+      user_id: user.id,
+      attachment_type: "image",
+      file_name: "image.png",
+      mime_type: "image/png",
+      file_size: file.size,
+      metadata: { post_type: "image" },
+    }));
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/feed");
+  });
+
+  it("keeps Website posting functional for an eligible published public website", async () => {
+    const maybeSingle = vi.fn().mockResolvedValue({
+      data: { id: "website_fixture", site_title: "Public site", visibility: "public", status: "published" },
+      error: null,
+    });
+    const websiteForUser = vi.fn().mockReturnValue({ maybeSingle });
+    const websiteById = vi.fn().mockReturnValue({ eq: websiteForUser });
+    const selectWebsite = vi.fn().mockReturnValue({ eq: websiteById });
+    const single = vi.fn().mockResolvedValue({ data: { id: "post_fixture" }, error: null });
+    const selectPost = vi.fn().mockReturnValue({ single });
+    const createPost = vi.fn().mockReturnValue({ select: selectPost });
+    const insertAttachment = vi.fn().mockResolvedValue({ error: null });
+    const from = vi.fn((table: string) => {
+      if (table === "website_structures") return { select: selectWebsite };
+      if (table === "community_posts") return { insert: createPost };
+      return { insert: insertAttachment };
+    });
+    mocks.getSupabaseServerClient.mockResolvedValue({ from });
+    const formData = new FormData();
+    formData.set("post_type", "website");
+    formData.set("body", "Sharing my website.");
+    formData.set("website_id", "website_fixture");
+
+    await expect(createCommunityPost(formData)).resolves.toEqual({ success: true });
+    expect(createPost).toHaveBeenCalledWith({
+      user_id: user.id,
+      title: null,
+      body: "Sharing my website.",
+      visibility: "public",
+    });
+    expect(insertAttachment).toHaveBeenCalledWith({
+      post_id: "post_fixture",
+      user_id: user.id,
+      attachment_type: "project",
+      storage_path: "website:website_fixture",
+      file_name: "Public site",
+      metadata: { website_id: "website_fixture", kind: "generated-website" },
+    });
   });
 
   it("records a heart for the signed-in user and refreshes the feed", async () => {

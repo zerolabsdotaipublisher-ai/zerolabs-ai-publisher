@@ -5,7 +5,12 @@ import { validateEnv } from "./config/env";
 validateEnv();
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  experimental: {
+    // Keep multipart uploads below Vercel's 4.5 MB Function request limit.
+    serverActions: {
+      bodySizeLimit: "4.4mb",
+    },
+  },
 };
 
 export default nextConfig;

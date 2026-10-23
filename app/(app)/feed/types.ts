@@ -38,7 +38,7 @@ export interface CommunityPostAttachment {
   id: string;
   post_id: string;
   attachment_type: CommunityPostAttachmentType;
-  storage_path: string;
+  storage_path: string | null;
   public_url?: string | null;
   file_name?: string | null;
   mime_type?: string | null;
