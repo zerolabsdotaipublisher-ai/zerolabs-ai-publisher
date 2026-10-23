@@ -49,9 +49,17 @@ export async function getCommunityFeed(): Promise<CommunityPostRecord[]> {
   const currentUserId = currentUser.data.user?.id;
   const attachmentRows = attachments.error ? [] : await Promise.all((attachments.data ?? []).map(async (row) => {
     const attachment = row as CommunityPostRecord["attachments"][number];
-    if (attachment.public_url || attachment.storage_path.startsWith("website:") || attachment.storage_path.startsWith("link:")) return attachment;
-    const signed = await supabase.storage.from("community-attachments").createSignedUrl(attachment.storage_path, 3600);
-    return { ...attachment, public_url: signed.data?.signedUrl ?? null };
+    const storagePath = attachment.storage_path;
+    if (!storagePath || attachment.public_url || storagePath.startsWith("website:") || storagePath.startsWith("link:")) return attachment;
+
+    try {
+      const signed = await supabase.storage.from("community-attachments").createSignedUrl(storagePath, 3600);
+      if (signed.error) logOptionalFeedError("attachment signed URL", signed.error);
+      return { ...attachment, public_url: signed.data?.signedUrl ?? null };
+    } catch (error) {
+      logOptionalFeedError("attachment signed URL", error instanceof Error ? error : null);
+      return { ...attachment, public_url: null };
+    }
   }));
   const reactionRows = reactions.error ? [] : (reactions.data ?? []);
   const commentRows = comments.error ? [] : (comments.data ?? []);

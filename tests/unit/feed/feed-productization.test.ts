@@ -13,6 +13,7 @@ describe("community feed productization", () => {
   const navigation = readSource("components/app/app-navigation.tsx");
   const routes = readSource("config/routes.ts");
   const websiteList = readSource("app/(app)/feed/website-list.tsx");
+  const nextConfig = readSource("next.config.ts");
 
   it("keeps the three feed areas and responsive layout hooks available", () => {
     expect(page).toContain("feed-community-panel");
@@ -27,7 +28,9 @@ describe("community feed productization", () => {
       expect(composer).toContain(`label: \"${label}\"`);
     }
 
-    expect(composer).toContain('{ value: "text", label: "Text", status: "Ready", statusClass: "is-ready", isAvailable: true }');
+    expect(composer).toContain('const [postType, setPostType] = useState<CommunityPostType>("text")');
+    expect(composer).toContain('aria-pressed={isSelected}');
+    expect(composer).toContain('feed-type-pill ${isSelected ? "is-active" : ""}');
     expect(composer).toContain('name="post_type"');
     expect(composer).toContain('name="title"');
     expect(composer).toContain("(optional)");
@@ -46,12 +49,14 @@ describe("community feed productization", () => {
       expect(composer).toContain(`value: "${label}"`);
     }
 
-    expect(composer).not.toContain('status: "Unavailable"');
-    expect(composer).not.toContain("isAvailable: false");
+    expect(composer).toContain('isWebsiteUnavailable');
+    expect(composer).toContain('disabled={isPending || !isAvailable}');
     expect(composer).toContain('name="attachment"');
     expect(composer).toContain('name="project_url"');
     expect(composer).toContain('name="website_id"');
     expect(composer).toContain('encType="multipart/form-data"');
+    expect(composer).toContain("event.currentTarget.setCustomValidity(validationError ?? \"\")");
+    expect(nextConfig).toContain('bodySizeLimit: "4.4mb"');
     expect(page).toContain("getPublicWebsitesForOwner(user.id)");
     expect(page).toContain("<PostComposer websites={shareableWebsites} />");
   });
@@ -85,5 +90,15 @@ describe("community feed productization", () => {
     expect(queries).toContain("isAvailable: false");
     expect(postList).toContain("disabled={post.commentCount === null}");
     expect(postList).toContain("disabled={isBusy || !savedItemsAvailable}");
+  });
+
+  it("keeps the composer safe while a post is submitting", () => {
+    expect(composer).toContain('const isSubmittingRef = useRef(false)');
+    expect(composer).toContain('if (isSubmittingRef.current) return;');
+    expect(composer).toContain('if (fileError) {');
+    expect(composer).toContain('isSubmittingRef.current = true;');
+    expect(composer).toContain('{isPending ? "Posting..." : "Post"}');
+    expect(composer).toContain('disabled={isPending || Boolean(fileError)}');
+    expect(composer).toContain('setError("Unable to create your post. Please try again.")');
   });
 });
