@@ -2,17 +2,32 @@
 
 import { revalidatePath } from "next/cache";
 import { routes } from "@/config/routes";
+import { logger } from "@/lib/observability";
 import { requireUser } from "@/lib/supabase/auth";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import {
+  getAttachmentType,
+  getAttachmentValidationError,
+  isCommunityPostType,
+  isFilePostType,
+  type CommunityAttachmentType,
+  type CommunityPostType,
+} from "./post-config";
 
 function isMissingFeedSchema(error: { code?: string; message?: string } | null): boolean {
   return error?.code === "42P01" || error?.code === "42501" || error?.code === "PGRST205" || error?.message?.toLowerCase().includes("schema cache") === true;
 }
 
-function logFeedActionError(label: string, error: { message?: string } | null) {
-  if (process.env.NODE_ENV === "development") {
-    console.warn(`Feed action unavailable: ${label}${error?.message ? ` (${error.message})` : ""}`);
-  }
+function logFeedActionError(label: string, error: unknown) {
+  const code = typeof error === "object" && error && "code" in error && typeof error.code === "string" ? error.code : null;
+  logger.warn(`Feed action failed: ${label}`, {
+    category: "error",
+    service: "supabase",
+    error: {
+      name: error instanceof Error ? error.name : "FeedActionError",
+      message: code ? `Supabase error ${code}` : "Feed operation failed",
+    },
+  });
 }
 
 function normalizeVisibility(value: FormDataEntryValue | null): "public" | "private" {
@@ -24,45 +39,91 @@ function readText(formData: FormData, name: string): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
-const communityPostTypes = ["text", "image", "code", "project", "docs", "gif", "video", "website"] as const;
-type CommunityPostType = (typeof communityPostTypes)[number];
+export type FeedActionResult = { success: true } | { error: string };
 
-function isCommunityPostType(value: string): value is CommunityPostType {
-  return (communityPostTypes as readonly string[]).includes(value);
+function isFileEntry(value: FormDataEntryValue | null): value is File {
+  if (!value || typeof value !== "object") return false;
+  if (typeof File !== "undefined" && value instanceof File) return true;
+
+  const candidate = value as Partial<File>;
+  return typeof candidate.name === "string"
+    && typeof candidate.size === "number"
+    && typeof candidate.type === "string"
+    && typeof candidate.arrayBuffer === "function";
 }
 
-function getAttachmentType(postType: CommunityPostType): "image" | "gif" | "video" | "document" | "code" | "project" | null {
-  if (postType === "image") return "image";
-  if (postType === "gif") return "gif";
-  if (postType === "video") return "video";
-  if (postType === "docs") return "document";
-  if (postType === "code") return "code";
-  if (postType === "project" || postType === "website") return "project";
-  return null;
+function getSafeActionError(error: unknown): string {
+  if (isMissingFeedSchema(error as { code?: string; message?: string } | null)) return "Feed posting is temporarily unavailable.";
+  return "Unable to create your post. Please try again.";
 }
 
-const maxAttachmentSize = 50 * 1024 * 1024;
-
-function isAllowedAttachment(file: File, type: string): boolean {
-  if (!file.size || file.size > maxAttachmentSize) return false;
-  if (type === "image") return file.type.startsWith("image/") && file.type !== "image/gif";
-  if (type === "gif") return file.type === "image/gif";
-  if (type === "video") return file.type.startsWith("video/");
-  if (type === "document") return file.type === "application/pdf" || file.type.startsWith("text/") || file.type.includes("document") || file.type.includes("spreadsheet");
-  if (type === "code") return file.type.startsWith("text/") || ["application/json", "application/javascript", "application/typescript", "application/xml"].includes(file.type);
-  return false;
+function getSafeAttachmentError(error: unknown): string {
+  if (isMissingFeedSchema(error as { code?: string; message?: string } | null)) return "Feed attachments are temporarily unavailable.";
+  return "Unable to save the attachment. Please try again.";
 }
 
-async function insertAttachment(supabase: Awaited<ReturnType<typeof getSupabaseServerClient>>, postId: string, userId: string, type: string, file: File, metadata: Record<string, unknown> = {}) {
-  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-") || "attachment";
-  const storagePath = `${userId}/${postId}/${crypto.randomUUID()}-${safeName}`;
+async function removeStorageObject(supabase: Awaited<ReturnType<typeof getSupabaseServerClient>>, storagePath: string) {
+  try {
+    const { error } = await supabase.storage.from("community-attachments").remove([storagePath]);
+    if (error) logFeedActionError("remove uploaded attachment", error);
+  } catch (error) {
+    logFeedActionError("remove uploaded attachment", error);
+  }
+}
+
+async function cleanUpFailedPost(
+  supabase: Awaited<ReturnType<typeof getSupabaseServerClient>>,
+  postId: string,
+  userId: string,
+  storagePath: string | null,
+) {
+  if (storagePath) await removeStorageObject(supabase, storagePath);
+
+  try {
+    const { error } = await supabase
+      .from("community_post_attachments")
+      .delete()
+      .eq("post_id", postId)
+      .eq("user_id", userId);
+    if (error) logFeedActionError("remove failed attachment metadata", error);
+  } catch (error) {
+    logFeedActionError("remove failed attachment metadata", error);
+  }
+
+  try {
+    const { error } = await supabase
+      .from("community_posts")
+      .delete()
+      .eq("id", postId)
+      .eq("user_id", userId);
+    if (error) logFeedActionError("remove failed post", error);
+  } catch (error) {
+    logFeedActionError("remove failed post", error);
+  }
+}
+
+async function uploadAttachment(
+  supabase: Awaited<ReturnType<typeof getSupabaseServerClient>>,
+  storagePath: string,
+  file: File,
+) {
   const upload = await supabase.storage.from("community-attachments").upload(storagePath, file, {
     contentType: file.type || "application/octet-stream",
     upsert: false,
   });
 
-  if (upload.error) throw new Error("Upload failed.");
+  if (upload.error) throw upload.error;
+}
 
+async function insertAttachmentMetadata(
+  supabase: Awaited<ReturnType<typeof getSupabaseServerClient>>,
+  postId: string,
+  userId: string,
+  type: CommunityAttachmentType,
+  storagePath: string,
+  file: File,
+  metadata: Record<string, unknown> = {},
+) {
   const { error } = await supabase.from("community_post_attachments").insert({
     post_id: postId,
     user_id: userId,
@@ -74,109 +135,116 @@ async function insertAttachment(supabase: Awaited<ReturnType<typeof getSupabaseS
     metadata,
   });
 
-  if (error) {
-    await supabase.storage.from("community-attachments").remove([storagePath]);
-    throw error;
-  }
-
-  return storagePath;
+  if (error) throw error;
 }
 
-export async function createCommunityPost(formData: FormData) {
+function buildStoragePath(userId: string, postId: string, file: File): string {
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-") || "attachment";
+  return `${userId}/${postId}/${crypto.randomUUID()}-${safeName}`;
+}
+
+export async function createCommunityPost(formData: FormData): Promise<FeedActionResult> {
   const user = await requireUser(routes.feed);
-  const title = readText(formData, "title");
-  const body = readText(formData, "body");
-  const postType = readText(formData, "post_type") || "text";
-  const visibility = normalizeVisibility(formData.get("visibility"));
-
-  if (!isCommunityPostType(postType)) {
-    return { error: "Select a supported post type." };
-  }
-
-  if (!body) {
-    return { error: "Post body is required." };
-  }
-
-  const attachmentType = getAttachmentType(postType);
-  const fileEntry = formData.get("attachment");
-  const file = fileEntry instanceof File && fileEntry.size > 0 ? fileEntry : null;
-  if (attachmentType && attachmentType !== "project" && attachmentType !== "code" && !file) return { error: "Select a file before posting." };
-  if (file && attachmentType && !isAllowedAttachment(file, attachmentType)) return { error: "This file type or size is not supported." };
-  const projectUrl = postType === "project" ? readText(formData, "project_url") : "";
-  if (postType === "project" && !/^https?:\/\//i.test(projectUrl)) return { error: "Enter a valid project link." };
-
-  const supabase = await getSupabaseServerClient();
-  let website: { id: string; site_title: string | null; visibility: string | null; status: string | null } | null = null;
-  if (postType === "website") {
-    const websiteId = readText(formData, "website_id");
-    if (!websiteId) return { error: "Select a website before posting." };
-    const { data, error: websiteError } = await supabase
-      .from("website_structures")
-      .select("id, site_title, visibility, status")
-      .eq("id", websiteId)
-      .eq("user_id", user.id)
-      .maybeSingle();
-    if (websiteError) return { error: "Unable to verify website visibility." };
-    website = data;
-    if (!website) return { error: "You are not allowed to share this website." };
-    if (website.visibility !== "public") return { error: "Make the website public before sharing it to Feed." };
-    if (website.status !== "published") return { error: "Publish the website before sharing it to Feed." };
-  }
-  const { data: post, error } = await supabase.from("community_posts").insert({
-    user_id: user.id,
-    title: title || null,
-    body: body || (postType === "website" ? "Shared website" : postType),
-    visibility,
-  }).select("id").single();
-
-  if (error) {
-    logFeedActionError("create post", error);
-    if (isMissingFeedSchema(error)) {
-      return { error: "Feed tables are not configured." };
-    }
-
-    return { error: "Feed tables are not configured." };
-  }
-
-  const uploadedStoragePaths: string[] = [];
   try {
-    if (file && attachmentType) {
-      uploadedStoragePaths.push(await insertAttachment(supabase, post.id, user.id, attachmentType, file, { post_type: postType }));
-    }
-    if (postType === "project") {
-      const { error: projectError } = await supabase.from("community_post_attachments").insert({
-        post_id: post.id,
-        user_id: user.id,
-        attachment_type: "project",
-        storage_path: `link:${projectUrl}`,
-        public_url: projectUrl,
-        metadata: { kind: "project-link" },
-      });
-      if (projectError) throw projectError;
-    }
-    if (postType === "website") {
-      if (!website) throw new Error("Website ownership could not be verified.");
-      const { error: websiteAttachmentError } = await supabase.from("community_post_attachments").insert({
-        post_id: post.id,
-        user_id: user.id,
-        attachment_type: "project",
-        storage_path: `website:${website.id}`,
-        file_name: website.site_title,
-        metadata: { website_id: website.id, kind: "generated-website" },
-      });
-      if (websiteAttachmentError) throw websiteAttachmentError;
-    }
-  } catch (attachmentError) {
-    if (uploadedStoragePaths.length > 0) {
-      await supabase.storage.from("community-attachments").remove(uploadedStoragePaths);
-    }
-    await supabase.from("community_posts").delete().eq("id", post.id).eq("user_id", user.id);
-    logFeedActionError("create attachment", attachmentError instanceof Error ? attachmentError : null);
-    return { error: attachmentError instanceof Error && attachmentError.message === "Upload failed." ? "Upload failed." : "Feed attachments are not configured." };
-  }
+    const title = readText(formData, "title");
+    const body = readText(formData, "body");
+    const postType = readText(formData, "post_type") || "text";
+    const visibility = normalizeVisibility(formData.get("visibility"));
 
-  revalidatePath(routes.feed);
-  return { success: true };
+    if (!isCommunityPostType(postType)) return { error: "Select a supported post type." };
+    if (!body) return { error: "Post body is required." };
+
+    const attachmentType = getAttachmentType(postType);
+    const fileEntry = formData.get("attachment");
+    const file = isFileEntry(fileEntry) && fileEntry.size > 0 ? fileEntry : null;
+    if (file && !isFilePostType(postType)) return { error: "This post type does not accept a file attachment." };
+    if (attachmentType && attachmentType !== "project" && attachmentType !== "code" && !file) return { error: "Select a file before posting." };
+    if (file && attachmentType && attachmentType !== "project") {
+      const validationError = getAttachmentValidationError(file, attachmentType);
+      if (validationError) return { error: validationError };
+    }
+
+    const projectUrl = postType === "project" ? readText(formData, "project_url") : "";
+    if (postType === "project" && !/^https?:\/\//i.test(projectUrl)) return { error: "Enter a valid project link." };
+
+    const supabase = await getSupabaseServerClient();
+    let website: { id: string; site_title: string | null; visibility: string | null; status: string | null } | null = null;
+    if (postType === "website") {
+      const websiteId = readText(formData, "website_id");
+      if (!websiteId) return { error: "Select a website before posting." };
+      const { data, error: websiteError } = await supabase
+        .from("website_structures")
+        .select("id, site_title, visibility, status")
+        .eq("id", websiteId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (websiteError) {
+        logFeedActionError("verify website", websiteError);
+        return { error: "Unable to verify website visibility." };
+      }
+      website = data;
+      if (!website) return { error: "You are not allowed to share this website." };
+      if (website.visibility !== "public") return { error: "Make the website public before sharing it to Feed." };
+      if (website.status !== "published") return { error: "Publish the website before sharing it to Feed." };
+    }
+
+    const { data: post, error: postError } = await supabase
+      .from("community_posts")
+      .insert({ user_id: user.id, title: title || null, body, visibility })
+      .select("id")
+      .single();
+
+    if (postError || !post) {
+      logFeedActionError("create post", postError);
+      return { error: getSafeActionError(postError) };
+    }
+
+    let storagePath: string | null = null;
+    try {
+      if (file && attachmentType) {
+        storagePath = buildStoragePath(user.id, post.id, file);
+        await uploadAttachment(supabase, storagePath, file);
+        await insertAttachmentMetadata(supabase, post.id, user.id, attachmentType, storagePath, file, { post_type: postType });
+      }
+      if (postType === "project") {
+        const { error: projectError } = await supabase.from("community_post_attachments").insert({
+          post_id: post.id,
+          user_id: user.id,
+          attachment_type: "project",
+          storage_path: `link:${projectUrl}`,
+          public_url: projectUrl,
+          metadata: { kind: "project-link" },
+        });
+        if (projectError) throw projectError;
+      }
+      if (postType === "website") {
+        if (!website) throw new Error("Website ownership could not be verified.");
+        const { error: websiteAttachmentError } = await supabase.from("community_post_attachments").insert({
+          post_id: post.id,
+          user_id: user.id,
+          attachment_type: "project",
+          storage_path: `website:${website.id}`,
+          file_name: website.site_title,
+          metadata: { website_id: website.id, kind: "generated-website" },
+        });
+        if (websiteAttachmentError) throw websiteAttachmentError;
+      }
+    } catch (attachmentError) {
+      logFeedActionError("create attachment", attachmentError);
+      await cleanUpFailedPost(supabase, post.id, user.id, storagePath);
+      return { error: getSafeAttachmentError(attachmentError) };
+    }
+
+    try {
+      revalidatePath(routes.feed);
+    } catch (error) {
+      logFeedActionError("revalidate feed", error);
+    }
+    return { success: true };
+  } catch (error) {
+    logFeedActionError("create community post", error);
+    return { error: getSafeActionError(error) };
+  }
 }
 
 export async function shareWebsiteToFeed(structureId: string, title: string) {

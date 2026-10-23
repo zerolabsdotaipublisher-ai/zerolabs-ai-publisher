@@ -14596,7 +14596,61 @@ body .feed-type-status.is-share {
 }
 
 body .feed-type-pill.is-active {
-  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  border-color: color-mix(in srgb, var(--accent) 78%, var(--border));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent) 23%, var(--surface)) 0%,
+    color-mix(in srgb, var(--accent) 12%, var(--surface-elevated)) 100%
+  );
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--accent) 24%, transparent),
+    0 12px 24px color-mix(in srgb, var(--accent) 16%, transparent);
+  font-weight: 750;
+}
+
+body .feed-type-pill:not(:disabled),
+body .feed-submit-button:not(:disabled) {
+  cursor: pointer;
+}
+
+body .feed-type-pill:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent) 58%, var(--border));
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface));
+}
+
+body .feed-type-pill.is-active:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 27%, var(--surface));
+}
+
+body .feed-type-pill:focus-visible,
+body .feed-submit-button:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+body .feed-type-pill:disabled,
+body .feed-submit-button:disabled {
+  opacity: 0.58;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+body .feed-type-pill:disabled {
+  border-color: color-mix(in srgb, var(--border) 80%, transparent);
+  background: color-mix(in srgb, var(--surface-elevated) 88%, transparent);
+  color: var(--text-secondary);
+}
+
+body .feed-submit-button:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent) 92%, white 8%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent) 94%, white 6%) 0%,
+    color-mix(in srgb, var(--accent) 82%, black 18%) 100%
+  );
+  box-shadow: 0 22px 44px color-mix(in srgb, var(--accent) 32%, transparent);
 }
 
 body .feed-composer-form,
