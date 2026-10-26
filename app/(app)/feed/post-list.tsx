@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useTransition, type FormEvent } from "react";
-import Link from "next/link";
-import Image from "next/image";
 import { MessageCircle, Heart, Bookmark, Share2, Trash2 } from "lucide-react";
 import { routes } from "@/config/routes";
+import { SharedContentPreview } from "@/components/feed/shared-content-preview";
 import { createCommunityPostComment, deleteCommunityPost, shareCommunityPost, toggleCommunityPostReaction, toggleSavedCommunityPost } from "./actions";
 import type { CommunityPostRecord } from "./types";
 
@@ -187,14 +186,7 @@ export function PostList({ posts, currentUserId, savedPostIds, savedItemsAvailab
 
             {post.attachments.length > 0 ? (
               <div className="feed-post-attachments">
-                {post.attachments.map((attachment) => {
-                  const websiteId = typeof attachment.metadata?.website_id === "string" ? attachment.metadata.website_id : null;
-                  if (websiteId) return <Link key={attachment.id} href={routes.liveSite(websiteId)} target="_blank" rel="noreferrer" className="feed-attachment-link">View shared website</Link>;
-                  if (!attachment.public_url) return <span key={attachment.id} className="feed-attachment-file">{attachment.file_name || "Attachment unavailable"}</span>;
-                  if (attachment.attachment_type === "image" || attachment.attachment_type === "gif") return <Image key={attachment.id} src={attachment.public_url} alt={attachment.file_name || "Post attachment"} width={1200} height={800} unoptimized className="feed-attachment-image" />;
-                  if (attachment.attachment_type === "video") return <video key={attachment.id} src={attachment.public_url} controls className="feed-attachment-video" />;
-                  return <a key={attachment.id} href={attachment.public_url} target="_blank" rel="noreferrer" className="feed-attachment-link">{attachment.file_name || "Open attachment"}</a>;
-                })}
+                {post.attachments.map((attachment) => <SharedContentPreview key={attachment.id} attachment={attachment} />)}
               </div>
             ) : null}
 
