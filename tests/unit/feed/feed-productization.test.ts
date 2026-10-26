@@ -13,6 +13,7 @@ describe("community feed productization", () => {
   const navigation = readSource("components/app/app-navigation.tsx");
   const routes = readSource("config/routes.ts");
   const websiteList = readSource("app/(app)/feed/website-list.tsx");
+  const sharedContentPreview = readSource("components/feed/shared-content-preview.tsx");
   const nextConfig = readSource("next.config.ts");
 
   it("keeps the three feed areas and responsive layout hooks available", () => {
@@ -81,8 +82,9 @@ describe("community feed productization", () => {
     expect(websiteList).toContain("View site");
     expect(websiteList).toContain("routes.liveSite(site.id)");
     expect(routes).toContain('liveSite: (id: string) => `/site/${id}`');
-    expect(postList).toContain("routes.liveSite(websiteId)");
-    expect(postList).not.toContain("routes.previewSite(websiteId)");
+    expect(postList).toContain("SharedContentPreview");
+    expect(sharedContentPreview).toContain("routes.liveSite(websiteId)");
+    expect(sharedContentPreview).not.toContain("routes.previewSite(websiteId)");
   });
 
   it("disables post actions whose backing Feed capability is unavailable", () => {

@@ -14759,6 +14759,254 @@ body .feed-website-meta {
   line-height: 1.45;
 }
 
+/* Feed shared-content previews */
+body .feed-post-attachments {
+  gap: 0.75rem;
+  padding-top: 0.1rem;
+}
+
+body .feed-shared-content-preview {
+  display: grid;
+  width: min(100%, 42rem);
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 1rem;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--surface-elevated) 96%, transparent), color-mix(in srgb, var(--surface) 96%, transparent));
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--accent) 6%, transparent);
+}
+
+body a.feed-shared-content-preview {
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease, background-color 160ms ease;
+}
+
+body a.feed-shared-content-preview:hover {
+  border-color: color-mix(in srgb, var(--accent) 52%, var(--border));
+  box-shadow: 0 14px 30px color-mix(in srgb, var(--accent) 14%, transparent);
+  transform: translateY(-1px);
+}
+
+body a.feed-shared-content-preview:active {
+  transform: translateY(0);
+}
+
+body a.feed-shared-content-preview:focus-visible,
+body .feed-shared-content-action:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+body .feed-shared-content-preview--website,
+body .feed-shared-content-preview--image,
+body .feed-shared-content-preview--video {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+body .feed-shared-content-preview--file,
+body .feed-shared-content-preview--project {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.9rem;
+}
+
+body .feed-shared-content-preview--file.is-code {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 8%, var(--surface)), color-mix(in srgb, var(--surface-elevated) 96%, transparent));
+}
+
+body .feed-shared-content-copy {
+  display: grid;
+  min-width: 0;
+  gap: 0.3rem;
+  padding: 0.8rem 0.9rem 0.9rem;
+}
+
+body .feed-shared-content-preview--file .feed-shared-content-copy,
+body .feed-shared-content-preview--project .feed-shared-content-copy {
+  padding: 0;
+}
+
+body .feed-shared-content-copy strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: 0.94rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  text-overflow: ellipsis;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  display: -webkit-box;
+}
+
+body .feed-shared-content-eyebrow,
+body .feed-shared-content-meta {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 0.35rem;
+  color: var(--text-secondary);
+  font-size: 0.76rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+body .feed-shared-content-eyebrow {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+body .feed-shared-content-action {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 1.85rem;
+  gap: 0.32rem;
+  margin-top: 0.22rem;
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 750;
+}
+
+body .feed-shared-content-action.is-unavailable {
+  color: var(--text-muted);
+  font-weight: 650;
+}
+
+body .feed-shared-content-media {
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  max-height: 25rem;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--surface) 78%, black 22%);
+}
+
+body .feed-shared-content-image,
+body .feed-shared-content-video {
+  display: block;
+  width: 100%;
+  max-height: 25rem;
+  object-fit: contain;
+  background: color-mix(in srgb, var(--surface) 78%, black 22%);
+}
+
+body .feed-shared-media-fallback {
+  display: grid;
+  min-height: 11rem;
+  place-items: center;
+  color: color-mix(in srgb, var(--accent) 72%, var(--text-primary));
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 20%, var(--surface)), color-mix(in srgb, var(--surface-elevated) 94%, transparent));
+}
+
+body .feed-shared-browser-fallback {
+  display: grid;
+  min-height: 10rem;
+  overflow: hidden;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 74%, transparent);
+  background: color-mix(in srgb, var(--surface) 90%, black 10%);
+}
+
+body .feed-shared-browser-chrome {
+  display: grid;
+  grid-template-columns: repeat(3, 0.45rem) minmax(0, 1fr);
+  align-items: center;
+  gap: 0.28rem;
+  min-height: 1.7rem;
+  padding: 0 0.6rem;
+  background: color-mix(in srgb, var(--surface-elevated) 92%, black 8%);
+}
+
+body .feed-shared-browser-chrome span {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text-muted) 42%, transparent);
+}
+
+body .feed-shared-browser-chrome i {
+  height: 0.58rem;
+  margin-left: 0.45rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--border) 76%, transparent);
+}
+
+body .feed-shared-browser-page {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  align-items: start;
+  gap: 0.8rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 17%, var(--surface)), color-mix(in srgb, var(--surface-elevated) 94%, transparent));
+}
+
+body .feed-shared-browser-brand,
+body .feed-shared-file-icon {
+  display: inline-grid;
+  width: 2.55rem;
+  height: 2.55rem;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border));
+  border-radius: 0.8rem;
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface));
+  color: color-mix(in srgb, var(--accent) 84%, var(--text-primary));
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+body .feed-shared-browser-lines {
+  display: grid;
+  gap: 0.38rem;
+  padding-top: 0.2rem;
+}
+
+body .feed-shared-browser-lines b,
+body .feed-shared-browser-lines span,
+body .feed-shared-browser-blocks span {
+  display: block;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text-secondary) 28%, transparent);
+}
+
+body .feed-shared-browser-lines b {
+  width: min(100%, 12rem);
+  height: 0.75rem;
+}
+
+body .feed-shared-browser-lines span {
+  width: min(100%, 9rem);
+  height: 0.45rem;
+}
+
+body .feed-shared-browser-lines span:last-child {
+  width: min(100%, 6rem);
+}
+
+body .feed-shared-browser-blocks {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: 1.3fr 0.9fr 0.75fr;
+  gap: 0.55rem;
+  min-height: 3.2rem;
+}
+
+body .feed-shared-browser-blocks span {
+  border-radius: 0.55rem;
+  background: color-mix(in srgb, var(--accent) 24%, var(--surface-elevated));
+}
+
+body .feed-shared-browser-blocks span:nth-child(2) {
+  background: color-mix(in srgb, var(--text-secondary) 16%, var(--surface-elevated));
+}
+
+body .feed-shared-browser-blocks span:nth-child(3) {
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface-elevated));
+}
+
 body:has(.feed-shell) .app-nav {
   min-height: 4.25rem;
   padding-block: 0.45rem;
@@ -14852,6 +15100,20 @@ body:has(.feed-shell) .app-nav-link[aria-current="page"] {
     min-height: 2.75rem;
     padding-inline: 0.65rem;
     font-size: 0.8rem;
+  }
+
+  body .feed-shared-content-preview {
+    width: 100%;
+  }
+
+  body .feed-shared-content-preview--file,
+  body .feed-shared-content-preview--project {
+    gap: 0.7rem;
+    padding: 0.8rem;
+  }
+
+  body .feed-shared-browser-page {
+    padding: 0.8rem;
   }
 
   body .feed-comment-form {
