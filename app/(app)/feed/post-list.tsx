@@ -190,38 +190,37 @@ export function PostList({ posts, currentUserId, savedPostIds, savedItemsAvailab
               </div>
             ) : null}
 
-            <div className="feed-post-actions">
-              <button type="button" className={`feed-post-action ${post.reactedByCurrentUser ? "is-active" : ""}`} onClick={() => handleReaction(post.id, Boolean(post.reactedByCurrentUser))} disabled={isBusy || post.reactedByCurrentUser === null} title={post.reactedByCurrentUser === null ? "Hearts are unavailable until Feed interactions are configured." : undefined}>
-                <Heart size={15} />
-                <span>Heart</span>
-                <em>{post.reactionCount === null ? "Not configured" : post.reactionCount}</em>
+            <div className={`feed-post-actions ${isBusy ? "is-busy" : ""}`} role="group" aria-label="Post actions" aria-busy={isBusy}>
+              <button type="button" className={`feed-post-action ${post.reactedByCurrentUser ? "is-active" : ""}`} onClick={() => handleReaction(post.id, Boolean(post.reactedByCurrentUser))} disabled={isBusy || post.reactedByCurrentUser === null} aria-label={post.reactedByCurrentUser ? "Remove heart" : "Add heart"} aria-pressed={Boolean(post.reactedByCurrentUser)} title={post.reactedByCurrentUser === null ? "Hearts are unavailable until Feed interactions are configured." : post.reactedByCurrentUser ? "Remove heart" : "Add heart"}>
+                <Heart size={16} fill={post.reactedByCurrentUser ? "currentColor" : "none"} aria-hidden="true" />
+                {post.reactionCount !== null ? <em aria-hidden="true">{post.reactionCount}</em> : null}
               </button>
               <button
                 type="button"
-                className="feed-post-action"
+                className={`feed-post-action ${expandedPostId === post.id ? "is-active" : ""}`}
                 onClick={() => setExpandedPostId((current) => current === post.id ? null : post.id)}
                 disabled={post.commentCount === null}
-                title={post.commentCount === null ? "Comments are unavailable until Feed interactions are configured." : undefined}
+                aria-label={expandedPostId === post.id ? "Hide comments" : "Show comments"}
+                aria-expanded={expandedPostId === post.id}
+                title={post.commentCount === null ? "Comments are unavailable until Feed interactions are configured." : expandedPostId === post.id ? "Hide comments" : "Show comments"}
               >
-                <MessageCircle size={15} />
-                <span>Comment</span>
-                <em>{post.commentCount === null ? "Not configured" : post.commentCount}</em>
+                <MessageCircle size={16} aria-hidden="true" />
+                {post.commentCount !== null ? <em aria-hidden="true">{post.commentCount}</em> : null}
               </button>
-              <button type="button" className="feed-post-action" onClick={() => void handleShare(post)} disabled={isBusy}>
-                <Share2 size={15} />
-                <span>Share</span>
-                <em>{post.shareCount === null ? "Not configured" : post.shareCount}</em>
+              <button type="button" className="feed-post-action" onClick={() => void handleShare(post)} disabled={isBusy} aria-label="Share post" title="Share post">
+                <Share2 size={16} aria-hidden="true" />
+                {post.shareCount !== null ? <em aria-hidden="true">{post.shareCount}</em> : null}
               </button>
               <button
                 type="button"
-                className="feed-post-action is-save"
+                className={`feed-post-action ${isSaved ? "is-active" : ""}`}
                 onClick={() => handleToggleSave(post.id, !isSaved)}
                 disabled={isBusy || !savedItemsAvailable}
-                title={!savedItemsAvailable ? "Saved posts are unavailable until Feed interactions are configured." : undefined}
+                aria-label={isSaved ? "Remove post from saved items" : "Save post"}
+                aria-pressed={isSaved}
+                title={!savedItemsAvailable ? "Saved posts are unavailable until Feed interactions are configured." : isSaved ? "Remove post from saved items" : "Save post"}
               >
-                <Bookmark size={15} />
-                <span>{isSaved ? "Saved" : "Save"}</span>
-                <em>Stored</em>
+                <Bookmark size={16} fill={isSaved ? "currentColor" : "none"} aria-hidden="true" />
               </button>
             </div>
 

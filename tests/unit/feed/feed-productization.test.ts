@@ -33,8 +33,8 @@ describe("community feed productization", () => {
     expect(composer).toContain('aria-pressed={isSelected}');
     expect(composer).toContain('feed-type-pill ${isSelected ? "is-active" : ""}');
     expect(composer).toContain('name="post_type"');
-    expect(composer).toContain('name="title"');
-    expect(composer).toContain("(optional)");
+    expect(composer).not.toContain('name="title"');
+    expect(composer).toContain("<span>Caption</span>");
     expect(composer).toContain('name="body"');
     expect(composer).toContain('name="visibility"');
   });
@@ -53,6 +53,9 @@ describe("community feed productization", () => {
     expect(composer).toContain('isWebsiteUnavailable');
     expect(composer).toContain('disabled={isPending || !isAvailable}');
     expect(composer).toContain('name="attachment"');
+    expect(composer).toContain('selectedFileName');
+    expect(composer).toContain('feed-upload-control');
+    expect(composer).toContain('feed-file-selection');
     expect(composer).toContain('name="project_url"');
     expect(composer).toContain('name="website_id"');
     expect(composer).toContain('encType="multipart/form-data"');
@@ -92,6 +95,11 @@ describe("community feed productization", () => {
     expect(queries).toContain("isAvailable: false");
     expect(postList).toContain("disabled={post.commentCount === null}");
     expect(postList).toContain("disabled={isBusy || !savedItemsAvailable}");
+    expect(postList).toContain('aria-label="Share post"');
+    expect(postList).not.toContain("<span>Heart</span>");
+    expect(postList).not.toContain("<span>Comment</span>");
+    expect(postList).not.toContain("<span>Share</span>");
+    expect(postList).toContain('className={`feed-post-action ${expandedPostId === post.id ? "is-active" : ""}`}');
   });
 
   it("keeps the composer safe while a post is submitting", () => {

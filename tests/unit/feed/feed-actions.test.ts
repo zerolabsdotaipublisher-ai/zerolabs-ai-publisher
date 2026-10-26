@@ -77,6 +77,26 @@ describe("community feed actions", () => {
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/feed");
   });
 
+  it("creates a text post without a title when the form does not provide one", async () => {
+    const single = vi.fn().mockResolvedValue({ data: { id: "post_fixture" }, error: null });
+    const select = vi.fn().mockReturnValue({ single });
+    const insert = vi.fn().mockReturnValue({ select });
+    const from = vi.fn().mockReturnValue({ insert });
+    mocks.getSupabaseServerClient.mockResolvedValue({ from });
+    const formData = new FormData();
+    formData.set("post_type", "text");
+    formData.set("body", "The site is live.");
+    formData.set("visibility", "public");
+
+    await expect(createCommunityPost(formData)).resolves.toEqual({ success: true });
+    expect(insert).toHaveBeenCalledWith({
+      user_id: user.id,
+      title: null,
+      body: "The site is live.",
+      visibility: "public",
+    });
+  });
+
   it("returns a structured error when post creation fails", async () => {
     const single = vi.fn().mockResolvedValue({ data: null, error: { code: "42501", message: "RLS denied" } });
     const select = vi.fn().mockReturnValue({ single });

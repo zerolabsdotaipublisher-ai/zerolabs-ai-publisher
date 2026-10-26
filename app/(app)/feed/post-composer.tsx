@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
+import { Check, Code2, FileText, Film, FolderGit2, Globe2, Image, MessageSquare, Send, Upload, Video } from "lucide-react";
 import { createCommunityPost } from "./actions";
 import {
   getAttachmentType,
@@ -13,20 +14,21 @@ import {
 import type { PublicWebsiteRecord } from "./types";
 
 const postTypes = [
-  { value: "text", label: "Text" },
-  { value: "image", label: "Image" },
-  { value: "code", label: "Code" },
-  { value: "project", label: "Project" },
-  { value: "docs", label: "Docs" },
-  { value: "gif", label: "GIF" },
-  { value: "video", label: "Video" },
-  { value: "website", label: "Website" },
+  { value: "text", label: "Text", icon: MessageSquare },
+  { value: "image", label: "Image", icon: Image },
+  { value: "code", label: "Code", icon: Code2 },
+  { value: "project", label: "Project", icon: FolderGit2 },
+  { value: "docs", label: "Docs", icon: FileText },
+  { value: "gif", label: "GIF", icon: Film },
+  { value: "video", label: "Video", icon: Video },
+  { value: "website", label: "Website", icon: Globe2 },
 ] as const;
 
 export function PostComposer({ websites }: { websites: PublicWebsiteRecord[] }) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
+  const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [postType, setPostType] = useState<CommunityPostType>("text");
   const formRef = useRef<HTMLFormElement>(null);
@@ -35,11 +37,13 @@ export function PostComposer({ websites }: { websites: PublicWebsiteRecord[] }) 
   const selectPostType = (nextPostType: CommunityPostType) => {
     setPostType(nextPostType);
     setFileError(null);
+    setSelectedFileName(null);
     setError(null);
     setMessage(null);
   };
 
   const handleFileChange = (file: File | null) => {
+    setSelectedFileName(file?.name ?? null);
     const attachmentType = getAttachmentType(postType);
     const validationError = file && attachmentType && attachmentType !== "project"
       ? getAttachmentValidationError(file, attachmentType)
@@ -68,6 +72,7 @@ export function PostComposer({ websites }: { websites: PublicWebsiteRecord[] }) 
         }
 
         formRef.current?.reset();
+        setSelectedFileName(null);
         setMessage("Post created.");
       } catch {
         setError("Unable to create your post. Please try again.");
@@ -80,13 +85,13 @@ export function PostComposer({ websites }: { websites: PublicWebsiteRecord[] }) 
   return (
     <section className="feed-panel feed-composer-card" aria-label="Create a community post">
       <div className="feed-panel-heading">
-        <span className="feed-panel-kicker">Create</span>
+        <span className="feed-panel-kicker">New post</span>
         <h2>Share with the community</h2>
         <p>Share a build update, launch note, question, or idea.</p>
       </div>
 
       <div className="feed-type-row" role="group" aria-label="Post type">
-        {postTypes.map(({ value, label }) => {
+        {postTypes.map(({ value, label, icon: Icon }) => {
           const isWebsiteUnavailable = value === "website" && websites.length === 0;
           const isAvailable = !isWebsiteUnavailable;
           const isSelected = postType === value;
@@ -101,32 +106,24 @@ export function PostComposer({ websites }: { websites: PublicWebsiteRecord[] }) 
               aria-label={`${label}${isSelected ? ", selected" : ""}${isWebsiteUnavailable ? ", unavailable: no published public websites" : ""}`}
               title={isWebsiteUnavailable ? "Publish a website and set it to public before sharing it to Feed." : undefined}
             >
+              <Icon className="feed-type-icon" size={16} strokeWidth={2} aria-hidden="true" />
               <span className="feed-type-label">{label}</span>
-              <span className={`feed-type-status ${isWebsiteUnavailable ? "is-unavailable" : "is-ready"}`}>
-                {isWebsiteUnavailable ? "No sites" : "Ready"}
-              </span>
+              {isWebsiteUnavailable ? <span className="feed-type-status is-unavailable">No sites</span> : null}
             </button>
           );
         })}
       </div>
 
-      <p className="feed-form-message">Files are private at rest and appear only with posts you share publicly. File uploads support files up to {maxAttachmentSizeLabel}.</p>
+      {isFilePostType(postType) ? (
+        <p className="feed-form-message feed-composer-notice">
+          Files are private at rest and appear only with posts you share publicly. File uploads support files up to {maxAttachmentSizeLabel}.
+        </p>
+      ) : null}
 
       <form ref={formRef} action={handleSubmit} className="feed-composer-form" encType="multipart/form-data">
         <input type="hidden" name="post_type" value={postType} />
         <label className="feed-field">
-          <span>Title <em>(optional)</em></span>
-          <input
-            type="text"
-            name="title"
-            placeholder="Optional headline for your post"
-            className="feed-input"
-            disabled={isPending}
-          />
-        </label>
-
-        <label className="feed-field">
-          <span>{postType === "text" ? "Post" : "Caption"}</span>
+          <span>Caption</span>
           <textarea
             name="body"
             placeholder="Share a build update, launch note, question, or idea."
@@ -146,7 +143,7 @@ export function PostComposer({ websites }: { websites: PublicWebsiteRecord[] }) 
               name="attachment"
               accept={getFileAccept(postType)}
               required={postType !== "code"}
-              className="feed-input"
+              className="feed-file-input"
               disabled={isPending}
               onChange={(event) => {
                 const selectedFile = event.currentTarget.files?.[0] ?? null;
@@ -158,6 +155,19 @@ export function PostComposer({ websites }: { websites: PublicWebsiteRecord[] }) 
                 handleFileChange(selectedFile);
               }}
             />
+            <span className={`feed-upload-control ${selectedFileName ? "has-file" : ""}`} aria-hidden="true">
+              <Upload className="feed-upload-icon" size={19} strokeWidth={2} />
+              <span className="feed-upload-copy">
+                <strong>{selectedFileName ? "Replace selected file" : "Choose a file"}</strong>
+                <small>{selectedFileName ? "Browse to choose another file" : "Browse from your device"}</small>
+              </span>
+            </span>
+            {selectedFileName ? (
+              <span className="feed-file-selection" role="status">
+                <Check size={15} strokeWidth={2.5} aria-hidden="true" />
+                Selected: {selectedFileName}
+              </span>
+            ) : null}
           </label>
         ) : null}
 
@@ -187,7 +197,7 @@ export function PostComposer({ websites }: { websites: PublicWebsiteRecord[] }) 
 
         <div className="feed-composer-footer">
           <label className="feed-field feed-field-inline">
-            <span>Visibility</span>
+            <span><Globe2 size={15} strokeWidth={2} aria-hidden="true" />Visibility</span>
             <select
               name="visibility"
               className="feed-select"
@@ -200,6 +210,7 @@ export function PostComposer({ websites }: { websites: PublicWebsiteRecord[] }) 
           </label>
 
           <button type="submit" disabled={isPending || Boolean(fileError)} className="feed-submit-button" aria-disabled={isPending || Boolean(fileError)}>
+            <Send size={16} strokeWidth={2} aria-hidden="true" />
             {isPending ? "Posting..." : "Post"}
           </button>
         </div>
