@@ -34,6 +34,7 @@ export type ProfileUpdateData = {
   username?: string | null;
   country?: string | null;
   date_of_birth?: string | null;
+  preferences?: Record<string, unknown>;
 };
 
 type AuthUserMetadata = {

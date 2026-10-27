@@ -2,7 +2,7 @@
  * Profile API — GET /api/profile · PATCH /api/profile
  *
  * GET  — return the authenticated user's profile row.
- * PATCH — update editable fields (full_name, avatar_url).
+ * PATCH — update editable identity fields and the controlled public-profile appearance.
  *
  * Both methods require an active session.  The service-role client is used
  * internally but the route itself gates access on the session user ID, so
@@ -10,6 +10,7 @@
  */
 
 import { normalizeEditableProfileUpdate, validateEditableProfileUpdate } from "@/lib/profile-validation";
+import { mergeProfileAppearance, toProfileAppearance, validateProfileAppearance } from "@/lib/profile-appearance";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { ensureProfile, updateProfile, type ProfileUpdateData } from "@/lib/supabase/profile";
 import { logger } from "@/lib/observability";
@@ -62,6 +63,7 @@ export async function PATCH(request: Request): Promise<Response> {
   // Extract and validate only the permitted editable fields.
   const raw = body as Record<string, unknown>;
   const data: ProfileUpdateData = {};
+  let profileAppearance: ReturnType<typeof toProfileAppearance> | undefined;
 
   if ("full_name" in raw) {
     if (raw.full_name !== null && typeof raw.full_name !== "string") {
@@ -88,7 +90,25 @@ export async function PATCH(request: Request): Promise<Response> {
     }
   }
 
-  if (Object.keys(data).length === 0) {
+  if ("profileAppearance" in raw) {
+    const appearanceErrors = validateProfileAppearance(raw.profileAppearance);
+    const parsedAppearance = toProfileAppearance(raw.profileAppearance);
+
+    if (!parsedAppearance) {
+      return Response.json(
+        {
+          error: "Please fix the profile appearance settings and try again.",
+          fieldErrors: { profileAppearance: Object.values(appearanceErrors)[0] ?? "Invalid profile appearance." },
+          appearanceErrors,
+        },
+        { status: 400 },
+      );
+    }
+
+    profileAppearance = parsedAppearance;
+  }
+
+  if (Object.keys(data).length === 0 && !profileAppearance) {
 
     return Response.json({ error: "No editable fields provided" }, { status: 400 });
   }
@@ -107,9 +127,16 @@ export async function PATCH(request: Request): Promise<Response> {
       );
     }
 
-    await ensureProfile(user);
+    const currentProfile = await ensureProfile(user);
 
-    const profile = await updateProfile(user.id, normalizedData as ProfileUpdateData);
+    // Merge only this dedicated key server-side so callers cannot overwrite
+    // unrelated preferences that may be owned by another feature.
+    const updateData: ProfileUpdateData = {
+      ...normalizedData,
+      ...(profileAppearance ? { preferences: mergeProfileAppearance(currentProfile.preferences, profileAppearance) } : {}),
+    };
+
+    const profile = await updateProfile(user.id, updateData);
     return Response.json({ profile });
   } catch (err) {
     logger.error("PATCH /api/profile failed", {
