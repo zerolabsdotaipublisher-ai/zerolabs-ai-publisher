@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import { ProfileForm } from "@/components/profile/profile-form";
+import { getPublicCommunityPostsForAuthor, getPublicWebsitesForOwner } from "@/app/(app)/feed/queries";
+import { ProfileView } from "@/components/profile/profile-view";
 import { routes } from "@/config/routes";
 import { ensureProfile } from "@/lib/supabase/profile";
 import { getServerUser } from "@/lib/supabase/server";
@@ -11,7 +12,18 @@ export default async function ProfilePage() {
     redirect(routes.login);
   }
 
-  const profile = await ensureProfile(user);
+  const [profile, websites, posts] = await Promise.all([
+    ensureProfile(user),
+    getPublicWebsitesForOwner(user.id),
+    getPublicCommunityPostsForAuthor(user.id),
+  ]);
 
-  return <ProfileForm profile={profile} layoutVariant={profile.role === "admin" ? "admin" : "default"} />;
+  return (
+    <ProfileView
+      profile={profile}
+      layoutVariant={profile.role === "admin" ? "admin" : "default"}
+      websites={websites}
+      posts={posts}
+    />
+  );
 }

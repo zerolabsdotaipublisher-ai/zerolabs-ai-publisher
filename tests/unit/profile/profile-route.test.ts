@@ -75,6 +75,31 @@ describe("PATCH /api/profile appearance persistence", () => {
     expect(mocks.updateProfile).not.toHaveBeenCalled();
   });
 
+  it("persists explicit public-detail visibility without replacing unrelated preferences", async () => {
+    const response = await PATCH(new Request("http://localhost/api/profile", {
+      method: "PATCH",
+      body: JSON.stringify({ profileVisibility: { showAge: true, showLocation: false } }),
+    }));
+
+    expect(response.status).toBe(200);
+    expect(mocks.updateProfile).toHaveBeenCalledWith("current_user", expect.objectContaining({
+      preferences: expect.objectContaining({
+        unrelatedPreference: "preserved",
+        profileVisibility: { showAge: true, showLocation: false },
+      }),
+    }));
+  });
+
+  it("rejects malformed public-detail visibility before persistence", async () => {
+    const response = await PATCH(new Request("http://localhost/api/profile", {
+      method: "PATCH",
+      body: JSON.stringify({ profileVisibility: { showAge: "yes", showLocation: false } }),
+    }));
+
+    expect(response.status).toBe(400);
+    expect(mocks.updateProfile).not.toHaveBeenCalled();
+  });
+
   it("requires an authenticated user", async () => {
     mocks.getUser.mockResolvedValue({ data: { user: null } });
 
