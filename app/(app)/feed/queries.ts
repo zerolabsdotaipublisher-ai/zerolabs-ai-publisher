@@ -2,6 +2,8 @@ import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { getFeedAuthorDisplayName, getFeedAuthorInitials, type FeedAuthorProfile } from "./author";
 import type { CommunityPostRecord, CommunitySavedItemRecord, PublicWebsiteRecord } from "./types";
 
+export type PublicCommunityPostSummary = Pick<CommunityPostRecord, "id" | "title" | "body" | "created_at">;
+
 function logOptionalFeedError(label: string, error: { message?: string } | null) {
   if (process.env.NODE_ENV === "development") {
     console.warn(`Optional feed data unavailable: ${label}${error?.message ? ` (${error.message})` : ""}`);
@@ -133,6 +135,30 @@ export async function getPublicWebsitesForOwner(userId: string): Promise<PublicW
     ...(row as Omit<PublicWebsiteRecord, "owner_id"> & { user_id?: string | null }),
     owner_id: (row as { user_id?: string | null }).user_id,
   }));
+}
+
+/** Lightweight public-post query for a profile surface; it deliberately excludes private and draft posts. */
+export async function getPublicCommunityPostsForAuthor(
+  userId: string,
+  limit = 3,
+): Promise<PublicCommunityPostSummary[]> {
+  const supabase = await getSupabaseServerClient();
+  const safeLimit = Math.min(Math.max(Math.trunc(limit), 1), 6);
+
+  const { data, error } = await supabase
+    .from("community_posts")
+    .select("id, title, body, created_at")
+    .eq("user_id", userId)
+    .eq("visibility", "public")
+    .order("created_at", { ascending: false })
+    .limit(safeLimit);
+
+  if (error) {
+    logOptionalFeedError("current user's public community posts", error);
+    return [];
+  }
+
+  return (data ?? []) as PublicCommunityPostSummary[];
 }
 
 export async function getSavedCommunityItems(userId: string): Promise<{ items: CommunitySavedItemRecord[]; isAvailable: boolean }> {

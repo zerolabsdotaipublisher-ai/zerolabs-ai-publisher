@@ -11,6 +11,7 @@
 
 import { normalizeEditableProfileUpdate, validateEditableProfileUpdate } from "@/lib/profile-validation";
 import { mergeProfileAppearance, toProfileAppearance, validateProfileAppearance } from "@/lib/profile-appearance";
+import { mergeProfileVisibility, toProfileVisibility, validateProfileVisibility } from "@/lib/profile-visibility";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { ensureProfile, updateProfile, type ProfileUpdateData } from "@/lib/supabase/profile";
 import { logger } from "@/lib/observability";
@@ -64,6 +65,7 @@ export async function PATCH(request: Request): Promise<Response> {
   const raw = body as Record<string, unknown>;
   const data: ProfileUpdateData = {};
   let profileAppearance: ReturnType<typeof toProfileAppearance> | undefined;
+  let profileVisibility: ReturnType<typeof toProfileVisibility> | undefined;
 
   if ("full_name" in raw) {
     if (raw.full_name !== null && typeof raw.full_name !== "string") {
@@ -108,7 +110,25 @@ export async function PATCH(request: Request): Promise<Response> {
     profileAppearance = parsedAppearance;
   }
 
-  if (Object.keys(data).length === 0 && !profileAppearance) {
+  if ("profileVisibility" in raw) {
+    const visibilityErrors = validateProfileVisibility(raw.profileVisibility);
+    const parsedVisibility = toProfileVisibility(raw.profileVisibility);
+
+    if (!parsedVisibility) {
+      return Response.json(
+        {
+          error: "Please fix the profile visibility settings and try again.",
+          fieldErrors: { profileVisibility: Object.values(visibilityErrors)[0] ?? "Invalid profile visibility." },
+          visibilityErrors,
+        },
+        { status: 400 },
+      );
+    }
+
+    profileVisibility = parsedVisibility;
+  }
+
+  if (Object.keys(data).length === 0 && !profileAppearance && !profileVisibility) {
 
     return Response.json({ error: "No editable fields provided" }, { status: 400 });
   }
@@ -131,9 +151,13 @@ export async function PATCH(request: Request): Promise<Response> {
 
     // Merge only this dedicated key server-side so callers cannot overwrite
     // unrelated preferences that may be owned by another feature.
+    let preferences: Record<string, unknown> = currentProfile.preferences ?? {};
+    if (profileAppearance) preferences = mergeProfileAppearance(preferences, profileAppearance);
+    if (profileVisibility) preferences = mergeProfileVisibility(preferences, profileVisibility);
+
     const updateData: ProfileUpdateData = {
       ...normalizedData,
-      ...(profileAppearance ? { preferences: mergeProfileAppearance(currentProfile.preferences, profileAppearance) } : {}),
+      ...(profileAppearance || profileVisibility ? { preferences } : {}),
     };
 
     const profile = await updateProfile(user.id, updateData);

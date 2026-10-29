@@ -50,7 +50,7 @@ function isActivePath(pathname: string, href: string) {
   }
 
   if (href === routes.profile) {
-    return pathname === href;
+    return pathname === href || pathname.startsWith(`${href}/`);
   }
 
   return pathname === href || pathname.startsWith(`${href}/`);

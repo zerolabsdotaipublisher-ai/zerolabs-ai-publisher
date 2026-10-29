@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useId, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
+import Link from "next/link";
+import { routes } from "@/config/routes";
 import {
   getProfileAppearance,
   validateProfileAppearance,
@@ -18,6 +20,10 @@ import {
   validateEditableProfileUpdate,
   type EditableProfileFieldErrors,
 } from "@/lib/profile-validation";
+import {
+  getProfileVisibility,
+  type ProfileVisibility,
+} from "@/lib/profile-visibility";
 import type { Profile, ProfileUpdateData } from "@/lib/supabase/profile";
 import { PasswordForm } from "./password-form";
 import { PublicProfilePreview } from "./profile-preview";
@@ -139,6 +145,7 @@ export function ProfileForm({ profile: initialProfile, layoutVariant = "default"
   const [dateOfBirth, setDateOfBirth] = useState(initialProfile.date_of_birth ?? "");
   const [avatarUrl, setAvatarUrl] = useState(initialProfile.avatar_url ?? "");
   const [appearance, setAppearance] = useState<ProfileAppearance>(() => getProfileAppearance(initialProfile.preferences));
+  const [visibility, setVisibility] = useState<ProfileVisibility>(() => getProfileVisibility(initialProfile.preferences));
   const [avatarLocalPreviewUrl, setAvatarLocalPreviewUrl] = useState<string | null>(null);
   const [coverLocalPreviewUrl, setCoverLocalPreviewUrl] = useState<string | null>(null);
   const [accountSubmitting, setAccountSubmitting] = useState(false);
@@ -177,7 +184,11 @@ export function ProfileForm({ profile: initialProfile, layoutVariant = "default"
     accountDraft.country !== (profile.country ?? null) ||
     accountDraft.date_of_birth !== (profile.date_of_birth ?? null)
   );
-  const appearanceDirty = avatarUrl.trim() !== (profile.avatar_url ?? "") || JSON.stringify(appearance) !== JSON.stringify(getProfileAppearance(profile.preferences));
+  const appearanceDirty = (
+    avatarUrl.trim() !== (profile.avatar_url ?? "") ||
+    JSON.stringify(appearance) !== JSON.stringify(getProfileAppearance(profile.preferences)) ||
+    JSON.stringify(visibility) !== JSON.stringify(getProfileVisibility(profile.preferences))
+  );
   const displayName = fullName.trim() || profile.full_name || [firstName, lastName].filter(Boolean).join(" ") || "Your profile";
   const previewAppearance = coverLocalPreviewUrl ? { ...appearance, coverUrl: coverLocalPreviewUrl } : appearance;
   const previewAvatarUrl = avatarLocalPreviewUrl ?? (avatarUrl.trim() || null);
@@ -198,9 +209,10 @@ export function ProfileForm({ profile: initialProfile, layoutVariant = "default"
     setDateOfBirth(nextProfile.date_of_birth ?? "");
     setAvatarUrl(nextProfile.avatar_url ?? "");
     setAppearance(getProfileAppearance(nextProfile.preferences));
+    setVisibility(getProfileVisibility(nextProfile.preferences));
   }
 
-  async function saveProfile(body: ProfileUpdateData & { profileAppearance?: ProfileAppearance }): Promise<Profile> {
+  async function saveProfile(body: ProfileUpdateData & { profileAppearance?: ProfileAppearance; profileVisibility?: ProfileVisibility }): Promise<Profile> {
     const response = await fetch("/api/profile", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -263,11 +275,12 @@ export function ProfileForm({ profile: initialProfile, layoutVariant = "default"
       const nextProfile = await saveProfile({
         ...normalizeEditableProfileUpdate({ avatar_url: avatarUrl }),
         profileAppearance: appearance,
+        profileVisibility: visibility,
       });
       applySavedProfile(nextProfile);
       setAvatarLocalPreviewUrl(null);
       setCoverLocalPreviewUrl(null);
-      setAppearanceSuccess("Profile appearance saved.");
+      setAppearanceSuccess("Public profile settings saved.");
     } catch (error) {
       setAppearanceError(error instanceof Error ? error.message : "Something went wrong. Please try again.");
     } finally {
@@ -312,11 +325,12 @@ export function ProfileForm({ profile: initialProfile, layoutVariant = "default"
   return (
     <section className={pageClassName} aria-label="Profile page">
       <header className={isAdminLayout ? "admin-page-header profile-page-header" : "dashboard-home-header"}>
-        <div className={isAdminLayout ? undefined : "dashboard-hero-panel"}>
+        <div className={isAdminLayout ? "profile-page-heading" : "dashboard-hero-panel profile-page-heading"}>
           <span className={isAdminLayout ? "admin-page-kicker" : "dashboard-eyebrow"}>{isAdminLayout ? "Admin workspace" : "Zero Labs workspace"}</span>
-          <h1>Profile</h1>
-          <p>Shape the public-facing profile people see, while keeping account and security details separate.</p>
+          <h1>Customize profile</h1>
+          <p>Update your public profile, account information, and password in separate sections.</p>
         </div>
+        <div className="profile-page-header-actions"><Link href={routes.profile} className="profile-secondary-link">Back to profile</Link></div>
       </header>
 
       <section className="profile-customization-shell" aria-labelledby={`${id}-customization-heading`}>
@@ -363,10 +377,19 @@ export function ProfileForm({ profile: initialProfile, layoutVariant = "default"
               <fieldset className="profile-option-group"><legend>Content width</legend><div className="profile-option-row">{(["compact", "standard", "wide"] as ProfileContentWidth[]).map((width) => <OptionButton key={width} label={width[0].toUpperCase() + width.slice(1)} selected={appearance.contentWidth === width} onClick={() => setAppearance((current) => updateAppearance(current, "contentWidth", width))} />)}</div></fieldset>
             </section>
 
+            <section className="profile-control-panel" aria-labelledby={`${id}-privacy-heading`}>
+              <div className="profile-control-heading"><span className="profile-section-kicker">Privacy</span><h3 id={`${id}-privacy-heading`}>Public details</h3></div>
+              <p className="profile-control-copy">Older profiles stay private by default. Choose only the details you want to show on your profile.</p>
+              <div className="profile-visibility-options">
+                <label className="profile-visibility-option"><input type="checkbox" checked={visibility.showAge} onChange={(event) => setVisibility((current) => ({ ...current, showAge: event.target.checked }))} /><span><strong>Show age</strong><small>Your exact date of birth stays private.</small></span></label>
+                <label className="profile-visibility-option"><input type="checkbox" checked={visibility.showLocation} onChange={(event) => setVisibility((current) => ({ ...current, showLocation: event.target.checked }))} /><span><strong>Show location</strong><small>Show your country on your public profile.</small></span></label>
+              </div>
+            </section>
+
             {localMediaMessage ? <p className="profile-local-media-message" role="status">{localMediaMessage}</p> : null}
             {appearanceError ? <p className="profile-error" role="alert">{appearanceError}</p> : null}
             {appearanceSuccess ? <p className="profile-success" role="status">{appearanceSuccess}</p> : null}
-            <div className="profile-form-actions"><button type="submit" className="profile-save-button" disabled={appearanceSubmitting || !appearanceDirty} aria-busy={appearanceSubmitting}>{appearanceSubmitting ? "Saving appearance…" : "Save appearance"}</button><p className="profile-form-note">{appearanceDirty ? "Appearance changes are ready to save." : "Your saved appearance is shown in the preview."}</p></div>
+            <div className="profile-form-actions"><button type="submit" className="profile-save-button" disabled={appearanceSubmitting || !appearanceDirty} aria-busy={appearanceSubmitting}>{appearanceSubmitting ? "Saving public profile…" : "Save public profile"}</button><p className="profile-form-note">{appearanceDirty ? "Public profile changes are ready to save." : "Your saved public profile is shown in the preview."}</p></div>
           </form>
         </div>
       </section>

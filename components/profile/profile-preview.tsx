@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { ProfileAppearance } from "@/lib/profile-appearance";
 
 type PublicProfilePreviewProps = {
@@ -6,6 +7,10 @@ type PublicProfilePreviewProps = {
   displayName: string;
   username: string | null;
   country: string | null;
+  label?: string;
+  variant?: "preview" | "profile";
+  metadata?: string[];
+  action?: ReactNode;
 };
 
 const BACKGROUND_CLASS_NAMES: Record<ProfileAppearance["background"]["preset"], string> = {
@@ -39,6 +44,10 @@ export function PublicProfilePreview({
   displayName,
   username,
   country,
+  label = "Live public profile preview",
+  variant = "preview",
+  metadata = [],
+  action,
 }: PublicProfilePreviewProps) {
   const safeAvatarUrl = safeImageUrl(avatarUrl);
   const safeCoverUrl = safeImageUrl(appearance.coverUrl);
@@ -46,18 +55,19 @@ export function PublicProfilePreview({
 
   return (
     <article
-      className={`profile-public-preview profile-preview-style-${appearance.visualStyle} profile-preview-shape-${appearance.cardShape} profile-preview-accent-${appearance.accent} profile-preview-align-${appearance.textAlignment} profile-preview-width-${appearance.contentWidth} ${BACKGROUND_CLASS_NAMES[appearance.background.preset]}`}
-      aria-label="Live public profile preview"
+      className={`profile-public-preview${variant === "profile" ? " profile-public-profile" : ""} profile-preview-style-${appearance.visualStyle} profile-preview-shape-${appearance.cardShape} profile-preview-accent-${appearance.accent} profile-preview-align-${appearance.textAlignment} profile-preview-width-${appearance.contentWidth} ${BACKGROUND_CLASS_NAMES[appearance.background.preset]}`}
+      aria-label={label}
       data-testid="public-profile-preview"
     >
-      <div className="profile-preview-device-label">Live public profile preview</div>
+      {variant === "preview" ? <div className="profile-preview-device-label">{label}</div> : null}
+      {variant === "profile" && action ? <div className="profile-profile-action">{action}</div> : null}
       <div className="profile-preview-canvas">
         {safeBackgroundImageUrl ? <img src={safeBackgroundImageUrl} alt="" className="profile-preview-background-image-layer" /> : null}
         <div className="profile-preview-cover">
           {safeCoverUrl ? (
             <img
               src={safeCoverUrl}
-              alt="Profile cover"
+              alt={`${displayName} profile cover`}
               className="profile-preview-cover-image"
               style={{ objectPosition: `center ${appearance.coverFocalPoint}` }}
             />
@@ -68,13 +78,11 @@ export function PublicProfilePreview({
             {safeAvatarUrl ? <img src={safeAvatarUrl} alt={`${displayName} profile picture`} /> : <span aria-hidden="true">{initials(displayName)}</span>}
           </div>
           <div className="profile-preview-copy">
-            <h3>{displayName}</h3>
+            {variant === "profile" ? <h1>{displayName}</h1> : <h3>{displayName}</h3>}
             {username ? <p className="profile-preview-username">@{username}</p> : null}
-            {country ? <p className="profile-preview-location">{country}</p> : null}
-            <div className="profile-preview-card">
-              <span>Creator profile</span>
-              <p>Share your work, ideas, and the projects you are building with Zero Labs.</p>
-            </div>
+            {variant === "profile" && metadata.length > 0 ? <ul className="profile-profile-metadata">{metadata.map((item) => <li key={item}>{item}</li>)}</ul> : null}
+            {variant === "preview" && country ? <p className="profile-preview-location">{country}</p> : null}
+            {variant === "preview" ? <div className="profile-preview-card"><span>Creator profile</span><p>Share your work, ideas, and the projects you are building with Zero Labs.</p></div> : null}
           </div>
         </div>
       </div>
