@@ -12,6 +12,10 @@ import {
 } from "@/lib/profile-appearance";
 import { normalizeEditableProfileUpdate, validateEditableProfileUpdate } from "@/lib/profile-validation";
 import { getProfileAge, getProfileVisibility, mergeProfileVisibility, validateProfileVisibility } from "@/lib/profile-visibility";
+import {
+  getPublicProfileCustomizationPayload,
+  isPublicProfileCustomizationDirty,
+} from "@/lib/profile-customization";
 import type { Profile } from "@/lib/supabase/profile";
 
 function profile(overrides: Partial<Profile> = {}): Profile {
@@ -76,6 +80,84 @@ describe("profile appearance preferences", () => {
       avatar_url: "Avatar URL must start with http:// or https://.",
     });
     expect(validateProfileAppearance({ ...DEFAULT_PROFILE_APPEARANCE, coverUrl: "javascript:alert(1)" })).toHaveProperty("coverUrl");
+  });
+
+  it("does not persist local image previews and retains existing durable media references", () => {
+    const persistedAppearance = {
+      ...DEFAULT_PROFILE_APPEARANCE,
+      coverUrl: "https://images.example.com/saved-cover.png",
+      background: {
+        type: "image" as const,
+        preset: "image" as const,
+        imageUrl: "https://images.example.com/saved-background.png",
+      },
+    };
+    const savedProfile = profile({
+      avatar_url: "https://images.example.com/saved-avatar.png",
+      preferences: {
+        profileAppearance: persistedAppearance,
+        profileVisibility: { showAge: false, showLocation: false },
+      },
+    });
+    const payload = getPublicProfileCustomizationPayload({
+      avatarUrl: "blob:local-avatar",
+      appearance: {
+        ...persistedAppearance,
+        coverUrl: "blob:local-cover",
+        background: { ...persistedAppearance.background, imageUrl: "blob:local-background" },
+      },
+      visibility: { showAge: true, showLocation: true },
+      profile: savedProfile,
+    });
+
+    expect(payload).toMatchObject({
+      avatar_url: "https://images.example.com/saved-avatar.png",
+      profileAppearance: {
+        coverUrl: "https://images.example.com/saved-cover.png",
+        background: { imageUrl: "https://images.example.com/saved-background.png" },
+      },
+    });
+    expect(JSON.stringify(payload)).not.toContain("blob:");
+    expect(validateEditableProfileUpdate(normalizeEditableProfileUpdate({ avatar_url: payload.avatar_url }))).toEqual({});
+    expect(validateProfileAppearance(payload.profileAppearance)).toEqual({});
+  });
+
+  it("does not let a legacy blob avatar block unrelated profile customization saves", () => {
+    const savedProfile = profile({ avatar_url: "blob:legacy-avatar" });
+    const payload = getPublicProfileCustomizationPayload({
+      avatarUrl: "blob:local-preview",
+      appearance: { ...DEFAULT_PROFILE_APPEARANCE, accent: "amber" },
+      visibility: { showAge: false, showLocation: true },
+      profile: savedProfile,
+    });
+
+    expect(payload.avatar_url).toBe("");
+    expect(validateEditableProfileUpdate(normalizeEditableProfileUpdate({ avatar_url: payload.avatar_url }))).toEqual({});
+    expect(validateProfileAppearance(payload.profileAppearance)).toEqual({});
+  });
+
+  it("clears public-profile dirty state after a persisted response while ignoring preview-only URLs", () => {
+    const savedProfile = profile({
+      avatar_url: "https://images.example.com/avatar.png",
+      preferences: {
+        profileAppearance: { ...DEFAULT_PROFILE_APPEARANCE, accent: "violet" },
+        profileVisibility: { showAge: true, showLocation: false },
+      },
+    });
+
+    expect(isPublicProfileCustomizationDirty({
+      avatarUrl: "blob:preview-only-avatar",
+      appearance: { ...DEFAULT_PROFILE_APPEARANCE, accent: "violet", coverUrl: "blob:preview-only-cover" },
+      visibility: { showAge: true, showLocation: false },
+      profile: savedProfile,
+    })).toBe(false);
+
+    expect(isPublicProfileCustomizationDirty({
+      avatarUrl: "https://images.example.com/avatar.png",
+      appearance: { ...DEFAULT_PROFILE_APPEARANCE, accent: "amber" },
+      visibility: { showAge: true, showLocation: false },
+      profile: savedProfile,
+    })).toBe(true);
   });
 });
 

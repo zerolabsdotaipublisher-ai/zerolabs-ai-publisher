@@ -54,6 +54,7 @@ describe("PATCH /api/profile appearance persistence", () => {
       method: "PATCH",
       body: JSON.stringify({ id: "another_user", profileAppearance: { ...DEFAULT_PROFILE_APPEARANCE, accent: "violet" } }),
     }));
+    await expect(response.json()).resolves.toMatchObject({ ok: true, profile: { id: "current_user" } });
 
     expect(response.status).toBe(200);
     expect(mocks.updateProfile).toHaveBeenCalledWith("current_user", expect.objectContaining({
@@ -71,7 +72,11 @@ describe("PATCH /api/profile appearance persistence", () => {
     }));
 
     expect(response.status).toBe(400);
-    await expect(response.json()).resolves.toMatchObject({ fieldErrors: { profileAppearance: "Choose a valid visual style." } });
+    await expect(response.json()).resolves.toMatchObject({
+      ok: false,
+      error: { code: "VALIDATION_ERROR", message: "Please fix the profile appearance settings and try again." },
+      fieldErrors: { profileAppearance: "Choose a valid visual style." },
+    });
     expect(mocks.updateProfile).not.toHaveBeenCalled();
   });
 
@@ -109,6 +114,39 @@ describe("PATCH /api/profile appearance persistence", () => {
     }));
 
     expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toMatchObject({ ok: false, error: { code: "UNAUTHORIZED" } });
     expect(mocks.updateProfile).not.toHaveBeenCalled();
+  });
+
+  it("keeps account-information updates independent from public-profile preferences", async () => {
+    const response = await PATCH(new Request("http://localhost/api/profile", {
+      method: "PATCH",
+      body: JSON.stringify({ full_name: "Updated owner", country: "Philippines" }),
+    }));
+
+    expect(response.status).toBe(200);
+    expect(mocks.updateProfile).toHaveBeenCalledWith("current_user", {
+      full_name: "Updated owner",
+      country: "Philippines",
+    });
+  });
+
+  it("returns a safe structured error and keeps server details out of the response", async () => {
+    mocks.updateProfile.mockRejectedValueOnce(new Error("database connection detail that must remain private"));
+
+    const response = await PATCH(new Request("http://localhost/api/profile", {
+      method: "PATCH",
+      body: JSON.stringify({ profileVisibility: { showAge: true, showLocation: false } }),
+    }));
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({
+      ok: false,
+      error: {
+        code: "PROFILE_UPDATE_FAILED",
+        message: "We couldn't save your profile. Please try again.",
+      },
+    });
+    expect(mocks.loggerError).toHaveBeenCalled();
   });
 });
