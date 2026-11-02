@@ -49,6 +49,12 @@ type AuthUserMetadata = {
   date_of_birth?: string;
 };
 
+const PROFILE_CUSTOMIZATION_METADATA_KEY = "profile_customization";
+
+type ProfileUpdateFailure = Error & {
+  profileErrorCode?: "PROFILE_UPDATE_FAILED" | "PROFILE_PREFERENCES_FALLBACK_FAILED";
+};
+
 function getCurrentTimestamp(): string {
   return new Date().toISOString();
 }
@@ -62,6 +68,10 @@ function getErrorField(error: unknown, field: "code" | "message"): string | unde
   return typeof record[field] === "string" ? record[field] : undefined;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
 function toError(error: unknown, fallbackMessage: string): Error {
   if (error instanceof Error) {
     return error;
@@ -69,6 +79,15 @@ function toError(error: unknown, fallbackMessage: string): Error {
 
   const message = getErrorField(error, "message");
   return new Error(message ?? fallbackMessage);
+}
+
+function toProfileUpdateFailure(
+  code: NonNullable<ProfileUpdateFailure["profileErrorCode"]>,
+  message: string,
+): ProfileUpdateFailure {
+  const error = new Error(message) as ProfileUpdateFailure;
+  error.profileErrorCode = code;
+  return error;
 }
 
 // 42P01 = undefined_table, 42703 = undefined_column.
@@ -83,6 +102,50 @@ function isRecoverableProfileSchemaError(error: unknown): boolean {
     message.includes("could not find the 'role' column of 'profiles'") ||
     message.includes("column \"role\" of relation \"profiles\" does not exist")
   );
+}
+
+function isUnavailableProfilePreferencesError(error: unknown): boolean {
+  const code = getErrorField(error, "code");
+  const message = (getErrorField(error, "message") ?? "").toLowerCase();
+
+  return (
+    code === "42703" ||
+    code === "PGRST204" ||
+    message.includes("could not find the 'preferences' column") ||
+    message.includes("column \"preferences\" of relation \"profiles\" does not exist")
+  );
+}
+
+function getProfileCustomizationPreferences(value: unknown): Record<string, unknown> {
+  if (!isRecord(value)) return {};
+
+  const appearance = isRecord(value.profileAppearance) ? value.profileAppearance : undefined;
+  const visibility = isRecord(value.profileVisibility) ? value.profileVisibility : undefined;
+
+  return {
+    ...(appearance ? { profileAppearance: appearance } : {}),
+    ...(visibility ? { profileVisibility: visibility } : {}),
+  };
+}
+
+function applyAuthProfileCustomization(profile: Profile, user: User): Profile {
+  const metadata = isRecord(user.user_metadata) ? user.user_metadata : {};
+  const fallbackPreferences = getProfileCustomizationPreferences(metadata[PROFILE_CUSTOMIZATION_METADATA_KEY]);
+
+  if (Object.keys(fallbackPreferences).length === 0) {
+    return profile;
+  }
+
+  return {
+    ...profile,
+    // The profile-table values remain authoritative if the optional JSONB
+    // column is available. Older installations use this small auth-metadata
+    // fallback until their existing profile extension migration is applied.
+    preferences: {
+      ...fallbackPreferences,
+      ...(profile.preferences ?? {}),
+    },
+  };
 }
 
 function normalizeProfileRole(role: unknown): ProfileRole {
@@ -269,6 +332,43 @@ async function syncAuthUserMetadata(userId: string, data: ProfileUpdateData): Pr
   }
 }
 
+async function syncProfileCustomizationMetadata(
+  userId: string,
+  preferences: Record<string, unknown>,
+): Promise<void> {
+  const customization = getProfileCustomizationPreferences(preferences);
+  if (Object.keys(customization).length === 0) return;
+
+  const supabase = getSupabaseServiceClient();
+  const { data: authUserData, error: authUserError } = await supabase.auth.admin.getUserById(userId);
+
+  if (authUserError || !authUserData.user) {
+    throw toProfileUpdateFailure(
+      "PROFILE_PREFERENCES_FALLBACK_FAILED",
+      "Profile appearance settings could not be saved.",
+    );
+  }
+
+  const existingMetadata = isRecord(authUserData.user.user_metadata) ? authUserData.user.user_metadata : {};
+  const existingCustomization = getProfileCustomizationPreferences(existingMetadata[PROFILE_CUSTOMIZATION_METADATA_KEY]);
+  const { error: updateError } = await supabase.auth.admin.updateUserById(userId, {
+    user_metadata: {
+      ...existingMetadata,
+      [PROFILE_CUSTOMIZATION_METADATA_KEY]: {
+        ...existingCustomization,
+        ...customization,
+      },
+    },
+  });
+
+  if (updateError) {
+    throw toProfileUpdateFailure(
+      "PROFILE_PREFERENCES_FALLBACK_FAILED",
+      "Profile appearance settings could not be saved.",
+    );
+  }
+}
+
 function resolveSeededProfileRole(email: string): ProfileRole | null {
   return isAdminEmail(email) ? "admin" : null;
 }
@@ -335,10 +435,39 @@ export async function getProfile(userId: string): Promise<Profile | null> {
 export async function updateProfile(userId: string, data: ProfileUpdateData): Promise<Profile> {
   try {
     const supabase = getSupabaseServiceClient();
-    const { data: updated, error } = await supabase.from("profiles").update(data).eq("id", userId).select().single();
+    const { data: initialUpdated, error: initialError } = await supabase.from("profiles").update(data).eq("id", userId).select().single();
 
-    if (error) {
-      throw toError(error, "Profile update failed.");
+    let updated = initialUpdated;
+    let preferencesFallbackWasUsed = false;
+
+    if (initialError && data.preferences && isUnavailableProfilePreferencesError(initialError)) {
+      preferencesFallbackWasUsed = true;
+      logger.warn("profiles.preferences is unavailable; saving controlled profile customization in auth metadata", {
+        category: "error",
+        service: "supabase",
+        userId,
+        error: { message: "Profile preferences column unavailable", name: "SupabaseProfileSchemaWarning" },
+      });
+
+      const { preferences: _preferences, ...databaseData } = data;
+
+      if (Object.keys(databaseData).length > 0) {
+        const fallbackUpdate = await supabase.from("profiles").update(databaseData).eq("id", userId).select().single();
+        if (fallbackUpdate.error) {
+          throw toError(fallbackUpdate.error, "Profile update failed.");
+        }
+        updated = fallbackUpdate.data;
+      } else {
+        const existingProfile = await supabase.from("profiles").select("*").eq("id", userId).single();
+        if (existingProfile.error) {
+          throw toError(existingProfile.error, "Profile update failed.");
+        }
+        updated = existingProfile.data;
+      }
+
+      await syncProfileCustomizationMetadata(userId, data.preferences);
+    } else if (initialError) {
+      throw toError(initialError, "Profile update failed.");
     }
 
     if (!updated) {
@@ -347,9 +476,14 @@ export async function updateProfile(userId: string, data: ProfileUpdateData): Pr
 
     await syncAuthUserMetadata(userId, data);
 
-    return applyResolvedProfileRole(normalizeProfileRow(updated as Partial<Profile>));
+    const normalized = normalizeProfileRow(updated as Partial<Profile>);
+    return applyResolvedProfileRole(
+      preferencesFallbackWasUsed
+        ? { ...normalized, preferences: getProfileCustomizationPreferences(data.preferences) }
+        : normalized,
+    );
   } catch (error) {
-    const normalizedError = toError(error, "Profile update failed.");
+    const normalizedError = error instanceof Error ? error : toError(error, "Profile update failed.");
 
     logger.error("updateProfile threw unexpectedly", {
       category: "error",
@@ -481,16 +615,16 @@ export async function ensureProfile(user: User): Promise<Profile> {
       await syncProfileFromAuthUser(user);
 
       const syncedProfile = await getProfile(user.id);
-      return applyResolvedProfileRole(syncedProfile ?? existingProfile, user.email);
+      return applyResolvedProfileRole(applyAuthProfileCustomization(syncedProfile ?? existingProfile, user), user.email);
     }
 
-    return applyResolvedProfileRole(existingProfile, user.email);
+    return applyResolvedProfileRole(applyAuthProfileCustomization(existingProfile, user), user.email);
   }
 
   await syncProfileFromAuthUser(user);
 
   const syncedProfile = await getProfile(user.id);
-  return applyResolvedProfileRole(syncedProfile ?? createFallbackProfile(user), user.email);
+  return applyResolvedProfileRole(applyAuthProfileCustomization(syncedProfile ?? createFallbackProfile(user), user), user.email);
 }
 
 export async function getSafeProfile(user: User): Promise<Profile> {
@@ -503,7 +637,7 @@ export async function getSafeProfile(user: User): Promise<Profile> {
       userId: user.id,
       error: { message: error instanceof Error ? error.message : String(error), name: "SupabaseProfileError" },
     });
-    return createFallbackProfile(user);
+    return applyAuthProfileCustomization(createFallbackProfile(user), user);
   }
 }
 
