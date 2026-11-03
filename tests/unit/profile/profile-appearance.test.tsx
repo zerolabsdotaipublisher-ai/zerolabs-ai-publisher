@@ -77,7 +77,7 @@ describe("profile appearance preferences", () => {
 
   it("validates avatar and cover URLs as safe web URLs", () => {
     expect(validateEditableProfileUpdate(normalizeEditableProfileUpdate({ avatar_url: "javascript:alert(1)" }))).toMatchObject({
-      avatar_url: "Avatar URL must start with http:// or https://.",
+      avatar_url: "Avatar must be an http(s) URL or a saved profile-media reference.",
     });
     expect(validateProfileAppearance({ ...DEFAULT_PROFILE_APPEARANCE, coverUrl: "javascript:alert(1)" })).toHaveProperty("coverUrl");
   });
@@ -120,6 +120,39 @@ describe("profile appearance preferences", () => {
     expect(JSON.stringify(payload)).not.toContain("blob:");
     expect(validateEditableProfileUpdate(normalizeEditableProfileUpdate({ avatar_url: payload.avatar_url }))).toEqual({});
     expect(validateProfileAppearance(payload.profileAppearance)).toEqual({});
+  });
+
+  it("persists durable media references for replacements and clears them for removals", () => {
+    const savedProfile = profile({
+      avatar_url: "media:media_avatar_previous",
+      preferences: {
+        profileAppearance: { ...DEFAULT_PROFILE_APPEARANCE, coverUrl: "media:media_cover_previous" },
+      },
+    });
+    const replacement = getPublicProfileCustomizationPayload({
+      avatarUrl: "media:media_avatar_replacement",
+      appearance: { ...DEFAULT_PROFILE_APPEARANCE, coverUrl: "media:media_cover_replacement" },
+      visibility: { showAge: false, showLocation: false },
+      profile: savedProfile,
+    });
+    const removal = getPublicProfileCustomizationPayload({
+      avatarUrl: "",
+      appearance: { ...DEFAULT_PROFILE_APPEARANCE, coverUrl: null },
+      visibility: { showAge: false, showLocation: false },
+      profile: savedProfile,
+    });
+
+    expect(replacement).toMatchObject({
+      avatar_url: "media:media_avatar_replacement",
+      profileAppearance: { coverUrl: "media:media_cover_replacement" },
+    });
+    expect(removal).toMatchObject({ avatar_url: "", profileAppearance: { coverUrl: null } });
+    expect(isPublicProfileCustomizationDirty({
+      avatarUrl: replacement.avatar_url,
+      appearance: replacement.profileAppearance,
+      visibility: replacement.profileVisibility,
+      profile: savedProfile,
+    })).toBe(true);
   });
 
   it("does not let a legacy blob avatar block unrelated profile customization saves", () => {
@@ -201,12 +234,34 @@ describe("profile customization UI", () => {
     expect(markup).not.toContain("years old");
   });
 
+  it("renders legacy HTTPS media but safely falls back for legacy browser-only URLs", () => {
+    const httpsMarkup = renderToStaticMarkup(
+      <ProfileView profile={profile({ avatar_url: "https://images.example.com/legacy-avatar.png" })} />,
+    );
+    const blobMarkup = renderToStaticMarkup(
+      <ProfileView
+        profile={profile({ avatar_url: "blob:legacy-avatar" })}
+        mediaUrls={{ avatarUrl: null, coverUrl: null }}
+      />,
+    );
+
+    expect(httpsMarkup).toContain("https://images.example.com/legacy-avatar.png");
+    expect(blobMarkup).not.toContain("blob:legacy-avatar");
+    expect(blobMarkup).toContain("MP");
+  });
+
   it("renders the live-preview controls and separates customization, account, and security", () => {
     const markup = renderToStaticMarkup(<ProfileForm profile={profile()} />);
 
     expect(markup).toContain("Live public profile preview");
-    expect(markup).toContain("Profile picture URL");
-    expect(markup).toContain("Cover photo URL");
+    expect(markup).toContain("Upload profile picture");
+    expect(markup).toContain("Upload cover photo");
+    expect(markup).toContain("Remove profile picture");
+    expect(markup).toContain("Remove cover photo");
+    expect(markup).not.toContain("Preview a local image");
+    expect(markup).not.toContain("Preview a local cover");
+    expect(markup).not.toContain("Profile picture URL");
+    expect(markup).not.toContain("Cover photo URL");
     expect(markup).toContain("Visual style");
     expect(markup).toContain("Public details");
     expect(markup).toContain("Show age");

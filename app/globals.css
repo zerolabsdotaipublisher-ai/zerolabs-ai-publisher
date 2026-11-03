@@ -11526,6 +11526,17 @@ html[data-theme="dark"] .generation-shell {
   cursor: pointer;
 }
 
+.profile-upload-trigger:hover,
+.profile-inline-action:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent) 65%, var(--border));
+  background: color-mix(in srgb, var(--accent) 15%, var(--surface));
+}
+
+.profile-upload-trigger:active,
+.profile-inline-action:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
 .profile-upload-trigger:focus-within,
 .profile-inline-action:focus-visible,
 .profile-option-button:focus-visible {
@@ -11538,6 +11549,7 @@ html[data-theme="dark"] .generation-shell {
 .profile-media-url-row input { flex: 1 1 auto; min-width: 0; }
 .profile-inline-action { flex: 0 0 auto; padding: 0.55rem 0.72rem; border-radius: 0.7rem; cursor: pointer; }
 .profile-inline-action:disabled { cursor: not-allowed; opacity: 0.52; }
+.profile-media-selection { margin: 0.55rem 0; color: var(--text-secondary); }
 
 .profile-option-group {
   display: grid;

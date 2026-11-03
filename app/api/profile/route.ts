@@ -11,6 +11,8 @@
 
 import { normalizeEditableProfileUpdate, validateEditableProfileUpdate } from "@/lib/profile-validation";
 import { mergeProfileAppearance, toProfileAppearance, validateProfileAppearance } from "@/lib/profile-appearance";
+import { isProfileMediaReference } from "@/lib/profile-media";
+import { assertOwnedProfileMediaReference } from "@/lib/profile-media-server";
 import { mergeProfileVisibility, toProfileVisibility, validateProfileVisibility } from "@/lib/profile-visibility";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { ensureProfile, updateProfile, type ProfileUpdateData } from "@/lib/supabase/profile";
@@ -174,6 +176,35 @@ export async function PATCH(request: Request): Promise<Response> {
         "VALIDATION_ERROR",
         "Please fix the highlighted fields and try again.",
         { fieldErrors },
+      );
+    }
+
+    try {
+      if (isProfileMediaReference(normalizedData.avatar_url)) {
+        await assertOwnedProfileMediaReference({
+          userId: user.id,
+          reference: normalizedData.avatar_url,
+          kind: "avatar",
+        });
+      }
+      if (profileAppearance && isProfileMediaReference(profileAppearance.coverUrl)) {
+        await assertOwnedProfileMediaReference({
+          userId: user.id,
+          reference: profileAppearance.coverUrl,
+          kind: "cover",
+        });
+      }
+    } catch {
+      return failure(
+        400,
+        "VALIDATION_ERROR",
+        "Choose profile media uploaded to this account.",
+        {
+          fieldErrors: {
+            ...(isProfileMediaReference(normalizedData.avatar_url) ? { avatar_url: "Choose a saved profile picture from this account." } : {}),
+            ...(profileAppearance && isProfileMediaReference(profileAppearance.coverUrl) ? { profileAppearance: "Choose a saved cover photo from this account." } : {}),
+          },
+        },
       );
     }
 

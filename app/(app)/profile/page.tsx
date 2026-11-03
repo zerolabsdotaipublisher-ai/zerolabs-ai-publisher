@@ -4,6 +4,8 @@ import { ProfileView } from "@/components/profile/profile-view";
 import { routes } from "@/config/routes";
 import { ensureProfile } from "@/lib/supabase/profile";
 import { getServerUser } from "@/lib/supabase/server";
+import { resolveProfileMediaDisplayUrls } from "@/lib/profile-media-server";
+import { getProfileAppearance } from "@/lib/profile-appearance";
 
 export default async function ProfilePage() {
   const user = await getServerUser();
@@ -17,6 +19,12 @@ export default async function ProfilePage() {
     getPublicWebsitesForOwner(user.id),
     getPublicCommunityPostsForAuthor(user.id),
   ]);
+  const appearance = getProfileAppearance(profile.preferences);
+  const mediaUrls = await resolveProfileMediaDisplayUrls({
+    userId: user.id,
+    avatarReference: profile.avatar_url,
+    coverReference: appearance.coverUrl,
+  });
 
   return (
     <ProfileView
@@ -24,6 +32,7 @@ export default async function ProfilePage() {
       layoutVariant={profile.role === "admin" ? "admin" : "default"}
       websites={websites}
       posts={posts}
+      mediaUrls={mediaUrls}
     />
   );
 }
