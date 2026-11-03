@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ProfileContent, type ProfilePublicPost, type ProfilePublicWebsite } from "@/components/profile/profile-content";
 import { routes } from "@/config/routes";
 import { getProfileAppearance } from "@/lib/profile-appearance";
+import { isProfileMediaReference, isSupportedProfileMediaUrl, type ProfileMediaDisplayUrls } from "@/lib/profile-media";
 import { getProfileAge, getProfileVisibility } from "@/lib/profile-visibility";
 import type { Profile } from "@/lib/supabase/profile";
 import { PublicProfilePreview } from "./profile-preview";
@@ -13,6 +14,7 @@ type ProfileViewProps = {
   layoutVariant?: ProfileLayoutVariant;
   websites?: ProfilePublicWebsite[];
   posts?: ProfilePublicPost[];
+  mediaUrls?: ProfileMediaDisplayUrls;
 };
 
 function publicText(value: string | null): string | null {
@@ -26,9 +28,22 @@ function profileDisplayName(profile: Profile): string {
 }
 
 /** Authenticated owner view. Private profile fields intentionally never enter this presentation. */
-export function ProfileView({ profile, layoutVariant = "default", websites = [], posts = [] }: ProfileViewProps) {
+export function ProfileView({ profile, layoutVariant = "default", websites = [], posts = [], mediaUrls }: ProfileViewProps) {
   const displayName = profileDisplayName(profile);
   const appearance = getProfileAppearance(profile.preferences);
+  const displayAppearance = {
+    ...appearance,
+    coverUrl: mediaUrls
+      ? mediaUrls.coverUrl
+      : isProfileMediaReference(appearance.coverUrl) || !isSupportedProfileMediaUrl(appearance.coverUrl)
+        ? null
+        : appearance.coverUrl,
+  };
+  const avatarUrl = mediaUrls
+    ? mediaUrls.avatarUrl
+    : isProfileMediaReference(profile.avatar_url) || !isSupportedProfileMediaUrl(profile.avatar_url)
+      ? null
+      : profile.avatar_url;
   const visibility = getProfileVisibility(profile.preferences);
   const age = visibility.showAge ? getProfileAge(profile.date_of_birth) : null;
   const location = visibility.showLocation ? publicText(profile.country) : null;
@@ -39,8 +54,8 @@ export function ProfileView({ profile, layoutVariant = "default", websites = [],
     <section className={pageClassName} aria-label="Profile page">
       <section className="profile-view-shell" aria-label={`${displayName} profile`}>
         <PublicProfilePreview
-          appearance={appearance}
-          avatarUrl={profile.avatar_url}
+          appearance={displayAppearance}
+          avatarUrl={avatarUrl}
           displayName={displayName}
           username={publicText(profile.username)}
           country={location}
@@ -51,7 +66,7 @@ export function ProfileView({ profile, layoutVariant = "default", websites = [],
         />
       </section>
 
-      <ProfileContent appearance={appearance} websites={websites} posts={posts} />
+      <ProfileContent appearance={displayAppearance} websites={websites} posts={posts} />
     </section>
   );
 }

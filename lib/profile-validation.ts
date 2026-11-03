@@ -19,6 +19,7 @@ export const PROFILE_USERNAME_MAX_LENGTH = 64;
 export const PROFILE_COUNTRY_MAX_LENGTH = 120;
 
 const PROFILE_URL_PROTOCOLS = new Set(["http:", "https:"]);
+const PROFILE_MEDIA_REFERENCE_PATTERN = /^media:media_[a-z0-9_]+$/i;
 
 function normalizeOptionalField(value: string | null | undefined): string | null | undefined {
   if (value === undefined) {
@@ -71,14 +72,18 @@ export function validateEditableProfileUpdate(input: EditableProfileUpdate): Edi
       return errors;
     }
 
+    if (PROFILE_MEDIA_REFERENCE_PATTERN.test(input.avatar_url)) {
+      return errors;
+    }
+
     try {
       const parsed = new URL(input.avatar_url);
 
       if (!PROFILE_URL_PROTOCOLS.has(parsed.protocol)) {
-        errors.avatar_url = "Avatar URL must start with http:// or https://.";
+        errors.avatar_url = "Avatar must be an http(s) URL or a saved profile-media reference.";
       }
     } catch {
-      errors.avatar_url = "Enter a valid avatar URL.";
+      errors.avatar_url = "Enter a valid avatar URL or saved profile-media reference.";
     }
   }
 

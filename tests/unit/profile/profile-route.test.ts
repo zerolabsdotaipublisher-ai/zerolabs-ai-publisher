@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   getUser: vi.fn(),
   ensureProfile: vi.fn(),
   updateProfile: vi.fn(),
+  assertOwnedProfileMediaReference: vi.fn(),
   loggerError: vi.fn(),
 }));
 
@@ -15,6 +16,9 @@ vi.mock("@/lib/supabase/server", () => ({
 vi.mock("@/lib/supabase/profile", () => ({
   ensureProfile: mocks.ensureProfile,
   updateProfile: mocks.updateProfile,
+}));
+vi.mock("@/lib/profile-media-server", () => ({
+  assertOwnedProfileMediaReference: mocks.assertOwnedProfileMediaReference,
 }));
 vi.mock("@/lib/observability", () => ({ logger: { error: mocks.loggerError } }));
 
@@ -129,6 +133,62 @@ describe("PATCH /api/profile appearance persistence", () => {
       full_name: "Updated owner",
       country: "Philippines",
     });
+  });
+
+  it("persists only validated durable avatar and cover references for the authenticated user", async () => {
+    const response = await PATCH(new Request("http://localhost/api/profile", {
+      method: "PATCH",
+      body: JSON.stringify({
+        avatar_url: "media:media_avatar_fixture",
+        profileAppearance: { ...DEFAULT_PROFILE_APPEARANCE, coverUrl: "media:media_cover_fixture" },
+      }),
+    }));
+
+    expect(response.status).toBe(200);
+    expect(mocks.assertOwnedProfileMediaReference).toHaveBeenCalledWith({
+      userId: "current_user",
+      reference: "media:media_avatar_fixture",
+      kind: "avatar",
+    });
+    expect(mocks.assertOwnedProfileMediaReference).toHaveBeenCalledWith({
+      userId: "current_user",
+      reference: "media:media_cover_fixture",
+      kind: "cover",
+    });
+    expect(mocks.updateProfile).toHaveBeenCalledWith("current_user", expect.objectContaining({
+      avatar_url: "media:media_avatar_fixture",
+      preferences: expect.objectContaining({
+        profileAppearance: expect.objectContaining({ coverUrl: "media:media_cover_fixture" }),
+      }),
+    }));
+  });
+
+  it("rejects a profile-media reference the authenticated user does not own", async () => {
+    mocks.assertOwnedProfileMediaReference.mockRejectedValueOnce(new Error("ownership required"));
+
+    const response = await PATCH(new Request("http://localhost/api/profile", {
+      method: "PATCH",
+      body: JSON.stringify({ avatar_url: "media:media_someone_else" }),
+    }));
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      ok: false,
+      error: { code: "VALIDATION_ERROR", message: "Choose profile media uploaded to this account." },
+      fieldErrors: { avatar_url: "Choose a saved profile picture from this account." },
+    });
+    expect(mocks.updateProfile).not.toHaveBeenCalled();
+  });
+
+  it("continues to support legacy HTTPS avatar URLs", async () => {
+    const response = await PATCH(new Request("http://localhost/api/profile", {
+      method: "PATCH",
+      body: JSON.stringify({ avatar_url: "https://images.example.com/legacy-avatar.png" }),
+    }));
+
+    expect(response.status).toBe(200);
+    expect(mocks.assertOwnedProfileMediaReference).not.toHaveBeenCalled();
+    expect(mocks.updateProfile).toHaveBeenCalledWith("current_user", { avatar_url: "https://images.example.com/legacy-avatar.png" });
   });
 
   it("returns a safe structured error and keeps server details out of the response", async () => {

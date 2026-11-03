@@ -1,3 +1,5 @@
+import { isProfileMediaReference } from "./profile-media";
+
 export const PROFILE_BACKGROUND_TYPES = ["solid", "gradient", "image"] as const;
 export const PROFILE_BACKGROUND_PRESETS = ["default", "forest", "midnight", "aurora", "sunset", "image"] as const;
 export const PROFILE_VISUAL_STYLES = ["minimal", "soft", "glass", "bold"] as const;
@@ -71,7 +73,7 @@ function isOneOf<T extends readonly string[]>(value: unknown, values: T): value 
   return typeof value === "string" && values.includes(value);
 }
 
-function isSafeImageUrl(value: unknown): value is string | null {
+function isSafeHttpImageUrl(value: unknown): value is string | null {
   if (value === null) return true;
   if (typeof value !== "string" || value.length > PROFILE_MEDIA_URL_MAX_LENGTH) return false;
 
@@ -80,6 +82,10 @@ function isSafeImageUrl(value: unknown): value is string | null {
   } catch {
     return false;
   }
+}
+
+function isSafeCoverUrl(value: unknown): value is string | null {
+  return isProfileMediaReference(typeof value === "string" ? value : null) || isSafeHttpImageUrl(value);
 }
 
 function cloneDefaultAppearance(): ProfileAppearance {
@@ -98,7 +104,7 @@ export function getProfileAppearance(preferences: Record<string, unknown> | null
   const stored = isRecord(preferences?.profileAppearance) ? preferences.profileAppearance : null;
   if (!stored) return result;
 
-  if (isSafeImageUrl(stored.coverUrl)) result.coverUrl = stored.coverUrl;
+  if (isSafeCoverUrl(stored.coverUrl)) result.coverUrl = stored.coverUrl;
   if (isOneOf(stored.coverFocalPoint, PROFILE_COVER_FOCAL_POINTS)) result.coverFocalPoint = stored.coverFocalPoint;
   if (isOneOf(stored.visualStyle, PROFILE_VISUAL_STYLES)) result.visualStyle = stored.visualStyle;
   if (isOneOf(stored.cardShape, PROFILE_CARD_SHAPES)) result.cardShape = stored.cardShape;
@@ -109,7 +115,7 @@ export function getProfileAppearance(preferences: Record<string, unknown> | null
   if (isRecord(stored.background)) {
     if (isOneOf(stored.background.type, PROFILE_BACKGROUND_TYPES)) result.background.type = stored.background.type;
     if (isOneOf(stored.background.preset, PROFILE_BACKGROUND_PRESETS)) result.background.preset = stored.background.preset;
-    if (isSafeImageUrl(stored.background.imageUrl)) result.background.imageUrl = stored.background.imageUrl;
+    if (isSafeHttpImageUrl(stored.background.imageUrl)) result.background.imageUrl = stored.background.imageUrl;
   }
 
   return result;
@@ -121,8 +127,8 @@ export function validateProfileAppearance(value: unknown): ProfileAppearanceFiel
     return { visualStyle: "Profile appearance must be an object." };
   }
 
-  if (!isSafeImageUrl(value.coverUrl)) {
-    errors.coverUrl = `Cover URL must be a valid http or https URL with at most ${PROFILE_MEDIA_URL_MAX_LENGTH} characters.`;
+  if (!isSafeCoverUrl(value.coverUrl)) {
+    errors.coverUrl = `Cover must be a valid http(s) URL or saved profile-media reference with at most ${PROFILE_MEDIA_URL_MAX_LENGTH} characters.`;
   }
   if (!isOneOf(value.coverFocalPoint, PROFILE_COVER_FOCAL_POINTS)) {
     errors.coverFocalPoint = "Choose a valid cover focal point.";
@@ -142,7 +148,7 @@ export function validateProfileAppearance(value: unknown): ProfileAppearanceFiel
     if (!isOneOf(value.background.preset, PROFILE_BACKGROUND_PRESETS)) {
       errors["background.preset"] = "Choose a valid background preset.";
     }
-    if (!isSafeImageUrl(value.background.imageUrl)) {
+    if (!isSafeHttpImageUrl(value.background.imageUrl)) {
       errors["background.imageUrl"] = `Background image URL must be a valid http or https URL with at most ${PROFILE_MEDIA_URL_MAX_LENGTH} characters.`;
     }
   }
