@@ -80,7 +80,7 @@ export function PublicProfilePreview({
           <div className="profile-preview-copy">
             {variant === "profile" ? <h1>{displayName}</h1> : <h3>{displayName}</h3>}
             {username ? <p className="profile-preview-username">@{username}</p> : null}
-            {variant === "profile" && metadata.length > 0 ? <ul className="profile-profile-metadata">{metadata.map((item) => <li key={item}>{item}</li>)}</ul> : null}
+            {metadata.length > 0 ? <ul className="profile-profile-metadata">{metadata.map((item) => <li key={item}>{item}</li>)}</ul> : null}
             {variant === "preview" && country ? <p className="profile-preview-location">{country}</p> : null}
             {variant === "preview" ? <div className="profile-preview-card"><span>Creator profile</span><p>Share your work, ideas, and the projects you are building with Zero Labs.</p></div> : null}
           </div>

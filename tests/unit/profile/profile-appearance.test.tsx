@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { ProfileForm } from "@/components/profile/profile-form";
+import { getNextProfileEditorCategoryIndex, ProfileForm } from "@/components/profile/profile-form";
 import { ProfileContent } from "@/components/profile/profile-content";
 import { PublicProfilePreview } from "@/components/profile/profile-preview";
 import { ProfileView } from "@/components/profile/profile-view";
@@ -214,6 +214,15 @@ describe("profile visibility preferences", () => {
 });
 
 describe("profile customization UI", () => {
+  it("supports roving keyboard navigation across editor categories", () => {
+    expect(getNextProfileEditorCategoryIndex("ArrowDown", 0)).toBe(1);
+    expect(getNextProfileEditorCategoryIndex("ArrowUp", 0)).toBe(5);
+    expect(getNextProfileEditorCategoryIndex("ArrowRight", 5)).toBe(0);
+    expect(getNextProfileEditorCategoryIndex("Home", 4)).toBe(0);
+    expect(getNextProfileEditorCategoryIndex("End", 1)).toBe(5);
+    expect(getNextProfileEditorCategoryIndex("Enter", 1)).toBeNull();
+  });
+
   it("keeps the profile route read-only and provides a dedicated edit entry point", () => {
     const markup = renderToStaticMarkup(<ProfileView profile={profile()} />);
 
@@ -250,24 +259,62 @@ describe("profile customization UI", () => {
     expect(blobMarkup).toContain("MP");
   });
 
-  it("renders the live-preview controls and separates customization, account, and security", () => {
+  it("renders the accessible profile editor categories and live-preview media controls", () => {
     const markup = renderToStaticMarkup(<ProfileForm profile={profile()} />);
 
     expect(markup).toContain("Live public profile preview");
+    expect(markup).toContain("profile-public-profile");
+    expect(markup).not.toContain("Creator profile");
     expect(markup).toContain("Upload profile picture");
     expect(markup).toContain("Upload cover photo");
+    expect(markup).toMatch(/<button[^>]*type="button"[^>]*>Upload profile picture<\/button>/);
+    expect(markup).toMatch(/<button[^>]*type="button"[^>]*>Upload cover photo<\/button>/);
+    expect(markup).toContain("profile-upload-input");
+    expect(markup).toMatch(/id="[^"]+-avatar-upload"[^>]*aria-label="Upload profile picture"/);
+    expect(markup).toMatch(/id="[^"]+-cover-upload"[^>]*aria-label="Upload cover photo"/);
+    expect(markup).toContain("profile-editor-nav");
+    expect(markup).toContain('role="tablist"');
+    expect(markup).toContain("Categories");
+    expect(markup).toContain("Profile Design");
+    expect(markup).toContain("Profile Information");
+    expect(markup).toContain("Media");
+    expect(markup).toContain("Privacy");
+    expect(markup).toContain("Account");
+    expect(markup).toContain("Security");
+    expect(markup).toContain("profile-editor-nav-step");
+    expect(markup).toMatch(/aria-controls="[^\"]+-media-controls"/);
+    expect(markup).toMatch(/aria-selected="true"/);
     expect(markup).toContain("Remove profile picture");
     expect(markup).toContain("Remove cover photo");
     expect(markup).not.toContain("Preview a local image");
     expect(markup).not.toContain("Preview a local cover");
     expect(markup).not.toContain("Profile picture URL");
     expect(markup).not.toContain("Cover photo URL");
-    expect(markup).toContain("Visual style");
-    expect(markup).toContain("Public details");
-    expect(markup).toContain("Show age");
-    expect(markup).toContain("aria-pressed=\"true\"");
-    expect(markup).toContain("Account information");
-    expect(markup).toContain("Change password");
+    expect(markup).not.toContain("Visual style");
+    expect(markup).not.toContain("Show age");
+    expect(markup).toContain("Save public profile");
+    expect(markup).not.toContain("profile-utilities");
+  });
+
+  it("keeps the live preview rendered while category selection chooses the matching right panel", () => {
+    const categories = [
+      { id: "profile-design" as const, heading: "Surface and styling", expected: "Visual style" },
+      { id: "profile-information" as const, heading: "Public identity", expected: "Display name" },
+      { id: "media" as const, heading: "Picture and cover", expected: "Upload cover photo" },
+      { id: "privacy" as const, heading: "Public details", expected: "Show age" },
+      { id: "account" as const, heading: "Private account details", expected: "First name" },
+      { id: "security" as const, heading: "Password and access", expected: "Change password" },
+    ];
+
+    for (const category of categories) {
+      const markup = renderToStaticMarkup(<ProfileForm profile={profile()} initialEditorCategory={category.id} />);
+
+      expect(markup).toContain('data-testid="public-profile-preview"');
+      expect(markup).toContain(category.heading);
+      expect(markup).toContain(category.expected);
+      expect(markup).toMatch(new RegExp(`aria-controls="[^\"]+-${category.id}-controls"[^>]*aria-selected="true"`));
+      expect(markup).toMatch(new RegExp(`id="[^\"]+-${category.id}-controls"`));
+    }
   });
 
   it("uses only explicitly visible metadata and applies appearance to populated public content", () => {
@@ -322,13 +369,30 @@ describe("profile customization UI", () => {
       visualStyle: "glass" as const,
     };
     const markup = renderToStaticMarkup(
-      <PublicProfilePreview appearance={appearance} avatarUrl={null} displayName="Mina Park" username="mina" country="Philippines" />,
+      <PublicProfilePreview appearance={appearance} avatarUrl={null} displayName="Mina Park" username="mina" country="Philippines" metadata={["36 years old"]} />,
     );
 
     expect(markup).toContain("profile-preview-accent-violet");
     expect(markup).toContain("profile-preview-align-center");
     expect(markup).toContain("profile-preview-style-glass");
+    expect(markup).toContain("36 years old");
     expect(markup).not.toContain("private@example.com");
     expect(markup).not.toContain("1990-05-11");
+  });
+
+  it("renders a selected cover preview immediately", () => {
+    const markup = renderToStaticMarkup(
+      <PublicProfilePreview
+        appearance={{ ...DEFAULT_PROFILE_APPEARANCE, coverUrl: "blob:cover-selected" }}
+        avatarUrl={null}
+        displayName="Mina Park"
+        username="mina"
+        country={null}
+        variant="profile"
+      />,
+    );
+
+    expect(markup).toContain('src="blob:cover-selected"');
+    expect(markup).toContain("Mina Park profile cover");
   });
 });

@@ -77,6 +77,27 @@ describe("profile media server workflow", () => {
     }));
   });
 
+  it("accepts normal cover filename punctuation without using it as the storage key", async () => {
+    mocks.uploadOwnedMedia.mockResolvedValue({
+      media: { id: "media_cover_fixture" },
+      signed: { url: "https://signed.example/cover", expiresAt: "2026-11-04T01:00:00.000Z" },
+    });
+
+    await expect(uploadProfileMedia({
+      userId: "current_user",
+      kind: "cover",
+      fileName: "Cover [final], export!.png",
+      mimeType: "image/png",
+      fileSizeBytes: PNG_BYTES.length,
+      bytes: PNG_BYTES,
+    })).resolves.toMatchObject({ reference: "media:media_cover_fixture" });
+
+    expect(mocks.uploadOwnedMedia).toHaveBeenCalledWith(expect.objectContaining({
+      fileName: "profile-cover.png",
+      metadata: { source: "profile_media", profileMediaKind: "cover", profileMediaOwnerId: "current_user" },
+    }));
+  });
+
   it("enforces current-user ownership and media slot before a reference can be saved", async () => {
     mocks.getOwnedMediaAsset.mockResolvedValue(null);
 

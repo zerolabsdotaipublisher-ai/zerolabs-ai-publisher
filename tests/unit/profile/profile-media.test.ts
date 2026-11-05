@@ -37,6 +37,19 @@ describe("profile media upload validation", () => {
     });
   });
 
+  it("accepts ordinary cover-image punctuation while deriving a controlled storage filename", () => {
+    expect(validateProfileMediaUpload({
+      kind: "cover",
+      fileName: "Cover [final], export!.png",
+      mimeType: "image/png",
+      fileSizeBytes: PNG_BYTES.length,
+      bytes: PNG_BYTES,
+    })).toMatchObject({
+      ok: true,
+      normalized: { kind: "cover", mimeType: "image/png", storageFileName: "profile-cover.png" },
+    });
+  });
+
   it("rejects non-image MIME types and image content that does not match its declared type", () => {
     expect(validateProfileMediaUpload({
       kind: "cover",
@@ -69,6 +82,6 @@ describe("profile media upload validation", () => {
       fileName: "avatar.png",
       mimeType: "image/png",
       fileSizeBytes: PROFILE_MEDIA_MAX_BYTES + 1,
-    })).toMatchObject({ ok: false, errors: expect.arrayContaining(["Choose an image smaller than 5 MB."]) });
+    })).toMatchObject({ ok: false, errors: expect.arrayContaining(["Choose an image smaller than 4 MB."]) });
   });
 });
