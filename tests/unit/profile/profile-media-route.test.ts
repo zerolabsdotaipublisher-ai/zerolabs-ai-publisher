@@ -13,11 +13,11 @@ vi.mock("@/lib/profile-media-server", () => ({
 
 import { POST } from "@/app/api/profile/media/route";
 
-function uploadRequest() {
+function uploadRequest(kind: "avatar" | "cover" = "avatar") {
   const formData = new FormData();
-  formData.set("kind", "avatar");
+  formData.set("kind", kind);
   formData.set("userId", "another_user");
-  formData.set("file", new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47])], "avatar.png", { type: "image/png" }));
+  formData.set("file", new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47])], kind === "cover" ? "cover (final).png" : "avatar.png", { type: "image/png" }));
   return new Request("http://localhost/api/profile/media", { method: "POST", body: formData });
 }
 
@@ -51,6 +51,18 @@ describe("POST /api/profile/media", () => {
       userId: "current_user",
       kind: "avatar",
       fileName: "avatar.png",
+      mimeType: "image/png",
+    }));
+  });
+
+  it("accepts a cover image and passes its cover slot to the owner-scoped upload workflow", async () => {
+    const response = await POST(uploadRequest("cover"));
+
+    expect(response.status).toBe(200);
+    expect(mocks.uploadProfileMedia).toHaveBeenCalledWith(expect.objectContaining({
+      userId: "current_user",
+      kind: "cover",
+      fileName: "cover (final).png",
       mimeType: "image/png",
     }));
   });

@@ -1,6 +1,8 @@
 export const PROFILE_MEDIA_KINDS = ["avatar", "cover"] as const;
 export const PROFILE_MEDIA_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"] as const;
-export const PROFILE_MEDIA_MAX_BYTES = 5 * 1024 * 1024;
+// Keep the file payload below Vercel's 4.5 MB Function request envelope once
+// multipart metadata is included.
+export const PROFILE_MEDIA_MAX_BYTES = 4 * 1024 * 1024;
 export const PROFILE_MEDIA_REFERENCE_PREFIX = "media:";
 
 export type ProfileMediaKind = (typeof PROFILE_MEDIA_KINDS)[number];
@@ -29,7 +31,21 @@ type ProfileMediaUploadValidation = {
 };
 
 const MEDIA_ID_PATTERN = /^media_[a-z0-9_]+$/i;
-const SAFE_FILENAME_PATTERN = /^[a-z0-9][a-z0-9._ -]{0,199}$/i;
+const MAX_SOURCE_FILENAME_LENGTH = 200;
+
+// Source names are never used as object keys: uploads use a generated
+// profile-avatar or profile-cover filename. Only reject values that cannot be
+// a single safe filename component, rather than rejecting normal punctuation
+// added by browsers, cameras, and download tools.
+function isSafeSourceFilename(fileName: string): boolean {
+  return (
+    fileName.length > 0 &&
+    fileName.length <= MAX_SOURCE_FILENAME_LENGTH &&
+    fileName !== "." &&
+    fileName !== ".." &&
+    !/[\\/\u0000-\u001f]/.test(fileName)
+  );
+}
 
 const FILE_EXTENSION_BY_MIME_TYPE: Record<(typeof PROFILE_MEDIA_MIME_TYPES)[number], string> = {
   "image/jpeg": "jpg",
@@ -101,13 +117,13 @@ export function validateProfileMediaUpload(input: ProfileMediaUploadInput): Prof
 
   if (!isProfileMediaKind(kind)) errors.push("Choose whether this image is a profile picture or cover photo.");
   if (!isProfileMediaMimeType(mimeType)) errors.push("Choose a JPG, PNG, WebP, or GIF image.");
-  if (!fileName || fileName !== input.fileName || !SAFE_FILENAME_PATTERN.test(fileName) || fileName.includes("..") || /[\\/\u0000-\u001f]/.test(fileName)) {
+  if (!fileName || fileName !== input.fileName || !isSafeSourceFilename(fileName)) {
     errors.push("Choose an image with a safe filename.");
   }
   if (!Number.isFinite(input.fileSizeBytes) || input.fileSizeBytes < 1) {
     errors.push("Choose an image file with content.");
   } else if (input.fileSizeBytes > PROFILE_MEDIA_MAX_BYTES) {
-    errors.push("Choose an image smaller than 5 MB.");
+    errors.push("Choose an image smaller than 4 MB.");
   }
 
   if (input.bytes) {
