@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { getNextProfileEditorCategoryIndex, ProfileForm } from "@/components/profile/profile-form";
+import { createProfileMediaUploadFormData, getNextProfileEditorCategoryIndex, ProfileForm } from "@/components/profile/profile-form";
 import { ProfileContent } from "@/components/profile/profile-content";
 import { PublicProfilePreview } from "@/components/profile/profile-preview";
 import { ProfileView } from "@/components/profile/profile-view";
@@ -82,6 +82,17 @@ describe("profile appearance preferences", () => {
     expect(validateProfileAppearance({ ...DEFAULT_PROFILE_APPEARANCE, coverUrl: "javascript:alert(1)" })).toHaveProperty("coverUrl");
   });
 
+  it("rejects Supabase signed URLs as canonical profile values", () => {
+    const signedUrl = "https://project.supabase.co/storage/v1/object/sign/profile-media/user_fixture/cover/profile-cover-550e8400-e29b-41d4-a716-446655440000.png?token=temporary";
+
+    expect(validateEditableProfileUpdate(normalizeEditableProfileUpdate({ avatar_url: signedUrl }))).toMatchObject({
+      avatar_url: "Avatar must use a saved profile-media reference, not a temporary signed URL.",
+    });
+    expect(validateProfileAppearance({ ...DEFAULT_PROFILE_APPEARANCE, coverUrl: signedUrl })).toMatchObject({
+      coverUrl: "Cover must use a saved profile-media reference, not a temporary signed URL.",
+    });
+  });
+
   it("does not persist local image previews and retains existing durable media references", () => {
     const persistedAppearance = {
       ...DEFAULT_PROFILE_APPEARANCE,
@@ -124,14 +135,14 @@ describe("profile appearance preferences", () => {
 
   it("persists durable media references for replacements and clears them for removals", () => {
     const savedProfile = profile({
-      avatar_url: "media:media_avatar_previous",
+      avatar_url: "supabase:profile-media:user_fixture/avatar/profile-avatar-11111111-1111-4111-8111-111111111111.png",
       preferences: {
-        profileAppearance: { ...DEFAULT_PROFILE_APPEARANCE, coverUrl: "media:media_cover_previous" },
+        profileAppearance: { ...DEFAULT_PROFILE_APPEARANCE, coverUrl: "supabase:profile-media:user_fixture/cover/profile-cover-11111111-1111-4111-8111-111111111111.png" },
       },
     });
     const replacement = getPublicProfileCustomizationPayload({
-      avatarUrl: "media:media_avatar_replacement",
-      appearance: { ...DEFAULT_PROFILE_APPEARANCE, coverUrl: "media:media_cover_replacement" },
+      avatarUrl: "supabase:profile-media:user_fixture/avatar/profile-avatar-550e8400-e29b-41d4-a716-446655440000.png",
+      appearance: { ...DEFAULT_PROFILE_APPEARANCE, coverUrl: "supabase:profile-media:user_fixture/cover/profile-cover-550e8400-e29b-41d4-a716-446655440000.png" },
       visibility: { showAge: false, showLocation: false },
       profile: savedProfile,
     });
@@ -143,8 +154,8 @@ describe("profile appearance preferences", () => {
     });
 
     expect(replacement).toMatchObject({
-      avatar_url: "media:media_avatar_replacement",
-      profileAppearance: { coverUrl: "media:media_cover_replacement" },
+      avatar_url: "supabase:profile-media:user_fixture/avatar/profile-avatar-550e8400-e29b-41d4-a716-446655440000.png",
+      profileAppearance: { coverUrl: "supabase:profile-media:user_fixture/cover/profile-cover-550e8400-e29b-41d4-a716-446655440000.png" },
     });
     expect(removal).toMatchObject({ avatar_url: "", profileAppearance: { coverUrl: null } });
     expect(isPublicProfileCustomizationDirty({
@@ -214,6 +225,24 @@ describe("profile visibility preferences", () => {
 });
 
 describe("profile customization UI", () => {
+  it("builds a multipart cover upload that preserves the original File and cover kind", async () => {
+    const file = new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])], "Mina cover (final).png", {
+      type: "image/png",
+    });
+
+    const formData = createProfileMediaUploadFormData(file, "cover");
+    const uploadedFile = formData.get("file");
+
+    expect(formData.get("kind")).toBe("cover");
+    expect(uploadedFile).toBeInstanceOf(File);
+    expect(uploadedFile).toMatchObject({
+      name: "Mina cover (final).png",
+      type: "image/png",
+      size: file.size,
+    });
+    expect(new Uint8Array(await (uploadedFile as File).arrayBuffer())).toEqual(new Uint8Array(await file.arrayBuffer()));
+  });
+
   it("supports roving keyboard navigation across editor categories", () => {
     expect(getNextProfileEditorCategoryIndex("ArrowDown", 0)).toBe(1);
     expect(getNextProfileEditorCategoryIndex("ArrowUp", 0)).toBe(5);

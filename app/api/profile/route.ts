@@ -10,9 +10,9 @@
  */
 
 import { normalizeEditableProfileUpdate, validateEditableProfileUpdate } from "@/lib/profile-validation";
-import { mergeProfileAppearance, toProfileAppearance, validateProfileAppearance } from "@/lib/profile-appearance";
+import { getProfileAppearance, mergeProfileAppearance, toProfileAppearance, validateProfileAppearance } from "@/lib/profile-appearance";
 import { isProfileMediaReference } from "@/lib/profile-media";
-import { assertOwnedProfileMediaReference } from "@/lib/profile-media-server";
+import { assertOwnedProfileMediaReference, deleteOwnedProfileMediaReference } from "@/lib/profile-media-server";
 import { mergeProfileVisibility, toProfileVisibility, validateProfileVisibility } from "@/lib/profile-visibility";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { ensureProfile, updateProfile, type ProfileUpdateData } from "@/lib/supabase/profile";
@@ -46,6 +46,36 @@ function profileFailureCode(error: unknown): Extract<ProfileApiErrorCode, "PROFI
   }
 
   return "PROFILE_UPDATE_FAILED";
+}
+
+async function deleteReplacedProfileMedia(input: {
+  userId: string;
+  kind: "avatar" | "cover";
+  previousReference: string | null | undefined;
+  nextReference: string | null | undefined;
+}): Promise<void> {
+  if (!isProfileMediaReference(input.previousReference) || input.previousReference === input.nextReference) return;
+
+  try {
+    await deleteOwnedProfileMediaReference({
+      userId: input.userId,
+      reference: input.previousReference,
+      kind: input.kind,
+    });
+  } catch (error) {
+    const errorCode = error && typeof error === "object" && "code" in error && typeof error.code === "string"
+      ? error.code
+      : "STORAGE_DELETE_FAILED";
+    // The profile now points at the new reference (or null), so a best-effort
+    // delete cannot make the save fail or leave it pointing at a deleted object.
+    logger.warn("Deferred cleanup of replaced profile media failed", {
+      category: "error",
+      service: "profile-media",
+      userId: input.userId,
+      profileMediaErrorCode: errorCode,
+      error: { name: "ProfileMediaCleanupError", message: errorCode },
+    });
+  }
 }
 
 export async function GET(): Promise<Response> {
@@ -222,13 +252,36 @@ export async function PATCH(request: Request): Promise<Response> {
     };
 
     const profile = await updateProfile(user.id, updateData);
+
+    // Cleanup occurs only after durable profile persistence succeeds. This
+    // preserves the previously displayed object if the profile write fails.
+    await Promise.all([
+      "avatar_url" in normalizedData
+        ? deleteReplacedProfileMedia({
+          userId: user.id,
+          kind: "avatar",
+          previousReference: currentProfile.avatar_url,
+          nextReference: normalizedData.avatar_url,
+        })
+        : Promise.resolve(),
+      profileAppearance
+        ? deleteReplacedProfileMedia({
+          userId: user.id,
+          kind: "cover",
+          previousReference: getProfileAppearance(currentProfile.preferences).coverUrl,
+          nextReference: profileAppearance.coverUrl,
+        })
+        : Promise.resolve(),
+    ]);
+
     return Response.json({ ok: true, profile });
   } catch (err) {
     logger.error("PATCH /api/profile failed", {
       category: "error",
       service: "supabase",
       userId: user.id,
-      error: { message: err instanceof Error ? err.message : String(err), name: "ProfileApiError" },
+      profileSaveErrorCode: profileFailureCode(err),
+      error: { message: profileFailureCode(err), name: "ProfileApiError" },
     });
     const code = profileFailureCode(err);
     return failure(

@@ -3,7 +3,9 @@ export const PROFILE_MEDIA_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"
 // Keep the file payload below Vercel's 4.5 MB Function request envelope once
 // multipart metadata is included.
 export const PROFILE_MEDIA_MAX_BYTES = 4 * 1024 * 1024;
-export const PROFILE_MEDIA_REFERENCE_PREFIX = "media:";
+export const PROFILE_MEDIA_BUCKET = "profile-media";
+export const PROFILE_MEDIA_REFERENCE_PREFIX = `supabase:${PROFILE_MEDIA_BUCKET}:`;
+export const LEGACY_PROFILE_MEDIA_REFERENCE_PREFIX = "media:";
 
 export type ProfileMediaKind = (typeof PROFILE_MEDIA_KINDS)[number];
 
@@ -30,8 +32,10 @@ type ProfileMediaUploadValidation = {
   };
 };
 
-const MEDIA_ID_PATTERN = /^media_[a-z0-9_]+$/i;
 const MAX_SOURCE_FILENAME_LENGTH = 200;
+const MAX_PROFILE_MEDIA_REFERENCE_LENGTH = 2048;
+const LEGACY_MEDIA_ID_PATTERN = /^media_[a-z0-9_]+$/i;
+const PROFILE_MEDIA_OBJECT_PATH_PATTERN = /^([A-Za-z0-9_.%~-]+)\/(avatar|cover)\/profile-(avatar|cover)-([a-z0-9-]+)\.(jpg|png|webp|gif)$/i;
 
 // Source names are never used as object keys: uploads use a generated
 // profile-avatar or profile-cover filename. Only reject values that cannot be
@@ -79,30 +83,89 @@ export function detectProfileMediaMimeType(bytes: Uint8Array): (typeof PROFILE_M
   return null;
 }
 
-export function toProfileMediaReference(mediaId: string): string {
-  if (!MEDIA_ID_PATTERN.test(mediaId)) {
-    throw new Error("Invalid profile media ID.");
+export function createProfileMediaObjectPath(input: {
+  userId: string;
+  kind: ProfileMediaKind;
+  generatedFileToken: string;
+  mimeType: (typeof PROFILE_MEDIA_MIME_TYPES)[number];
+}): string {
+  const userPathSegment = encodeURIComponent(input.userId);
+  const extension = FILE_EXTENSION_BY_MIME_TYPE[input.mimeType];
+  const objectPath = `${userPathSegment}/${input.kind}/profile-${input.kind}-${input.generatedFileToken}.${extension}`;
+
+  if (!parseProfileMediaObjectPath(objectPath)) {
+    throw new Error("Invalid generated profile-media object path.");
   }
-  return `${PROFILE_MEDIA_REFERENCE_PREFIX}${mediaId}`;
+
+  return objectPath;
 }
 
+export function parseProfileMediaObjectPath(value: string | null | undefined): {
+  ownerPathSegment: string;
+  kind: ProfileMediaKind;
+  fileName: string;
+} | null {
+  if (typeof value !== "string" || value.length === 0 || value.length > MAX_PROFILE_MEDIA_REFERENCE_LENGTH) return null;
+  const match = PROFILE_MEDIA_OBJECT_PATH_PATTERN.exec(value);
+  if (!match) return null;
+
+  const [, ownerPathSegment, directoryKind, fileKind, token, extension] = match;
+  if (directoryKind !== fileKind || !isProfileMediaKind(directoryKind)) return null;
+
+  return {
+    ownerPathSegment,
+    kind: directoryKind,
+    fileName: `profile-${fileKind}-${token}.${extension.toLowerCase()}`,
+  };
+}
+
+export function toProfileMediaReference(objectPath: string): string {
+  if (!parseProfileMediaObjectPath(objectPath)) {
+    throw new Error("Invalid profile-media object path.");
+  }
+  return `${PROFILE_MEDIA_REFERENCE_PREFIX}${objectPath}`;
+}
+
+/** Parses current Supabase Storage references only. */
 export function parseProfileMediaReference(value: string | null | undefined): string | null {
   if (typeof value !== "string" || !value.startsWith(PROFILE_MEDIA_REFERENCE_PREFIX)) return null;
-  const mediaId = value.slice(PROFILE_MEDIA_REFERENCE_PREFIX.length);
-  return MEDIA_ID_PATTERN.test(mediaId) ? mediaId : null;
+  const objectPath = value.slice(PROFILE_MEDIA_REFERENCE_PREFIX.length);
+  return parseProfileMediaObjectPath(objectPath) ? objectPath : null;
 }
 
 export function isProfileMediaReference(value: string | null | undefined): value is string {
   return parseProfileMediaReference(value) !== null;
 }
 
+/** Old media records were stored by the prior profile-media backend. Keep them readable but never upload new ones. */
+export function isLegacyProfileMediaReference(value: string | null | undefined): value is string {
+  if (typeof value !== "string" || !value.startsWith(LEGACY_PROFILE_MEDIA_REFERENCE_PREFIX)) return false;
+  return LEGACY_MEDIA_ID_PATTERN.test(value.slice(LEGACY_PROFILE_MEDIA_REFERENCE_PREFIX.length));
+}
+
 export function isSupportedProfileMediaUrl(value: string | null | undefined): boolean {
-  if (isProfileMediaReference(value)) return true;
+  if (isProfileMediaReference(value) || isLegacyProfileMediaReference(value)) return true;
   if (!value) return value === null || value === undefined;
 
   try {
     const protocol = new URL(value).protocol;
     return protocol === "http:" || protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+/** Signed URLs are display-only transport values and must never be canonical profile data. */
+export function isSupabaseProfileMediaSignedUrl(value: string | null | undefined): boolean {
+  if (typeof value !== "string") return false;
+
+  try {
+    const url = new URL(value);
+    return (
+      (url.protocol === "http:" || url.protocol === "https:") &&
+      url.pathname.includes(`/storage/v1/object/sign/${PROFILE_MEDIA_BUCKET}/`) &&
+      url.searchParams.has("token")
+    );
   } catch {
     return false;
   }
