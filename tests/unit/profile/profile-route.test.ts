@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   ensureProfile: vi.fn(),
   updateProfile: vi.fn(),
   assertOwnedProfileMediaReference: vi.fn(),
+  deleteOwnedProfileMediaReference: vi.fn(),
   loggerError: vi.fn(),
 }));
 
@@ -19,6 +20,7 @@ vi.mock("@/lib/supabase/profile", () => ({
 }));
 vi.mock("@/lib/profile-media-server", () => ({
   assertOwnedProfileMediaReference: mocks.assertOwnedProfileMediaReference,
+  deleteOwnedProfileMediaReference: mocks.deleteOwnedProfileMediaReference,
 }));
 vi.mock("@/lib/observability", () => ({ logger: { error: mocks.loggerError } }));
 
@@ -51,6 +53,7 @@ describe("PATCH /api/profile appearance persistence", () => {
     mocks.getUser.mockResolvedValue({ data: { user: { id: "current_user" } } });
     mocks.ensureProfile.mockResolvedValue(currentProfile());
     mocks.updateProfile.mockImplementation(async (_userId: string, updates: Record<string, unknown>) => ({ ...currentProfile(), ...updates }));
+    mocks.deleteOwnedProfileMediaReference.mockResolvedValue(undefined);
   });
 
   it("persists a valid appearance for the authenticated user and preserves unrelated preferences", async () => {
@@ -139,26 +142,26 @@ describe("PATCH /api/profile appearance persistence", () => {
     const response = await PATCH(new Request("http://localhost/api/profile", {
       method: "PATCH",
       body: JSON.stringify({
-        avatar_url: "media:media_avatar_fixture",
-        profileAppearance: { ...DEFAULT_PROFILE_APPEARANCE, coverUrl: "media:media_cover_fixture" },
+        avatar_url: "supabase:profile-media:current_user/avatar/profile-avatar-550e8400-e29b-41d4-a716-446655440000.png",
+        profileAppearance: { ...DEFAULT_PROFILE_APPEARANCE, coverUrl: "supabase:profile-media:current_user/cover/profile-cover-550e8400-e29b-41d4-a716-446655440000.png" },
       }),
     }));
 
     expect(response.status).toBe(200);
     expect(mocks.assertOwnedProfileMediaReference).toHaveBeenCalledWith({
       userId: "current_user",
-      reference: "media:media_avatar_fixture",
+      reference: "supabase:profile-media:current_user/avatar/profile-avatar-550e8400-e29b-41d4-a716-446655440000.png",
       kind: "avatar",
     });
     expect(mocks.assertOwnedProfileMediaReference).toHaveBeenCalledWith({
       userId: "current_user",
-      reference: "media:media_cover_fixture",
+      reference: "supabase:profile-media:current_user/cover/profile-cover-550e8400-e29b-41d4-a716-446655440000.png",
       kind: "cover",
     });
     expect(mocks.updateProfile).toHaveBeenCalledWith("current_user", expect.objectContaining({
-      avatar_url: "media:media_avatar_fixture",
+      avatar_url: "supabase:profile-media:current_user/avatar/profile-avatar-550e8400-e29b-41d4-a716-446655440000.png",
       preferences: expect.objectContaining({
-        profileAppearance: expect.objectContaining({ coverUrl: "media:media_cover_fixture" }),
+        profileAppearance: expect.objectContaining({ coverUrl: "supabase:profile-media:current_user/cover/profile-cover-550e8400-e29b-41d4-a716-446655440000.png" }),
       }),
     }));
   });
@@ -168,7 +171,7 @@ describe("PATCH /api/profile appearance persistence", () => {
 
     const response = await PATCH(new Request("http://localhost/api/profile", {
       method: "PATCH",
-      body: JSON.stringify({ avatar_url: "media:media_someone_else" }),
+      body: JSON.stringify({ avatar_url: "supabase:profile-media:another_user/avatar/profile-avatar-550e8400-e29b-41d4-a716-446655440000.png" }),
     }));
 
     expect(response.status).toBe(400);
@@ -178,6 +181,48 @@ describe("PATCH /api/profile appearance persistence", () => {
       fieldErrors: { avatar_url: "Choose a saved profile picture from this account." },
     });
     expect(mocks.updateProfile).not.toHaveBeenCalled();
+  });
+
+  it("removes an old Supabase avatar only after the replacement reference persists", async () => {
+    const oldReference = "supabase:profile-media:current_user/avatar/profile-avatar-11111111-1111-4111-8111-111111111111.png";
+    const nextReference = "supabase:profile-media:current_user/avatar/profile-avatar-550e8400-e29b-41d4-a716-446655440000.png";
+    mocks.ensureProfile.mockResolvedValue({ ...currentProfile(), avatar_url: oldReference });
+    mocks.updateProfile.mockResolvedValue({ ...currentProfile(), avatar_url: nextReference });
+
+    const response = await PATCH(new Request("http://localhost/api/profile", {
+      method: "PATCH",
+      body: JSON.stringify({ avatar_url: nextReference }),
+    }));
+
+    expect(response.status).toBe(200);
+    expect(mocks.updateProfile).toHaveBeenCalledWith("current_user", { avatar_url: nextReference });
+    expect(mocks.deleteOwnedProfileMediaReference).toHaveBeenCalledWith({
+      userId: "current_user",
+      reference: oldReference,
+      kind: "avatar",
+    });
+  });
+
+  it("does not delete the old object when profile persistence fails", async () => {
+    const oldReference = "supabase:profile-media:current_user/cover/profile-cover-11111111-1111-4111-8111-111111111111.png";
+    mocks.ensureProfile.mockResolvedValue({
+      ...currentProfile(),
+      preferences: { profileAppearance: { ...DEFAULT_PROFILE_APPEARANCE, coverUrl: oldReference } },
+    });
+    mocks.updateProfile.mockRejectedValueOnce(new Error("database detail"));
+
+    const response = await PATCH(new Request("http://localhost/api/profile", {
+      method: "PATCH",
+      body: JSON.stringify({
+        profileAppearance: {
+          ...DEFAULT_PROFILE_APPEARANCE,
+          coverUrl: "supabase:profile-media:current_user/cover/profile-cover-550e8400-e29b-41d4-a716-446655440000.png",
+        },
+      }),
+    }));
+
+    expect(response.status).toBe(500);
+    expect(mocks.deleteOwnedProfileMediaReference).not.toHaveBeenCalled();
   });
 
   it("continues to support legacy HTTPS avatar URLs", async () => {

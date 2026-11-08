@@ -1,135 +1,160 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({
-  uploadOwnedMedia: vi.fn(),
-  createOwnedMediaSignedUrl: vi.fn(),
-  getOwnedMediaAsset: vi.fn(),
-}));
+const mocks = vi.hoisted(() => {
+  const storage = {
+    upload: vi.fn(),
+    createSignedUrl: vi.fn(),
+    remove: vi.fn(),
+  };
+
+  return {
+    storage,
+    from: vi.fn(() => storage),
+    getSupabaseServiceClient: vi.fn(),
+  };
+});
 
 vi.mock("server-only", () => ({}));
-vi.mock("@/lib/media/workflow", () => ({
-  uploadOwnedMedia: mocks.uploadOwnedMedia,
-  createOwnedMediaSignedUrl: mocks.createOwnedMediaSignedUrl,
+vi.mock("crypto", () => ({ randomUUID: () => "550e8400-e29b-41d4-a716-446655440000" }));
+vi.mock("@/lib/supabase/server", () => ({
+  getSupabaseServiceClient: mocks.getSupabaseServiceClient,
+  SupabaseServiceRoleError: class SupabaseServiceRoleError extends Error {},
 }));
-vi.mock("@/lib/media/storage", () => ({ getOwnedMediaAsset: mocks.getOwnedMediaAsset }));
 
 import {
   ProfileMediaError,
   assertOwnedProfileMediaReference,
+  deleteOwnedProfileMediaReference,
   resolveProfileMediaDisplayUrls,
   uploadProfileMedia,
 } from "@/lib/profile-media-server";
 
 const PNG_BYTES = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+const avatarPath = "current_user/avatar/profile-avatar-550e8400-e29b-41d4-a716-446655440000.png";
+const coverPath = "current_user/cover/profile-cover-550e8400-e29b-41d4-a716-446655440000.png";
 
-function profileMediaAsset(kind: "avatar" | "cover") {
-  return {
-    id: "media_profile_fixture",
-    userId: "current_user",
-    tenantId: "current_user",
-    provider: "wasabi" as const,
-    bucket: "private-media",
-    objectKey: "tenant/current_user/ai-publisher/2026-11-04/media_profile_fixture/profile-avatar.png",
-    mediaType: "image" as const,
-    mimeType: "image/png",
-    originalFilename: "profile-avatar.png",
-    fileSizeBytes: PNG_BYTES.length,
-    usageMetadata: {},
-    metadata: { profileMediaKind: kind, profileMediaOwnerId: "current_user" },
-    status: "active" as const,
-    createdAt: "2026-11-04T00:00:00.000Z",
-    updatedAt: "2026-11-04T00:00:00.000Z",
-  };
-}
-
-describe("profile media server workflow", () => {
+describe("profile media Supabase Storage workflow", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.getSupabaseServiceClient.mockReturnValue({ storage: { from: mocks.from } });
+    mocks.storage.upload.mockResolvedValue({ data: { path: avatarPath }, error: null });
+    mocks.storage.createSignedUrl.mockImplementation(async (path: string) => ({ data: { signedUrl: `https://signed.example/${path}?token=fresh` }, error: null }));
+    mocks.storage.remove.mockResolvedValue({ data: [], error: null });
   });
 
-  it("uploads through the existing owner-scoped media workflow and returns a durable reference", async () => {
-    mocks.uploadOwnedMedia.mockResolvedValue({
-      media: { id: "media_profile_fixture" },
-      signed: { url: "https://signed.example/avatar", expiresAt: "2026-11-04T01:00:00.000Z" },
-    });
-
-    await expect(uploadProfileMedia({
+  it("uploads an avatar to the private Supabase bucket with a generated user-scoped key and durable reference", async () => {
+    const uploaded = await uploadProfileMedia({
       userId: "current_user",
       kind: "avatar",
       fileName: "Mina portrait.png",
       mimeType: "image/png",
       fileSizeBytes: PNG_BYTES.length,
       bytes: PNG_BYTES,
-    })).resolves.toEqual({
-      reference: "media:media_profile_fixture",
-      previewUrl: "https://signed.example/avatar",
-      expiresAt: "2026-11-04T01:00:00.000Z",
+    });
+
+    expect(mocks.from).toHaveBeenCalledWith("profile-media");
+    expect(mocks.storage.upload).toHaveBeenCalledWith(avatarPath, PNG_BYTES, {
+      contentType: "image/png",
+      cacheControl: "3600",
+      upsert: false,
+    });
+    expect(uploaded).toMatchObject({
+      reference: `supabase:profile-media:${avatarPath}`,
+      previewUrl: `https://signed.example/${avatarPath}?token=fresh`,
       fileName: "Mina portrait.png",
     });
-
-    expect(mocks.uploadOwnedMedia).toHaveBeenCalledWith(expect.objectContaining({
-      userId: "current_user",
-      tenantId: "current_user",
-      fileName: "profile-avatar.png",
-      linkedContentId: "current_user",
-      linkedContentType: "profile",
-      metadata: { source: "profile_media", profileMediaKind: "avatar", profileMediaOwnerId: "current_user" },
-    }));
+    expect(uploaded.reference).not.toContain("token=");
   });
 
-  it("accepts normal cover filename punctuation without using it as the storage key", async () => {
-    mocks.uploadOwnedMedia.mockResolvedValue({
-      media: { id: "media_cover_fixture" },
-      signed: { url: "https://signed.example/cover", expiresAt: "2026-11-04T01:00:00.000Z" },
+  it("uploads a cover to its own user-scoped folder and accepts filename spaces and parentheses", async () => {
+    const uploaded = await uploadProfileMedia({
+      userId: "current_user",
+      kind: "cover",
+      fileName: "Mina cover (final).png",
+      mimeType: "image/png",
+      fileSizeBytes: PNG_BYTES.length,
+      bytes: PNG_BYTES,
     });
+
+    expect(mocks.storage.upload).toHaveBeenCalledWith(coverPath, PNG_BYTES, expect.objectContaining({ contentType: "image/png" }));
+    expect(uploaded.reference).toBe(`supabase:profile-media:${coverPath}`);
+  });
+
+  it("returns a structured retry-safe error when the storage write fails", async () => {
+    mocks.storage.upload.mockResolvedValueOnce({ data: null, error: { message: "provider detail" } });
 
     await expect(uploadProfileMedia({
       userId: "current_user",
       kind: "cover",
-      fileName: "Cover [final], export!.png",
+      fileName: "cover.png",
       mimeType: "image/png",
       fileSizeBytes: PNG_BYTES.length,
       bytes: PNG_BYTES,
-    })).resolves.toMatchObject({ reference: "media:media_cover_fixture" });
-
-    expect(mocks.uploadOwnedMedia).toHaveBeenCalledWith(expect.objectContaining({
-      fileName: "profile-cover.png",
-      metadata: { source: "profile_media", profileMediaKind: "cover", profileMediaOwnerId: "current_user" },
-    }));
+    })).rejects.toMatchObject({ code: "STORAGE_UPLOAD_FAILED", status: 502 });
   });
 
-  it("enforces current-user ownership and media slot before a reference can be saved", async () => {
-    mocks.getOwnedMediaAsset.mockResolvedValue(null);
-
-    await expect(assertOwnedProfileMediaReference({
+  it("enforces MIME and payload size validation before calling Supabase Storage", async () => {
+    await expect(uploadProfileMedia({
       userId: "current_user",
-      reference: "media:media_someone_else",
-      kind: "avatar",
-    })).rejects.toBeInstanceOf(ProfileMediaError);
-    expect(mocks.getOwnedMediaAsset).toHaveBeenCalledWith("current_user", "media_someone_else");
-
-    mocks.getOwnedMediaAsset.mockResolvedValue(profileMediaAsset("cover"));
-    await expect(assertOwnedProfileMediaReference({
-      userId: "current_user",
-      reference: "media:media_profile_fixture",
-      kind: "avatar",
-    })).rejects.toBeInstanceOf(ProfileMediaError);
+      kind: "cover",
+      fileName: "cover.txt",
+      mimeType: "text/plain",
+      fileSizeBytes: PNG_BYTES.length,
+      bytes: PNG_BYTES,
+    })).rejects.toMatchObject({ code: "INVALID_MIME_TYPE", status: 400 });
+    expect(mocks.storage.upload).not.toHaveBeenCalled();
   });
 
-  it("resolves persisted avatar and cover references to fresh signed display URLs on reload", async () => {
-    mocks.getOwnedMediaAsset.mockImplementation(async (_userId: string, mediaId: string) => profileMediaAsset(mediaId.includes("cover") ? "cover" : "avatar"));
-    mocks.createOwnedMediaSignedUrl.mockImplementation(async ({ mediaId }: { mediaId: string }) => ({
-      url: `https://signed.example/${mediaId}`,
-      expiresAt: "2026-11-04T01:00:00.000Z",
-    }));
+  it("cleans an unreferenced object when its initial signed display URL cannot be made", async () => {
+    mocks.storage.createSignedUrl.mockResolvedValueOnce({ data: null, error: { message: "signing detail" } });
+
+    await expect(uploadProfileMedia({
+      userId: "current_user",
+      kind: "cover",
+      fileName: "cover.png",
+      mimeType: "image/png",
+      fileSizeBytes: PNG_BYTES.length,
+      bytes: PNG_BYTES,
+    })).rejects.toMatchObject({ code: "SIGNED_URL_GENERATION_FAILED" });
+    expect(mocks.storage.remove).toHaveBeenCalledWith([coverPath]);
+  });
+
+  it("prevents cross-user references at the application boundary", async () => {
+    await expect(assertOwnedProfileMediaReference({
+      userId: "current_user",
+      reference: "supabase:profile-media:another_user/avatar/profile-avatar-550e8400-e29b-41d4-a716-446655440000.png",
+      kind: "avatar",
+    })).rejects.toBeInstanceOf(ProfileMediaError);
+    expect(mocks.storage.upload).not.toHaveBeenCalled();
+  });
+
+  it("resolves saved avatar and cover references to fresh signed URLs while legacy HTTPS still displays", async () => {
+    await expect(resolveProfileMediaDisplayUrls({
+      userId: "current_user",
+      avatarReference: `supabase:profile-media:${avatarPath}`,
+      coverReference: `supabase:profile-media:${coverPath}`,
+    })).resolves.toEqual({
+      avatarUrl: `https://signed.example/${avatarPath}?token=fresh`,
+      coverUrl: `https://signed.example/${coverPath}?token=fresh`,
+    });
 
     await expect(resolveProfileMediaDisplayUrls({
       userId: "current_user",
-      avatarReference: "media:media_avatar_fixture",
-      coverReference: "media:media_cover_fixture",
+      avatarReference: "https://images.example.com/legacy-avatar.png",
+      coverReference: "media:media_old_profile_cover",
     })).resolves.toEqual({
-      avatarUrl: "https://signed.example/media_avatar_fixture",
-      coverUrl: "https://signed.example/media_cover_fixture",
+      avatarUrl: "https://images.example.com/legacy-avatar.png",
+      coverUrl: null,
     });
+  });
+
+  it("deletes only a current user's matching slot after replacement or removal persists", async () => {
+    await deleteOwnedProfileMediaReference({
+      userId: "current_user",
+      reference: `supabase:profile-media:${coverPath}`,
+      kind: "cover",
+    });
+
+    expect(mocks.storage.remove).toHaveBeenCalledWith([coverPath]);
   });
 });

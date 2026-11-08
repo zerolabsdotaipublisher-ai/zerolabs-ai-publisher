@@ -1,4 +1,4 @@
-import { isProfileMediaReference } from "./profile-media";
+import { isSupabaseProfileMediaSignedUrl, isSupportedProfileMediaUrl } from "./profile-media";
 
 export const PROFILE_BACKGROUND_TYPES = ["solid", "gradient", "image"] as const;
 export const PROFILE_BACKGROUND_PRESETS = ["default", "forest", "midnight", "aurora", "sunset", "image"] as const;
@@ -85,7 +85,7 @@ function isSafeHttpImageUrl(value: unknown): value is string | null {
 }
 
 function isSafeCoverUrl(value: unknown): value is string | null {
-  return isProfileMediaReference(typeof value === "string" ? value : null) || isSafeHttpImageUrl(value);
+  return value === null || (typeof value === "string" && isSupportedProfileMediaUrl(value));
 }
 
 function cloneDefaultAppearance(): ProfileAppearance {
@@ -129,6 +129,8 @@ export function validateProfileAppearance(value: unknown): ProfileAppearanceFiel
 
   if (!isSafeCoverUrl(value.coverUrl)) {
     errors.coverUrl = `Cover must be a valid http(s) URL or saved profile-media reference with at most ${PROFILE_MEDIA_URL_MAX_LENGTH} characters.`;
+  } else if (isSupabaseProfileMediaSignedUrl(value.coverUrl)) {
+    errors.coverUrl = "Cover must use a saved profile-media reference, not a temporary signed URL.";
   }
   if (!isOneOf(value.coverFocalPoint, PROFILE_COVER_FOCAL_POINTS)) {
     errors.coverFocalPoint = "Choose a valid cover focal point.";

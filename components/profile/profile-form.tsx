@@ -29,13 +29,21 @@ import {
   getPublicProfileCustomizationPayload,
   isPublicProfileCustomizationDirty,
 } from "@/lib/profile-customization";
-import { isProfileMediaReference, isSupportedProfileMediaUrl, validateProfileMediaUpload, type ProfileMediaDisplayUrls, type ProfileMediaKind } from "@/lib/profile-media";
+import {
+  isProfileMediaReference,
+  isSupportedProfileMediaUrl,
+  validateProfileMediaUpload,
+  type ProfileMediaDisplayUrls,
+  type ProfileMediaKind,
+} from "@/lib/profile-media";
 import type { Profile, ProfileUpdateData } from "@/lib/supabase/profile";
 import { PasswordForm } from "./password-form";
 import { PublicProfilePreview } from "./profile-preview";
 
 type ProfileLayoutVariant = "default" | "admin";
 type ProfileEditorCategory = "profile-design" | "profile-information" | "media" | "privacy" | "account" | "security";
+type UploadedProfileMedia = { reference: string; previewUrl: string };
+type PendingProfileMediaUpload = { file: File; uploaded: UploadedProfileMedia };
 
 type ProfileFormProps = {
   profile: Profile;
@@ -79,6 +87,14 @@ export function getNextProfileEditorCategoryIndex(
   if (key === "Home") return 0;
   if (key === "End") return lastIndex;
   return null;
+}
+
+/** Kept separate so every profile-media upload uses the same multipart shape. */
+export function createProfileMediaUploadFormData(file: File, kind: ProfileMediaKind): FormData {
+  const formData = new FormData();
+  formData.set("file", file);
+  formData.set("kind", kind);
+  return formData;
 }
 
 function isDisplayableImageUrl(value: string | null): value is string {
@@ -171,6 +187,8 @@ export function ProfileForm({
   const categoryButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const coverInputRef = useRef<HTMLInputElement | null>(null);
+  const pendingAvatarUploadRef = useRef<PendingProfileMediaUpload | null>(null);
+  const pendingCoverUploadRef = useRef<PendingProfileMediaUpload | null>(null);
   const [profile, setProfile] = useState<Profile>(initialProfile);
   const [fullName, setFullName] = useState(initialProfile.full_name ?? "");
   const [firstName, setFirstName] = useState(initialProfile.first_name ?? "");
@@ -345,22 +363,35 @@ export function ProfileForm({
     setAppearanceSubmitting(true);
 
     try {
+      // Validate the profile before writing an object so invalid text/settings
+      // cannot leave an upload waiting for a profile save that will never run.
+      const currentPublicProfilePayload = getPublicProfileCustomizationPayload({
+        avatarUrl,
+        appearance,
+        visibility,
+        profile,
+      });
+      const initialPublicFieldErrors = validateEditableProfileUpdate(normalizeEditableProfileUpdate({
+        ...publicProfileDraft,
+        avatar_url: currentPublicProfilePayload.avatar_url,
+      }));
+      const initialAppearanceErrors = validateProfileAppearance(currentPublicProfilePayload.profileAppearance);
+      if (Object.keys(initialPublicFieldErrors).length > 0 || Object.keys(initialAppearanceErrors).length > 0) {
+        setPublicFieldErrors(initialPublicFieldErrors);
+        setAppearanceError(initialPublicFieldErrors.avatar_url ?? Object.values(initialPublicFieldErrors)[0] ?? Object.values(initialAppearanceErrors)[0] ?? "Please fix the public profile settings.");
+        return;
+      }
+
       if (avatarFile) {
-        const uploaded = await uploadProfileMedia(avatarFile, "avatar");
+        const uploaded = await getOrUploadProfileMedia(avatarFile, "avatar");
         nextAvatarUrl = uploaded.reference;
         nextAvatarDisplayUrl = uploaded.previewUrl;
-        setAvatarUrl(uploaded.reference);
-        setAvatarDisplayUrl(uploaded.previewUrl);
-        setAvatarFile(null);
       }
 
       if (coverFile) {
-        const uploaded = await uploadProfileMedia(coverFile, "cover");
+        const uploaded = await getOrUploadProfileMedia(coverFile, "cover");
         nextAppearance = { ...nextAppearance, coverUrl: uploaded.reference };
         nextCoverDisplayUrl = uploaded.previewUrl;
-        setAppearance(nextAppearance);
-        setCoverDisplayUrl(uploaded.previewUrl);
-        setCoverFile(null);
       }
 
       const publicProfilePayload = getPublicProfileCustomizationPayload({
@@ -389,12 +420,20 @@ export function ProfileForm({
         profileVisibility: publicProfilePayload.profileVisibility,
       });
       applySavedPublicProfile(nextProfile, { avatarUrl: nextAvatarDisplayUrl, coverUrl: nextCoverDisplayUrl });
+      pendingAvatarUploadRef.current = null;
+      pendingCoverUploadRef.current = null;
+      setAvatarFile(null);
+      setCoverFile(null);
       setAvatarLocalPreviewUrl(null);
       setCoverLocalPreviewUrl(null);
       setMediaMessage(null);
       setPublicFieldErrors({});
       setAppearanceSuccess("Public profile saved.");
     } catch (error) {
+      // Keep both the local File and its staged durable reference. The next
+      // Save retries the profile PATCH without replacing the object, which is
+      // safe even if the previous request reached the server before a network
+      // error prevented the browser from receiving its response.
       const fieldErrors = error instanceof Error && "fieldErrors" in error
         ? (error.fieldErrors as EditableProfileFieldErrors | undefined)
         : undefined;
@@ -405,23 +444,54 @@ export function ProfileForm({
     }
   }
 
-  async function uploadProfileMedia(file: File, kind: ProfileMediaKind): Promise<{ reference: string; previewUrl: string }> {
-    const formData = new FormData();
-    formData.set("file", file);
-    formData.set("kind", kind);
+  async function uploadProfileMedia(file: File, kind: ProfileMediaKind): Promise<UploadedProfileMedia> {
+    const formData = createProfileMediaUploadFormData(file, kind);
     const response = await fetch("/api/profile/media", { method: "POST", body: formData });
     const payload = (await response.json().catch(() => ({}))) as {
       ok?: boolean;
       media?: { reference?: string; previewUrl?: string };
-      error?: string | { message?: string };
+      error?: string | { code?: string; message?: string };
     };
     if (!response.ok || !payload.media?.reference || !payload.media.previewUrl) {
       const message = typeof payload.error === "string"
         ? payload.error
         : payload.error?.message ?? "We couldn't upload that image. Your selection is still ready to retry.";
-      throw new Error(message);
+      const error = new Error(message);
+      Object.assign(error, { code: typeof payload.error === "string" ? undefined : payload.error?.code });
+      throw error;
     }
     return { reference: payload.media.reference, previewUrl: payload.media.previewUrl };
+  }
+
+  async function getOrUploadProfileMedia(file: File, kind: ProfileMediaKind): Promise<UploadedProfileMedia> {
+    const pendingRef = kind === "avatar" ? pendingAvatarUploadRef : pendingCoverUploadRef;
+    if (pendingRef.current?.file === file) return pendingRef.current.uploaded;
+
+    const uploaded = await uploadProfileMedia(file, kind);
+    pendingRef.current = { file, uploaded };
+    return uploaded;
+  }
+
+  async function discardUploadedProfileMedia(media: Array<{ reference: string; kind: ProfileMediaKind }>): Promise<void> {
+    await Promise.all(media.map(async ({ reference, kind }) => {
+      try {
+        await fetch("/api/profile/media", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reference, kind }),
+        });
+      } catch {
+        // Retrying the profile save remains more important than surfacing a
+        // cleanup warning. The server keeps the object owner-scoped either way.
+      }
+    }));
+  }
+
+  function discardPendingProfileMedia(kind: ProfileMediaKind): void {
+    const pendingRef = kind === "avatar" ? pendingAvatarUploadRef : pendingCoverUploadRef;
+    const pending = pendingRef.current;
+    pendingRef.current = null;
+    if (pending) void discardUploadedProfileMedia([{ reference: pending.uploaded.reference, kind }]);
   }
 
   function chooseProfileMedia(event: ChangeEvent<HTMLInputElement>, target: ProfileMediaKind) {
@@ -440,9 +510,11 @@ export function ProfileForm({
     }
     const previewUrl = URL.createObjectURL(file);
     if (target === "avatar") {
+      discardPendingProfileMedia("avatar");
       setAvatarFile(file);
       setAvatarLocalPreviewUrl(previewUrl);
     } else {
+      discardPendingProfileMedia("cover");
       setCoverFile(file);
       setCoverLocalPreviewUrl(previewUrl);
     }
@@ -587,7 +659,7 @@ export function ProfileForm({
                   </button>
                   <input ref={avatarInputRef} id={`${id}-avatar-upload`} className="profile-upload-input" aria-label="Upload profile picture" tabIndex={-1} type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(event) => chooseProfileMedia(event, "avatar")} />
                   <p className="profile-media-selection" role="status">{avatarFile ? `${avatarFile.name} selected` : avatarUrl ? "Profile picture saved" : "No profile picture selected"}</p>
-                  <button type="button" className="profile-inline-action" onClick={() => { setAvatarUrl(""); setAvatarDisplayUrl(null); setAvatarFile(null); setAvatarLocalPreviewUrl(null); setMediaMessage("Profile picture will be removed when you save."); }} disabled={!avatarUrl && !avatarFile}>
+                  <button type="button" className="profile-inline-action" onClick={() => { discardPendingProfileMedia("avatar"); setAvatarUrl(""); setAvatarDisplayUrl(null); setAvatarFile(null); setAvatarLocalPreviewUrl(null); setMediaMessage("Profile picture will be removed when you save."); }} disabled={!avatarUrl && !avatarFile}>
                     Remove profile picture
                   </button>
                 </div>
@@ -602,7 +674,7 @@ export function ProfileForm({
                   </button>
                   <input ref={coverInputRef} id={`${id}-cover-upload`} className="profile-upload-input" aria-label="Upload cover photo" tabIndex={-1} type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(event) => chooseProfileMedia(event, "cover")} />
                   <p className="profile-media-selection" role="status">{coverFile ? `${coverFile.name} selected` : appearance.coverUrl ? "Cover photo saved" : "No cover photo selected"}</p>
-                  <button type="button" className="profile-inline-action" onClick={() => { setAppearance((current) => updateAppearance(current, "coverUrl", null)); setCoverDisplayUrl(null); setCoverFile(null); setCoverLocalPreviewUrl(null); setMediaMessage("Cover photo will be removed when you save."); }} disabled={!appearance.coverUrl && !coverFile}>
+                  <button type="button" className="profile-inline-action" onClick={() => { discardPendingProfileMedia("cover"); setAppearance((current) => updateAppearance(current, "coverUrl", null)); setCoverDisplayUrl(null); setCoverFile(null); setCoverLocalPreviewUrl(null); setMediaMessage("Cover photo will be removed when you save."); }} disabled={!appearance.coverUrl && !coverFile}>
                     Remove cover photo
                   </button>
                 </div>
