@@ -24,6 +24,7 @@ export type ProfileAppearance = {
   background: {
     type: ProfileBackgroundType;
     preset: ProfileBackgroundPreset;
+    color?: string | null;
     imageUrl: string | null;
   };
   visualStyle: ProfileVisualStyle;
@@ -38,6 +39,7 @@ export type ProfileAppearanceFieldErrors = Partial<Record<
   | "coverFocalPoint"
   | "background.type"
   | "background.preset"
+  | "background.color"
   | "background.imageUrl"
   | "visualStyle"
   | "cardShape"
@@ -53,6 +55,7 @@ export const DEFAULT_PROFILE_APPEARANCE: ProfileAppearance = {
   background: {
     type: "gradient",
     preset: "default",
+    color: null,
     imageUrl: null,
   },
   visualStyle: "soft",
@@ -63,7 +66,7 @@ export const DEFAULT_PROFILE_APPEARANCE: ProfileAppearance = {
 };
 
 const PROFILE_MEDIA_URL_MAX_LENGTH = 2048;
-const SAFE_URL_PROTOCOLS = new Set(["http:", "https:"]);
+const SAFE_HEX_COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -73,19 +76,20 @@ function isOneOf<T extends readonly string[]>(value: unknown, values: T): value 
   return typeof value === "string" && values.includes(value);
 }
 
-function isSafeHttpImageUrl(value: unknown): value is string | null {
-  if (value === null) return true;
-  if (typeof value !== "string" || value.length > PROFILE_MEDIA_URL_MAX_LENGTH) return false;
-
-  try {
-    return SAFE_URL_PROTOCOLS.has(new URL(value).protocol);
-  } catch {
-    return false;
-  }
-}
-
 function isSafeCoverUrl(value: unknown): value is string | null {
   return value === null || (typeof value === "string" && isSupportedProfileMediaUrl(value));
+}
+
+function isSafeBackgroundImageUrl(value: unknown): value is string | null {
+  return value === null || (
+    typeof value === "string" &&
+    value.length <= PROFILE_MEDIA_URL_MAX_LENGTH &&
+    isSupportedProfileMediaUrl(value)
+  );
+}
+
+function isSafeHexColor(value: unknown): value is string | null {
+  return value === null || (typeof value === "string" && SAFE_HEX_COLOR_PATTERN.test(value));
 }
 
 function cloneDefaultAppearance(): ProfileAppearance {
@@ -115,7 +119,8 @@ export function getProfileAppearance(preferences: Record<string, unknown> | null
   if (isRecord(stored.background)) {
     if (isOneOf(stored.background.type, PROFILE_BACKGROUND_TYPES)) result.background.type = stored.background.type;
     if (isOneOf(stored.background.preset, PROFILE_BACKGROUND_PRESETS)) result.background.preset = stored.background.preset;
-    if (isSafeHttpImageUrl(stored.background.imageUrl)) result.background.imageUrl = stored.background.imageUrl;
+    if (isSafeHexColor(stored.background.color)) result.background.color = stored.background.color;
+    if (isSafeBackgroundImageUrl(stored.background.imageUrl)) result.background.imageUrl = stored.background.imageUrl;
   }
 
   return result;
@@ -150,8 +155,13 @@ export function validateProfileAppearance(value: unknown): ProfileAppearanceFiel
     if (!isOneOf(value.background.preset, PROFILE_BACKGROUND_PRESETS)) {
       errors["background.preset"] = "Choose a valid background preset.";
     }
-    if (!isSafeHttpImageUrl(value.background.imageUrl)) {
-      errors["background.imageUrl"] = `Background image URL must be a valid http or https URL with at most ${PROFILE_MEDIA_URL_MAX_LENGTH} characters.`;
+    if (value.background.color !== undefined && !isSafeHexColor(value.background.color)) {
+      errors["background.color"] = "Choose a valid six-digit background color.";
+    }
+    if (!isSafeBackgroundImageUrl(value.background.imageUrl)) {
+      errors["background.imageUrl"] = `Background image must be a valid http(s) URL or saved profile-media reference with at most ${PROFILE_MEDIA_URL_MAX_LENGTH} characters.`;
+    } else if (isSupabaseProfileMediaSignedUrl(value.background.imageUrl)) {
+      errors["background.imageUrl"] = "Background image must use a saved profile-media reference, not a temporary signed URL.";
     }
   }
 
@@ -169,6 +179,7 @@ export function toProfileAppearance(value: unknown): ProfileAppearance | null {
     background: {
       type: value.background.type as ProfileBackgroundType,
       preset: value.background.preset as ProfileBackgroundPreset,
+      color: (value.background.color as string | null | undefined) ?? null,
       imageUrl: value.background.imageUrl as string | null,
     },
     visualStyle: value.visualStyle as ProfileVisualStyle,

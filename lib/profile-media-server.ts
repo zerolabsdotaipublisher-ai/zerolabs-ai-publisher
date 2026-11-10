@@ -55,7 +55,7 @@ function profileMediaValidationError(input: {
   const mimeType = input.mimeType.trim().toLowerCase();
   const kind = input.kind.trim().toLowerCase();
 
-  if (kind !== "avatar" && kind !== "cover") return new ProfileMediaError(fallbackMessage, "INVALID_MEDIA_KIND");
+  if (kind !== "avatar" && kind !== "cover" && kind !== "background") return new ProfileMediaError(fallbackMessage, "INVALID_MEDIA_KIND");
   if (!(PROFILE_MEDIA_MIME_TYPES as readonly string[]).includes(mimeType)) return new ProfileMediaError(fallbackMessage, "INVALID_MIME_TYPE");
   if (!Number.isFinite(input.fileSizeBytes) || input.fileSizeBytes < 1 || input.fileSizeBytes > PROFILE_MEDIA_MAX_BYTES) {
     return new ProfileMediaError(fallbackMessage, "FILE_TOO_LARGE");
@@ -241,11 +241,13 @@ export async function resolveProfileMediaDisplayUrls(input: {
   userId: string;
   avatarReference: string | null | undefined;
   coverReference: string | null | undefined;
+  backgroundReference?: string | null | undefined;
 }): Promise<ProfileMediaDisplayUrls> {
-  const [avatarUrl, coverUrl] = await Promise.all([
+  const [avatarUrl, coverUrl, backgroundUrl] = await Promise.all([
     resolveProfileMediaDisplayUrl({ userId: input.userId, reference: input.avatarReference, kind: "avatar" }),
     resolveProfileMediaDisplayUrl({ userId: input.userId, reference: input.coverReference, kind: "cover" }),
+    resolveProfileMediaDisplayUrl({ userId: input.userId, reference: input.backgroundReference, kind: "background" }),
   ]);
 
-  return { avatarUrl, coverUrl };
+  return { avatarUrl, coverUrl, backgroundUrl };
 }

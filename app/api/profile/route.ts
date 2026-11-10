@@ -50,7 +50,7 @@ function profileFailureCode(error: unknown): Extract<ProfileApiErrorCode, "PROFI
 
 async function deleteReplacedProfileMedia(input: {
   userId: string;
-  kind: "avatar" | "cover";
+  kind: "avatar" | "cover" | "background";
   previousReference: string | null | undefined;
   nextReference: string | null | undefined;
 }): Promise<void> {
@@ -224,6 +224,13 @@ export async function PATCH(request: Request): Promise<Response> {
           kind: "cover",
         });
       }
+      if (profileAppearance && isProfileMediaReference(profileAppearance.background.imageUrl)) {
+        await assertOwnedProfileMediaReference({
+          userId: user.id,
+          reference: profileAppearance.background.imageUrl,
+          kind: "background",
+        });
+      }
     } catch {
       return failure(
         400,
@@ -233,6 +240,7 @@ export async function PATCH(request: Request): Promise<Response> {
           fieldErrors: {
             ...(isProfileMediaReference(normalizedData.avatar_url) ? { avatar_url: "Choose a saved profile picture from this account." } : {}),
             ...(profileAppearance && isProfileMediaReference(profileAppearance.coverUrl) ? { profileAppearance: "Choose a saved cover photo from this account." } : {}),
+            ...(profileAppearance && isProfileMediaReference(profileAppearance.background.imageUrl) ? { profileAppearance: "Choose a saved page background image from this account." } : {}),
           },
         },
       );
@@ -270,6 +278,14 @@ export async function PATCH(request: Request): Promise<Response> {
           kind: "cover",
           previousReference: getProfileAppearance(currentProfile.preferences).coverUrl,
           nextReference: profileAppearance.coverUrl,
+        })
+        : Promise.resolve(),
+      profileAppearance
+        ? deleteReplacedProfileMedia({
+          userId: user.id,
+          kind: "background",
+          previousReference: getProfileAppearance(currentProfile.preferences).background.imageUrl,
+          nextReference: profileAppearance.background.imageUrl,
         })
         : Promise.resolve(),
     ]);

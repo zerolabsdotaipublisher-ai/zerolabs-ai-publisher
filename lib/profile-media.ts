@@ -1,4 +1,4 @@
-export const PROFILE_MEDIA_KINDS = ["avatar", "cover"] as const;
+export const PROFILE_MEDIA_KINDS = ["avatar", "cover", "background"] as const;
 export const PROFILE_MEDIA_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"] as const;
 // Keep the file payload below Vercel's 4.5 MB Function request envelope once
 // multipart metadata is included.
@@ -12,6 +12,8 @@ export type ProfileMediaKind = (typeof PROFILE_MEDIA_KINDS)[number];
 export type ProfileMediaDisplayUrls = {
   avatarUrl: string | null;
   coverUrl: string | null;
+  /** Optional so callers with an older avatar/cover-only payload remain compatible. */
+  backgroundUrl?: string | null;
 };
 
 type ProfileMediaUploadInput = {
@@ -35,7 +37,7 @@ type ProfileMediaUploadValidation = {
 const MAX_SOURCE_FILENAME_LENGTH = 200;
 const MAX_PROFILE_MEDIA_REFERENCE_LENGTH = 2048;
 const LEGACY_MEDIA_ID_PATTERN = /^media_[a-z0-9_]+$/i;
-const PROFILE_MEDIA_OBJECT_PATH_PATTERN = /^([A-Za-z0-9_.%~-]+)\/(avatar|cover)\/profile-(avatar|cover)-([a-z0-9-]+)\.(jpg|png|webp|gif)$/i;
+const PROFILE_MEDIA_OBJECT_PATH_PATTERN = /^([A-Za-z0-9_.%~-]+)\/(avatar|cover|background)\/profile-(avatar|cover|background)-([a-z0-9-]+)\.(jpg|png|webp|gif)$/i;
 
 // Source names are never used as object keys: uploads use a generated
 // profile-avatar or profile-cover filename. Only reject values that cannot be
@@ -178,7 +180,7 @@ export function validateProfileMediaUpload(input: ProfileMediaUploadInput): Prof
   const mimeType = input.mimeType.trim().toLowerCase();
   const fileName = input.fileName.trim();
 
-  if (!isProfileMediaKind(kind)) errors.push("Choose whether this image is a profile picture or cover photo.");
+  if (!isProfileMediaKind(kind)) errors.push("Choose whether this image is a profile picture, cover photo, or page background.");
   if (!isProfileMediaMimeType(mimeType)) errors.push("Choose a JPG, PNG, WebP, or GIF image.");
   if (!fileName || fileName !== input.fileName || !isSafeSourceFilename(fileName)) {
     errors.push("Choose an image with a safe filename.");

@@ -2,8 +2,6 @@ import Link from "next/link";
 import { routes } from "@/config/routes";
 import type { ProfileAppearance } from "@/lib/profile-appearance";
 
-/* eslint-disable @next/next/no-img-element -- The validated, user-configured background cannot be statically optimized. */
-
 export type ProfilePublicWebsite = {
   id: string;
   site_title: string | null;
@@ -40,16 +38,6 @@ function formatPostDate(value: string): { dateTime: string; label: string } | nu
     : { dateTime: date.toISOString(), label: date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) };
 }
 
-function safeImageUrl(value: string | null): string | null {
-  if (!value) return null;
-  try {
-    const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:" ? value : null;
-  } catch {
-    return null;
-  }
-}
-
 /** Renders only persisted public items; empty content types disappear instead of leaving empty cards. */
 export function ProfileContent({ appearance, websites, posts }: ProfileContentProps) {
   const publicWebsites = websites.flatMap((website) => {
@@ -65,14 +53,11 @@ export function ProfileContent({ appearance, websites, posts }: ProfileContentPr
 
   if (publicWebsites.length === 0 && publicPosts.length === 0) return null;
 
-  const backgroundImageUrl = appearance.background.type === "image" ? safeImageUrl(appearance.background.imageUrl) : null;
-
   return (
     <section
-      className={`profile-content-section profile-content-style-${appearance.visualStyle} profile-content-shape-${appearance.cardShape} profile-content-accent-${appearance.accent} profile-content-align-${appearance.textAlignment} profile-content-width-${appearance.contentWidth} profile-content-background-${appearance.background.preset}`}
+      className={`profile-content-section profile-content-style-${appearance.visualStyle} profile-content-shape-${appearance.cardShape} profile-content-accent-${appearance.accent} profile-content-align-${appearance.textAlignment} profile-content-width-${appearance.contentWidth}`}
       aria-labelledby="profile-content-heading"
     >
-      {backgroundImageUrl ? <img src={backgroundImageUrl} alt="" className="profile-content-background-image-layer" /> : null}
       <header className="profile-content-heading">
         <span className="profile-section-kicker">Public profile</span>
         <h2 id="profile-content-heading">Shared work and updates</h2>

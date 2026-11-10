@@ -5,7 +5,12 @@ import { getProfileAppearance } from "@/lib/profile-appearance";
 import { isProfileMediaReference, isSupportedProfileMediaUrl, type ProfileMediaDisplayUrls } from "@/lib/profile-media";
 import { getProfileAge, getProfileVisibility } from "@/lib/profile-visibility";
 import type { Profile } from "@/lib/supabase/profile";
-import { PublicProfilePreview } from "./profile-preview";
+import {
+  getProfilePageBackgroundClassName,
+  getProfilePageBackgroundStyle,
+  ProfilePageBackgroundImage,
+  PublicProfilePreview,
+} from "./profile-preview";
 
 type ProfileLayoutVariant = "default" | "admin";
 
@@ -38,6 +43,14 @@ export function ProfileView({ profile, layoutVariant = "default", websites = [],
       : isProfileMediaReference(appearance.coverUrl) || !isSupportedProfileMediaUrl(appearance.coverUrl)
         ? null
         : appearance.coverUrl,
+    background: {
+      ...appearance.background,
+      imageUrl: mediaUrls
+        ? mediaUrls.backgroundUrl ?? null
+        : isProfileMediaReference(appearance.background.imageUrl) || !isSupportedProfileMediaUrl(appearance.background.imageUrl)
+          ? null
+          : appearance.background.imageUrl,
+    },
   };
   const avatarUrl = mediaUrls
     ? mediaUrls.avatarUrl
@@ -48,25 +61,34 @@ export function ProfileView({ profile, layoutVariant = "default", websites = [],
   const age = visibility.showAge ? getProfileAge(profile.date_of_birth) : null;
   const location = visibility.showLocation ? publicText(profile.country) : null;
   const metadata = [age === null ? null : `${age} years old`, location].filter((value): value is string => Boolean(value));
-  const pageClassName = layoutVariant === "admin" ? "profile-page profile-page-admin admin-page-shell" : "profile-page dashboard-home-shell";
+  const pageClassName = layoutVariant === "admin"
+    ? "profile-page profile-page-canvas profile-page-admin admin-page-shell"
+    : "profile-page profile-page-canvas dashboard-home-shell";
 
   return (
-    <section className={pageClassName} aria-label="Profile page">
-      <section className="profile-view-shell" aria-label={`${displayName} profile`}>
-        <PublicProfilePreview
-          appearance={displayAppearance}
-          avatarUrl={avatarUrl}
-          displayName={displayName}
-          username={publicText(profile.username)}
-          country={location}
-          label={`${displayName} profile`}
-          variant="profile"
-          metadata={metadata}
-          action={<Link href={routes.profileCustomize} className="profile-edit-link">Edit profile</Link>}
-        />
-      </section>
+    <section
+      className={`${pageClassName} ${getProfilePageBackgroundClassName(displayAppearance)}`}
+      style={getProfilePageBackgroundStyle(displayAppearance)}
+      aria-label="Profile page"
+    >
+      <ProfilePageBackgroundImage appearance={displayAppearance} />
+      <div className="profile-page-canvas-content">
+        <section className="profile-view-shell" aria-label={`${displayName} profile`}>
+          <PublicProfilePreview
+            appearance={displayAppearance}
+            avatarUrl={avatarUrl}
+            displayName={displayName}
+            username={publicText(profile.username)}
+            country={location}
+            label={`${displayName} profile`}
+            variant="profile"
+            metadata={metadata}
+            action={<Link href={routes.profileCustomize} className="profile-edit-link">Edit profile</Link>}
+          />
+        </section>
 
-      <ProfileContent appearance={displayAppearance} websites={websites} posts={posts} />
+        <ProfileContent appearance={displayAppearance} websites={websites} posts={posts} />
+      </div>
     </section>
   );
 }

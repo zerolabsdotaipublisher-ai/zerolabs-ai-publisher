@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import type { ProfileAppearance } from "@/lib/profile-appearance";
 
 type PublicProfilePreviewProps = {
@@ -13,13 +13,13 @@ type PublicProfilePreviewProps = {
   action?: ReactNode;
 };
 
-const BACKGROUND_CLASS_NAMES: Record<ProfileAppearance["background"]["preset"], string> = {
-  default: "profile-preview-background-default",
-  forest: "profile-preview-background-forest",
-  midnight: "profile-preview-background-midnight",
-  aurora: "profile-preview-background-aurora",
-  sunset: "profile-preview-background-sunset",
-  image: "profile-preview-background-image",
+const PAGE_BACKGROUND_PRESET_CLASS_NAMES: Record<ProfileAppearance["background"]["preset"], string> = {
+  default: "profile-page-background-default",
+  forest: "profile-page-background-forest",
+  midnight: "profile-page-background-midnight",
+  aurora: "profile-page-background-aurora",
+  sunset: "profile-page-background-sunset",
+  image: "profile-page-background-image",
 };
 
 function initials(displayName: string): string {
@@ -37,6 +37,47 @@ function safeImageUrl(value: string | null): string | null {
   }
 }
 
+function getPageBackgroundFallback(appearance: ProfileAppearance): {
+  type: "solid" | "gradient";
+  preset: ProfileAppearance["background"]["preset"];
+  color: string | null;
+} {
+  const { background } = appearance;
+  if (background.type !== "image") {
+    return { type: background.type, preset: background.preset, color: background.color ?? null };
+  }
+
+  return {
+    type: background.color ? "solid" : "gradient",
+    preset: background.preset === "image" ? "default" : background.preset,
+    color: background.color ?? null,
+  };
+}
+
+/** The page canvas is separate from the profile header's cover photo. */
+export function getProfilePageBackgroundClassName(appearance: ProfileAppearance): string {
+  const fallback = getPageBackgroundFallback(appearance);
+  return [
+    "profile-page-background",
+    `profile-page-background-${fallback.type}`,
+    PAGE_BACKGROUND_PRESET_CLASS_NAMES[fallback.preset],
+    appearance.background.type === "image" ? "profile-page-background-image" : null,
+  ].filter(Boolean).join(" ");
+}
+
+export function getProfilePageBackgroundStyle(appearance: ProfileAppearance): CSSProperties | undefined {
+  const fallback = getPageBackgroundFallback(appearance);
+  if (fallback.type !== "solid" || !fallback.color) return undefined;
+
+  return { "--profile-page-solid-color": fallback.color } as CSSProperties;
+}
+
+export function ProfilePageBackgroundImage({ appearance }: { appearance: ProfileAppearance }) {
+  const imageUrl = appearance.background.type === "image" ? safeImageUrl(appearance.background.imageUrl) : null;
+
+  return imageUrl ? <img src={imageUrl} alt="" className="profile-page-background-image-layer" /> : null;
+}
+
 /** Public-facing content only: account email, birth date and internal identifiers are intentionally excluded. */
 export function PublicProfilePreview({
   appearance,
@@ -51,18 +92,15 @@ export function PublicProfilePreview({
 }: PublicProfilePreviewProps) {
   const safeAvatarUrl = safeImageUrl(avatarUrl);
   const safeCoverUrl = safeImageUrl(appearance.coverUrl);
-  const safeBackgroundImageUrl = appearance.background.type === "image" ? safeImageUrl(appearance.background.imageUrl) : null;
-
   return (
     <article
-      className={`profile-public-preview${variant === "profile" ? " profile-public-profile" : ""} profile-preview-style-${appearance.visualStyle} profile-preview-shape-${appearance.cardShape} profile-preview-accent-${appearance.accent} profile-preview-align-${appearance.textAlignment} profile-preview-width-${appearance.contentWidth} ${BACKGROUND_CLASS_NAMES[appearance.background.preset]}`}
+      className={`profile-public-preview${variant === "profile" ? " profile-public-profile" : ""} profile-preview-style-${appearance.visualStyle} profile-preview-shape-${appearance.cardShape} profile-preview-accent-${appearance.accent} profile-preview-align-${appearance.textAlignment} profile-preview-width-${appearance.contentWidth}`}
       aria-label={label}
       data-testid="public-profile-preview"
     >
       {variant === "preview" ? <div className="profile-preview-device-label">{label}</div> : null}
       {variant === "profile" && action ? <div className="profile-profile-action">{action}</div> : null}
       <div className="profile-preview-canvas">
-        {safeBackgroundImageUrl ? <img src={safeBackgroundImageUrl} alt="" className="profile-preview-background-image-layer" /> : null}
         <div className="profile-preview-cover">
           {safeCoverUrl ? (
             <img

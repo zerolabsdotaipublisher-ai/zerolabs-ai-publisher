@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { DEFAULT_PROFILE_APPEARANCE } from "@/lib/profile-appearance";
 
 const mocks = vi.hoisted(() => ({
   getServerUser: vi.fn(),
   uploadProfileMedia: vi.fn(),
   deleteOwnedProfileMediaReference: vi.fn(),
+  ensureProfile: vi.fn(),
   loggerError: vi.fn(),
   ProfileMediaError: class ProfileMediaError extends Error {
     constructor(
@@ -17,6 +19,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/supabase/server", () => ({ getServerUser: mocks.getServerUser }));
+vi.mock("@/lib/supabase/profile", () => ({ ensureProfile: mocks.ensureProfile }));
 vi.mock("@/lib/profile-media-server", () => ({
   uploadProfileMedia: mocks.uploadProfileMedia,
   deleteOwnedProfileMediaReference: mocks.deleteOwnedProfileMediaReference,
@@ -45,6 +48,7 @@ describe("/api/profile/media", () => {
       fileName: "avatar.png",
     });
     mocks.deleteOwnedProfileMediaReference.mockResolvedValue(undefined);
+    mocks.ensureProfile.mockResolvedValue({ avatar_url: null, preferences: null });
   });
 
   it("requires authentication", async () => {
@@ -110,5 +114,28 @@ describe("/api/profile/media", () => {
       reference: "supabase:profile-media:current_user/cover/profile-cover-550e8400-e29b-41d4-a716-446655440000.png",
       kind: "cover",
     });
+  });
+
+  it("refuses to delete a page background that the saved profile still references", async () => {
+    const backgroundReference = "supabase:profile-media:current_user/background/profile-background-550e8400-e29b-41d4-a716-446655440000.png";
+    mocks.ensureProfile.mockResolvedValue({
+      avatar_url: null,
+      preferences: {
+        profileAppearance: {
+          ...DEFAULT_PROFILE_APPEARANCE,
+          background: { type: "image", preset: "image", color: null, imageUrl: backgroundReference },
+        },
+      },
+    });
+
+    const response = await DELETE(new Request("http://localhost/api/profile/media", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reference: backgroundReference, kind: "background" }),
+    }));
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toMatchObject({ ok: false, error: { code: "PROFILE_MEDIA_IN_USE" } });
+    expect(mocks.deleteOwnedProfileMediaReference).not.toHaveBeenCalled();
   });
 });
