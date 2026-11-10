@@ -166,6 +166,98 @@ describe("PATCH /api/profile appearance persistence", () => {
     }));
   });
 
+  it("persists only an owned durable page-background reference and cleans up its replacement after saving", async () => {
+    const oldBackground = "supabase:profile-media:current_user/background/profile-background-11111111-1111-4111-8111-111111111111.png";
+    const nextBackground = "supabase:profile-media:current_user/background/profile-background-550e8400-e29b-41d4-a716-446655440000.png";
+    mocks.ensureProfile.mockResolvedValue({
+      ...currentProfile(),
+      preferences: { profileAppearance: { ...DEFAULT_PROFILE_APPEARANCE, background: { type: "image", preset: "image", imageUrl: oldBackground } } },
+    });
+    mocks.updateProfile.mockImplementation(async (_userId: string, updates: Record<string, unknown>) => ({ ...currentProfile(), ...updates }));
+
+    const response = await PATCH(new Request("http://localhost/api/profile", {
+      method: "PATCH",
+      body: JSON.stringify({
+        profileAppearance: {
+          ...DEFAULT_PROFILE_APPEARANCE,
+          background: { type: "image", preset: "image", color: null, imageUrl: nextBackground },
+        },
+      }),
+    }));
+
+    expect(response.status).toBe(200);
+    expect(mocks.assertOwnedProfileMediaReference).toHaveBeenCalledWith({
+      userId: "current_user",
+      reference: nextBackground,
+      kind: "background",
+    });
+    expect(mocks.deleteOwnedProfileMediaReference).toHaveBeenCalledWith({
+      userId: "current_user",
+      reference: oldBackground,
+      kind: "background",
+    });
+  });
+
+  it("persists solid and gradient page backgrounds independently from the cover", async () => {
+    const response = await PATCH(new Request("http://localhost/api/profile", {
+      method: "PATCH",
+      body: JSON.stringify({
+        profileAppearance: {
+          ...DEFAULT_PROFILE_APPEARANCE,
+          coverUrl: "https://images.example.com/unchanged-cover.png",
+          background: { type: "solid", preset: "default", color: "#173459", imageUrl: null },
+        },
+      }),
+    }));
+
+    expect(response.status).toBe(200);
+    expect(mocks.updateProfile).toHaveBeenCalledWith("current_user", expect.objectContaining({
+      preferences: expect.objectContaining({
+        profileAppearance: expect.objectContaining({
+          coverUrl: "https://images.example.com/unchanged-cover.png",
+          background: { type: "solid", preset: "default", color: "#173459", imageUrl: null },
+        }),
+      }),
+    }));
+  });
+
+  it("clears a removed page-background reference before its old object is cleaned up", async () => {
+    const oldBackground = "supabase:profile-media:current_user/background/profile-background-11111111-1111-4111-8111-111111111111.png";
+    mocks.ensureProfile.mockResolvedValue({
+      ...currentProfile(),
+      preferences: {
+        profileAppearance: {
+          ...DEFAULT_PROFILE_APPEARANCE,
+          background: { type: "image", preset: "image", color: null, imageUrl: oldBackground },
+        },
+      },
+    });
+
+    const response = await PATCH(new Request("http://localhost/api/profile", {
+      method: "PATCH",
+      body: JSON.stringify({
+        profileAppearance: {
+          ...DEFAULT_PROFILE_APPEARANCE,
+          background: { type: "gradient", preset: "aurora", color: null, imageUrl: null },
+        },
+      }),
+    }));
+
+    expect(response.status).toBe(200);
+    expect(mocks.updateProfile).toHaveBeenCalledWith("current_user", expect.objectContaining({
+      preferences: expect.objectContaining({
+        profileAppearance: expect.objectContaining({
+          background: { type: "gradient", preset: "aurora", color: null, imageUrl: null },
+        }),
+      }),
+    }));
+    expect(mocks.deleteOwnedProfileMediaReference).toHaveBeenCalledWith({
+      userId: "current_user",
+      reference: oldBackground,
+      kind: "background",
+    });
+  });
+
   it("rejects a profile-media reference the authenticated user does not own", async () => {
     mocks.assertOwnedProfileMediaReference.mockRejectedValueOnce(new Error("ownership required"));
 
@@ -217,6 +309,38 @@ describe("PATCH /api/profile appearance persistence", () => {
         profileAppearance: {
           ...DEFAULT_PROFILE_APPEARANCE,
           coverUrl: "supabase:profile-media:current_user/cover/profile-cover-550e8400-e29b-41d4-a716-446655440000.png",
+        },
+      }),
+    }));
+
+    expect(response.status).toBe(500);
+    expect(mocks.deleteOwnedProfileMediaReference).not.toHaveBeenCalled();
+  });
+
+  it("does not delete a persisted page background when saving its replacement fails", async () => {
+    const oldBackground = "supabase:profile-media:current_user/background/profile-background-11111111-1111-4111-8111-111111111111.png";
+    mocks.ensureProfile.mockResolvedValue({
+      ...currentProfile(),
+      preferences: {
+        profileAppearance: {
+          ...DEFAULT_PROFILE_APPEARANCE,
+          background: { type: "image", preset: "image", color: null, imageUrl: oldBackground },
+        },
+      },
+    });
+    mocks.updateProfile.mockRejectedValueOnce(new Error("database detail"));
+
+    const response = await PATCH(new Request("http://localhost/api/profile", {
+      method: "PATCH",
+      body: JSON.stringify({
+        profileAppearance: {
+          ...DEFAULT_PROFILE_APPEARANCE,
+          background: {
+            type: "image",
+            preset: "image",
+            color: null,
+            imageUrl: "supabase:profile-media:current_user/background/profile-background-550e8400-e29b-41d4-a716-446655440000.png",
+          },
         },
       }),
     }));

@@ -97,9 +97,15 @@ describe("profile preference persistence compatibility", () => {
     mocks.getUserById.mockResolvedValue({ data: { user: { user_metadata: { existing: "keep" } } }, error: null });
     mocks.updateUserById.mockResolvedValue({ error: null });
 
+    const backgroundReference = "supabase:profile-media:current_user/background/profile-background-550e8400-e29b-41d4-a716-446655440000.png";
+    const appearance = {
+      ...DEFAULT_PROFILE_APPEARANCE,
+      accent: "amber" as const,
+      background: { type: "image" as const, preset: "image" as const, color: null, imageUrl: backgroundReference },
+    };
     const preferences = {
       unrelatedPreference: "preserved-in-profile-when-supported",
-      profileAppearance: { ...DEFAULT_PROFILE_APPEARANCE, accent: "amber" },
+      profileAppearance: appearance,
       profileVisibility: { showAge: false, showLocation: true },
     };
     const result = await updateProfile("current_user", { preferences });
@@ -108,13 +114,13 @@ describe("profile preference persistence compatibility", () => {
       user_metadata: {
         existing: "keep",
         profile_customization: {
-          profileAppearance: { ...DEFAULT_PROFILE_APPEARANCE, accent: "amber" },
+          profileAppearance: appearance,
           profileVisibility: { showAge: false, showLocation: true },
         },
       },
     });
     expect(result.preferences).toEqual({
-      profileAppearance: { ...DEFAULT_PROFILE_APPEARANCE, accent: "amber" },
+      profileAppearance: appearance,
       profileVisibility: { showAge: false, showLocation: true },
     });
     expect(mocks.loggerWarn).toHaveBeenCalled();

@@ -38,7 +38,12 @@ import {
 } from "@/lib/profile-media";
 import type { Profile, ProfileUpdateData } from "@/lib/supabase/profile";
 import { PasswordForm } from "./password-form";
-import { PublicProfilePreview } from "./profile-preview";
+import {
+  getProfilePageBackgroundClassName,
+  getProfilePageBackgroundStyle,
+  ProfilePageBackgroundImage,
+  PublicProfilePreview,
+} from "./profile-preview";
 
 type ProfileLayoutVariant = "default" | "admin";
 type ProfileEditorCategory = "profile-design" | "profile-information" | "media" | "privacy" | "account" | "security";
@@ -53,13 +58,26 @@ type ProfileFormProps = {
   initialEditorCategory?: ProfileEditorCategory;
 };
 
-const BACKGROUND_OPTIONS: Array<{ label: string; preset: ProfileBackgroundPreset; type: ProfileAppearance["background"]["type"] }> = [
-  { label: "Default", preset: "default", type: "gradient" },
-  { label: "Forest", preset: "forest", type: "solid" },
-  { label: "Midnight", preset: "midnight", type: "solid" },
-  { label: "Aurora", preset: "aurora", type: "gradient" },
-  { label: "Sunset", preset: "sunset", type: "gradient" },
+const GRADIENT_OPTIONS: Array<{ label: string; preset: ProfileBackgroundPreset }> = [
+  { label: "Forest", preset: "forest" },
+  { label: "Midnight", preset: "midnight" },
+  { label: "Aurora", preset: "aurora" },
+  { label: "Sunset", preset: "sunset" },
 ];
+
+const LEGACY_SOLID_BACKGROUND_COLORS: Partial<Record<ProfileBackgroundPreset, string>> = {
+  forest: "#0b392a",
+  midnight: "#13233c",
+};
+
+export function getBackgroundImageFallback(background: ProfileAppearance["background"]): ProfileAppearance["background"] {
+  return {
+    type: background.color ? "solid" : "gradient",
+    preset: background.preset === "image" ? "default" : background.preset,
+    color: background.color ?? null,
+    imageUrl: null,
+  };
+}
 
 const PROFILE_EDITOR_CATEGORIES: Array<{
   id: ProfileEditorCategory;
@@ -134,47 +152,6 @@ function OptionButton({
   );
 }
 
-function ImageUrlField({
-  id,
-  label,
-  value,
-  placeholder,
-  onChange,
-  onRemove,
-  error,
-}: {
-  id: string;
-  label: string;
-  value: string;
-  placeholder: string;
-  onChange: (value: string) => void;
-  onRemove: () => void;
-  error?: string;
-}) {
-  return (
-    <label className={`profile-field profile-field-span${error ? " profile-field-error" : ""}`} htmlFor={id}>
-      <span>{label}</span>
-      <div className="profile-media-url-row">
-        <input
-          id={id}
-          type="url"
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          autoComplete="url"
-          inputMode="url"
-          maxLength={2048}
-          placeholder={placeholder}
-          aria-invalid={error ? "true" : "false"}
-        />
-        <button type="button" className="profile-inline-action" onClick={onRemove} disabled={!value}>
-          Remove
-        </button>
-      </div>
-      {error ? <span className="profile-field-message" role="alert">{error}</span> : null}
-    </label>
-  );
-}
-
 export function ProfileForm({
   profile: initialProfile,
   mediaUrls,
@@ -187,8 +164,10 @@ export function ProfileForm({
   const categoryButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const coverInputRef = useRef<HTMLInputElement | null>(null);
+  const backgroundInputRef = useRef<HTMLInputElement | null>(null);
   const pendingAvatarUploadRef = useRef<PendingProfileMediaUpload | null>(null);
   const pendingCoverUploadRef = useRef<PendingProfileMediaUpload | null>(null);
+  const pendingBackgroundUploadRef = useRef<PendingProfileMediaUpload | null>(null);
   const [profile, setProfile] = useState<Profile>(initialProfile);
   const [fullName, setFullName] = useState(initialProfile.full_name ?? "");
   const [firstName, setFirstName] = useState(initialProfile.first_name ?? "");
@@ -216,10 +195,20 @@ export function ProfileForm({
         ? null
         : coverUrl;
   });
+  const [backgroundDisplayUrl, setBackgroundDisplayUrl] = useState<string | null>(() => {
+    const backgroundImageUrl = getProfileAppearance(initialProfile.preferences).background.imageUrl;
+    return mediaUrls
+      ? mediaUrls.backgroundUrl ?? null
+      : isProfileMediaReference(backgroundImageUrl) || !isSupportedProfileMediaUrl(backgroundImageUrl)
+        ? null
+        : backgroundImageUrl;
+  });
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [backgroundFile, setBackgroundFile] = useState<File | null>(null);
   const [avatarLocalPreviewUrl, setAvatarLocalPreviewUrl] = useState<string | null>(null);
   const [coverLocalPreviewUrl, setCoverLocalPreviewUrl] = useState<string | null>(null);
+  const [backgroundLocalPreviewUrl, setBackgroundLocalPreviewUrl] = useState<string | null>(null);
   const [accountSubmitting, setAccountSubmitting] = useState(false);
   const [appearanceSubmitting, setAppearanceSubmitting] = useState(false);
   const [accountFieldErrors, setAccountFieldErrors] = useState<EditableProfileFieldErrors>({});
@@ -236,6 +225,9 @@ export function ProfileForm({
   useEffect(() => () => {
     if (coverLocalPreviewUrl) URL.revokeObjectURL(coverLocalPreviewUrl);
   }, [coverLocalPreviewUrl]);
+  useEffect(() => () => {
+    if (backgroundLocalPreviewUrl) URL.revokeObjectURL(backgroundLocalPreviewUrl);
+  }, [backgroundLocalPreviewUrl]);
 
   const publicProfileDraft = normalizeEditableProfileUpdate({
     full_name: fullName,
@@ -261,15 +253,25 @@ export function ProfileForm({
     accountDraft.suffix !== (profile.suffix ?? null) ||
     accountDraft.date_of_birth !== (profile.date_of_birth ?? null)
   );
-  const publicProfileDirty = Boolean(avatarFile || coverFile) || publicProfileInformationDirty || isPublicProfileCustomizationDirty({ avatarUrl, appearance, visibility, profile });
+  const publicProfileDirty = Boolean(avatarFile || coverFile || backgroundFile) || publicProfileInformationDirty || isPublicProfileCustomizationDirty({ avatarUrl, appearance, visibility, profile });
   const displayName = fullName.trim() || profile.full_name || [firstName, lastName].filter(Boolean).join(" ") || "Your profile";
   const previewAge = visibility.showAge ? getProfileAge(dateOfBirth) : null;
   const previewMetadata = [
     previewAge === null ? null : `${previewAge} years old`,
     visibility.showLocation ? country.trim() || null : null,
   ].filter((value): value is string => Boolean(value));
-  const previewAppearance = { ...appearance, coverUrl: coverLocalPreviewUrl ?? coverDisplayUrl };
+  const previewAppearance = {
+    ...appearance,
+    coverUrl: coverLocalPreviewUrl ?? coverDisplayUrl,
+    background: {
+      ...appearance.background,
+      imageUrl: backgroundLocalPreviewUrl ?? backgroundDisplayUrl,
+    },
+  };
   const previewAvatarUrl = avatarLocalPreviewUrl ?? avatarDisplayUrl;
+  const solidBackgroundColor = appearance.background.type === "solid"
+    ? appearance.background.color ?? LEGACY_SOLID_BACKGROUND_COLORS[appearance.background.preset] ?? "#0b392a"
+    : "#0b392a";
   const formattedMemberSince = useMemo(
     () => new Date(profile.created_at).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }),
     [profile.created_at],
@@ -286,6 +288,7 @@ export function ProfileForm({
     if (nextMediaUrls) {
       setAvatarDisplayUrl(nextMediaUrls.avatarUrl);
       setCoverDisplayUrl(nextMediaUrls.coverUrl);
+      setBackgroundDisplayUrl(nextMediaUrls.backgroundUrl ?? null);
     }
   }
 
@@ -355,6 +358,7 @@ export function ProfileForm({
     let nextAppearance = appearance;
     let nextAvatarDisplayUrl = avatarDisplayUrl;
     let nextCoverDisplayUrl = coverDisplayUrl;
+    let nextBackgroundDisplayUrl = backgroundDisplayUrl;
 
     setAppearanceError(null);
     setAppearanceSuccess(null);
@@ -394,6 +398,19 @@ export function ProfileForm({
         nextCoverDisplayUrl = uploaded.previewUrl;
       }
 
+      if (backgroundFile) {
+        const uploaded = await getOrUploadProfileMedia(backgroundFile, "background");
+        nextAppearance = {
+          ...nextAppearance,
+          background: {
+            ...nextAppearance.background,
+            type: "image",
+            imageUrl: uploaded.reference,
+          },
+        };
+        nextBackgroundDisplayUrl = uploaded.previewUrl;
+      }
+
       const publicProfilePayload = getPublicProfileCustomizationPayload({
         avatarUrl: nextAvatarUrl,
         appearance: nextAppearance,
@@ -419,13 +436,20 @@ export function ProfileForm({
         profileAppearance: publicProfilePayload.profileAppearance,
         profileVisibility: publicProfilePayload.profileVisibility,
       });
-      applySavedPublicProfile(nextProfile, { avatarUrl: nextAvatarDisplayUrl, coverUrl: nextCoverDisplayUrl });
+      applySavedPublicProfile(nextProfile, {
+        avatarUrl: nextAvatarDisplayUrl,
+        coverUrl: nextCoverDisplayUrl,
+        backgroundUrl: nextBackgroundDisplayUrl,
+      });
       pendingAvatarUploadRef.current = null;
       pendingCoverUploadRef.current = null;
+      pendingBackgroundUploadRef.current = null;
       setAvatarFile(null);
       setCoverFile(null);
+      setBackgroundFile(null);
       setAvatarLocalPreviewUrl(null);
       setCoverLocalPreviewUrl(null);
+      setBackgroundLocalPreviewUrl(null);
       setMediaMessage(null);
       setPublicFieldErrors({});
       setAppearanceSuccess("Public profile saved.");
@@ -464,7 +488,11 @@ export function ProfileForm({
   }
 
   async function getOrUploadProfileMedia(file: File, kind: ProfileMediaKind): Promise<UploadedProfileMedia> {
-    const pendingRef = kind === "avatar" ? pendingAvatarUploadRef : pendingCoverUploadRef;
+    const pendingRef = kind === "avatar"
+      ? pendingAvatarUploadRef
+      : kind === "cover"
+        ? pendingCoverUploadRef
+        : pendingBackgroundUploadRef;
     if (pendingRef.current?.file === file) return pendingRef.current.uploaded;
 
     const uploaded = await uploadProfileMedia(file, kind);
@@ -488,10 +516,20 @@ export function ProfileForm({
   }
 
   function discardPendingProfileMedia(kind: ProfileMediaKind): void {
-    const pendingRef = kind === "avatar" ? pendingAvatarUploadRef : pendingCoverUploadRef;
+    const pendingRef = kind === "avatar"
+      ? pendingAvatarUploadRef
+      : kind === "cover"
+        ? pendingCoverUploadRef
+        : pendingBackgroundUploadRef;
     const pending = pendingRef.current;
     pendingRef.current = null;
     if (pending) void discardUploadedProfileMedia([{ reference: pending.uploaded.reference, kind }]);
+  }
+
+  function clearPendingBackgroundImage(): void {
+    discardPendingProfileMedia("background");
+    setBackgroundFile(null);
+    setBackgroundLocalPreviewUrl(null);
   }
 
   function chooseProfileMedia(event: ChangeEvent<HTMLInputElement>, target: ProfileMediaKind) {
@@ -513,10 +551,21 @@ export function ProfileForm({
       discardPendingProfileMedia("avatar");
       setAvatarFile(file);
       setAvatarLocalPreviewUrl(previewUrl);
-    } else {
+    } else if (target === "cover") {
       discardPendingProfileMedia("cover");
       setCoverFile(file);
       setCoverLocalPreviewUrl(previewUrl);
+    } else {
+      discardPendingProfileMedia("background");
+      setBackgroundFile(file);
+      setBackgroundLocalPreviewUrl(previewUrl);
+      setAppearance((current) => ({
+        ...current,
+        background: {
+          ...current.background,
+          type: "image",
+        },
+      }));
     }
     setMediaMessage(`${file.name} selected. It will upload when you save your public profile.`);
   }
@@ -616,7 +665,13 @@ export function ProfileForm({
 
           <div className="profile-preview-column">
             <span className="profile-preview-live-label">Live preview</span>
-            <PublicProfilePreview appearance={previewAppearance} avatarUrl={previewAvatarUrl} displayName={displayName} username={username.trim() || null} country={visibility.showLocation ? country.trim() || null : null} label="Live public profile preview" variant="profile" metadata={previewMetadata} />
+            <div
+              className={`profile-editor-page-preview ${getProfilePageBackgroundClassName(previewAppearance)}`}
+              style={getProfilePageBackgroundStyle(previewAppearance)}
+            >
+              <ProfilePageBackgroundImage appearance={previewAppearance} />
+              <PublicProfilePreview appearance={previewAppearance} avatarUrl={previewAvatarUrl} displayName={displayName} username={username.trim() || null} country={visibility.showLocation ? country.trim() || null : null} label="Live public profile preview" variant="profile" metadata={previewMetadata} />
+            </div>
           </div>
 
           {selectedEditorCategory === "security" ? (
@@ -686,8 +741,20 @@ export function ProfileForm({
             {selectedEditorCategory === "profile-design" ? (
               <section className="profile-control-panel" aria-labelledby={`${id}-profile-design-heading`}>
               <div className="profile-control-heading"><span className="profile-section-kicker">Profile design</span><h3 id={`${id}-profile-design-heading`}>Surface and styling</h3></div>
-              <fieldset className="profile-option-group"><legend>Profile background</legend><div className="profile-option-row profile-background-options">{BACKGROUND_OPTIONS.map((option) => <OptionButton key={option.preset} label={option.label} swatchClass={`profile-option-swatch-${option.preset}`} selected={appearance.background.preset === option.preset && appearance.background.type === option.type} onClick={() => setAppearance((current) => ({ ...current, background: { ...current.background, type: option.type, preset: option.preset, imageUrl: null } }))} />)}</div></fieldset>
-              <ImageUrlField id={`${id}-background-url`} label="Background image URL (optional)" value={appearance.background.imageUrl ?? ""} placeholder="https://example.com/background.jpg" onChange={(imageUrl) => { setAppearance((current) => ({ ...current, background: { ...current.background, type: imageUrl.trim() ? "image" : "gradient", preset: imageUrl.trim() ? "image" : "default", imageUrl: imageUrl.trim() || null } })); }} onRemove={() => setAppearance((current) => ({ ...current, background: { ...current.background, type: "gradient", preset: "default", imageUrl: null } }))} />
+              <fieldset className="profile-option-group"><legend>Page background</legend><p className="profile-control-copy">This fills the full public profile canvas behind your header and shared content. It does not replace the cover photo.</p><div className="profile-option-row profile-background-options"><OptionButton label="Default" swatchClass="profile-option-swatch-default" selected={appearance.background.type === "gradient" && appearance.background.preset === "default"} onClick={() => { clearPendingBackgroundImage(); setAppearance((current) => ({ ...current, background: { type: "gradient", preset: "default", color: null, imageUrl: null } })); }} /></div></fieldset>
+              <fieldset className="profile-option-group"><legend>Solid color</legend><div className="profile-background-color-control"><input id={`${id}-background-color`} type="color" value={solidBackgroundColor} aria-label="Page background color" onChange={(event) => { clearPendingBackgroundImage(); setAppearance((current) => ({ ...current, background: { type: "solid", preset: "default", color: event.target.value, imageUrl: null } })); }} /><output htmlFor={`${id}-background-color`}>{solidBackgroundColor.toUpperCase()}</output></div></fieldset>
+              <fieldset className="profile-option-group"><legend>Gradient preset</legend><div className="profile-option-row profile-background-options">{GRADIENT_OPTIONS.map((option) => <OptionButton key={option.preset} label={option.label} swatchClass={`profile-option-swatch-${option.preset}`} selected={appearance.background.type === "gradient" && appearance.background.preset === option.preset} onClick={() => { clearPendingBackgroundImage(); setAppearance((current) => ({ ...current, background: { type: "gradient", preset: option.preset, color: null, imageUrl: null } })); }} />)}</div></fieldset>
+              <div className="profile-media-controls profile-background-image-control">
+                <div className="profile-media-thumbnail profile-media-thumbnail-background" aria-hidden="true">{isDisplayableImageUrl(previewAppearance.background.imageUrl) ? <img src={previewAppearance.background.imageUrl} alt="" /> : null}</div>
+                <div className="profile-media-copy">
+                  <strong>Page background image</strong>
+                  <p>Use an image for the full profile page canvas. Your cover photo remains inside the profile header. JPG, PNG, WebP, or GIF up to 4 MB.</p>
+                  <button type="button" className="profile-upload-trigger" onClick={() => backgroundInputRef.current?.click()}>Upload page background image</button>
+                  <input ref={backgroundInputRef} id={`${id}-background-upload`} className="profile-upload-input" aria-label="Upload page background image" tabIndex={-1} type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(event) => chooseProfileMedia(event, "background")} />
+                  <p className="profile-media-selection" role="status">{backgroundFile ? `${backgroundFile.name} selected` : appearance.background.imageUrl ? "Page background image saved" : "No page background image selected"}</p>
+                  <button type="button" className="profile-inline-action" onClick={() => { clearPendingBackgroundImage(); setAppearance((current) => ({ ...current, background: getBackgroundImageFallback(current.background) })); setBackgroundDisplayUrl(null); setMediaMessage("Page background image will be removed when you save."); }} disabled={!appearance.background.imageUrl && !backgroundFile}>Remove page background image</button>
+                </div>
+              </div>
               <fieldset className="profile-option-group"><legend>Visual style</legend><div className="profile-option-row">{(["minimal", "soft", "glass", "bold"] as ProfileVisualStyle[]).map((style) => <OptionButton key={style} label={style[0].toUpperCase() + style.slice(1)} selected={appearance.visualStyle === style} onClick={() => setAppearance((current) => updateAppearance(current, "visualStyle", style))} />)}</div></fieldset>
               <fieldset className="profile-option-group"><legend>Card shape</legend><div className="profile-option-row">{(["square", "rounded", "pill-soft"] as ProfileCardShape[]).map((shape) => <OptionButton key={shape} label={shape === "pill-soft" ? "Soft / Pill" : shape[0].toUpperCase() + shape.slice(1)} selected={appearance.cardShape === shape} onClick={() => setAppearance((current) => updateAppearance(current, "cardShape", shape))} />)}</div></fieldset>
               <fieldset className="profile-option-group"><legend>Accent</legend><div className="profile-option-row">{(["mint", "emerald", "blue", "violet", "amber", "neutral"] as ProfileAccent[]).map((accent) => <OptionButton key={accent} label={accent[0].toUpperCase() + accent.slice(1)} swatchClass={`profile-option-swatch-accent-${accent}`} selected={appearance.accent === accent} onClick={() => setAppearance((current) => updateAppearance(current, "accent", accent))} />)}</div></fieldset>

@@ -32,6 +32,7 @@ import {
 const PNG_BYTES = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 const avatarPath = "current_user/avatar/profile-avatar-550e8400-e29b-41d4-a716-446655440000.png";
 const coverPath = "current_user/cover/profile-cover-550e8400-e29b-41d4-a716-446655440000.png";
+const backgroundPath = "current_user/background/profile-background-550e8400-e29b-41d4-a716-446655440000.png";
 
 describe("profile media Supabase Storage workflow", () => {
   beforeEach(() => {
@@ -78,6 +79,20 @@ describe("profile media Supabase Storage workflow", () => {
 
     expect(mocks.storage.upload).toHaveBeenCalledWith(coverPath, PNG_BYTES, expect.objectContaining({ contentType: "image/png" }));
     expect(uploaded.reference).toBe(`supabase:profile-media:${coverPath}`);
+  });
+
+  it("uploads a page background to its own user-scoped folder", async () => {
+    const uploaded = await uploadProfileMedia({
+      userId: "current_user",
+      kind: "background",
+      fileName: "Profile canvas.png",
+      mimeType: "image/png",
+      fileSizeBytes: PNG_BYTES.length,
+      bytes: PNG_BYTES,
+    });
+
+    expect(mocks.storage.upload).toHaveBeenCalledWith(backgroundPath, PNG_BYTES, expect.objectContaining({ contentType: "image/png" }));
+    expect(uploaded.reference).toBe(`supabase:profile-media:${backgroundPath}`);
   });
 
   it("returns a structured retry-safe error when the storage write fails", async () => {
@@ -128,23 +143,27 @@ describe("profile media Supabase Storage workflow", () => {
     expect(mocks.storage.upload).not.toHaveBeenCalled();
   });
 
-  it("resolves saved avatar and cover references to fresh signed URLs while legacy HTTPS still displays", async () => {
+  it("resolves saved avatar, cover, and background references to fresh signed URLs while legacy HTTPS still displays", async () => {
     await expect(resolveProfileMediaDisplayUrls({
       userId: "current_user",
       avatarReference: `supabase:profile-media:${avatarPath}`,
       coverReference: `supabase:profile-media:${coverPath}`,
+      backgroundReference: `supabase:profile-media:${backgroundPath}`,
     })).resolves.toEqual({
       avatarUrl: `https://signed.example/${avatarPath}?token=fresh`,
       coverUrl: `https://signed.example/${coverPath}?token=fresh`,
+      backgroundUrl: `https://signed.example/${backgroundPath}?token=fresh`,
     });
 
     await expect(resolveProfileMediaDisplayUrls({
       userId: "current_user",
       avatarReference: "https://images.example.com/legacy-avatar.png",
       coverReference: "media:media_old_profile_cover",
+      backgroundReference: "https://images.example.com/legacy-background.png",
     })).resolves.toEqual({
       avatarUrl: "https://images.example.com/legacy-avatar.png",
       coverUrl: null,
+      backgroundUrl: "https://images.example.com/legacy-background.png",
     });
   });
 

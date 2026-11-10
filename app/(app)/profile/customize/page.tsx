@@ -14,10 +14,12 @@ export default async function CustomizeProfilePage() {
   }
 
   const profile = await ensureProfile(user);
+  const appearance = getProfileAppearance(profile.preferences);
   const mediaUrls = await resolveProfileMediaDisplayUrls({
     userId: user.id,
     avatarReference: profile.avatar_url,
-    coverReference: getProfileAppearance(profile.preferences).coverUrl,
+    coverReference: appearance.coverUrl,
+    backgroundReference: appearance.background.imageUrl,
   });
 
   return <ProfileForm profile={profile} mediaUrls={mediaUrls} layoutVariant={profile.role === "admin" ? "admin" : "default"} />;

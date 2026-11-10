@@ -24,6 +24,7 @@ export default async function ProfilePage() {
     userId: user.id,
     avatarReference: profile.avatar_url,
     coverReference: appearance.coverUrl,
+    backgroundReference: appearance.background.imageUrl,
   });
 
   return (

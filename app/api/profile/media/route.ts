@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import { getProfileAppearance } from "@/lib/profile-appearance";
 import { ProfileMediaError, deleteOwnedProfileMediaReference, uploadProfileMedia } from "@/lib/profile-media-server";
 import { type ProfileMediaKind } from "@/lib/profile-media";
 import { logger } from "@/lib/observability";
+import { ensureProfile } from "@/lib/supabase/profile";
 import { getServerUser } from "@/lib/supabase/server";
 
 export async function POST(request: Request): Promise<NextResponse> {
@@ -75,11 +77,28 @@ export async function DELETE(request: Request): Promise<NextResponse> {
   }
 
   const { reference, kind } = body as { reference?: unknown; kind?: unknown };
-  if (typeof reference !== "string" || (kind !== "avatar" && kind !== "cover")) {
+  if (typeof reference !== "string" || (kind !== "avatar" && kind !== "cover" && kind !== "background")) {
     return NextResponse.json({ ok: false, error: { code: "INVALID_REQUEST", message: "Choose valid profile media to remove." } }, { status: 400 });
   }
 
   try {
+    const profile = await ensureProfile(user);
+    const appearance = getProfileAppearance(profile.preferences);
+    const persistedReference = kind === "avatar"
+      ? profile.avatar_url
+      : kind === "cover"
+        ? appearance.coverUrl
+        : appearance.background.imageUrl;
+    if (reference === persistedReference) {
+      return NextResponse.json({
+        ok: false,
+        error: {
+          code: "PROFILE_MEDIA_IN_USE",
+          message: "Save the profile change before removing its current media.",
+        },
+      }, { status: 409 });
+    }
+
     await deleteOwnedProfileMediaReference({ userId: user.id, reference, kind: kind as ProfileMediaKind });
     return NextResponse.json({ ok: true });
   } catch (error) {

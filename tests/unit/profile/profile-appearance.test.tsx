@@ -1,8 +1,8 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { createProfileMediaUploadFormData, getNextProfileEditorCategoryIndex, ProfileForm } from "@/components/profile/profile-form";
+import { createProfileMediaUploadFormData, getBackgroundImageFallback, getNextProfileEditorCategoryIndex, ProfileForm } from "@/components/profile/profile-form";
 import { ProfileContent } from "@/components/profile/profile-content";
-import { PublicProfilePreview } from "@/components/profile/profile-preview";
+import { getProfilePageBackgroundClassName, getProfilePageBackgroundStyle, PublicProfilePreview } from "@/components/profile/profile-preview";
 import { ProfileView } from "@/components/profile/profile-view";
 import {
   DEFAULT_PROFILE_APPEARANCE,
@@ -46,6 +46,23 @@ describe("profile appearance preferences", () => {
     expect(getProfileAppearance({ profileAppearance: { visualStyle: "unsafe-css" } })).toEqual(DEFAULT_PROFILE_APPEARANCE);
   });
 
+  it("normalizes partial, legacy, solid, gradient, and HTTPS page-background preferences", () => {
+    const solid = getProfileAppearance({
+      profileAppearance: { background: { type: "solid", preset: "default", color: "#173459", imageUrl: null } },
+    });
+    const legacyGradient = getProfileAppearance({
+      profileAppearance: { background: { type: "gradient", preset: "aurora", imageUrl: null } },
+    });
+    const legacyImage = getProfileAppearance({
+      profileAppearance: { background: { type: "image", preset: "image", imageUrl: "https://images.example.com/legacy-background.png" } },
+    });
+
+    expect(solid.background).toEqual({ type: "solid", preset: "default", color: "#173459", imageUrl: null });
+    expect(legacyGradient.background).toEqual({ type: "gradient", preset: "aurora", color: null, imageUrl: null });
+    expect(legacyImage.background).toEqual({ type: "image", preset: "image", color: null, imageUrl: "https://images.example.com/legacy-background.png" });
+    expect(getProfileAppearance({ profileAppearance: { background: { type: "gradient", preset: "sunset", imageUrl: null } } }).background.preset).toBe("sunset");
+  });
+
   it("merges the dedicated appearance key without losing unrelated preferences", () => {
     const next = mergeProfileAppearance(
       { dashboardLayout: "dense", unrelatedFeature: { enabled: true } },
@@ -75,6 +92,24 @@ describe("profile appearance preferences", () => {
     expect(validateProfileAppearance({ ...valid, accent: "neon" })).toMatchObject({ accent: "Choose a valid accent treatment." });
   });
 
+  it("accepts a constrained page-background color and saved background-media reference", () => {
+    const backgroundReference = "supabase:profile-media:user_fixture/background/profile-background-550e8400-e29b-41d4-a716-446655440000.png";
+    const valid = {
+      ...DEFAULT_PROFILE_APPEARANCE,
+      background: { type: "solid" as const, preset: "default" as const, color: "#173459", imageUrl: null },
+    };
+
+    expect(validateProfileAppearance(valid)).toEqual({});
+    expect(validateProfileAppearance({
+      ...DEFAULT_PROFILE_APPEARANCE,
+      background: { type: "image", preset: "image", color: null, imageUrl: backgroundReference },
+    })).toEqual({});
+    expect(validateProfileAppearance({
+      ...valid,
+      background: { ...valid.background, color: "rgb(0, 0, 0)" },
+    })).toHaveProperty("background.color");
+  });
+
   it("validates avatar and cover URLs as safe web URLs", () => {
     expect(validateEditableProfileUpdate(normalizeEditableProfileUpdate({ avatar_url: "javascript:alert(1)" }))).toMatchObject({
       avatar_url: "Avatar must be an http(s) URL or a saved profile-media reference.",
@@ -90,6 +125,12 @@ describe("profile appearance preferences", () => {
     });
     expect(validateProfileAppearance({ ...DEFAULT_PROFILE_APPEARANCE, coverUrl: signedUrl })).toMatchObject({
       coverUrl: "Cover must use a saved profile-media reference, not a temporary signed URL.",
+    });
+    expect(validateProfileAppearance({
+      ...DEFAULT_PROFILE_APPEARANCE,
+      background: { type: "image", preset: "image", color: null, imageUrl: signedUrl.replace("/cover/", "/background/") },
+    })).toMatchObject({
+      "background.imageUrl": "Background image must use a saved profile-media reference, not a temporary signed URL.",
     });
   });
 
@@ -134,10 +175,15 @@ describe("profile appearance preferences", () => {
   });
 
   it("persists durable media references for replacements and clears them for removals", () => {
+    const oldBackground = "supabase:profile-media:user_fixture/background/profile-background-11111111-1111-4111-8111-111111111111.png";
     const savedProfile = profile({
       avatar_url: "supabase:profile-media:user_fixture/avatar/profile-avatar-11111111-1111-4111-8111-111111111111.png",
       preferences: {
-        profileAppearance: { ...DEFAULT_PROFILE_APPEARANCE, coverUrl: "supabase:profile-media:user_fixture/cover/profile-cover-11111111-1111-4111-8111-111111111111.png" },
+        profileAppearance: {
+          ...DEFAULT_PROFILE_APPEARANCE,
+          coverUrl: "supabase:profile-media:user_fixture/cover/profile-cover-11111111-1111-4111-8111-111111111111.png",
+          background: { type: "image", preset: "image", color: null, imageUrl: oldBackground },
+        },
       },
     });
     const replacement = getPublicProfileCustomizationPayload({
@@ -157,13 +203,48 @@ describe("profile appearance preferences", () => {
       avatar_url: "supabase:profile-media:user_fixture/avatar/profile-avatar-550e8400-e29b-41d4-a716-446655440000.png",
       profileAppearance: { coverUrl: "supabase:profile-media:user_fixture/cover/profile-cover-550e8400-e29b-41d4-a716-446655440000.png" },
     });
-    expect(removal).toMatchObject({ avatar_url: "", profileAppearance: { coverUrl: null } });
+    expect(removal).toMatchObject({
+      avatar_url: "",
+      profileAppearance: { coverUrl: null, background: { type: "gradient", preset: "default", color: null, imageUrl: null } },
+    });
     expect(isPublicProfileCustomizationDirty({
       avatarUrl: replacement.avatar_url,
       appearance: replacement.profileAppearance,
       visibility: replacement.profileVisibility,
       profile: savedProfile,
     })).toBe(true);
+  });
+
+  it("clears a background image back to its selected solid, gradient, or default fallback", () => {
+    expect(getBackgroundImageFallback({
+      type: "image",
+      preset: "aurora",
+      color: null,
+      imageUrl: "supabase:profile-media:user_fixture/background/profile-background-550e8400-e29b-41d4-a716-446655440000.png",
+    })).toEqual({ type: "gradient", preset: "aurora", color: null, imageUrl: null });
+    expect(getBackgroundImageFallback({
+      type: "image",
+      preset: "default",
+      color: "#173459",
+      imageUrl: "supabase:profile-media:user_fixture/background/profile-background-550e8400-e29b-41d4-a716-446655440000.png",
+    })).toEqual({ type: "solid", preset: "default", color: "#173459", imageUrl: null });
+    expect(getBackgroundImageFallback({ type: "image", preset: "image", color: null, imageUrl: "https://images.example.com/background.png" }))
+      .toEqual({ type: "gradient", preset: "default", color: null, imageUrl: null });
+  });
+
+  it("keeps an image background's selected surface as the rendering fallback", () => {
+    const imageWithGradientFallback = {
+      ...DEFAULT_PROFILE_APPEARANCE,
+      background: { type: "image" as const, preset: "aurora" as const, color: null, imageUrl: null },
+    };
+    const imageWithSolidFallback = {
+      ...DEFAULT_PROFILE_APPEARANCE,
+      background: { type: "image" as const, preset: "default" as const, color: "#173459", imageUrl: null },
+    };
+
+    expect(getProfilePageBackgroundClassName(imageWithGradientFallback)).toContain("profile-page-background-gradient");
+    expect(getProfilePageBackgroundClassName(imageWithGradientFallback)).toContain("profile-page-background-aurora");
+    expect(getProfilePageBackgroundStyle(imageWithSolidFallback)).toMatchObject({ "--profile-page-solid-color": "#173459" });
   });
 
   it("does not let a legacy blob avatar block unrelated profile customization saves", () => {
@@ -259,6 +340,8 @@ describe("profile customization UI", () => {
     expect(markup).toContain("Edit profile");
     expect(markup).toContain('href="/profile/customize"');
     expect(markup).toContain("profile-public-profile");
+    expect(markup).toContain("profile-page-canvas");
+    expect(markup).toContain("profile-page-background-gradient");
     expect(markup).toContain("MP");
     expect(markup).not.toContain("Creator profile");
     expect(markup).not.toContain("Live public profile preview");
@@ -286,6 +369,64 @@ describe("profile customization UI", () => {
     expect(httpsMarkup).toContain("https://images.example.com/legacy-avatar.png");
     expect(blobMarkup).not.toContain("blob:legacy-avatar");
     expect(blobMarkup).toContain("MP");
+  });
+
+  it("keeps page background, cover photo, and profile picture in independent render layers", () => {
+    const avatarUrl = "https://signed.example/avatar?token=fresh";
+    const coverUrl = "https://signed.example/cover?token=fresh";
+    const backgroundUrl = "https://signed.example/background?token=fresh";
+    const markup = renderToStaticMarkup(
+      <ProfileView
+        profile={profile({
+          preferences: {
+            profileAppearance: {
+              ...DEFAULT_PROFILE_APPEARANCE,
+              coverUrl: "supabase:profile-media:user_fixture/cover/profile-cover-550e8400-e29b-41d4-a716-446655440000.png",
+              background: {
+                type: "image",
+                preset: "aurora",
+                color: null,
+                imageUrl: "supabase:profile-media:user_fixture/background/profile-background-550e8400-e29b-41d4-a716-446655440000.png",
+              },
+            },
+          },
+        })}
+        mediaUrls={{ avatarUrl, coverUrl, backgroundUrl }}
+      />,
+    );
+
+    expect(markup).toContain("profile-page-canvas");
+    expect(markup).toContain("profile-page-background-image-layer");
+    expect(markup).toContain(`src="${backgroundUrl}"`);
+    expect(markup).toContain(`src="${coverUrl}"`);
+    expect(markup).toContain(`src="${avatarUrl}"`);
+    expect(markup).toContain("Mina Park profile cover");
+    expect(markup.indexOf("profile-page-background-image-layer")).toBeLessThan(markup.indexOf("profile-preview-cover"));
+  });
+
+  it("falls back to the saved solid or gradient surface when a background object cannot resolve", () => {
+    const markup = renderToStaticMarkup(
+      <ProfileView
+        profile={profile({
+          preferences: {
+            profileAppearance: {
+              ...DEFAULT_PROFILE_APPEARANCE,
+              background: {
+                type: "image",
+                preset: "sunset",
+                color: null,
+                imageUrl: "supabase:profile-media:user_fixture/background/profile-background-550e8400-e29b-41d4-a716-446655440000.png",
+              },
+            },
+          },
+        })}
+        mediaUrls={{ avatarUrl: null, coverUrl: null, backgroundUrl: null }}
+      />,
+    );
+
+    expect(markup).toContain("profile-page-background-gradient");
+    expect(markup).toContain("profile-page-background-sunset");
+    expect(markup).not.toContain("profile-page-background-image-layer");
   });
 
   it("renders the accessible profile editor categories and live-preview media controls", () => {
@@ -344,6 +485,20 @@ describe("profile customization UI", () => {
       expect(markup).toMatch(new RegExp(`aria-controls="[^\"]+-${category.id}-controls"[^>]*aria-selected="true"`));
       expect(markup).toMatch(new RegExp(`id="[^\"]+-${category.id}-controls"`));
     }
+  });
+
+  it("keeps page background controls in Profile Design and media controls limited to picture and cover", () => {
+    const designMarkup = renderToStaticMarkup(<ProfileForm profile={profile()} initialEditorCategory="profile-design" />);
+    const mediaMarkup = renderToStaticMarkup(<ProfileForm profile={profile()} initialEditorCategory="media" />);
+
+    expect(designMarkup).toContain("Page background");
+    expect(designMarkup).toContain("Solid color");
+    expect(designMarkup).toContain("Gradient preset");
+    expect(designMarkup).toContain("Upload page background image");
+    expect(designMarkup).toContain("profile-editor-page-preview");
+    expect(mediaMarkup).toContain("Upload profile picture");
+    expect(mediaMarkup).toContain("Upload cover photo");
+    expect(mediaMarkup).not.toContain("Upload page background image");
   });
 
   it("uses only explicitly visible metadata and applies appearance to populated public content", () => {

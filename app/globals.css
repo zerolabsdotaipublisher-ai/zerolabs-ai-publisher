@@ -11057,6 +11057,54 @@ html[data-theme="dark"] .generation-shell {
   box-shadow: none;
 }
 
+/* Page background belongs to the full public-profile canvas, not to the
+   profile hero card or shared-content card. */
+.profile-page.profile-page-canvas {
+  position: relative;
+  isolation: isolate;
+  display: block;
+  min-block-size: min(72rem, 100dvh);
+  max-width: var(--app-layout-max-width);
+  overflow: hidden;
+  padding: clamp(0.8rem, 2vw, 1.4rem);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: clamp(1.25rem, 2.5vw, 2rem);
+  box-shadow: 0 30px 90px color-mix(in srgb, black 30%, transparent);
+}
+
+.profile-page-canvas-content {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: clamp(0.85rem, 1.8vw, 1.35rem);
+  width: 100%;
+  min-width: 0;
+}
+
+.profile-page-background {
+  background: linear-gradient(145deg, #103c2f 0%, #061b14 56%, #03110d 100%);
+}
+
+.profile-page-background-solid { background: var(--profile-page-solid-color, #0b392a); }
+.profile-page-background-solid.profile-page-background-forest { background: var(--profile-page-solid-color, #0b392a); }
+.profile-page-background-solid.profile-page-background-midnight { background: var(--profile-page-solid-color, #13233c); }
+.profile-page-background-gradient.profile-page-background-default { background: linear-gradient(145deg, #103c2f 0%, #061b14 56%, #03110d 100%); }
+.profile-page-background-gradient.profile-page-background-forest { background: linear-gradient(145deg, #0b392a, #071f17); }
+.profile-page-background-gradient.profile-page-background-midnight { background: linear-gradient(145deg, #13233c, #101728 62%, #243a68); }
+.profile-page-background-gradient.profile-page-background-aurora { background: linear-gradient(145deg, #0c4b43, #1a2a61 52%, #722b66); }
+.profile-page-background-gradient.profile-page-background-sunset { background: linear-gradient(145deg, #632d35, #8d4c35 48%, #2c2442); }
+.profile-page-background-image-layer {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  opacity: 0.42;
+  pointer-events: none;
+}
+
 .profile-section-heading,
 .profile-control-heading,
 .profile-media-controls,
@@ -11236,6 +11284,21 @@ html[data-theme="dark"] .generation-shell {
   height: clamp(12rem, 21vw, 17.5rem);
 }
 
+.profile-editor-page-preview {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 0.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 1.7rem;
+  box-shadow: 0 20px 58px color-mix(in srgb, black 24%, transparent);
+}
+
+.profile-editor-page-preview > .profile-public-preview {
+  position: relative;
+  z-index: 1;
+}
+
 .profile-public-preview {
   --profile-preview-accent: #ade6cd;
   position: relative;
@@ -11243,7 +11306,8 @@ html[data-theme="dark"] .generation-shell {
   min-height: 36rem;
   border: 1px solid color-mix(in srgb, var(--profile-preview-accent) 34%, var(--border));
   border-radius: 1.45rem;
-  background: linear-gradient(145deg, #103c2f 0%, #061b14 56%, #03110d 100%);
+  background: color-mix(in srgb, #061b14 78%, transparent);
+  backdrop-filter: blur(14px);
   box-shadow: 0 26px 70px color-mix(in srgb, black 32%, transparent);
 }
 
@@ -11262,22 +11326,6 @@ html[data-theme="dark"] .generation-shell {
 .profile-public-profile .profile-preview-content {
   gap: 0.72rem;
   padding-bottom: 1.4rem;
-}
-
-.profile-preview-background-forest { background: #0b392a; }
-.profile-preview-background-midnight { background: #13233c; }
-.profile-preview-background-aurora { background: linear-gradient(145deg, #0c4b43, #1a2a61 52%, #722b66); }
-.profile-preview-background-sunset { background: linear-gradient(145deg, #5e351f, #74354d 52%, #273b6a); }
-.profile-preview-background-image { background: #0b2d24; }
-
-.profile-preview-background-image-layer {
-  position: absolute;
-  z-index: 0;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0.48;
 }
 
 .profile-preview-device-label {
@@ -11391,32 +11439,16 @@ html[data-theme="dark"] .generation-shell {
   padding: clamp(1.25rem, 3vw, 2.5rem);
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 1.35rem;
-  background: linear-gradient(145deg, #142820, #10221e 58%, #173b30);
+  background: color-mix(in srgb, #061b14 76%, transparent);
   color: #f7fffa;
   box-shadow: 0 26px 70px color-mix(in srgb, black 26%, transparent);
+  backdrop-filter: blur(14px);
 }
 
-.profile-content-section > *:not(.profile-content-background-image-layer) {
+.profile-content-section > * {
   position: relative;
   z-index: 1;
 }
-
-.profile-content-background-image-layer {
-  position: absolute;
-  z-index: 0;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0.3;
-}
-
-.profile-content-background-default { background: linear-gradient(145deg, #142820, #10221e 58%, #173b30); }
-.profile-content-background-forest { background: linear-gradient(145deg, #0b392a, #071f17); }
-.profile-content-background-midnight { background: linear-gradient(145deg, #13233c, #101728 62%, #243a68); }
-.profile-content-background-aurora { background: linear-gradient(145deg, #0c4b43, #1a2a61 52%, #722b66); }
-.profile-content-background-sunset { background: linear-gradient(145deg, #632d35, #8d4c35 48%, #2c2442); }
-.profile-content-background-image { background: linear-gradient(145deg, #142820, #10221e 58%, #173b30); }
 
 .profile-content-heading,
 .profile-content-group {
@@ -11644,6 +11676,7 @@ html[data-theme="dark"] .generation-shell {
 
 .profile-media-thumbnail-avatar { width: 4rem; height: 4rem; border-radius: 50%; }
 .profile-media-thumbnail-cover { width: 6rem; height: 4rem; border-radius: 0.8rem; }
+.profile-media-thumbnail-background { width: 6rem; height: 4rem; border-radius: 0.8rem; }
 .profile-media-thumbnail img { width: 100%; height: 100%; object-fit: cover; }
 
 .profile-upload-trigger,
@@ -11737,6 +11770,34 @@ html[data-theme="dark"] .generation-shell {
 .profile-option-swatch-accent-amber { background: #ffd17c; }
 .profile-option-swatch-accent-neutral { background: #d0d7d4; }
 
+.profile-background-color-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: fit-content;
+  min-height: 2.45rem;
+  padding: 0.4rem 0.65rem 0.4rem 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: 0.72rem;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+}
+
+.profile-background-color-control input {
+  width: 2rem;
+  height: 1.65rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0.38rem;
+  background: transparent;
+  cursor: pointer;
+}
+
+.profile-background-color-control output {
+  color: var(--text-primary);
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
 .profile-local-media-message {
   margin: 0;
   padding: 0.82rem 0.95rem;
@@ -11815,7 +11876,8 @@ html[data-theme="dark"] .generation-shell {
   .profile-public-preview { min-height: 31rem; }
   .profile-preview-canvas { min-height: 26rem; }
   .profile-media-controls { grid-template-columns: 1fr; }
-  .profile-media-thumbnail-cover { width: min(100%, 22rem); height: 7rem; }
+  .profile-media-thumbnail-cover,
+  .profile-media-thumbnail-background { width: min(100%, 22rem); height: 7rem; }
   .profile-media-url-row { align-items: stretch; flex-direction: column; }
   .profile-inline-action { width: 100%; }
   .profile-option-button { flex: 1 1 auto; justify-content: center; }
