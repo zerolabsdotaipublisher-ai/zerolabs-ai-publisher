@@ -5,6 +5,8 @@ export interface CommunityPostAuthor {
   username?: string | null;
   displayName: string;
   initials: string;
+  /** Fresh, render-only URL. This is never the canonical profile-media reference. */
+  avatarDisplayUrl: string | null;
 }
 
 export interface CommunityPostRecord {

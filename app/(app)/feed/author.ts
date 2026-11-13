@@ -6,6 +6,7 @@ export type FeedAuthorProfile = {
   first_name?: string | null;
   last_name?: string | null;
   email?: string | null;
+  avatar_url?: string | null;
 };
 
 function getNonEmptyText(value?: string | null): string | null {

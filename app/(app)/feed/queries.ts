@@ -1,4 +1,5 @@
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { resolveProfileMediaDisplayUrl } from "@/lib/profile-media-server";
 import { getFeedAuthorDisplayName, getFeedAuthorInitials, type FeedAuthorProfile } from "./author";
 import type { CommunityPostRecord, CommunitySavedItemRecord, PublicWebsiteRecord } from "./types";
 
@@ -8,6 +9,22 @@ function logOptionalFeedError(label: string, error: { message?: string } | null)
   if (process.env.NODE_ENV === "development") {
     console.warn(`Optional feed data unavailable: ${label}${error?.message ? ` (${error.message})` : ""}`);
   }
+}
+
+/** Resolves each current author avatar once, after the feed's batched profile lookup. */
+async function resolveFeedAuthorAvatarDisplayUrls(profilesById: Map<string, FeedAuthorProfile>): Promise<Map<string, string | null>> {
+  const resolved = await Promise.all(
+    [...profilesById.values()].map(async (profile) => [
+      profile.id,
+      await resolveProfileMediaDisplayUrl({
+        userId: profile.id,
+        reference: profile.avatar_url,
+        kind: "avatar",
+      }),
+    ] as const),
+  );
+
+  return new Map(resolved);
 }
 
 export async function getCommunityFeed(): Promise<CommunityPostRecord[]> {
@@ -30,7 +47,7 @@ export async function getCommunityFeed(): Promise<CommunityPostRecord[]> {
   const authorIds = [...new Set(posts.map((post) => post.user_id))];
 
   const [authorProfiles, attachments, reactions, comments, shares, currentUser] = await Promise.all([
-    supabase.from("profiles").select("id, username, full_name, first_name, last_name").in("id", authorIds),
+    supabase.from("profiles").select("id, username, full_name, first_name, last_name, avatar_url").in("id", authorIds),
     supabase.from("community_post_attachments").select("id, post_id, attachment_type, storage_path, public_url, file_name, mime_type, file_size, metadata").in("post_id", ids),
     supabase.from("community_post_reactions").select("post_id, user_id").in("post_id", ids),
     supabase.from("community_post_comments").select("id, post_id, user_id, body, created_at").in("post_id", ids).is("deleted_at", null).order("created_at", { ascending: true }),
@@ -49,20 +66,23 @@ export async function getCommunityFeed(): Promise<CommunityPostRecord[]> {
     }),
   );
   const currentUserId = currentUser.data.user?.id;
-  const attachmentRows = attachments.error ? [] : await Promise.all((attachments.data ?? []).map(async (row) => {
-    const attachment = row as CommunityPostRecord["attachments"][number];
-    const storagePath = attachment.storage_path;
-    if (!storagePath || attachment.public_url || storagePath.startsWith("website:") || storagePath.startsWith("link:")) return attachment;
+  const [authorAvatarDisplayUrls, attachmentRows] = await Promise.all([
+    resolveFeedAuthorAvatarDisplayUrls(profilesById),
+    attachments.error ? [] : Promise.all((attachments.data ?? []).map(async (row) => {
+      const attachment = row as CommunityPostRecord["attachments"][number];
+      const storagePath = attachment.storage_path;
+      if (!storagePath || attachment.public_url || storagePath.startsWith("website:") || storagePath.startsWith("link:")) return attachment;
 
-    try {
-      const signed = await supabase.storage.from("community-attachments").createSignedUrl(storagePath, 3600);
-      if (signed.error) logOptionalFeedError("attachment signed URL", signed.error);
-      return { ...attachment, public_url: signed.data?.signedUrl ?? null };
-    } catch (error) {
-      logOptionalFeedError("attachment signed URL", error instanceof Error ? error : null);
-      return { ...attachment, public_url: null };
-    }
-  }));
+      try {
+        const signed = await supabase.storage.from("community-attachments").createSignedUrl(storagePath, 3600);
+        if (signed.error) logOptionalFeedError("attachment signed URL", signed.error);
+        return { ...attachment, public_url: signed.data?.signedUrl ?? null };
+      } catch (error) {
+        logOptionalFeedError("attachment signed URL", error instanceof Error ? error : null);
+        return { ...attachment, public_url: null };
+      }
+    })),
+  ]);
   const reactionRows = reactions.error ? [] : (reactions.data ?? []);
   const commentRows = comments.error ? [] : (comments.data ?? []);
   const shareRows = shares.error ? [] : (shares.data ?? []);
@@ -82,6 +102,7 @@ export async function getCommunityFeed(): Promise<CommunityPostRecord[]> {
         username: profile?.username ?? null,
         displayName: getFeedAuthorDisplayName(authorProfile),
         initials: getFeedAuthorInitials(authorProfile),
+        avatarDisplayUrl: authorAvatarDisplayUrls.get(post.user_id) ?? null,
       };
     })(),
     attachments: attachmentRows.filter((row) => row.post_id === post.id) as CommunityPostRecord["attachments"],

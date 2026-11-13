@@ -5,6 +5,7 @@ import { MessageCircle, Heart, Bookmark, Share2, Trash2 } from "lucide-react";
 import { routes } from "@/config/routes";
 import { SharedContentPreview } from "@/components/feed/shared-content-preview";
 import { createCommunityPostComment, deleteCommunityPost, shareCommunityPost, toggleCommunityPostReaction, toggleSavedCommunityPost } from "./actions";
+import { FeedAvatar } from "./avatar";
 import type { CommunityPostRecord } from "./types";
 
 interface PostListProps {
@@ -154,9 +155,11 @@ export function PostList({ posts, currentUserId, savedPostIds, savedItemsAvailab
           <article key={post.id} id={`feed-post-${post.id}`} className="feed-post-card">
             <div className="feed-post-header">
               <div className="feed-post-author">
-                <div className="feed-post-avatar" aria-hidden="true">
-                  {post.author.initials}
-                </div>
+                <FeedAvatar
+                  className="feed-post-avatar"
+                  avatarDisplayUrl={post.author.avatarDisplayUrl}
+                  initials={post.author.initials}
+                />
 
                 <div className="feed-post-author-copy">
                   <strong>{post.author.displayName}</strong>

@@ -1,11 +1,13 @@
 import { Metadata } from "next";
 import { PostComposer } from "./post-composer";
 import { PostList } from "./post-list";
+import { FeedAvatar } from "./avatar";
 import { getCommunityFeed, getPublicWebsites, getPublicWebsitesForOwner, getSavedCommunityItems } from "./queries";
 import { PublicWebsiteList } from "./website-list";
 import { routes } from "@/config/routes";
 import { requireUser } from "@/lib/supabase/auth";
 import { createFallbackProfile, getProfileDisplayName, getSafeProfile } from "@/lib/supabase/profile";
+import { resolveProfileMediaDisplayUrl } from "@/lib/profile-media-server";
 
 export const metadata: Metadata = {
   title: "Community Feed | Zero Labs AI Publisher",
@@ -16,7 +18,12 @@ export default async function FeedPage() {
   const user = await requireUser(routes.feed);
   const profile = await getSafeProfile(user).catch(() => createFallbackProfile(user));
 
-  const [posts, publicWebsites, shareableWebsites, savedItemsResult] = await Promise.all([
+  const [currentUserAvatarDisplayUrl, posts, publicWebsites, shareableWebsites, savedItemsResult] = await Promise.all([
+    resolveProfileMediaDisplayUrl({
+      userId: user.id,
+      reference: profile.avatar_url,
+      kind: "avatar",
+    }),
     getCommunityFeed(),
     getPublicWebsites(),
     getPublicWebsitesForOwner(user.id),
@@ -36,9 +43,11 @@ export default async function FeedPage() {
         </div>
 
         <div className="feed-profile-card">
-          <div className="feed-profile-avatar" aria-hidden="true">
-            {getProfileDisplayName(profile).charAt(0).toUpperCase()}
-          </div>
+          <FeedAvatar
+            className="feed-profile-avatar"
+            avatarDisplayUrl={currentUserAvatarDisplayUrl}
+            initials={getProfileDisplayName(profile).charAt(0).toUpperCase()}
+          />
           <div className="feed-profile-copy">
             <strong>{getProfileDisplayName(profile)}</strong>
             <span>{user.email}</span>
