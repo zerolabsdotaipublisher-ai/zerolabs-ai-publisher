@@ -6,6 +6,7 @@ import { ensureProfile } from "@/lib/supabase/profile";
 import { getServerUser } from "@/lib/supabase/server";
 import { resolveProfileMediaDisplayUrls } from "@/lib/profile-media-server";
 import { getProfileAppearance } from "@/lib/profile-appearance";
+import { getProfileSocialStats } from "@/lib/profile-social";
 
 export default async function ProfilePage() {
   const user = await getServerUser();
@@ -14,10 +15,11 @@ export default async function ProfilePage() {
     redirect(routes.login);
   }
 
-  const [profile, websites, posts] = await Promise.all([
-    ensureProfile(user),
-    getPublicWebsitesForOwner(user.id),
-    getPublicCommunityPostsForAuthor(user.id),
+  const profile = await ensureProfile(user);
+  const [websites, posts, socialStats] = await Promise.all([
+    getPublicWebsitesForOwner(profile.id),
+    getPublicCommunityPostsForAuthor(profile.id),
+    getProfileSocialStats(profile.id),
   ]);
   const appearance = getProfileAppearance(profile.preferences);
   const mediaUrls = await resolveProfileMediaDisplayUrls({
@@ -34,6 +36,7 @@ export default async function ProfilePage() {
       websites={websites}
       posts={posts}
       mediaUrls={mediaUrls}
+      socialStats={socialStats}
     />
   );
 }

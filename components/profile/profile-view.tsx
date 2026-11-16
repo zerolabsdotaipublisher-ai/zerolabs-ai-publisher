@@ -20,6 +20,10 @@ type ProfileViewProps = {
   websites?: ProfilePublicWebsite[];
   posts?: ProfilePublicPost[];
   mediaUrls?: ProfileMediaDisplayUrls;
+  socialStats?: {
+    followersCount: number;
+    followingCount: number;
+  };
 };
 
 function publicText(value: string | null): string | null {
@@ -33,7 +37,14 @@ function profileDisplayName(profile: Profile): string {
 }
 
 /** Authenticated owner view. Private profile fields intentionally never enter this presentation. */
-export function ProfileView({ profile, layoutVariant = "default", websites = [], posts = [], mediaUrls }: ProfileViewProps) {
+export function ProfileView({
+  profile,
+  layoutVariant = "default",
+  websites = [],
+  posts = [],
+  mediaUrls,
+  socialStats = { followersCount: 0, followingCount: 0 },
+}: ProfileViewProps) {
   const displayName = profileDisplayName(profile);
   const appearance = getProfileAppearance(profile.preferences);
   const displayAppearance = {
@@ -83,6 +94,7 @@ export function ProfileView({ profile, layoutVariant = "default", websites = [],
             label={`${displayName} profile`}
             variant="profile"
             metadata={metadata}
+            socialStats={socialStats}
             action={<Link href={routes.profileCustomize} className="profile-edit-link">Edit profile</Link>}
           />
         </section>
