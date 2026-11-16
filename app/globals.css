@@ -11407,6 +11407,26 @@ html[data-theme="dark"] .generation-shell {
   color: rgba(255, 255, 255, 0.72);
 }
 
+.profile-social-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+  margin-top: 0.58rem;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.profile-social-stat {
+  display: inline-flex;
+  gap: 0.28rem;
+  white-space: nowrap;
+}
+
+.profile-social-stat strong {
+  color: var(--profile-preview-accent);
+}
+
 .profile-profile-action {
   position: absolute;
   z-index: 3;
@@ -11869,6 +11889,7 @@ html[data-theme="dark"] .generation-shell {
   .profile-view-shell .profile-public-profile .profile-preview-canvas { min-height: 21rem; }
   .profile-view-shell .profile-public-profile .profile-preview-cover { height: 10.5rem; }
   .profile-profile-action { top: 0.75rem; right: 0.75rem; }
+  .profile-social-stats { gap: 0.3rem 0.75rem; font-size: 0.82rem; }
   .profile-content-section { padding: 1.1rem; border-radius: 1.1rem; }
   .profile-section-heading { align-items: flex-start; flex-direction: column; }
   .profile-editor-tablist { grid-template-columns: 1fr; }

@@ -10,6 +10,10 @@ type PublicProfilePreviewProps = {
   label?: string;
   variant?: "preview" | "profile";
   metadata?: string[];
+  socialStats?: {
+    followersCount: number;
+    followingCount: number;
+  };
   action?: ReactNode;
 };
 
@@ -35,6 +39,14 @@ function safeImageUrl(value: string | null): string | null {
   } catch {
     return null;
   }
+}
+
+function socialCount(value: number): number {
+  return Number.isFinite(value) && value > 0 ? Math.trunc(value) : 0;
+}
+
+function followerLabel(count: number): string {
+  return count === 1 ? "Follower" : "Followers";
 }
 
 function getPageBackgroundFallback(appearance: ProfileAppearance): {
@@ -88,10 +100,13 @@ export function PublicProfilePreview({
   label = "Live public profile preview",
   variant = "preview",
   metadata = [],
+  socialStats,
   action,
 }: PublicProfilePreviewProps) {
   const safeAvatarUrl = safeImageUrl(avatarUrl);
   const safeCoverUrl = safeImageUrl(appearance.coverUrl);
+  const followersCount = socialCount(socialStats?.followersCount ?? 0);
+  const followingCount = socialCount(socialStats?.followingCount ?? 0);
   return (
     <article
       className={`profile-public-preview${variant === "profile" ? " profile-public-profile" : ""} profile-preview-style-${appearance.visualStyle} profile-preview-shape-${appearance.cardShape} profile-preview-accent-${appearance.accent} profile-preview-align-${appearance.textAlignment} profile-preview-width-${appearance.contentWidth}`}
@@ -118,6 +133,12 @@ export function PublicProfilePreview({
           <div className="profile-preview-copy">
             {variant === "profile" ? <h1>{displayName}</h1> : <h3>{displayName}</h3>}
             {username ? <p className="profile-preview-username">@{username}</p> : null}
+            {variant === "profile" ? (
+              <div className="profile-social-stats" aria-label="Profile social statistics">
+                <span className="profile-social-stat" aria-label={`${followersCount} ${followerLabel(followersCount)}`}><strong>{followersCount}</strong> {followerLabel(followersCount)}</span>
+                <span className="profile-social-stat" aria-label={`${followingCount} Following`}><strong>{followingCount}</strong> Following</span>
+              </div>
+            ) : null}
             {metadata.length > 0 ? <ul className="profile-profile-metadata">{metadata.map((item) => <li key={item}>{item}</li>)}</ul> : null}
             {variant === "preview" && country ? <p className="profile-preview-location">{country}</p> : null}
             {variant === "preview" ? <div className="profile-preview-card"><span>Creator profile</span><p>Share your work, ideas, and the projects you are building with Zero Labs.</p></div> : null}
