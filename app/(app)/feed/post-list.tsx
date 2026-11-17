@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition, type FormEvent } from "react";
 import { MessageCircle, Heart, Bookmark, Share2, Trash2 } from "lucide-react";
 import { routes } from "@/config/routes";
 import { SharedContentPreview } from "@/components/feed/shared-content-preview";
+import { ProfileFollowButton } from "@/components/profile/profile-follow-button";
 import { createCommunityPostComment, deleteCommunityPost, shareCommunityPost, toggleCommunityPostReaction, toggleSavedCommunityPost } from "./actions";
 import { FeedAvatar } from "./avatar";
 import type { CommunityPostRecord } from "./types";
@@ -20,10 +22,20 @@ function formatPostDate(value: string): string {
   return Number.isNaN(date.getTime()) ? "Unknown date" : date.toLocaleString();
 }
 
+function getEngagementSummary(post: CommunityPostRecord): string[] {
+  const pluralize = (count: number, singular: string) => `${count} ${count === 1 ? singular : `${singular}s`}`;
+  return [
+    post.reactionCount && post.reactionCount > 0 ? pluralize(post.reactionCount, "reaction") : null,
+    post.commentCount && post.commentCount > 0 ? pluralize(post.commentCount, "comment") : null,
+    post.shareCount && post.shareCount > 0 ? pluralize(post.shareCount, "share") : null,
+  ].filter((summary): summary is string => Boolean(summary));
+}
+
 export function PostList({ posts, currentUserId, savedPostIds, savedItemsAvailable }: PostListProps) {
   const [busyPostId, setBusyPostId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ message: string; tone: "error" | "success" } | null>(null);
   const [expandedPostId, setExpandedPostId] = useState<string | null>(null);
+  const [followingOverrides, setFollowingOverrides] = useState<Record<string, boolean>>({});
   const [isPending, startTransition] = useTransition();
 
   const handleDelete = (postId: string) => {
@@ -146,6 +158,9 @@ export function PostList({ posts, currentUserId, savedPostIds, savedItemsAvailab
         const isOwner = post.user_id === currentUserId;
         const isSaved = savedPostIds.includes(post.id);
         const isBusy = busyPostId === post.id;
+        const profileHref = isOwner ? routes.profile : post.author.profileHref;
+        const isFollowing = followingOverrides[post.author.id] ?? post.author.isFollowing;
+        const engagementSummary = getEngagementSummary(post);
         const authorUsername = post.author.username?.trim();
         const shouldShowAuthorUsername = Boolean(
           authorUsername && authorUsername.localeCompare(post.author.displayName, undefined, { sensitivity: "accent" }) !== 0,
@@ -153,36 +168,65 @@ export function PostList({ posts, currentUserId, savedPostIds, savedItemsAvailab
 
         return (
           <article key={post.id} id={`feed-post-${post.id}`} className="feed-post-card">
-            <div className="feed-post-header">
+            <header className="feed-post-header">
               <div className="feed-post-author">
-                <FeedAvatar
-                  className="feed-post-avatar"
-                  avatarDisplayUrl={post.author.avatarDisplayUrl}
-                  initials={post.author.initials}
-                />
+                {profileHref ? (
+                  <Link href={profileHref} className="feed-post-author-avatar-link" aria-label={`View ${post.author.displayName}'s profile`}>
+                    <FeedAvatar
+                      className="feed-post-avatar"
+                      avatarDisplayUrl={post.author.avatarDisplayUrl}
+                      initials={post.author.initials}
+                    />
+                  </Link>
+                ) : (
+                  <FeedAvatar
+                    className="feed-post-avatar"
+                    avatarDisplayUrl={post.author.avatarDisplayUrl}
+                    initials={post.author.initials}
+                  />
+                )}
 
                 <div className="feed-post-author-copy">
-                  <strong>{post.author.displayName}</strong>
-                  {shouldShowAuthorUsername ? <span>@{authorUsername}</span> : null}
+                  {profileHref ? (
+                    <Link href={profileHref} className="feed-post-author-name-link">{post.author.displayName}</Link>
+                  ) : (
+                    <strong>{post.author.displayName}</strong>
+                  )}
                   <div className="feed-post-meta">
+                    {shouldShowAuthorUsername ? (
+                      profileHref ? <Link href={profileHref} className="feed-post-author-username-link">@{authorUsername}</Link> : <span>@{authorUsername}</span>
+                    ) : null}
                     <time dateTime={post.created_at}>{formatPostDate(post.created_at)}</time>
                     <span className={`feed-post-visibility is-${post.visibility}`}>{post.visibility}</span>
                   </div>
                 </div>
               </div>
 
-              {isOwner ? (
-                <button
-                  type="button"
-                  className="feed-icon-button"
-                  onClick={() => handleDelete(post.id)}
-                  disabled={isBusy}
-                  aria-label="Delete post"
-                >
-                  <Trash2 size={16} />
-                </button>
-              ) : null}
-            </div>
+              <div className="feed-post-header-actions">
+                {!isOwner ? (
+                  <ProfileFollowButton
+                    className="feed-follow-button"
+                    profileUserId={post.author.id}
+                    displayName={post.author.displayName}
+                    isFollowing={isFollowing}
+                    onRelationshipChange={(nextIsFollowing) => {
+                      setFollowingOverrides((current) => ({ ...current, [post.author.id]: nextIsFollowing }));
+                    }}
+                  />
+                ) : null}
+                {isOwner ? (
+                  <button
+                    type="button"
+                    className="feed-icon-button"
+                    onClick={() => handleDelete(post.id)}
+                    disabled={isBusy}
+                    aria-label="Delete post"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                ) : null}
+              </div>
+            </header>
 
             {post.title ? <h3 className="feed-post-title">{post.title}</h3> : null}
             <p className="feed-post-body">{post.body}</p>
@@ -193,39 +237,51 @@ export function PostList({ posts, currentUserId, savedPostIds, savedItemsAvailab
               </div>
             ) : null}
 
-            <div className={`feed-post-actions ${isBusy ? "is-busy" : ""}`} role="group" aria-label="Post actions" aria-busy={isBusy}>
-              <button type="button" className={`feed-post-action ${post.reactedByCurrentUser ? "is-active" : ""}`} onClick={() => handleReaction(post.id, Boolean(post.reactedByCurrentUser))} disabled={isBusy || post.reactedByCurrentUser === null} aria-label={post.reactedByCurrentUser ? "Remove heart" : "Add heart"} aria-pressed={Boolean(post.reactedByCurrentUser)} title={post.reactedByCurrentUser === null ? "Hearts are unavailable until Feed interactions are configured." : post.reactedByCurrentUser ? "Remove heart" : "Add heart"}>
-                <Heart size={16} fill={post.reactedByCurrentUser ? "currentColor" : "none"} aria-hidden="true" />
-                {post.reactionCount !== null ? <em aria-hidden="true">{post.reactionCount}</em> : null}
-              </button>
-              <button
-                type="button"
-                className={`feed-post-action ${expandedPostId === post.id ? "is-active" : ""}`}
-                onClick={() => setExpandedPostId((current) => current === post.id ? null : post.id)}
-                disabled={post.commentCount === null}
-                aria-label={expandedPostId === post.id ? "Hide comments" : "Show comments"}
-                aria-expanded={expandedPostId === post.id}
-                title={post.commentCount === null ? "Comments are unavailable until Feed interactions are configured." : expandedPostId === post.id ? "Hide comments" : "Show comments"}
-              >
-                <MessageCircle size={16} aria-hidden="true" />
-                {post.commentCount !== null ? <em aria-hidden="true">{post.commentCount}</em> : null}
-              </button>
-              <button type="button" className="feed-post-action" onClick={() => void handleShare(post)} disabled={isBusy} aria-label="Share post" title="Share post">
-                <Share2 size={16} aria-hidden="true" />
-                {post.shareCount !== null ? <em aria-hidden="true">{post.shareCount}</em> : null}
-              </button>
-              <button
-                type="button"
-                className={`feed-post-action ${isSaved ? "is-active" : ""}`}
-                onClick={() => handleToggleSave(post.id, !isSaved)}
-                disabled={isBusy || !savedItemsAvailable}
-                aria-label={isSaved ? "Remove post from saved items" : "Save post"}
-                aria-pressed={isSaved}
-                title={!savedItemsAvailable ? "Saved posts are unavailable until Feed interactions are configured." : isSaved ? "Remove post from saved items" : "Save post"}
-              >
-                <Bookmark size={16} fill={isSaved ? "currentColor" : "none"} aria-hidden="true" />
-              </button>
-            </div>
+            <footer className="feed-post-footer">
+              {engagementSummary.length > 0 ? (
+                <p className="feed-post-engagement-summary" aria-label={`Post engagement: ${engagementSummary.join(", ")}`}>
+                  <Heart size={14} fill="currentColor" aria-hidden="true" />
+                  {engagementSummary.join(" · ")}
+                </p>
+              ) : null}
+              <div className={`feed-post-actions ${isBusy ? "is-busy" : ""}`} role="group" aria-label="Post actions" aria-busy={isBusy}>
+                <button type="button" className={`feed-post-action ${post.reactedByCurrentUser ? "is-active" : ""}`} onClick={() => handleReaction(post.id, Boolean(post.reactedByCurrentUser))} disabled={isBusy || post.reactedByCurrentUser === null} aria-label={post.reactedByCurrentUser ? "Remove reaction" : "React to post"} aria-pressed={Boolean(post.reactedByCurrentUser)} title={post.reactedByCurrentUser === null ? "Reactions are unavailable until Feed interactions are configured." : post.reactedByCurrentUser ? "Remove reaction" : "React to post"}>
+                  <Heart size={16} fill={post.reactedByCurrentUser ? "currentColor" : "none"} aria-hidden="true" />
+                  <span>React</span>
+                  {post.reactionCount !== null ? <em aria-hidden="true">{post.reactionCount}</em> : null}
+                </button>
+                <button
+                  type="button"
+                  className={`feed-post-action ${expandedPostId === post.id ? "is-active" : ""}`}
+                  onClick={() => setExpandedPostId((current) => current === post.id ? null : post.id)}
+                  disabled={post.commentCount === null}
+                  aria-label={expandedPostId === post.id ? "Hide comments" : "Show comments"}
+                  aria-expanded={expandedPostId === post.id}
+                  title={post.commentCount === null ? "Comments are unavailable until Feed interactions are configured." : expandedPostId === post.id ? "Hide comments" : "Show comments"}
+                >
+                  <MessageCircle size={16} aria-hidden="true" />
+                  <span>Comment</span>
+                  {post.commentCount !== null ? <em aria-hidden="true">{post.commentCount}</em> : null}
+                </button>
+                <button type="button" className="feed-post-action" onClick={() => void handleShare(post)} disabled={isBusy} aria-label="Share post" title="Share post">
+                  <Share2 size={16} aria-hidden="true" />
+                  <span>Share</span>
+                  {post.shareCount !== null ? <em aria-hidden="true">{post.shareCount}</em> : null}
+                </button>
+                <button
+                  type="button"
+                  className={`feed-post-action ${isSaved ? "is-active" : ""}`}
+                  onClick={() => handleToggleSave(post.id, !isSaved)}
+                  disabled={isBusy || !savedItemsAvailable}
+                  aria-label={isSaved ? "Remove post from saved items" : "Save post"}
+                  aria-pressed={isSaved}
+                  title={!savedItemsAvailable ? "Saved posts are unavailable until Feed interactions are configured." : isSaved ? "Remove post from saved items" : "Save post"}
+                >
+                  <Bookmark size={16} fill={isSaved ? "currentColor" : "none"} aria-hidden="true" />
+                  <span>Save</span>
+                </button>
+              </div>
+            </footer>
 
             {expandedPostId === post.id ? (
               <div className="feed-comments">
