@@ -5,6 +5,7 @@ import { ProfileView } from "@/components/profile/profile-view";
 import { DEFAULT_PROFILE_APPEARANCE } from "@/lib/profile-appearance";
 import type { Profile } from "@/lib/supabase/profile";
 
+
 function profile(overrides: Partial<Profile> = {}): Profile {
   return {
     id: "profile_owner",

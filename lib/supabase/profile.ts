@@ -1,6 +1,7 @@
 import type { User } from "@supabase/supabase-js";
 import { isAdminEmail, resolveAdminRole } from "@/lib/admin/access";
 import { logger } from "@/lib/observability";
+import { normalizePublicProfileUsername } from "@/lib/profile-public";
 import { getSupabaseServiceClient } from "./server";
 
 export type ProfileRole = "user" | "admin";
@@ -23,6 +24,20 @@ export type Profile = {
   created_at: string;
   updated_at: string;
 };
+
+/** The only profile fields allowed to cross the public-profile route boundary. */
+export type PublicProfile = Pick<
+  Profile,
+  | "id"
+  | "full_name"
+  | "avatar_url"
+  | "first_name"
+  | "last_name"
+  | "username"
+  | "country"
+  | "date_of_birth"
+  | "preferences"
+>;
 
 export type ProfileUpdateData = {
   full_name?: string | null;
@@ -427,6 +442,55 @@ export async function getProfile(userId: string): Promise<Profile | null> {
       service: "supabase",
       userId,
       error: { message: error instanceof Error ? error.message : String(error), name: "SupabaseProfileError" },
+    });
+    return null;
+  }
+}
+
+/**
+ * Looks up a profile for a public route without selecting email, metadata, or
+ * other account-only columns. Usernames are backed by the existing unique
+ * `profiles_username_idx` index, so an exact username resolves one profile.
+ */
+export async function getPublicProfileByUsername(username: string | null | undefined): Promise<PublicProfile | null> {
+  const normalizedUsername = normalizePublicProfileUsername(username);
+  if (!normalizedUsername) return null;
+
+  try {
+    const supabase = getSupabaseServiceClient();
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, full_name, avatar_url, first_name, last_name, username, country, date_of_birth, preferences")
+      .eq("username", normalizedUsername)
+      .maybeSingle();
+
+    if (error) {
+      logger.warn("public profile lookup failed", {
+        category: "error",
+        service: "supabase",
+        error: { message: error.message, name: "SupabasePublicProfileError" },
+      });
+      return null;
+    }
+    if (!data) return null;
+
+    const profile = data as Partial<Profile>;
+    return {
+      id: typeof profile.id === "string" ? profile.id : "",
+      full_name: typeof profile.full_name === "string" ? profile.full_name : null,
+      avatar_url: typeof profile.avatar_url === "string" ? profile.avatar_url : null,
+      first_name: typeof profile.first_name === "string" ? profile.first_name : null,
+      last_name: typeof profile.last_name === "string" ? profile.last_name : null,
+      username: typeof profile.username === "string" ? profile.username : null,
+      country: typeof profile.country === "string" ? profile.country : null,
+      date_of_birth: typeof profile.date_of_birth === "string" ? profile.date_of_birth : null,
+      preferences: profile.preferences && typeof profile.preferences === "object" ? profile.preferences : null,
+    };
+  } catch (error) {
+    logger.warn("public profile lookup could not be completed", {
+      category: "error",
+      service: "supabase",
+      error: { message: error instanceof Error ? error.message : "Unknown profile lookup error", name: "SupabasePublicProfileError" },
     });
     return null;
   }

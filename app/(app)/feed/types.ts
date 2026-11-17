@@ -5,6 +5,10 @@ export interface CommunityPostAuthor {
   username?: string | null;
   displayName: string;
   initials: string;
+  /** Null for legacy profiles without a username, preventing broken links. */
+  profileHref: string | null;
+  /** Relationship state is resolved once per distinct author for the feed. */
+  isFollowing: boolean;
   /** Fresh, render-only URL. This is never the canonical profile-media reference. */
   avatarDisplayUrl: string | null;
 }

@@ -25,9 +25,6 @@ function getEmailPrefix(email?: string | null): string | null {
 export function getFeedAuthorDisplayName(profile?: FeedAuthorProfile | null): string {
   if (!profile) return "Community member";
 
-  const username = getNonEmptyText(profile.username);
-  if (username) return username;
-
   const fullName = getNonEmptyText(profile.full_name) ?? getNonEmptyText(profile.display_name);
   if (fullName) return fullName;
 
@@ -35,6 +32,9 @@ export function getFeedAuthorDisplayName(profile?: FeedAuthorProfile | null): st
     (part): part is string => Boolean(part),
   );
   if (nameParts.length > 0) return nameParts.join(" ");
+
+  const username = getNonEmptyText(profile.username);
+  if (username) return username;
 
   return getEmailPrefix(profile.email) ?? "Community member";
 }

@@ -39,6 +39,11 @@ export const routes = {
   editorVisual: (id: string) => `/editor/${encodeURIComponent(id)}/visual`,
   editorPrimary: (id: string) => `/editor/${encodeURIComponent(id)}/visual`,
   profile: "/profile",
+  /**
+   * Kept under a stable segment so legacy usernames such as `customize` do not
+   * collide with owner-only `/profile/customize` routing.
+   */
+  publicProfile: (username: string) => `/profile/u/${encodeURIComponent(username)}`,
   profileCustomize: "/profile/customize",
   generatedSites: "/generated-sites",
   generatedSite: (id: string) => `/generated-sites/${id}`,

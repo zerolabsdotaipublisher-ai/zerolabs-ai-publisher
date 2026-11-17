@@ -15,6 +15,7 @@ const replacementAvatarReference = "supabase:profile-media:author_fixture/avatar
 
 let avatarReference: string | null;
 let profileRecords: Array<Record<string, unknown>>;
+let followingIn: ReturnType<typeof vi.fn>;
 
 function queryWithIn(getResult: () => unknown) {
   return {
@@ -28,6 +29,7 @@ function createFeedSupabase() {
     { id: "post_two", user_id: "author_fixture", title: null, body: "Second update", visibility: "public", created_at: "2026-01-02T00:00:00.000Z", updated_at: "2026-01-02T00:00:00.000Z" },
   ];
   const emptyResult = { data: [], error: null };
+  followingIn = vi.fn().mockResolvedValue(emptyResult);
 
   return {
     from: vi.fn((table: string) => {
@@ -43,6 +45,13 @@ function createFeedSupabase() {
             in: vi.fn().mockReturnValue({
               is: vi.fn().mockReturnValue({ order: vi.fn().mockResolvedValue(emptyResult) }),
             }),
+          }),
+        };
+      }
+      if (table === "profile_follows") {
+        return {
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({ in: followingIn }),
           }),
         };
       }
@@ -88,6 +97,10 @@ describe("community feed avatar resolution", () => {
     expect(profileRecords[0].avatar_url).toBe(originalAvatarReference);
     expect(feed[0].author).not.toHaveProperty("avatarReference");
     expect(feed[0]).not.toHaveProperty("avatar_url");
+    expect(feed[0].author.profileHref).toBe("/profile/u/Avery");
+    expect(feed[0].author.isFollowing).toBe(false);
+    expect(followingIn).toHaveBeenCalledTimes(1);
+    expect(followingIn).toHaveBeenCalledWith("followed_user_id", ["author_fixture"]);
   });
 
   it("uses a replacement profile avatar for existing posts after Feed reloads without changing post data", async () => {

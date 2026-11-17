@@ -13,7 +13,7 @@ vi.mock("@/lib/observability", () => ({
   logger: { warn: mocks.loggerWarn },
 }));
 
-import { getProfileSocialStats } from "@/lib/profile-social";
+import { getFollowingProfileIds, getProfileRelationship, getProfileSocialStats } from "@/lib/profile-social";
 
 type Counts = {
   followers: number | null;
@@ -31,6 +31,17 @@ function socialStatsClient(counts: Counts) {
   const from = vi.fn(() => ({ select }));
 
   return { client: { from }, from, select, eq };
+}
+
+function relationshipClient(followedUserIds: string[]) {
+  const inFilter = vi.fn().mockResolvedValue({
+    data: followedUserIds.map((followed_user_id) => ({ followed_user_id })),
+    error: null,
+  });
+  const eq = vi.fn().mockReturnValue({ in: inFilter });
+  const select = vi.fn().mockReturnValue({ eq });
+  const from = vi.fn().mockReturnValue({ select });
+  return { client: { from }, from, eq, inFilter };
 }
 
 describe("profile social statistics", () => {
@@ -80,5 +91,24 @@ describe("profile social statistics", () => {
       followersCount: 0,
       followingCount: 0,
     });
+  });
+
+  it("batches unique author IDs into one current-viewer relationship query", async () => {
+    const query = relationshipClient(["author_one"]);
+    mocks.getSupabaseServerClient.mockResolvedValue(query.client);
+
+    await expect(getFollowingProfileIds("viewer_user", ["author_one", "author_one", "author_two"])).resolves.toEqual(new Set(["author_one"]));
+
+    expect(query.from).toHaveBeenCalledTimes(1);
+    expect(query.eq).toHaveBeenCalledWith("follower_user_id", "viewer_user");
+    expect(query.inFilter).toHaveBeenCalledWith("followed_user_id", ["author_one", "author_two"]);
+  });
+
+  it("keeps viewer and viewed IDs separate and never queries a self relationship", async () => {
+    await expect(getProfileRelationship("profile_user", "profile_user")).resolves.toEqual({
+      isSelf: true,
+      isFollowing: false,
+    });
+    expect(mocks.getSupabaseServerClient).not.toHaveBeenCalled();
   });
 });

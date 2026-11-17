@@ -37,6 +37,7 @@ export default async function ProfilePage() {
       posts={posts}
       mediaUrls={mediaUrls}
       socialStats={socialStats}
+      viewerUserId={user.id}
     />
   );
 }

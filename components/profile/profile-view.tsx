@@ -1,6 +1,4 @@
-import Link from "next/link";
 import { ProfileContent, type ProfilePublicPost, type ProfilePublicWebsite } from "@/components/profile/profile-content";
-import { routes } from "@/config/routes";
 import { getProfileAppearance } from "@/lib/profile-appearance";
 import { isProfileMediaReference, isSupportedProfileMediaUrl, type ProfileMediaDisplayUrls } from "@/lib/profile-media";
 import { getProfileAge, getProfileVisibility } from "@/lib/profile-visibility";
@@ -9,13 +7,26 @@ import {
   getProfilePageBackgroundClassName,
   getProfilePageBackgroundStyle,
   ProfilePageBackgroundImage,
-  PublicProfilePreview,
 } from "./profile-preview";
+import { ProfileSocialPreview } from "./profile-social-preview";
 
 type ProfileLayoutVariant = "default" | "admin";
 
+export type ProfilePresentation = Pick<
+  Profile,
+  | "id"
+  | "full_name"
+  | "avatar_url"
+  | "first_name"
+  | "last_name"
+  | "username"
+  | "country"
+  | "date_of_birth"
+  | "preferences"
+>;
+
 type ProfileViewProps = {
-  profile: Profile;
+  profile: ProfilePresentation;
   layoutVariant?: ProfileLayoutVariant;
   websites?: ProfilePublicWebsite[];
   posts?: ProfilePublicPost[];
@@ -24,6 +35,8 @@ type ProfileViewProps = {
     followersCount: number;
     followingCount: number;
   };
+  viewerUserId?: string | null;
+  isFollowing?: boolean;
 };
 
 function publicText(value: string | null): string | null {
@@ -31,7 +44,7 @@ function publicText(value: string | null): string | null {
   return trimmed && !/^(null|undefined)$/i.test(trimmed) ? trimmed : null;
 }
 
-function profileDisplayName(profile: Profile): string {
+function profileDisplayName(profile: Pick<Profile, "full_name" | "first_name" | "last_name">): string {
   const derivedName = [profile.first_name, profile.last_name].map((value) => publicText(value)).filter(Boolean).join(" ");
   return publicText(profile.full_name) ?? (derivedName || "Your profile");
 }
@@ -44,6 +57,8 @@ export function ProfileView({
   posts = [],
   mediaUrls,
   socialStats = { followersCount: 0, followingCount: 0 },
+  viewerUserId = profile.id,
+  isFollowing = false,
 }: ProfileViewProps) {
   const displayName = profileDisplayName(profile);
   const appearance = getProfileAppearance(profile.preferences);
@@ -85,17 +100,17 @@ export function ProfileView({
       <ProfilePageBackgroundImage appearance={displayAppearance} />
       <div className="profile-page-canvas-content">
         <section className="profile-view-shell" aria-label={`${displayName} profile`}>
-          <PublicProfilePreview
+          <ProfileSocialPreview
             appearance={displayAppearance}
             avatarUrl={avatarUrl}
             displayName={displayName}
             username={publicText(profile.username)}
             country={location}
-            label={`${displayName} profile`}
-            variant="profile"
             metadata={metadata}
             socialStats={socialStats}
-            action={<Link href={routes.profileCustomize} className="profile-edit-link">Edit profile</Link>}
+            profileUserId={profile.id}
+            viewerUserId={viewerUserId}
+            isFollowing={isFollowing}
           />
         </section>
 

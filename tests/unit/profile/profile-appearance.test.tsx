@@ -18,6 +18,7 @@ import {
 } from "@/lib/profile-customization";
 import type { Profile } from "@/lib/supabase/profile";
 
+
 function profile(overrides: Partial<Profile> = {}): Profile {
   return {
     id: "user_fixture",

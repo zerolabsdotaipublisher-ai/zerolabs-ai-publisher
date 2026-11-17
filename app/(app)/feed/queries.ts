@@ -1,5 +1,6 @@
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { resolveProfileMediaDisplayUrl } from "@/lib/profile-media-server";
+import { getPublicProfileHref } from "@/lib/profile-public";
 import { getFeedAuthorDisplayName, getFeedAuthorInitials, type FeedAuthorProfile } from "./author";
 import type { CommunityPostRecord, CommunitySavedItemRecord, PublicWebsiteRecord } from "./types";
 
@@ -66,7 +67,7 @@ export async function getCommunityFeed(): Promise<CommunityPostRecord[]> {
     }),
   );
   const currentUserId = currentUser.data.user?.id;
-  const [authorAvatarDisplayUrls, attachmentRows] = await Promise.all([
+  const [authorAvatarDisplayUrls, attachmentRows, followingRelationships] = await Promise.all([
     resolveFeedAuthorAvatarDisplayUrls(profilesById),
     attachments.error ? [] : Promise.all((attachments.data ?? []).map(async (row) => {
       const attachment = row as CommunityPostRecord["attachments"][number];
@@ -82,7 +83,22 @@ export async function getCommunityFeed(): Promise<CommunityPostRecord[]> {
         return { ...attachment, public_url: null };
       }
     })),
+    currentUserId
+      ? supabase
+        .from("profile_follows")
+        .select("followed_user_id")
+        .eq("follower_user_id", currentUserId)
+        .in("followed_user_id", authorIds)
+      : Promise.resolve({ data: [], error: null }),
   ]);
+  if (followingRelationships.error) {
+    logOptionalFeedError("author follow relationships", followingRelationships.error);
+  }
+  const followingAuthorIds = new Set(
+    (followingRelationships.data ?? [])
+      .map((relationship) => relationship.followed_user_id)
+      .filter((followedUserId): followedUserId is string => typeof followedUserId === "string"),
+  );
   const reactionRows = reactions.error ? [] : (reactions.data ?? []);
   const commentRows = comments.error ? [] : (comments.data ?? []);
   const shareRows = shares.error ? [] : (shares.data ?? []);
@@ -102,6 +118,8 @@ export async function getCommunityFeed(): Promise<CommunityPostRecord[]> {
         username: profile?.username ?? null,
         displayName: getFeedAuthorDisplayName(authorProfile),
         initials: getFeedAuthorInitials(authorProfile),
+        profileHref: getPublicProfileHref(profile?.username),
+        isFollowing: Boolean(currentUserId && currentUserId !== post.user_id && followingAuthorIds.has(post.user_id)),
         avatarDisplayUrl: authorAvatarDisplayUrls.get(post.user_id) ?? null,
       };
     })(),

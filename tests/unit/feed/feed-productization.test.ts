@@ -96,9 +96,9 @@ describe("community feed productization", () => {
     expect(postList).toContain("disabled={post.commentCount === null}");
     expect(postList).toContain("disabled={isBusy || !savedItemsAvailable}");
     expect(postList).toContain('aria-label="Share post"');
-    expect(postList).not.toContain("<span>Heart</span>");
-    expect(postList).not.toContain("<span>Comment</span>");
-    expect(postList).not.toContain("<span>Share</span>");
+    expect(postList).toContain("<span>React</span>");
+    expect(postList).toContain("<span>Comment</span>");
+    expect(postList).toContain("<span>Share</span>");
     expect(postList).toContain('className={`feed-post-action ${expandedPostId === post.id ? "is-active" : ""}`}');
   });
 
