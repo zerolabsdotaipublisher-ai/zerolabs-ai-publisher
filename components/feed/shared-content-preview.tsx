@@ -4,9 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { Code2, ExternalLink, File, FileText, Folder, Globe, ImageIcon, Video } from "lucide-react";
-import { routes } from "@/config/routes";
 import { toSafeDocumentUrl } from "@/lib/editor/registry/urls";
 import type { CommunityPostAttachment } from "@/app/(app)/feed/types";
+import { getSharedWebsiteId } from "@/app/(app)/feed/shared-website";
 
 export type SharedContentPreviewKind = "website" | "image" | "video" | "document" | "code" | "project" | "file";
 
@@ -18,13 +18,8 @@ const FALLBACK_FILE_NAMES: Record<Exclude<SharedContentPreviewKind, "website" | 
   file: "File attachment",
 };
 
-function getWebsiteId(attachment: CommunityPostAttachment): string | null {
-  const websiteId = attachment.metadata?.website_id;
-  return typeof websiteId === "string" && websiteId.trim() ? websiteId.trim() : null;
-}
-
 export function getSharedContentPreviewKind(attachment: CommunityPostAttachment): SharedContentPreviewKind {
-  if (getWebsiteId(attachment)) return "website";
+  if (getSharedWebsiteId(attachment)) return "website";
   if (attachment.attachment_type === "image" || attachment.attachment_type === "gif") return "image";
   if (attachment.attachment_type === "video") return "video";
   if (attachment.attachment_type === "document") return "document";
@@ -115,11 +110,40 @@ function UnavailableAction({ children }: { children: ReactNode }) {
 }
 
 function WebsitePreviewCard({ attachment, websiteId }: { attachment: CommunityPostAttachment; websiteId: string }) {
-  const title = getAttachmentDisplayName(attachment, "website");
-  const href = routes.liveSite(websiteId);
+  const title = attachment.website?.title ?? getAttachmentDisplayName(attachment, "website");
+  const href = attachment.website?.href;
+  const destination = href ? getHostname(href) ?? href : null;
+
+  if (!href) {
+    return (
+      <div className="feed-shared-content-preview feed-shared-content-preview--website">
+        <BrowserFallback title={title} />
+        <span className="feed-shared-content-copy">
+          <span className="feed-shared-content-eyebrow"><Globe size={14} aria-hidden="true" /> Shared website</span>
+          <strong>{title}</strong>
+          <span className="feed-shared-content-meta">Website no longer public</span>
+          <UnavailableAction>Website no longer public</UnavailableAction>
+        </span>
+      </div>
+    );
+  }
+
+  if (attachment.website?.isExternal) {
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer" className="feed-shared-content-preview feed-shared-content-preview--website" aria-label={`View ${title} website`}>
+        <BrowserFallback title={title} />
+        <span className="feed-shared-content-copy">
+          <span className="feed-shared-content-eyebrow"><Globe size={14} aria-hidden="true" /> Shared website</span>
+          <strong>{title}</strong>
+          <span className="feed-shared-content-meta">Published website · {destination}</span>
+          <CardAction>View website</CardAction>
+        </span>
+      </a>
+    );
+  }
 
   return (
-    <Link href={href} target="_blank" rel="noreferrer" className="feed-shared-content-preview feed-shared-content-preview--website" aria-label={`View website: ${title}`}>
+    <Link href={href} target="_blank" rel="noopener noreferrer" className="feed-shared-content-preview feed-shared-content-preview--website" aria-label={`View ${title} website`}>
       <BrowserFallback title={title} />
       <span className="feed-shared-content-copy">
         <span className="feed-shared-content-eyebrow"><Globe size={14} aria-hidden="true" /> Shared website</span>
@@ -248,7 +272,7 @@ function ProjectPreviewCard({ attachment, url }: { attachment: CommunityPostAtta
 
 export function SharedContentPreview({ attachment }: { attachment: CommunityPostAttachment }) {
   const kind = getSharedContentPreviewKind(attachment);
-  const websiteId = getWebsiteId(attachment);
+  const websiteId = getSharedWebsiteId(attachment);
   const url = getSafeAttachmentUrl(attachment);
 
   if (kind === "website" && websiteId) return <WebsitePreviewCard attachment={attachment} websiteId={websiteId} />;

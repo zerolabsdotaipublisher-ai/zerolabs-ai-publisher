@@ -49,6 +49,10 @@ describe("Feed social author cards", () => {
     expect(markup).toContain('aria-label="View Avery Builder&#x27;s profile"');
     expect(markup).toContain(">Avery Builder</a>");
     expect(markup).toContain(">@avery.builds</a>");
+    expect(markup.match(/href="\/profile\/u\/avery\.builds"/g)).toHaveLength(3);
+    expect(markup).toContain('class="feed-post-author-avatar-link"');
+    expect(markup).toContain('class="feed-post-author-name-link"');
+    expect(markup).toContain('class="feed-post-author-username-link"');
     expect(markup).toContain(">Follow</button>");
     expect(markup).toContain("2 reactions · 1 comment");
     expect(markup).toContain(">React</span>");
@@ -65,6 +69,9 @@ describe("Feed social author cards", () => {
     expect(markup).toContain('href="/profile"');
     expect(markup).not.toContain(">Follow</button>");
     expect(markup).toContain('aria-label="Delete post"');
+    const headerActions = markup.slice(markup.indexOf('<div class="feed-post-header-actions">'), markup.indexOf("</header>"));
+    expect(headerActions).toContain('aria-label="Delete post"');
+    expect(headerActions).not.toContain("<a");
   });
 
   it("keeps a legacy author without a username non-clickable instead of producing a broken profile URL", () => {
@@ -74,6 +81,8 @@ describe("Feed social author cards", () => {
     );
 
     expect(markup).not.toContain("/profile/null");
+    expect(markup).not.toContain("/profile/undefined");
+    expect(markup).not.toContain('href="/profile/u/"');
     expect(markup).not.toContain('aria-label="View Avery Builder&#x27;s profile"');
   });
 });

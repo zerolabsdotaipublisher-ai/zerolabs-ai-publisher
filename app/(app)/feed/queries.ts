@@ -2,6 +2,7 @@ import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { resolveProfileMediaDisplayUrl } from "@/lib/profile-media-server";
 import { getPublicProfileHref } from "@/lib/profile-public";
 import { getFeedAuthorDisplayName, getFeedAuthorInitials, type FeedAuthorProfile } from "./author";
+import { getSharedWebsiteId, resolveSharedWebsiteAttachment, type SharedWebsiteRecord } from "./shared-website";
 import type { CommunityPostRecord, CommunitySavedItemRecord, PublicWebsiteRecord } from "./types";
 
 export type PublicCommunityPostSummary = Pick<CommunityPostRecord, "id" | "title" | "body" | "created_at">;
@@ -67,7 +68,11 @@ export async function getCommunityFeed(): Promise<CommunityPostRecord[]> {
     }),
   );
   const currentUserId = currentUser.data.user?.id;
-  const [authorAvatarDisplayUrls, attachmentRows, followingRelationships] = await Promise.all([
+  const rawAttachments = (attachments.data ?? []) as CommunityPostRecord["attachments"];
+  const sharedWebsiteIds = [...new Set(rawAttachments
+    .map(getSharedWebsiteId)
+    .filter((websiteId): websiteId is string => Boolean(websiteId)))];
+  const [authorAvatarDisplayUrls, attachmentRows, followingRelationships, sharedWebsiteRecords] = await Promise.all([
     resolveFeedAuthorAvatarDisplayUrls(profilesById),
     attachments.error ? [] : Promise.all((attachments.data ?? []).map(async (row) => {
       const attachment = row as CommunityPostRecord["attachments"][number];
@@ -90,10 +95,25 @@ export async function getCommunityFeed(): Promise<CommunityPostRecord[]> {
         .eq("follower_user_id", currentUserId)
         .in("followed_user_id", authorIds)
       : Promise.resolve({ data: [], error: null }),
+    sharedWebsiteIds.length > 0
+      ? supabase
+        .from("website_structures")
+        .select("id, site_title, visibility, status, deleted_at, structure")
+        .in("id", sharedWebsiteIds)
+      : Promise.resolve({ data: [], error: null }),
   ]);
   if (followingRelationships.error) {
     logOptionalFeedError("author follow relationships", followingRelationships.error);
   }
+  if (sharedWebsiteRecords.error) {
+    logOptionalFeedError("shared website records", sharedWebsiteRecords.error);
+  }
+  const sharedWebsitesById = new Map(
+    (sharedWebsiteRecords.data ?? []).map((website) => {
+      const record = website as SharedWebsiteRecord;
+      return [record.id, record];
+    }),
+  );
   const followingAuthorIds = new Set(
     (followingRelationships.data ?? [])
       .map((relationship) => relationship.followed_user_id)
@@ -123,7 +143,14 @@ export async function getCommunityFeed(): Promise<CommunityPostRecord[]> {
         avatarDisplayUrl: authorAvatarDisplayUrls.get(post.user_id) ?? null,
       };
     })(),
-    attachments: attachmentRows.filter((row) => row.post_id === post.id) as CommunityPostRecord["attachments"],
+    attachments: attachmentRows
+      .filter((row) => row.post_id === post.id)
+      .map((attachment) => {
+        const websiteId = getSharedWebsiteId(attachment);
+        return websiteId
+          ? { ...attachment, website: resolveSharedWebsiteAttachment(attachment, sharedWebsitesById.get(websiteId)) }
+          : attachment;
+      }) as CommunityPostRecord["attachments"],
     reactionCount: reactions.error ? null : count(reactionRows, post.id),
     commentCount: comments.error ? null : count(commentRows, post.id),
     shareCount: shares.error ? null : count(shareRows, post.id),
