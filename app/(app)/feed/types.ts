@@ -50,6 +50,15 @@ export interface CommunityPostAttachment {
   mime_type?: string | null;
   file_size?: number | null;
   metadata?: Record<string, unknown> | null;
+  /** Current public destination state for a shared generated website. */
+  website?: SharedWebsiteAttachment | null;
+}
+
+export interface SharedWebsiteAttachment {
+  id: string;
+  title: string | null;
+  href: string | null;
+  isExternal: boolean;
 }
 
 export interface CommunitySavedItemRecord {

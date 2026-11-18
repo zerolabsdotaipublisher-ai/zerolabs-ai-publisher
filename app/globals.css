@@ -15781,6 +15781,7 @@ body .feed-shared-content-preview {
 
 body a.feed-shared-content-preview {
   color: var(--text-primary);
+  cursor: pointer;
   text-decoration: none;
   transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease, background-color 160ms ease;
 }
@@ -16461,6 +16462,10 @@ body .feed-post-author-name-link:focus-visible,
 body .feed-post-author-username-link:focus-visible {
   outline: 3px solid var(--focus-ring);
   outline-offset: 3px;
+}
+
+body .feed-post-author-avatar-link:hover .feed-post-avatar {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 28%, transparent);
 }
 
 body .feed-post-author-name-link,

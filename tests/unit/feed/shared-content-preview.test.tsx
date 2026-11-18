@@ -32,6 +32,12 @@ describe("shared feed content previews", () => {
       attachment_type: "project",
       file_name: "Nimbus Studio",
       metadata: { website_id: "website_fixture", kind: "generated-website" },
+      website: {
+        id: "website_fixture",
+        title: "Nimbus Studio",
+        href: "/site/website_fixture",
+        isExternal: false,
+      },
     });
 
     expect(markup).toContain("feed-shared-content-preview--website");
@@ -40,6 +46,43 @@ describe("shared feed content previews", () => {
     expect(markup).toContain("View website");
     expect(markup).toContain('href="/site/website_fixture"');
     expect(markup).toContain('target="_blank"');
+    expect(markup).toContain('rel="noopener noreferrer"');
+    expect(markup).toContain('aria-label="View Nimbus Studio website"');
+  });
+
+  it("renders a canonical custom domain as a safe external website link", () => {
+    const markup = renderPreview({
+      attachment_type: "project",
+      metadata: { website_id: "website_fixture", kind: "generated-website" },
+      website: {
+        id: "website_fixture",
+        title: "Harborview Home Services",
+        href: "https://harborview.example",
+        isExternal: true,
+      },
+    });
+
+    expect(markup).toContain('href="https://harborview.example"');
+    expect(markup).toContain('target="_blank"');
+    expect(markup).toContain('rel="noopener noreferrer"');
+    expect(markup).toContain("Harborview Home Services");
+  });
+
+  it("keeps a website card non-clickable when the current website is no longer public", () => {
+    const markup = renderPreview({
+      attachment_type: "project",
+      metadata: { website_id: "website_fixture", kind: "generated-website" },
+      website: {
+        id: "website_fixture",
+        title: "Formerly public site",
+        href: null,
+        isExternal: false,
+      },
+    });
+
+    expect(markup).toContain("Website no longer public");
+    expect(markup).not.toContain("/site/website_fixture");
+    expect(markup).not.toContain("/editor/");
   });
 
   it("keeps the website fallback intentional when no preview image exists", () => {
