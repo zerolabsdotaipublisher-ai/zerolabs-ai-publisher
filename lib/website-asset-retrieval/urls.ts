@@ -2,6 +2,7 @@ import type { WebsiteStructure } from "@/lib/ai/structure";
 
 interface WebsiteAssetUrlContext {
   previewToken?: string;
+  feedSharedWebsiteId?: string;
 }
 
 function toMutableClone<T>(value: T): T {
@@ -55,6 +56,12 @@ export function appendWebsiteAssetQueryContext(value: string, context: WebsiteAs
     url.searchParams.delete("previewToken");
   }
 
+  if (context.feedSharedWebsiteId) {
+    url.searchParams.set("feedSharedWebsiteId", context.feedSharedWebsiteId);
+  } else {
+    url.searchParams.delete("feedSharedWebsiteId");
+  }
+
   return renderableValue.startsWith("http://") || renderableValue.startsWith("https://")
     ? url.toString()
     : `${url.pathname}${url.search}`;
@@ -96,7 +103,7 @@ function rewriteValue(value: unknown, context: WebsiteAssetUrlContext): unknown 
 }
 
 export function withWebsiteAssetQueryContext(structure: WebsiteStructure, context: WebsiteAssetUrlContext): WebsiteStructure {
-  if (!context.previewToken || !containsWebsiteAssetPath(structure)) {
+  if ((!context.previewToken && !context.feedSharedWebsiteId) || !containsWebsiteAssetPath(structure)) {
     return structure;
   }
 

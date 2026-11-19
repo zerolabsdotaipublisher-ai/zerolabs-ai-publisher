@@ -388,7 +388,7 @@ describe("community feed actions", () => {
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/feed");
   });
 
-  it("does not share an unpublished website to Feed", async () => {
+  it("shares a public draft website to Feed as an explicit design share", async () => {
     const maybeSingle = vi.fn().mockResolvedValue({
       data: { id: "website_fixture", site_title: "Draft site", visibility: "public", status: "draft" },
       error: null,
@@ -396,14 +396,25 @@ describe("community feed actions", () => {
     const websiteUserId = vi.fn().mockReturnValue({ maybeSingle });
     const websiteId = vi.fn().mockReturnValue({ eq: websiteUserId });
     const select = vi.fn().mockReturnValue({ eq: websiteId });
-    const from = vi.fn().mockReturnValue({ select });
+    const single = vi.fn().mockResolvedValue({ data: { id: "post_fixture" }, error: null });
+    const createPost = vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue({ single }) });
+    const insertAttachment = vi.fn().mockResolvedValue({ error: null });
+    const from = vi.fn((table: string) => {
+      if (table === "website_structures") return { select };
+      if (table === "community_posts") return { insert: createPost };
+      return { insert: insertAttachment };
+    });
     mocks.getSupabaseServerClient.mockResolvedValue({ from });
 
-    await expect(shareWebsiteToFeed("website_fixture", "Draft site")).resolves.toEqual({
-      error: "Publish the website before sharing it to Feed.",
-    });
-    expect(from).toHaveBeenCalledTimes(1);
-    expect(from).toHaveBeenCalledWith("website_structures");
+    await expect(shareWebsiteToFeed("website_fixture", "Draft site")).resolves.toEqual({ success: true });
+    expect(createPost).toHaveBeenCalledWith(expect.objectContaining({
+      user_id: user.id,
+      visibility: "public",
+    }));
+    expect(insertAttachment).toHaveBeenCalledWith(expect.objectContaining({
+      storage_path: "website:website_fixture",
+      metadata: { website_id: "website_fixture", kind: "generated-website" },
+    }));
   });
 
   it("deletes the post and cleans up its uploaded attachment objects", async () => {

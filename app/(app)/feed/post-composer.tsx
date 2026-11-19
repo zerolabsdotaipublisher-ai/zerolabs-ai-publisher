@@ -103,8 +103,8 @@ export function PostComposer({ websites }: { websites: PublicWebsiteRecord[] }) 
               onClick={isAvailable ? () => selectPostType(value) : undefined}
               disabled={isPending || !isAvailable}
               aria-pressed={isSelected}
-              aria-label={`${label}${isSelected ? ", selected" : ""}${isWebsiteUnavailable ? ", unavailable: no published public websites" : ""}`}
-              title={isWebsiteUnavailable ? "Publish a website and set it to public before sharing it to Feed." : undefined}
+              aria-label={`${label}${isSelected ? ", selected" : ""}${isWebsiteUnavailable ? ", unavailable: no public website designs" : ""}`}
+              title={isWebsiteUnavailable ? "Set a website to public before sharing it to Feed." : undefined}
             >
               <Icon className="feed-type-icon" size={16} strokeWidth={2} aria-hidden="true" />
               <span className="feed-type-label">{label}</span>
@@ -187,7 +187,7 @@ export function PostComposer({ websites }: { websites: PublicWebsiteRecord[] }) 
 
         {postType === "website" ? (
           <label className="feed-field">
-            <span>Published public website</span>
+            <span>Public website design</span>
             <select name="website_id" required className="feed-select" disabled={isPending} defaultValue="">
               <option value="" disabled>Select a website</option>
               {websites.map((website) => <option key={website.id} value={website.id}>{website.site_title || "Untitled website"}</option>)}

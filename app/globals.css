@@ -15542,6 +15542,34 @@ body .feed-profile-card {
   box-shadow: none;
 }
 
+body .feed-profile-avatar-link {
+  display: inline-flex;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+body .feed-profile-avatar-link:hover .feed-profile-avatar {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+body .feed-profile-avatar-link:focus-visible,
+body .feed-profile-name-link:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+body .feed-profile-name-link {
+  width: fit-content;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+body .feed-profile-name-link:hover {
+  color: var(--accent);
+}
+
 body .feed-panel-note {
   padding-top: 0.85rem;
   border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
@@ -15754,6 +15782,29 @@ body .feed-website-card h3 {
   color: var(--text-primary);
   font-size: 0.95rem;
   line-height: 1.35;
+}
+
+body .feed-website-card-link {
+  color: var(--text-primary);
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    transform 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+body .feed-website-card-link:hover,
+body .feed-website-card-link:focus-visible {
+  transform: translateY(-1px);
+  border-color: var(--border-strong);
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+}
+
+body .feed-website-card-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }
 
 body .feed-website-meta {
@@ -16455,6 +16506,7 @@ body .feed-post-author-avatar-link {
   display: inline-flex;
   flex: 0 0 auto;
   border-radius: 999px;
+  cursor: pointer;
 }
 
 body .feed-post-author-avatar-link:focus-visible,
@@ -16476,6 +16528,7 @@ body .feed-post-author-username-link {
   font-weight: 800;
   line-height: 1.35;
   overflow-wrap: anywhere;
+  cursor: pointer;
   text-decoration: none;
 }
 

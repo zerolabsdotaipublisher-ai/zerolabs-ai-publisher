@@ -38,6 +38,7 @@ export function parseWebsiteAssetResolveQuery(searchParams: URLSearchParams): We
     search: searchParams.get("search")?.trim() || undefined,
     tenantId: searchParams.get("tenantId")?.trim() || undefined,
     previewToken: searchParams.get("previewToken")?.trim() || undefined,
+    feedSharedWebsiteId: searchParams.get("feedSharedWebsiteId")?.trim() || undefined,
     surface: parseSurface(searchParams.get("surface")),
     includeArchived: searchParams.get("includeArchived") === "true",
     includeDeleted: searchParams.get("includeDeleted") === "true",
@@ -48,11 +49,13 @@ export function parseWebsiteAssetResolveQuery(searchParams: URLSearchParams): We
 
 export function parseWebsiteAssetUrlRequest(searchParams: URLSearchParams): {
   previewToken?: string;
+  feedSharedWebsiteId?: string;
   surface: WebsiteAssetSurface;
   direct: boolean;
 } {
   return {
     previewToken: searchParams.get("previewToken")?.trim() || undefined,
+    feedSharedWebsiteId: searchParams.get("feedSharedWebsiteId")?.trim() || undefined,
     surface: parseSurface(searchParams.get("surface")),
     direct: searchParams.get("direct") !== "false",
   };

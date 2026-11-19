@@ -62,7 +62,7 @@ describe("community feed productization", () => {
     expect(composer).toContain('encType="multipart/form-data"');
     expect(composer).toContain("event.currentTarget.setCustomValidity(validationError ?? \"\")");
     expect(nextConfig).toContain('bodySizeLimit: "4.4mb"');
-    expect(page).toContain("getPublicWebsitesForOwner(user.id)");
+    expect(page).toContain("getFeedShareableWebsitesForOwner(user.id)");
     expect(page).toContain("<PostComposer websites={shareableWebsites} />");
   });
 

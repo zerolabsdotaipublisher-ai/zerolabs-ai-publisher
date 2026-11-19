@@ -5,7 +5,7 @@ export interface CommunityPostAuthor {
   username?: string | null;
   displayName: string;
   initials: string;
-  /** Null for legacy profiles without a username, preventing broken links. */
+  /** Null only when the post author identifier itself is unavailable. */
   profileHref: string | null;
   /** Relationship state is resolved once per distinct author for the feed. */
   isFollowing: boolean;
@@ -59,6 +59,10 @@ export interface SharedWebsiteAttachment {
   title: string | null;
   href: string | null;
   isExternal: boolean;
+  /** A public Feed share exposes this otherwise-unpublished design in `/site/[id]`. */
+  isFeedSharedDesign?: boolean;
+  /** The Feed viewer owns an unpublished/private shared site and may preview it. */
+  isOwnerPreview?: boolean;
 }
 
 export interface CommunitySavedItemRecord {

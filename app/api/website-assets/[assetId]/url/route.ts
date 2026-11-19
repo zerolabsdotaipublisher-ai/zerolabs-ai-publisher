@@ -23,6 +23,7 @@ export async function GET(request: NextRequest, context: RouteContext): Promise<
       assetId: normalizedAssetId,
       userId: user?.id,
       previewToken: query.previewToken,
+      feedSharedWebsiteId: query.feedSharedWebsiteId,
       surface: query.surface,
       direct: query.direct,
     });

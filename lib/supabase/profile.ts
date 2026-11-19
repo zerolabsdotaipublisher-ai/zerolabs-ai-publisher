@@ -447,21 +447,38 @@ export async function getProfile(userId: string): Promise<Profile | null> {
   }
 }
 
-/**
- * Looks up a profile for a public route without selecting email, metadata, or
- * other account-only columns. Usernames are backed by the existing unique
- * `profiles_username_idx` index, so an exact username resolves one profile.
- */
-export async function getPublicProfileByUsername(username: string | null | undefined): Promise<PublicProfile | null> {
-  const normalizedUsername = normalizePublicProfileUsername(username);
-  if (!normalizedUsername) return null;
+const PUBLIC_PROFILE_FIELDS = "id, full_name, avatar_url, first_name, last_name, username, country, date_of_birth, preferences";
 
+function toPublicProfile(data: unknown): PublicProfile | null {
+  if (!data || typeof data !== "object") return null;
+
+  const profile = data as Partial<Profile>;
+  const id = typeof profile.id === "string" ? profile.id : "";
+  if (!id) return null;
+
+  return {
+    id,
+    full_name: typeof profile.full_name === "string" ? profile.full_name : null,
+    avatar_url: typeof profile.avatar_url === "string" ? profile.avatar_url : null,
+    first_name: typeof profile.first_name === "string" ? profile.first_name : null,
+    last_name: typeof profile.last_name === "string" ? profile.last_name : null,
+    username: typeof profile.username === "string" ? profile.username : null,
+    country: typeof profile.country === "string" ? profile.country : null,
+    date_of_birth: typeof profile.date_of_birth === "string" ? profile.date_of_birth : null,
+    preferences: profile.preferences && typeof profile.preferences === "object" ? profile.preferences : null,
+  };
+}
+
+async function getPublicProfileByField(
+  field: "id" | "username",
+  value: string,
+): Promise<PublicProfile | null> {
   try {
     const supabase = getSupabaseServiceClient();
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, full_name, avatar_url, first_name, last_name, username, country, date_of_birth, preferences")
-      .eq("username", normalizedUsername)
+      .select(PUBLIC_PROFILE_FIELDS)
+      .eq(field, value)
       .maybeSingle();
 
     if (error) {
@@ -472,20 +489,8 @@ export async function getPublicProfileByUsername(username: string | null | undef
       });
       return null;
     }
-    if (!data) return null;
 
-    const profile = data as Partial<Profile>;
-    return {
-      id: typeof profile.id === "string" ? profile.id : "",
-      full_name: typeof profile.full_name === "string" ? profile.full_name : null,
-      avatar_url: typeof profile.avatar_url === "string" ? profile.avatar_url : null,
-      first_name: typeof profile.first_name === "string" ? profile.first_name : null,
-      last_name: typeof profile.last_name === "string" ? profile.last_name : null,
-      username: typeof profile.username === "string" ? profile.username : null,
-      country: typeof profile.country === "string" ? profile.country : null,
-      date_of_birth: typeof profile.date_of_birth === "string" ? profile.date_of_birth : null,
-      preferences: profile.preferences && typeof profile.preferences === "object" ? profile.preferences : null,
-    };
+    return toPublicProfile(data);
   } catch (error) {
     logger.warn("public profile lookup could not be completed", {
       category: "error",
@@ -494,6 +499,18 @@ export async function getPublicProfileByUsername(username: string | null | undef
     });
     return null;
   }
+}
+
+/** Looks up a public profile by its human-readable username. */
+export async function getPublicProfileByUsername(username: string | null | undefined): Promise<PublicProfile | null> {
+  const normalizedUsername = normalizePublicProfileUsername(username);
+  return normalizedUsername ? getPublicProfileByField("username", normalizedUsername) : null;
+}
+
+/** Looks up a public profile by its stable, durable user identifier. */
+export async function getPublicProfileById(userId: string | null | undefined): Promise<PublicProfile | null> {
+  const normalizedUserId = userId?.trim();
+  return normalizedUserId ? getPublicProfileByField("id", normalizedUserId) : null;
 }
 
 export async function updateProfile(userId: string, data: ProfileUpdateData): Promise<Profile> {

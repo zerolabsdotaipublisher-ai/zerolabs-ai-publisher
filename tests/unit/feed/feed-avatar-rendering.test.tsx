@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => ({
   resolveProfileMediaDisplayUrl: vi.fn(),
   getCommunityFeed: vi.fn(),
   getPublicWebsites: vi.fn(),
-  getPublicWebsitesForOwner: vi.fn(),
+  getFeedShareableWebsitesForOwner: vi.fn(),
   getSavedCommunityItems: vi.fn(),
   createCommunityPost: vi.fn(),
   createCommunityPostComment: vi.fn(),
@@ -31,7 +31,7 @@ vi.mock("@/lib/profile-media-server", () => ({ resolveProfileMediaDisplayUrl: mo
 vi.mock("@/app/(app)/feed/queries", () => ({
   getCommunityFeed: mocks.getCommunityFeed,
   getPublicWebsites: mocks.getPublicWebsites,
-  getPublicWebsitesForOwner: mocks.getPublicWebsitesForOwner,
+  getFeedShareableWebsitesForOwner: mocks.getFeedShareableWebsitesForOwner,
   getSavedCommunityItems: mocks.getSavedCommunityItems,
 }));
 vi.mock("@/app/(app)/feed/actions", () => ({
@@ -60,7 +60,7 @@ describe("community feed avatar rendering", () => {
     mocks.resolveProfileMediaDisplayUrl.mockResolvedValue(signedAvatarUrl);
     mocks.getCommunityFeed.mockResolvedValue([]);
     mocks.getPublicWebsites.mockResolvedValue([]);
-    mocks.getPublicWebsitesForOwner.mockResolvedValue([]);
+    mocks.getFeedShareableWebsitesForOwner.mockResolvedValue([]);
     mocks.getSavedCommunityItems.mockResolvedValue({ items: [], isAvailable: true });
   });
 

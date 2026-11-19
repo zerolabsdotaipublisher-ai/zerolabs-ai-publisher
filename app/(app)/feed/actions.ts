@@ -168,13 +168,13 @@ export async function createCommunityPost(formData: FormData): Promise<FeedActio
     if (postType === "project" && !/^https?:\/\//i.test(projectUrl)) return { error: "Enter a valid project link." };
 
     const supabase = await getSupabaseServerClient();
-    let website: { id: string; site_title: string | null; visibility: string | null; status: string | null } | null = null;
+    let website: { id: string; site_title: string | null; visibility: string | null; status: string | null; deleted_at?: string | null } | null = null;
     if (postType === "website") {
       const websiteId = readText(formData, "website_id");
       if (!websiteId) return { error: "Select a website before posting." };
       const { data, error: websiteError } = await supabase
         .from("website_structures")
-        .select("id, site_title, visibility, status")
+        .select("id, site_title, visibility, status, deleted_at")
         .eq("id", websiteId)
         .eq("user_id", user.id)
         .maybeSingle();
@@ -185,7 +185,7 @@ export async function createCommunityPost(formData: FormData): Promise<FeedActio
       website = data;
       if (!website) return { error: "You are not allowed to share this website." };
       if (website.visibility !== "public") return { error: "Make the website public before sharing it to Feed." };
-      if (website.status !== "published") return { error: "Publish the website before sharing it to Feed." };
+      if (website.status === "deleted" || website.deleted_at) return { error: "This website is no longer available to share." };
     }
 
     const { data: post, error: postError } = await supabase
@@ -255,7 +255,7 @@ export async function shareWebsiteToFeed(structureId: string, title: string) {
   const supabase = await getSupabaseServerClient();
   const { data: website, error: websiteError } = await supabase
     .from("website_structures")
-    .select("id, site_title, visibility, status")
+    .select("id, site_title, visibility, status, deleted_at")
     .eq("id", websiteId)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -266,7 +266,7 @@ export async function shareWebsiteToFeed(structureId: string, title: string) {
   }
   if (!website) return { error: "You are not allowed to share this website." };
   if (website.visibility !== "public") return { error: "Make the website public before sharing it to Feed." };
-  if (website.status !== "published") return { error: "Publish the website before sharing it to Feed." };
+  if (website.status === "deleted" || website.deleted_at) return { error: "This website is no longer available to share." };
 
   const { data: post, error: postError } = await supabase
     .from("community_posts")

@@ -113,6 +113,8 @@ function WebsitePreviewCard({ attachment, websiteId }: { attachment: CommunityPo
   const title = attachment.website?.title ?? getAttachmentDisplayName(attachment, "website");
   const href = attachment.website?.href;
   const destination = href ? getHostname(href) ?? href : null;
+  const isOwnerPreview = Boolean(attachment.website?.isOwnerPreview);
+  const isFeedSharedDesign = Boolean(attachment.website?.isFeedSharedDesign);
 
   if (!href) {
     return (
@@ -148,8 +150,14 @@ function WebsitePreviewCard({ attachment, websiteId }: { attachment: CommunityPo
       <span className="feed-shared-content-copy">
         <span className="feed-shared-content-eyebrow"><Globe size={14} aria-hidden="true" /> Shared website</span>
         <strong>{title}</strong>
-        <span className="feed-shared-content-meta">Published website · /site/{websiteId}</span>
-        <CardAction>View website</CardAction>
+        <span className="feed-shared-content-meta">
+          {isOwnerPreview
+            ? `Shared website preview · /preview/${websiteId}`
+            : isFeedSharedDesign
+              ? `Shared website design · /site/${websiteId}`
+              : `Published website · /site/${websiteId}`}
+        </span>
+        <CardAction>{isOwnerPreview ? "Open preview" : isFeedSharedDesign ? "View design" : "View website"}</CardAction>
       </span>
     </Link>
   );

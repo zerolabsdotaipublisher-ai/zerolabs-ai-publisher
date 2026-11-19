@@ -74,15 +74,26 @@ describe("Feed social author cards", () => {
     expect(headerActions).not.toContain("<a");
   });
 
-  it("keeps a legacy author without a username non-clickable instead of producing a broken profile URL", () => {
-    const legacyPost = post({ author: { ...post().author, username: null, profileHref: null } });
+  it("keeps a legacy author without a username clickable through their durable profile route", () => {
+    const legacyPost = post({ author: { ...post().author, username: null, profileHref: "/profile/u/id/author_user" } });
     const markup = renderToStaticMarkup(
       <PostList posts={[legacyPost]} currentUserId="viewer_user" savedPostIds={[]} savedItemsAvailable />,
     );
 
     expect(markup).not.toContain("/profile/null");
     expect(markup).not.toContain("/profile/undefined");
-    expect(markup).not.toContain('href="/profile/u/"');
-    expect(markup).not.toContain('aria-label="View Avery Builder&#x27;s profile"');
+    expect(markup).toContain('href="/profile/u/id/author_user"');
+    expect(markup).toContain('aria-label="View Avery Builder&#x27;s profile"');
+  });
+
+  it("keeps obvious pointer, hover, and focus-visible affordances for all author identity links", () => {
+    const styles = readFileSync(resolve(process.cwd(), "app/globals.css"), "utf8");
+
+    expect(styles).toContain("body .feed-post-author-avatar-link");
+    expect(styles).toContain("body .feed-post-author-name-link:hover");
+    expect(styles).toContain("body .feed-post-author-username-link:focus-visible");
+    expect(styles).toContain("cursor: pointer");
   });
 });
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";

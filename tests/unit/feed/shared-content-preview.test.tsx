@@ -68,6 +68,27 @@ describe("shared feed content previews", () => {
     expect(markup).toContain("Harborview Home Services");
   });
 
+  it("wraps a Feed-shared design preview, title, metadata, and action in one internal website link", () => {
+    const markup = renderPreview({
+      attachment_type: "project",
+      metadata: { website_id: "website_fixture", kind: "generated-website" },
+      website: {
+        id: "website_fixture",
+        title: "Harborview Home Services",
+        href: "/site/website_fixture",
+        isExternal: false,
+        isFeedSharedDesign: true,
+      },
+    });
+
+    expect(markup.match(/href="\/site\/website_fixture"/g)).toHaveLength(1);
+    expect(markup).toContain("feed-shared-browser-fallback");
+    expect(markup).toContain("Harborview Home Services");
+    expect(markup).toContain("Shared website design");
+    expect(markup).toContain("View design");
+    expect(markup).not.toContain("/editor/");
+  });
+
   it("keeps a website card non-clickable when the current website is no longer public", () => {
     const markup = renderPreview({
       attachment_type: "project",
@@ -83,6 +104,24 @@ describe("shared feed content previews", () => {
     expect(markup).toContain("Website no longer public");
     expect(markup).not.toContain("/site/website_fixture");
     expect(markup).not.toContain("/editor/");
+  });
+
+  it("keeps an owner's shared unpublished website card navigable to its design preview", () => {
+    const markup = renderPreview({
+      attachment_type: "project",
+      metadata: { website_id: "website_fixture", kind: "generated-website" },
+      website: {
+        id: "website_fixture",
+        title: "Draft site",
+        href: "/preview/website_fixture",
+        isExternal: false,
+        isOwnerPreview: true,
+      },
+    });
+
+    expect(markup).toContain('href="/preview/website_fixture"');
+    expect(markup).toContain("Shared website preview");
+    expect(markup).toContain("Open preview");
   });
 
   it("keeps the website fallback intentional when no preview image exists", () => {

@@ -3,11 +3,17 @@ import type { CommunityPostAttachment, SharedWebsiteAttachment } from "./types";
 
 export type SharedWebsiteRecord = {
   id: string;
+  user_id?: string | null;
   site_title?: string | null;
   visibility?: string | null;
   status?: string | null;
   deleted_at?: string | null;
   structure?: unknown;
+};
+
+export type SharedWebsiteViewerContext = {
+  currentUserId?: string | null;
+  isPublicFeedPost?: boolean;
 };
 
 function getNonEmptyText(value: unknown): string | null {
@@ -66,6 +72,7 @@ export function getSharedWebsiteId(attachment: CommunityPostAttachment): string 
 export function resolveSharedWebsiteAttachment(
   attachment: CommunityPostAttachment,
   website: SharedWebsiteRecord | null | undefined,
+  viewerContext: SharedWebsiteViewerContext = {},
 ): SharedWebsiteAttachment | null {
   const websiteId = getSharedWebsiteId(attachment);
   if (!websiteId) return null;
@@ -76,15 +83,41 @@ export function resolveSharedWebsiteAttachment(
     && website.status === "published"
     && !website.deleted_at;
 
-  if (!isPubliclyAvailable) {
-    return { id: websiteId, title, href: null, isExternal: false };
+  if (isPubliclyAvailable) {
+    const liveUrl = getSafePublishedUrl(getPublicationString(website.structure, "liveUrl"));
+    if (liveUrl) {
+      return { id: websiteId, title, href: liveUrl, isExternal: true };
+    }
+
+    const livePath = getSafeLiveSitePath(getPublicationString(website.structure, "livePath"), websiteId);
+    return { id: websiteId, title, href: livePath ?? routes.liveSite(websiteId), isExternal: false };
   }
 
-  const liveUrl = getSafePublishedUrl(getPublicationString(website.structure, "liveUrl"));
-  if (liveUrl) {
-    return { id: websiteId, title, href: liveUrl, isExternal: true };
+  // A public Feed post is an explicit product-level share of a public website
+  // design. It remains viewable in the supported app route even when there is
+  // not yet an external published URL. The route repeats this authorization
+  // check before rendering so a direct URL cannot bypass it.
+  const isFeedSharedDesign = Boolean(
+    viewerContext.isPublicFeedPost
+    && website?.id === websiteId
+    && website.visibility === "public"
+    && website.status !== "deleted"
+    && !website.deleted_at,
+  );
+  if (isFeedSharedDesign) {
+    return { id: websiteId, title, href: routes.liveSite(websiteId), isExternal: false, isFeedSharedDesign: true };
   }
 
-  const livePath = getSafeLiveSitePath(getPublicationString(website.structure, "livePath"), websiteId);
-  return { id: websiteId, title, href: livePath ?? routes.liveSite(websiteId), isExternal: false };
+  const viewerOwnsWebsite = Boolean(
+    viewerContext.currentUserId
+    && website?.id === websiteId
+    && website.user_id === viewerContext.currentUserId
+    && website.status !== "deleted"
+    && !website.deleted_at,
+  );
+  if (viewerOwnsWebsite) {
+    return { id: websiteId, title, href: routes.previewSite(websiteId), isExternal: false, isOwnerPreview: true };
+  }
+
+  return { id: websiteId, title, href: null, isExternal: false };
 }

@@ -44,6 +44,8 @@ export const routes = {
    * collide with owner-only `/profile/customize` routing.
    */
   publicProfile: (username: string) => `/profile/u/${encodeURIComponent(username)}`,
+  /** Stable canonical route for a profile that has no public username. */
+  publicProfileById: (userId: string) => `/profile/u/id/${encodeURIComponent(userId)}`,
   profileCustomize: "/profile/customize",
   generatedSites: "/generated-sites",
   generatedSite: (id: string) => `/generated-sites/${id}`,
