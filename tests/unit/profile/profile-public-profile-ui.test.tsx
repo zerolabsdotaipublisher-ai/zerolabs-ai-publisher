@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { ProfileView } from "@/components/profile/profile-view";
-import { getPublicProfileHref } from "@/lib/profile-public";
+import { getPublicProfileHref, getPublicProfileIdHref } from "@/lib/profile-public";
 import type { Profile } from "@/lib/supabase/profile";
 
 
@@ -29,10 +29,18 @@ function profile(overrides: Partial<Profile> = {}): Profile {
 
 describe("public profile identity and visitor controls", () => {
   it("builds a safe canonical public route and leaves missing legacy usernames unlinked", () => {
-    expect(getPublicProfileHref("avery.builds")).toBe("/profile/u/avery.builds");
-    expect(getPublicProfileHref("  avery builds  ")).toBe("/profile/u/avery%20builds");
-    expect(getPublicProfileHref(null)).toBeNull();
-    expect(getPublicProfileHref("   ")).toBeNull();
+    expect(getPublicProfileHref({ username: "avery.builds", id: "author_fixture" })).toBe("/profile/u/avery.builds");
+    expect(getPublicProfileHref({ username: "  avery builds  ", id: "author_fixture" })).toBe("/profile/u/avery%20builds");
+    expect(getPublicProfileHref({ id: "author_fixture" })).toBe("/profile/u/id/author_fixture");
+    expect(getPublicProfileHref({ username: "   ", id: "   " })).toBeNull();
+  });
+
+  it("uses a distinct durable-identifier route when a legacy Feed author has no username", () => {
+    expect(getPublicProfileIdHref("author_fixture")).toBe("/profile/u/id/author_fixture");
+    expect(getPublicProfileIdHref("  author fixture  ")).toBe("/profile/u/id/author%20fixture");
+    expect(getPublicProfileHref({ id: "author_fixture" })).toBe("/profile/u/id/author_fixture");
+    expect(getPublicProfileHref({ username: "avery.builds", id: "author_fixture" })).toBe("/profile/u/avery.builds");
+    expect(getPublicProfileHref({ id: "   " })).toBeNull();
   });
 
   it("keeps owner and viewed identities distinct: an owner gets Edit profile, never Follow", () => {

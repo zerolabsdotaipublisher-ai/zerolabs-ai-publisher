@@ -15,12 +15,16 @@ function resolveAccessLevel(input: {
   publicationState?: string;
   userId?: string;
   previewToken?: string;
+  feedSharedWebsiteId?: string;
 }): WebsiteAssetAccessLevel {
   if (input.previewToken) {
     return "preview";
   }
   if (input.publicationState === "published") {
     return input.userId ? "published" : "public";
+  }
+  if (input.feedSharedWebsiteId && input.userId) {
+    return "draft";
   }
   return input.userId ? "draft" : "private";
 }
@@ -35,6 +39,7 @@ function createDeliveryCacheKey(input: {
   assetId: string;
   userId?: string;
   previewToken?: string;
+  feedSharedWebsiteId?: string;
   direct: boolean;
   surface: string;
 }): string {
@@ -42,22 +47,24 @@ function createDeliveryCacheKey(input: {
     input.assetId,
     input.userId ?? "anonymous",
     input.previewToken ? "preview-token" : "no-preview-token",
+    input.feedSharedWebsiteId ?? "no-feed-shared-website",
     input.direct ? "direct" : "render",
     input.surface,
   ].join(":");
 }
 
-function buildRenderUrl(assetId: string, previewToken?: string): string {
+function buildRenderUrl(assetId: string, context: { previewToken?: string; feedSharedWebsiteId?: string }): string {
   if (!assetId) {
     throw new StorageAccessError("Website asset id is required.", 400, "website_asset_id_required");
   }
-  return appendWebsiteAssetQueryContext(buildWebsiteAssetRenderPath(assetId), { previewToken });
+  return appendWebsiteAssetQueryContext(buildWebsiteAssetRenderPath(assetId), context);
 }
 
 export async function getWebsiteAssetDelivery(input: {
   assetId: string;
   userId?: string;
   previewToken?: string;
+  feedSharedWebsiteId?: string;
   direct?: boolean;
   surface: WebsiteAssetResolveQuery["surface"];
 }): Promise<WebsiteAssetDelivery> {
@@ -73,8 +80,12 @@ export async function getWebsiteAssetDelivery(input: {
       publicationState: asset.publicationState,
       userId: input.userId,
       previewToken: input.previewToken,
+      feedSharedWebsiteId: input.feedSharedWebsiteId,
     });
-    const renderUrl = buildRenderUrl(asset.id, input.previewToken);
+    const renderUrl = buildRenderUrl(asset.id, {
+      previewToken: input.previewToken,
+      feedSharedWebsiteId: input.feedSharedWebsiteId,
+    });
 
     if (!asset.media) {
       logWebsiteAssetEvent("fallback", { assetId: asset.id, reason: "missing_media", surface: input.surface });
@@ -85,6 +96,7 @@ export async function getWebsiteAssetDelivery(input: {
       asset,
       userId: input.userId,
       previewToken: input.previewToken,
+      feedSharedWebsiteId: input.feedSharedWebsiteId,
       operation: input.direct ? "signed_url" : "read",
     });
 
@@ -92,6 +104,7 @@ export async function getWebsiteAssetDelivery(input: {
       assetId: asset.id,
       userId: input.userId,
       previewToken: input.previewToken,
+      feedSharedWebsiteId: input.feedSharedWebsiteId,
       direct: Boolean(input.direct),
       surface: input.surface,
     });
@@ -157,6 +170,7 @@ export async function resolveWebsiteAsset(input: WebsiteAssetResolveQuery & { us
         assetId: record.id,
         userId: input.userId,
         previewToken: input.previewToken,
+        feedSharedWebsiteId: input.feedSharedWebsiteId,
         surface: input.surface,
       });
       logWebsiteAssetEvent("resolve", { assetId: record.id, surface: input.surface, userId: input.userId });
@@ -175,6 +189,7 @@ export async function resolveWebsiteAsset(input: WebsiteAssetResolveQuery & { us
       assetId: record.id,
       userId: input.userId,
       previewToken: input.previewToken,
+      feedSharedWebsiteId: input.feedSharedWebsiteId,
       surface: input.surface,
     });
     logWebsiteAssetEvent("resolve", { assetId: record.id, surface: input.surface, userId: input.userId });
@@ -199,6 +214,7 @@ export async function listWebsiteAssets(input: WebsiteAssetResolveQuery & { user
         assetId: record.id,
         userId: input.userId,
         previewToken: input.previewToken,
+        feedSharedWebsiteId: input.feedSharedWebsiteId,
         surface: input.surface,
       });
       return createWebsiteAssetApiRecord(record, delivery);

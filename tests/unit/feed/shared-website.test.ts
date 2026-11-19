@@ -72,11 +72,42 @@ describe("shared Feed website destinations", () => {
     expect(result).toMatchObject({ href: "/site/website_fixture", isExternal: false });
   });
 
-  it("makes a private, unpublished, or missing website unavailable without a public href", () => {
+  it("keeps private, deleted, missing, and unshared draft websites unavailable to ordinary Feed viewers", () => {
     expect(resolveSharedWebsiteAttachment(attachment(), website({ visibility: "private" }))).toMatchObject({ href: null });
     expect(resolveSharedWebsiteAttachment(attachment(), website({ status: "draft" }))).toMatchObject({ href: null });
+    expect(resolveSharedWebsiteAttachment(attachment(), website({ status: "deleted" }), { isPublicFeedPost: true })).toMatchObject({ href: null });
     expect(resolveSharedWebsiteAttachment(attachment(), website({ deleted_at: "2026-11-18T00:00:00.000Z" }))).toMatchObject({ href: null });
     expect(resolveSharedWebsiteAttachment(attachment(), null)).toMatchObject({ href: null });
+  });
+
+  it("uses the internal design route for a public website deliberately shared through a public Feed post", () => {
+    const result = resolveSharedWebsiteAttachment(
+      attachment(),
+      website({ status: "draft", structure: {} }),
+      { isPublicFeedPost: true },
+    );
+
+    expect(result).toEqual({
+      id: "website_fixture",
+      title: "Harborview Home Services",
+      href: "/site/website_fixture",
+      isExternal: false,
+      isFeedSharedDesign: true,
+    });
+  });
+
+  it("routes an owner's no-longer-public shared site to its authenticated design preview", () => {
+    const result = resolveSharedWebsiteAttachment(
+      attachment(),
+      website({ visibility: "private", user_id: "viewer_fixture" }),
+      { currentUserId: "viewer_fixture" },
+    );
+
+    expect(result).toMatchObject({
+      href: "/preview/website_fixture",
+      isExternal: false,
+      isOwnerPreview: true,
+    });
   });
 
   it("reads the metadata website ID, with the established storage sentinel as a legacy fallback", () => {

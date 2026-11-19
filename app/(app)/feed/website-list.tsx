@@ -26,24 +26,35 @@ export function PublicWebsiteList({ websites }: PublicWebsiteListProps) {
 
   return (
     <div className="feed-website-list">
-      {websites.map((site) => (
-        <article key={site.id} className="feed-website-card">
-          <div className="feed-website-card-copy">
-            <h3>{site.site_title || "Untitled website"}</h3>
-            <p className="feed-website-meta">
-              Generated {formatDate(site.generated_at)}
-              {site.updated_at ? ` | Updated ${formatDate(site.updated_at)}` : ""}
-            </p>
-          </div>
+      {websites.map((site) => {
+        const title = site.site_title || "Untitled website";
 
-          <div className="feed-website-card-footer">
-            <span className={`feed-website-status is-${site.status}`}>{site.status.replaceAll("_", " ")}</span>
-            <Link href={routes.liveSite(site.id)} target="_blank" className="feed-inline-link">
-              View site <ExternalLink size={12} />
-            </Link>
-          </div>
-        </article>
-      ))}
+        return (
+          <Link
+            key={site.id}
+            href={routes.liveSite(site.id)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="feed-website-card feed-website-card-link"
+            aria-label={`View ${title}`}
+          >
+            <div className="feed-website-card-copy">
+              <h3>{title}</h3>
+              <p className="feed-website-meta">
+                Generated {formatDate(site.generated_at)}
+                {site.updated_at ? ` | Updated ${formatDate(site.updated_at)}` : ""}
+              </p>
+            </div>
+
+            <div className="feed-website-card-footer">
+              <span className={`feed-website-status is-${site.status}`}>{site.status.replaceAll("_", " ")}</span>
+              <span className="feed-inline-link feed-website-card-action">
+                View site <ExternalLink size={12} />
+              </span>
+            </div>
+          </Link>
+        );
+      })}
     </div>
   );
 }

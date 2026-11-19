@@ -29,6 +29,7 @@ function revalidateRelationshipViews() {
     revalidatePath(routes.feed);
     revalidatePath(routes.profile);
     revalidatePath("/profile/u/[username]", "page");
+    revalidatePath("/profile/u/id/[id]", "page");
   } catch (error) {
     // The relationship write already succeeded. A later refresh failure must
     // not make the client roll back a correct optimistic relationship state.

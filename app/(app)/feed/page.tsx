@@ -1,8 +1,8 @@
 import { Metadata } from "next";
 import { PostComposer } from "./post-composer";
 import { PostList } from "./post-list";
-import { FeedAvatar } from "./avatar";
-import { getCommunityFeed, getPublicWebsites, getPublicWebsitesForOwner, getSavedCommunityItems } from "./queries";
+import { FeedSidebarProfileIdentity } from "./sidebar-profile-identity";
+import { getCommunityFeed, getFeedShareableWebsitesForOwner, getPublicWebsites, getSavedCommunityItems } from "./queries";
 import { PublicWebsiteList } from "./website-list";
 import { routes } from "@/config/routes";
 import { requireUser } from "@/lib/supabase/auth";
@@ -26,7 +26,7 @@ export default async function FeedPage() {
     }),
     getCommunityFeed(),
     getPublicWebsites(),
-    getPublicWebsitesForOwner(user.id),
+    getFeedShareableWebsitesForOwner(user.id),
     getSavedCommunityItems(user.id),
   ]);
   const savedPostIds = savedItemsResult.items
@@ -42,20 +42,16 @@ export default async function FeedPage() {
           <p>A focused place to share build notes, launches, questions, and ideas.</p>
         </div>
 
-        <div className="feed-profile-card">
-          <FeedAvatar
-            className="feed-profile-avatar"
-            avatarDisplayUrl={currentUserAvatarDisplayUrl}
-            initials={getProfileDisplayName(profile).charAt(0).toUpperCase()}
-          />
-          <div className="feed-profile-copy">
-            <strong>{getProfileDisplayName(profile)}</strong>
-            <span>{user.email}</span>
-          </div>
-        </div>
+        <FeedSidebarProfileIdentity
+          href={routes.profile}
+          displayName={getProfileDisplayName(profile)}
+          email={user.email}
+          avatarDisplayUrl={currentUserAvatarDisplayUrl}
+          initials={getProfileDisplayName(profile).charAt(0).toUpperCase()}
+        />
 
         <p className="feed-panel-note">
-          Share text, files, project links, and your published public websites with the community.
+          Share text, files, project links, and your public website designs with the community.
         </p>
       </aside>
 

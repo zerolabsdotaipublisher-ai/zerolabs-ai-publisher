@@ -98,7 +98,7 @@ export async function getCommunityFeed(): Promise<CommunityPostRecord[]> {
     sharedWebsiteIds.length > 0
       ? supabase
         .from("website_structures")
-        .select("id, site_title, visibility, status, deleted_at, structure")
+        .select("id, user_id, site_title, visibility, status, deleted_at, structure")
         .in("id", sharedWebsiteIds)
       : Promise.resolve({ data: [], error: null }),
   ]);
@@ -138,7 +138,7 @@ export async function getCommunityFeed(): Promise<CommunityPostRecord[]> {
         username: profile?.username ?? null,
         displayName: getFeedAuthorDisplayName(authorProfile),
         initials: getFeedAuthorInitials(authorProfile),
-        profileHref: getPublicProfileHref(profile?.username),
+        profileHref: getPublicProfileHref({ id: post.user_id, username: profile?.username }),
         isFollowing: Boolean(currentUserId && currentUserId !== post.user_id && followingAuthorIds.has(post.user_id)),
         avatarDisplayUrl: authorAvatarDisplayUrls.get(post.user_id) ?? null,
       };
@@ -148,7 +148,13 @@ export async function getCommunityFeed(): Promise<CommunityPostRecord[]> {
       .map((attachment) => {
         const websiteId = getSharedWebsiteId(attachment);
         return websiteId
-          ? { ...attachment, website: resolveSharedWebsiteAttachment(attachment, sharedWebsitesById.get(websiteId)) }
+          ? {
+              ...attachment,
+              website: resolveSharedWebsiteAttachment(attachment, sharedWebsitesById.get(websiteId), {
+                currentUserId,
+                isPublicFeedPost: post.visibility === "public",
+              }),
+            }
           : attachment;
       }) as CommunityPostRecord["attachments"],
     reactionCount: reactions.error ? null : count(reactionRows, post.id),
@@ -201,6 +207,30 @@ export async function getPublicWebsitesForOwner(userId: string): Promise<PublicW
     ...(row as Omit<PublicWebsiteRecord, "owner_id"> & { user_id?: string | null }),
     owner_id: (row as { user_id?: string | null }).user_id,
   }));
+}
+
+/** Lists an owner's public website designs that may be deliberately shared in Feed. */
+export async function getFeedShareableWebsitesForOwner(userId: string): Promise<PublicWebsiteRecord[]> {
+  const supabase = await getSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from("website_structures")
+    .select("id, site_title, visibility, updated_at, generated_at, status, user_id, deleted_at")
+    .eq("visibility", "public")
+    .eq("user_id", userId)
+    .order("generated_at", { ascending: false });
+
+  if (error) {
+    logOptionalFeedError("current user's Feed-shareable websites", error);
+    return [];
+  }
+
+  return (data ?? [])
+    .filter((row) => row.status !== "deleted" && !row.deleted_at)
+    .map((row) => ({
+      ...(row as Omit<PublicWebsiteRecord, "owner_id"> & { user_id?: string | null }),
+      owner_id: (row as { user_id?: string | null }).user_id,
+    }));
 }
 
 /** Lightweight public-post query for a profile surface; it deliberately excludes private and draft posts. */

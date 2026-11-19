@@ -4,10 +4,12 @@ import { notFound, redirect } from "next/navigation";
 import { routes } from "@/config/routes";
 import { Renderer } from "@/components/generated-site/renderer";
 import { getWebsiteStructureById } from "@/lib/ai/structure/storage";
+import { canViewFeedSharedWebsiteDesign } from "@/lib/feed/shared-website-access";
 import { recordWebsiteView } from "@/lib/insights/events";
 import { detectPublicationState } from "@/lib/publish";
 import { resolveWebsitePageByPath } from "@/lib/routing";
 import { getServerUser } from "@/lib/supabase/server";
+import { withWebsiteAssetQueryContext } from "@/lib/website-asset-retrieval";
 
 interface LiveSitePageProps {
   params: Promise<{ id: string; slug?: string[] }>;
@@ -61,14 +63,16 @@ export async function generateMetadata({ params }: LiveSitePageProps): Promise<M
 
 export default async function LiveSitePage({ params }: LiveSitePageProps) {
   const { id, slug } = await params;
-  const structure = await getWebsiteStructureById(id);
+  const [structure, viewer] = await Promise.all([getWebsiteStructureById(id), getServerUser()]);
 
   if (!structure || structure.management?.deletedAt) {
     notFound();
   }
 
   const publication = detectPublicationState(structure);
-  if (publication.state !== "published") {
+  const isFeedSharedDesign = publication.state !== "published"
+    && Boolean(viewer && await canViewFeedSharedWebsiteDesign(id));
+  if (publication.state !== "published" && !isFeedSharedDesign) {
     notFound();
   }
 
@@ -85,7 +89,7 @@ export default async function LiveSitePage({ params }: LiveSitePageProps) {
     notFound();
   }
 
-  const [requestHeaders, viewer] = await Promise.all([headers(), getServerUser()]);
+  const requestHeaders = await headers();
   await recordWebsiteView({
     ownerUserId: structure.userId,
     structureId: structure.id,
@@ -96,5 +100,9 @@ export default async function LiveSitePage({ params }: LiveSitePageProps) {
     userAgent: requestHeaders.get("user-agent"),
   });
 
-  return <Renderer structure={structure} pageSlug={resolved.route?.path ?? page.slug} strictRoute />;
+  const renderStructure = isFeedSharedDesign
+    ? withWebsiteAssetQueryContext(structure, { feedSharedWebsiteId: id })
+    : structure;
+
+  return <Renderer structure={renderStructure} pageSlug={resolved.route?.path ?? page.slug} strictRoute />;
 }

@@ -81,6 +81,7 @@ export interface WebsiteAssetResolveQuery {
   tenantId?: string;
   surface: WebsiteAssetSurface;
   previewToken?: string;
+  feedSharedWebsiteId?: string;
   includeArchived?: boolean;
   includeDeleted?: boolean;
   page: number;

@@ -130,4 +130,12 @@ describe("community feed avatar resolution", () => {
     const missingMediaFeed = await getCommunityFeed();
     expect(missingMediaFeed[0].author.avatarDisplayUrl).toBeNull();
   });
+
+  it("keeps a valid Feed author navigable when their legacy profile has no username", async () => {
+    profileRecords = [{ ...profileRecords[0], username: null }];
+
+    const feed = await getCommunityFeed();
+
+    expect(feed[0].author.profileHref).toBe("/profile/u/id/author_fixture");
+  });
 });
