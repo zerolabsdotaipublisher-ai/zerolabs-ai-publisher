@@ -10,8 +10,9 @@ vi.mock("@/lib/profile-media-server", () => ({ resolveProfileMediaDisplayUrl: mo
 
 import { getCommunityFeed } from "@/app/(app)/feed/queries";
 
-const originalAvatarReference = "supabase:profile-media:author_fixture/avatar/profile-avatar-11111111-1111-4111-8111-111111111111.png";
-const replacementAvatarReference = "supabase:profile-media:author_fixture/avatar/profile-avatar-22222222-2222-4222-8222-222222222222.png";
+const authorUserId = "66666666-6666-4666-8666-666666666666";
+const originalAvatarReference = `supabase:profile-media:${authorUserId}/avatar/profile-avatar-11111111-1111-4111-8111-111111111111.png`;
+const replacementAvatarReference = `supabase:profile-media:${authorUserId}/avatar/profile-avatar-22222222-2222-4222-8222-222222222222.png`;
 
 let avatarReference: string | null;
 let profileRecords: Array<Record<string, unknown>>;
@@ -25,8 +26,8 @@ function queryWithIn(getResult: () => unknown) {
 
 function createFeedSupabase() {
   const posts = [
-    { id: "post_one", user_id: "author_fixture", title: null, body: "First update", visibility: "public", created_at: "2026-01-01T00:00:00.000Z", updated_at: "2026-01-01T00:00:00.000Z" },
-    { id: "post_two", user_id: "author_fixture", title: null, body: "Second update", visibility: "public", created_at: "2026-01-02T00:00:00.000Z", updated_at: "2026-01-02T00:00:00.000Z" },
+    { id: "post_one", user_id: authorUserId, title: null, body: "First update", visibility: "public", created_at: "2026-01-01T00:00:00.000Z", updated_at: "2026-01-01T00:00:00.000Z" },
+    { id: "post_two", user_id: authorUserId, title: null, body: "Second update", visibility: "public", created_at: "2026-01-02T00:00:00.000Z", updated_at: "2026-01-02T00:00:00.000Z" },
   ];
   const emptyResult = { data: [], error: null };
   followingIn = vi.fn().mockResolvedValue(emptyResult);
@@ -67,7 +68,7 @@ describe("community feed avatar resolution", () => {
     vi.clearAllMocks();
     avatarReference = originalAvatarReference;
     profileRecords = [{
-      id: "author_fixture",
+      id: authorUserId,
       username: "Avery",
       full_name: "Avery Builder",
       first_name: "Avery",
@@ -90,7 +91,7 @@ describe("community feed avatar resolution", () => {
     expect(feed.map((post) => post.author.avatarDisplayUrl)).toEqual([expectedDisplayUrl, expectedDisplayUrl]);
     expect(mocks.resolveProfileMediaDisplayUrl).toHaveBeenCalledTimes(1);
     expect(mocks.resolveProfileMediaDisplayUrl).toHaveBeenCalledWith({
-      userId: "author_fixture",
+      userId: authorUserId,
       reference: originalAvatarReference,
       kind: "avatar",
     });
@@ -100,7 +101,7 @@ describe("community feed avatar resolution", () => {
     expect(feed[0].author.profileHref).toBe("/profile/u/Avery");
     expect(feed[0].author.isFollowing).toBe(false);
     expect(followingIn).toHaveBeenCalledTimes(1);
-    expect(followingIn).toHaveBeenCalledWith("followed_user_id", ["author_fixture"]);
+    expect(followingIn).toHaveBeenCalledWith("followed_user_id", [authorUserId]);
   });
 
   it("uses a replacement profile avatar for existing posts after Feed reloads without changing post data", async () => {
@@ -136,6 +137,26 @@ describe("community feed avatar resolution", () => {
 
     const feed = await getCommunityFeed();
 
-    expect(feed[0].author.profileHref).toBe("/profile/u/id/author_fixture");
+    expect(feed[0].author.authorUserId).toBe(authorUserId);
+    expect(feed[0].author.profileUserId).toBe(authorUserId);
+    expect(feed[0].author.profileHref).toBe(`/profile/u/id/${authorUserId}`);
+    expect(feed[0].author.avatarDisplayUrl).toContain(encodeURIComponent(originalAvatarReference));
+    expect(mocks.resolveProfileMediaDisplayUrl).toHaveBeenCalledWith({
+      userId: authorUserId,
+      reference: originalAvatarReference,
+      kind: "avatar",
+    });
+    expect(followingIn).toHaveBeenCalledWith("followed_user_id", [authorUserId]);
+  });
+
+  it("does not turn an unresolved post author reference into a public-profile route", async () => {
+    profileRecords = [];
+
+    const feed = await getCommunityFeed();
+
+    expect(feed[0].author.authorUserId).toBe(authorUserId);
+    expect(feed[0].author.profileUserId).toBeNull();
+    expect(feed[0].author.profileHref).toBeNull();
+    expect(followingIn).toHaveBeenCalledWith("followed_user_id", [authorUserId]);
   });
 });

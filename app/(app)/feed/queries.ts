@@ -43,17 +43,19 @@ export async function getCommunityFeed(): Promise<CommunityPostRecord[]> {
   }
 
   const posts = (data ?? []) as Array<Omit<CommunityPostRecord, "author" | "attachments" | "reactionCount" | "commentCount" | "shareCount" | "reactedByCurrentUser" | "comments">>;
-  const ids = posts.map((post) => post.id);
-  if (ids.length === 0) return [];
+  const postIds = posts.map((post) => post.id);
+  if (postIds.length === 0) return [];
 
-  const authorIds = [...new Set(posts.map((post) => post.user_id))];
+  // Community posts carry the author reference, while the profile row is the
+  // canonical identity used by public-profile routes and follow relationships.
+  const postAuthorIds = [...new Set(posts.map((post) => post.user_id))];
 
   const [authorProfiles, attachments, reactions, comments, shares, currentUser] = await Promise.all([
-    supabase.from("profiles").select("id, username, full_name, first_name, last_name, avatar_url").in("id", authorIds),
-    supabase.from("community_post_attachments").select("id, post_id, attachment_type, storage_path, public_url, file_name, mime_type, file_size, metadata").in("post_id", ids),
-    supabase.from("community_post_reactions").select("post_id, user_id").in("post_id", ids),
-    supabase.from("community_post_comments").select("id, post_id, user_id, body, created_at").in("post_id", ids).is("deleted_at", null).order("created_at", { ascending: true }),
-    supabase.from("community_post_shares").select("post_id").in("post_id", ids),
+    supabase.from("profiles").select("id, username, full_name, first_name, last_name, avatar_url").in("id", postAuthorIds),
+    supabase.from("community_post_attachments").select("id, post_id, attachment_type, storage_path, public_url, file_name, mime_type, file_size, metadata").in("post_id", postIds),
+    supabase.from("community_post_reactions").select("post_id, user_id").in("post_id", postIds),
+    supabase.from("community_post_comments").select("id, post_id, user_id, body, created_at").in("post_id", postIds).is("deleted_at", null).order("created_at", { ascending: true }),
+    supabase.from("community_post_shares").select("post_id").in("post_id", postIds),
     supabase.auth.getUser(),
   ]);
 
@@ -67,6 +69,7 @@ export async function getCommunityFeed(): Promise<CommunityPostRecord[]> {
       return [authorProfile.id, authorProfile];
     }),
   );
+  const followTargetUserIds = [...new Set(posts.map((post) => profilesById.get(post.user_id)?.id ?? post.user_id))];
   const currentUserId = currentUser.data.user?.id;
   const rawAttachments = (attachments.data ?? []) as CommunityPostRecord["attachments"];
   const sharedWebsiteIds = [...new Set(rawAttachments
@@ -93,7 +96,7 @@ export async function getCommunityFeed(): Promise<CommunityPostRecord[]> {
         .from("profile_follows")
         .select("followed_user_id")
         .eq("follower_user_id", currentUserId)
-        .in("followed_user_id", authorIds)
+        .in("followed_user_id", followTargetUserIds)
       : Promise.resolve({ data: [], error: null }),
     sharedWebsiteIds.length > 0
       ? supabase
@@ -122,25 +125,31 @@ export async function getCommunityFeed(): Promise<CommunityPostRecord[]> {
   const reactionRows = reactions.error ? [] : (reactions.data ?? []);
   const commentRows = comments.error ? [] : (comments.data ?? []);
   const shareRows = shares.error ? [] : (shares.data ?? []);
-  const count = (rows: Array<{ post_id?: string }>, id: string) => rows.filter((row) => row.post_id === id).length;
+  const count = (rows: Array<{ post_id?: string }>, postId: string) => rows.filter((row) => row.post_id === postId).length;
 
   return posts.map((post) => ({
     ...post,
     author: (() => {
       const profile = profilesById.get(post.user_id);
+      // A Feed author may originate from a post, but public-profile routing
+      // uses one explicit identity: a `profileUserId` resolved from `profiles`.
+      // Do not turn an unresolved post author reference into a profile route.
+      const profileUserId = profile?.id ?? null;
+      const authorUserId = post.user_id;
       const authorProfile = profile ?? {
-        id: post.user_id,
+        id: authorUserId,
         email: currentUserId === post.user_id ? currentUser.data.user?.email : null,
       };
 
       return {
-        id: post.user_id,
+        authorUserId,
+        profileUserId,
         username: profile?.username ?? null,
         displayName: getFeedAuthorDisplayName(authorProfile),
         initials: getFeedAuthorInitials(authorProfile),
-        profileHref: getPublicProfileHref({ id: post.user_id, username: profile?.username }),
-        isFollowing: Boolean(currentUserId && currentUserId !== post.user_id && followingAuthorIds.has(post.user_id)),
-        avatarDisplayUrl: authorAvatarDisplayUrls.get(post.user_id) ?? null,
+        profileHref: getPublicProfileHref({ profileUserId, username: profile?.username }),
+        isFollowing: Boolean(currentUserId && currentUserId !== authorUserId && followingAuthorIds.has(profileUserId ?? authorUserId)),
+        avatarDisplayUrl: authorAvatarDisplayUrls.get(profileUserId ?? authorUserId) ?? null,
       };
     })(),
     attachments: attachmentRows
@@ -187,19 +196,19 @@ export async function getPublicWebsites(): Promise<PublicWebsiteRecord[]> {
   }));
 }
 
-export async function getPublicWebsitesForOwner(userId: string): Promise<PublicWebsiteRecord[]> {
+export async function getPublicWebsitesForOwner(profileUserId: string): Promise<PublicWebsiteRecord[]> {
   const supabase = await getSupabaseServerClient();
 
   const { data, error } = await supabase
     .from("website_structures")
     .select("id, site_title, visibility, updated_at, generated_at, status, user_id")
     .eq("visibility", "public")
-    .eq("user_id", userId)
+    .eq("user_id", profileUserId)
     .eq("status", "published")
     .order("generated_at", { ascending: false });
 
   if (error) {
-    logOptionalFeedError("current user's public websites", error);
+    logOptionalFeedError("profile public websites", error);
     return [];
   }
 
@@ -235,7 +244,7 @@ export async function getFeedShareableWebsitesForOwner(userId: string): Promise<
 
 /** Lightweight public-post query for a profile surface; it deliberately excludes private and draft posts. */
 export async function getPublicCommunityPostsForAuthor(
-  userId: string,
+  profileUserId: string,
   limit = 3,
 ): Promise<PublicCommunityPostSummary[]> {
   const supabase = await getSupabaseServerClient();
@@ -244,13 +253,13 @@ export async function getPublicCommunityPostsForAuthor(
   const { data, error } = await supabase
     .from("community_posts")
     .select("id, title, body, created_at")
-    .eq("user_id", userId)
+    .eq("user_id", profileUserId)
     .eq("visibility", "public")
     .order("created_at", { ascending: false })
     .limit(safeLimit);
 
   if (error) {
-    logOptionalFeedError("current user's public community posts", error);
+    logOptionalFeedError("profile public community posts", error);
     return [];
   }
 

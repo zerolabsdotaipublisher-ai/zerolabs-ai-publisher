@@ -45,7 +45,7 @@ export const routes = {
    */
   publicProfile: (username: string) => `/profile/u/${encodeURIComponent(username)}`,
   /** Stable canonical route for a profile that has no public username. */
-  publicProfileById: (userId: string) => `/profile/u/id/${encodeURIComponent(userId)}`,
+  publicProfileByProfileUserId: (profileUserId: string) => `/profile/u/id/${encodeURIComponent(profileUserId)}`,
   profileCustomize: "/profile/customize",
   generatedSites: "/generated-sites",
   generatedSite: (id: string) => `/generated-sites/${id}`,

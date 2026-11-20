@@ -1,7 +1,7 @@
 import type { User } from "@supabase/supabase-js";
 import { isAdminEmail, resolveAdminRole } from "@/lib/admin/access";
 import { logger } from "@/lib/observability";
-import { normalizePublicProfileUsername } from "@/lib/profile-public";
+import { normalizePublicProfileUsername, normalizePublicProfileUserId } from "@/lib/profile-public";
 import { getSupabaseServiceClient } from "./server";
 
 export type ProfileRole = "user" | "admin";
@@ -448,6 +448,21 @@ export async function getProfile(userId: string): Promise<Profile | null> {
 }
 
 const PUBLIC_PROFILE_FIELDS = "id, full_name, avatar_url, first_name, last_name, username, country, date_of_birth, preferences";
+const PUBLIC_PROFILE_FIELDS_WITHOUT_PREFERENCES = "id, full_name, avatar_url, first_name, last_name, username, country, date_of_birth";
+
+/**
+ * Indicates an operational failure while resolving a public profile.
+ *
+ * Routes may convert an absent profile into a 404, but must allow this error
+ * to reach Next.js so missing configuration or schema defects are not
+ * presented as an absent user.
+ */
+export class PublicProfileLookupError extends Error {
+  constructor() {
+    super("Unable to load the public profile.");
+    this.name = "PublicProfileLookupError";
+  }
+}
 
 function toPublicProfile(data: unknown): PublicProfile | null {
   if (!data || typeof data !== "object") return null;
@@ -475,29 +490,41 @@ async function getPublicProfileByField(
 ): Promise<PublicProfile | null> {
   try {
     const supabase = getSupabaseServiceClient();
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("profiles")
       .select(PUBLIC_PROFILE_FIELDS)
       .eq(field, value)
       .maybeSingle();
 
-    if (error) {
-      logger.warn("public profile lookup failed", {
+    // `preferences` is an optional profile-customization extension. Older
+    // installations may not yet have its migration, but their public profile
+    // rows remain valid and must not be misreported as 404s.
+    if (error && isUnavailableProfilePreferencesError(error)) {
+      logger.warn("profiles.preferences is unavailable; loading the public profile without optional preferences", {
         category: "error",
         service: "supabase",
-        error: { message: error.message, name: "SupabasePublicProfileError" },
+        error: { message: error.message, name: "SupabaseProfileSchemaWarning" },
       });
-      return null;
+
+      ({ data, error } = await supabase
+        .from("profiles")
+        .select(PUBLIC_PROFILE_FIELDS_WITHOUT_PREFERENCES)
+        .eq(field, value)
+        .maybeSingle());
+    }
+
+    if (error) {
+      throw error;
     }
 
     return toPublicProfile(data);
   } catch (error) {
-    logger.warn("public profile lookup could not be completed", {
+    logger.error("public profile lookup could not be completed", {
       category: "error",
       service: "supabase",
       error: { message: error instanceof Error ? error.message : "Unknown profile lookup error", name: "SupabasePublicProfileError" },
     });
-    return null;
+    throw new PublicProfileLookupError();
   }
 }
 
@@ -507,10 +534,10 @@ export async function getPublicProfileByUsername(username: string | null | undef
   return normalizedUsername ? getPublicProfileByField("username", normalizedUsername) : null;
 }
 
-/** Looks up a public profile by its stable, durable user identifier. */
-export async function getPublicProfileById(userId: string | null | undefined): Promise<PublicProfile | null> {
-  const normalizedUserId = userId?.trim();
-  return normalizedUserId ? getPublicProfileByField("id", normalizedUserId) : null;
+/** Looks up a public profile by its stable, durable profile user identifier. */
+export async function getPublicProfileByProfileUserId(profileUserId: string | null | undefined): Promise<PublicProfile | null> {
+  const normalizedProfileUserId = normalizePublicProfileUserId(profileUserId);
+  return normalizedProfileUserId ? getPublicProfileByField("id", normalizedProfileUserId) : null;
 }
 
 export async function updateProfile(userId: string, data: ProfileUpdateData): Promise<Profile> {

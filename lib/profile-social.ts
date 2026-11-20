@@ -70,12 +70,12 @@ export async function getProfileRelationship(
   profileUserId: string,
 ): Promise<ProfileRelationship> {
   const viewerId = viewerUserId?.trim();
-  const viewedProfileId = profileUserId.trim();
-  const isSelf = Boolean(viewerId && viewerId === viewedProfileId);
-  if (!viewerId || !viewedProfileId || isSelf) return { isSelf, isFollowing: false };
+  const viewedProfileUserId = profileUserId.trim();
+  const isSelf = Boolean(viewerId && viewerId === viewedProfileUserId);
+  if (!viewerId || !viewedProfileUserId || isSelf) return { isSelf, isFollowing: false };
 
-  const followingProfileIds = await getFollowingProfileIds(viewerId, [viewedProfileId]);
-  return { isSelf: false, isFollowing: followingProfileIds.has(viewedProfileId) };
+  const followingProfileUserIds = await getFollowingProfileIds(viewerId, [viewedProfileUserId]);
+  return { isSelf: false, isFollowing: followingProfileUserIds.has(viewedProfileUserId) };
 }
 
 /**

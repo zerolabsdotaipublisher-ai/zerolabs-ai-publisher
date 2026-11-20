@@ -3,6 +3,10 @@ import { describe, expect, it, vi } from "vitest";
 import { PostList } from "@/app/(app)/feed/post-list";
 import type { CommunityPostRecord } from "@/app/(app)/feed/types";
 
+const authorUserId = "77777777-7777-4777-8777-777777777777";
+const legacyAuthorUserId = "88888888-8888-4888-8888-888888888888";
+const legacyProfileUserId = "99999999-9999-4999-8999-999999999999";
+
 vi.mock("@/app/(app)/feed/actions", () => ({
   createCommunityPostComment: vi.fn(),
   deleteCommunityPost: vi.fn(),
@@ -10,18 +14,22 @@ vi.mock("@/app/(app)/feed/actions", () => ({
   toggleCommunityPostReaction: vi.fn(),
   toggleSavedCommunityPost: vi.fn(),
 }));
+vi.mock("@/components/profile/profile-follow-button", () => ({
+  ProfileFollowButton: ({ profileUserId }: { profileUserId: string }) => <button type="button" data-follow-target={profileUserId}>Follow</button>,
+}));
 
 function post(overrides: Partial<CommunityPostRecord> = {}): CommunityPostRecord {
   return {
     id: "post_fixture",
-    user_id: "author_user",
+    user_id: authorUserId,
     title: null,
     body: "A public build update.",
     visibility: "public",
     created_at: "2026-01-01T00:00:00.000Z",
     updated_at: "2026-01-01T00:00:00.000Z",
     author: {
-      id: "author_user",
+      authorUserId,
+      profileUserId: authorUserId,
       username: "avery.builds",
       displayName: "Avery Builder",
       initials: "AB",
@@ -61,7 +69,7 @@ describe("Feed social author cards", () => {
   });
 
   it("keeps own posts routed to the owner profile and omits Follow while preserving Delete", () => {
-    const ownPost = post({ user_id: "viewer_user", author: { ...post().author, id: "viewer_user", profileHref: null } });
+    const ownPost = post({ user_id: "viewer_user", author: { ...post().author, authorUserId: "viewer_user", profileUserId: "viewer_user", profileHref: null } });
     const markup = renderToStaticMarkup(
       <PostList posts={[ownPost]} currentUserId="viewer_user" savedPostIds={[]} savedItemsAvailable />,
     );
@@ -75,15 +83,28 @@ describe("Feed social author cards", () => {
   });
 
   it("keeps a legacy author without a username clickable through their durable profile route", () => {
-    const legacyPost = post({ author: { ...post().author, username: null, profileHref: "/profile/u/id/author_user" } });
+    const legacyPost = post({
+      user_id: legacyAuthorUserId,
+      author: {
+        ...post().author,
+        authorUserId: legacyAuthorUserId,
+        profileUserId: legacyProfileUserId,
+        username: null,
+        profileHref: `/profile/u/id/${legacyProfileUserId}`,
+      },
+    });
     const markup = renderToStaticMarkup(
       <PostList posts={[legacyPost]} currentUserId="viewer_user" savedPostIds={[]} savedItemsAvailable />,
     );
 
     expect(markup).not.toContain("/profile/null");
     expect(markup).not.toContain("/profile/undefined");
-    expect(markup).toContain('href="/profile/u/id/author_user"');
+    expect(markup).toContain(`href="/profile/u/id/${legacyProfileUserId}"`);
+    expect(markup.match(new RegExp(`href="/profile/u/id/${legacyProfileUserId}"`, "g"))).toHaveLength(2);
+    expect(markup).toContain('class="feed-post-author-avatar-link"');
+    expect(markup).toContain('class="feed-post-author-name-link"');
     expect(markup).toContain('aria-label="View Avery Builder&#x27;s profile"');
+    expect(markup).toContain(`data-follow-target="${legacyProfileUserId}"`);
   });
 
   it("keeps obvious pointer, hover, and focus-visible affordances for all author identity links", () => {

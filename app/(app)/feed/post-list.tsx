@@ -155,11 +155,13 @@ export function PostList({ posts, currentUserId, savedPostIds, savedItemsAvailab
       {feedback ? <p className={`feed-form-message is-${feedback.tone}`} role={feedback.tone === "error" ? "alert" : "status"}>{feedback.message}</p> : null}
 
       {posts.map((post) => {
-        const isOwner = post.user_id === currentUserId;
+        const { authorUserId, profileUserId } = post.author;
+        const followTargetProfileUserId = profileUserId ?? authorUserId;
+        const isOwner = authorUserId === currentUserId;
         const isSaved = savedPostIds.includes(post.id);
         const isBusy = busyPostId === post.id;
         const profileHref = isOwner ? routes.profile : post.author.profileHref;
-        const isFollowing = followingOverrides[post.author.id] ?? post.author.isFollowing;
+        const isFollowing = followingOverrides[followTargetProfileUserId] ?? post.author.isFollowing;
         const engagementSummary = getEngagementSummary(post);
         const authorUsername = post.author.username?.trim();
         const shouldShowAuthorUsername = Boolean(
@@ -206,11 +208,11 @@ export function PostList({ posts, currentUserId, savedPostIds, savedItemsAvailab
                 {!isOwner ? (
                   <ProfileFollowButton
                     className="feed-follow-button"
-                    profileUserId={post.author.id}
+                    profileUserId={followTargetProfileUserId}
                     displayName={post.author.displayName}
                     isFollowing={isFollowing}
                     onRelationshipChange={(nextIsFollowing) => {
-                      setFollowingOverrides((current) => ({ ...current, [post.author.id]: nextIsFollowing }));
+                      setFollowingOverrides((current) => ({ ...current, [followTargetProfileUserId]: nextIsFollowing }));
                     }}
                   />
                 ) : null}

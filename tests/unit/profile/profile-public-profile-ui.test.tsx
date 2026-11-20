@@ -1,9 +1,10 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { ProfileView } from "@/components/profile/profile-view";
-import { getPublicProfileHref, getPublicProfileIdHref } from "@/lib/profile-public";
+import { getPublicProfileHref, getPublicProfileUserIdHref } from "@/lib/profile-public";
 import type { Profile } from "@/lib/supabase/profile";
 
+const profileUserId = "22222222-2222-4222-8222-222222222222";
 
 function profile(overrides: Partial<Profile> = {}): Profile {
   return {
@@ -29,18 +30,19 @@ function profile(overrides: Partial<Profile> = {}): Profile {
 
 describe("public profile identity and visitor controls", () => {
   it("builds a safe canonical public route and leaves missing legacy usernames unlinked", () => {
-    expect(getPublicProfileHref({ username: "avery.builds", id: "author_fixture" })).toBe("/profile/u/avery.builds");
-    expect(getPublicProfileHref({ username: "  avery builds  ", id: "author_fixture" })).toBe("/profile/u/avery%20builds");
-    expect(getPublicProfileHref({ id: "author_fixture" })).toBe("/profile/u/id/author_fixture");
-    expect(getPublicProfileHref({ username: "   ", id: "   " })).toBeNull();
+    expect(getPublicProfileHref({ username: "avery.builds", profileUserId })).toBe("/profile/u/avery.builds");
+    expect(getPublicProfileHref({ username: "  avery builds  ", profileUserId })).toBe("/profile/u/avery%20builds");
+    expect(getPublicProfileHref({ profileUserId })).toBe(`/profile/u/id/${profileUserId}`);
+    expect(getPublicProfileHref({ username: "   ", profileUserId: "   " })).toBeNull();
   });
 
   it("uses a distinct durable-identifier route when a legacy Feed author has no username", () => {
-    expect(getPublicProfileIdHref("author_fixture")).toBe("/profile/u/id/author_fixture");
-    expect(getPublicProfileIdHref("  author fixture  ")).toBe("/profile/u/id/author%20fixture");
-    expect(getPublicProfileHref({ id: "author_fixture" })).toBe("/profile/u/id/author_fixture");
-    expect(getPublicProfileHref({ username: "avery.builds", id: "author_fixture" })).toBe("/profile/u/avery.builds");
-    expect(getPublicProfileHref({ id: "   " })).toBeNull();
+    expect(getPublicProfileUserIdHref(profileUserId)).toBe(`/profile/u/id/${profileUserId}`);
+    expect(getPublicProfileUserIdHref(`  ${profileUserId}  `)).toBe(`/profile/u/id/${profileUserId}`);
+    expect(getPublicProfileHref({ profileUserId })).toBe(`/profile/u/id/${profileUserId}`);
+    expect(getPublicProfileHref({ username: "avery.builds", profileUserId })).toBe("/profile/u/avery.builds");
+    expect(getPublicProfileHref({ profileUserId: "   " })).toBeNull();
+    expect(getPublicProfileUserIdHref("not-a-profile-user-id")).toBeNull();
   });
 
   it("keeps owner and viewed identities distinct: an owner gets Edit profile, never Follow", () => {
