@@ -1,11 +1,20 @@
+import type { ProfileUserId } from "@/lib/profile-public";
+
 export type CommunityPostVisibility = "public" | "private" | "draft";
+/** `community_posts.id`: a Feed post identity, never a public-profile identity. */
+export type PostId = string;
+/** `community_posts.user_id`: the author identity recorded on a Feed post. */
+export type AuthorUserId = string;
 
 export interface CommunityPostAuthor {
-  id: string;
+  /** The exact `community_posts.user_id` value that authored this post. */
+  authorUserId: AuthorUserId;
+  /** The resolved `profiles.id`; this is the only identity used in a public-profile href. */
+  profileUserId: ProfileUserId | null;
   username?: string | null;
   displayName: string;
   initials: string;
-  /** Null only when the post author identifier itself is unavailable. */
+  /** Null when the author has no resolved public-profile identity. */
   profileHref: string | null;
   /** Relationship state is resolved once per distinct author for the feed. */
   isFollowing: boolean;
@@ -14,8 +23,10 @@ export interface CommunityPostAuthor {
 }
 
 export interface CommunityPostRecord {
-  id: string;
-  user_id: string;
+  /** The database post ID. Public-profile routing must not use this value. */
+  id: PostId;
+  /** The database author ID. The normalized author field is `author.authorUserId`. */
+  user_id: AuthorUserId;
   title: string | null;
   body: string;
   visibility: CommunityPostVisibility;

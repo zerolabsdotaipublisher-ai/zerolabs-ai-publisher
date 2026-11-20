@@ -13,18 +13,22 @@ export async function PublicProfilePage({ profile }: { profile: PublicProfile })
   const user = await getServerUser();
   if (!user) redirect(routes.login);
 
+  // The route resolves this profile first. Every visitor-facing query below
+  // must use that resolved identity, never the signed-in viewer's identity.
+  const profileUserId = profile.id;
+
   // Preserve `/profile` as the signed-in owner experience and avoid rendering
   // a visitor action state for the current user through a public URL.
-  if (profile.id === user.id) redirect(routes.profile);
+  if (profileUserId === user.id) redirect(routes.profile);
 
   const appearance = getProfileAppearance(profile.preferences);
   const [websites, posts, socialStats, relationship, mediaUrls] = await Promise.all([
-    getPublicWebsitesForOwner(profile.id),
-    getPublicCommunityPostsForAuthor(profile.id),
-    getProfileSocialStats(profile.id),
-    getProfileRelationship(user.id, profile.id),
+    getPublicWebsitesForOwner(profileUserId),
+    getPublicCommunityPostsForAuthor(profileUserId),
+    getProfileSocialStats(profileUserId),
+    getProfileRelationship(user.id, profileUserId),
     resolveProfileMediaDisplayUrls({
-      userId: profile.id,
+      userId: profileUserId,
       avatarReference: profile.avatar_url,
       coverReference: appearance.coverUrl,
       backgroundReference: appearance.background.imageUrl,
